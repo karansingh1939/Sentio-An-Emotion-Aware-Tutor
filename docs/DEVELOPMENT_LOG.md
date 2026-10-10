@@ -89,3 +89,22 @@ fixtures are omitted; all other published blobs match the tested snapshot before
 this documentation update. Original weights/training data and learner uploads
 are excluded. Versioned evaluation fixtures and reviewed reports remain included.
 The repository remains private. Publication and hosted CI verification follow.
+
+## 2026-10-11 — Private publication verified
+
+Published clean `main` at `49539f72` to the owner's private repository. Verified
+the remote tree and exact LICENSE/README blob hashes; no weights, learner
+uploads, databases or logs are present. Local `main` now tracks `origin/main`.
+Original commits remain on `preserved-original-history-2026-10-11` and
+`legacy-main-2026-10-11`; previous-origin/upstream and local generated documents
+are preserved. No historical LFS objects were uploaded.
+
+The clean checkout passed 147 Python tests and 31 subtests, with one optional
+local Tesseract test skipped. JavaScript, Ruff and Prettier checks passed.
+Hosted Linux CI passed with Tesseract installed:
+https://github.com/karansingh-1939/Sentio-An-Emotion-Aware-Tutor/actions/runs/38083574712
+
+Next: evaluate OCR against labelled scans, improve the documented semantic
+grading false negative, and expand the retrieval dataset before proposing
+performance changes. Emotion accuracy and Docker execution remain unverified;
+keep the repository private until an explicit visibility review.
