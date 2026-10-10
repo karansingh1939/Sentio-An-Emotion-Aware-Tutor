@@ -20,3 +20,61 @@ before creation/push. The cached Git credential belongs to `karansingh1939`, a
 different account; it will not be used to publish to the requested destination.
 
 Next: replace simulated retrieval scores with a versioned isolated benchmark.
+
+## 2026-10-11 ? AI evaluation and response workflow
+
+Changed: replaced fabricated retrieval scores with a registered/authenticated
+owner, isolated database, selected source IDs and real hit/Recall@5/MRR/latency
+metrics. Added corpus v1.0 with answerable, paraphrased, negative and adversarial
+cases, reference answers and grading rubrics. Kept exact matches separate.
+Student grading text is now user data; blank answers reject without model calls.
+The CPU benchmark uses fresh equivalent prompts, cold/warm separation and three
+repetitions. Chat exposes generation state, deadlines and duplicate-send guard.
+
+Evidence: isolated ownership, ranking, grading-boundary, equivalent-prompt and
+JavaScript deadline regressions pass. Measured reports and raw results are
+committed separately from implementation. Hybrid did not outperform keywords;
+one valid semantic answer still failed. All three speed experiments lost measured
+rubric quality, so production generation parameters remain unchanged.
+
+Next: independent semantic labels, longer multi-passage sources, and quiet-machine
+latency trials. Emotion accuracy remains unverified without labelled data.
+
+## 2026-10-11 ? Optional OCR
+
+Changed: optional PDFium extra and local Tesseract extraction, native-text
+preservation, PNG/JPEG support, rotation selection, 20 scanned-page/20 MiB limits,
+page citations, persisted text/OCR/mixed provenance and actionable errors.
+Document Library exposes availability and extraction method. CI includes OCR tools;
+Docker has an opt-in OCR build argument.
+
+Evidence: fixture tests cover native, scanned/mixed, rotated, empty, encrypted,
+oversized, missing-tool and replacement/provenance behavior. PDFium actually
+renders in fixture tests; recognition calls are controlled fixtures. The live
+Tesseract smoke test is skipped locally because its installation was canceled.
+Docker and hosted GitHub Actions remain unverified.
+
+Next: install the local OCR engine when available, then run the live smoke test
+and evaluate recognition against labelled scans. Publishing remains private-only
+and requires authentication as the exact requested GitHub account.
+
+## 2026-10-11 ? Validation and publication attempt
+
+Final local validation: 147 Python tests and 31 subtests passed, one live
+Tesseract test skipped; all five JavaScript checks, Ruff, Prettier, and wheel/source
+build passed. Browser regressions run in the Python suite.
+
+GitHub device authentication succeeded and the authenticated API confirmed
+`karansingh-1939`. Created and verified private repository
+https://github.com/karansingh-1939/Sentio-An-Emotion-Aware-Tutor . Preserved the
+old remote as `previous-origin`, retained `upstream`, and pointed `origin` at
+the requested repository.
+
+The baseline push was rejected with GH008 because preserved commits reference
+24 unavailable Git LFS objects (old emotion checkpoints, a model and FER2013).
+Those historical artifacts total approximately 1.6 GB. They are not included
+in the current tree. GitHub requires them even though new commits exclude
+weights and training data. No history rewrite or exclusion bypass was performed.
+The destination is still empty and Actions cannot run until publication is
+resolved. A user decision is required between allowing recoverable legacy LFS
+objects, keeping publication blocked, or authorizing a separate clean history.

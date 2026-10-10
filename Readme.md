@@ -83,8 +83,10 @@ because Docker is not installed.
 
 PDF, DOCX, and TXT uploads are available to their authenticated owner. Files
 are limited to 20 MiB. Text remains searchable by keywords when embeddings are
-unavailable. Scanned PDFs need OCR and currently return a clear extraction error.
-Image uploads are unsupported.
+unavailable. Optional English OCR supports scanned or mixed PDFs and PNG/JPEG
+images, with page citations and text/OCR/mixed extraction provenance. OCR processes
+at most 20 scanned pages per document and rejects encrypted or unreadable files.
+Native PDF text is preserved. The OCR engine must be installed locally.
 
 The AI provider must be running for generation and semantic answer grading.
 Objective quiz answers still produce deterministic grades when the summary
@@ -120,3 +122,48 @@ The next milestones are reproducible retrieval/grading evaluations, measured
 local inference improvements, and optional OCR. Results will describe the actual
 hardware, dataset, model, and limits; successful model loading is not an accuracy
 claim. Commits use their real dates. See [development record](docs/DEVELOPMENT_LOG.md).
+
+## Reproducible AI evaluations
+
+The versioned, author-written corpus contains 22 retrieval cases (including
+paraphrases, irrelevant questions and adversarial instructions) and 14 grading
+rubrics. Evaluations create a temporary database, register and authenticate a
+learner, index only the selected fixture documents, and clean up afterward.
+They do not scan learner uploads or score simulated answers.
+
+```powershell
+uv run python scripts/evaluate_retrieval.py --grade --output reports/evaluation.json
+uv run python scripts/benchmark_ollama_cpu.py --repetitions 3 --cases 3 --output reports/latency.json
+```
+
+The embedding model must already be cached for the retrieval benchmark; the
+semantic grading and CPU latency experiments require local Ollama. See
+[measured evaluation results](reports/AI_EVALUATION_2026-10-11.md) and
+[CPU experiment results](reports/CPU_LATENCY_2026-10-11.md). These are small
+synthetic experiments, not guarantees of answer quality or emotion accuracy.
+
+## Optional local OCR
+
+```powershell
+uv sync --extra ocr
+```
+
+Install Tesseract with English (`eng`) language data using your OS package
+manager. On Windows, the standard `C:\Program Files\Tesseract-OCR` location is
+detected; alternatively set `TESSERACT_CMD` to the executable's absolute path.
+On Ubuntu: `sudo apt-get install tesseract-ocr tesseract-ocr-eng`.
+Use `uv run --extra ocr sentio --port 8001` to retain the optional dependency.
+The Document Library shows whether OCR is available and how each document was
+extracted. Image OCR is capped at 16 million pixels; PDF rendering is capped at
+that size and starts at 150 DPI. Rotated images are tried in four orientations.
+The native text heuristic treats pages with fewer than 10 non-whitespace
+characters as OCR candidates; complex layouts may require a cleaner scan.
+
+Run all OCR regressions with `uv run --extra ocr python scripts/run_tests.py -q`.
+CI installs Tesseract and the OCR extra, including a live generated-image test.
+The local Tesseract installation was canceled, so its live test is currently
+skipped on this machine; fixture tests validate PDFium rendering, orientation
+selection, limits, provenance and actionable errors.
+Docker OCR is optional: `docker build --build-arg ENABLE_OCR=1 -t sentio-ocr .`.
+Docker has not been verified on this machine. See the
+[dependency decision](docs/OCR_DEPENDENCY_DECISION.md) for resource and license details.
