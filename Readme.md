@@ -182,3 +182,11 @@ retained attribution. Model weights, training data, learner uploads, databases,
 logs and generated scratch documents are excluded. Versioned synthetic evaluation
 fixtures and explicitly reviewed measurement reports are included as evidence.
 The source checkout retains the original history and its previous/upstream remotes.
+
+## Follow-up evaluations
+
+Repeated grading comparisons and labelled synthetic OCR measurements are
+documented in [docs/FOLLOWUP_EVALUATIONS.md](docs/FOLLOWUP_EVALUATIONS.md).
+These experiments keep exact-answer checks separate from semantic inference and
+record real OCR errors without claiming accuracy on real learner documents.
+

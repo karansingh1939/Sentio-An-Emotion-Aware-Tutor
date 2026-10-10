@@ -108,3 +108,18 @@ Next: evaluate OCR against labelled scans, improve the documented semantic
 grading false negative, and expand the retrieval dataset before proposing
 performance changes. Emotion accuracy and Docker execution remain unverified;
 keep the repository private until an explicit visibility review.
+
+## 2026-10-11 — Repeated grading and labelled OCR evaluation tools
+
+Added a 28-case versioned grading dataset and a three-repeat comparison with
+alternating profile order, model digest and raw scores. Exact and blank answers
+are now distinguished from semantic inference. Added real OCR measurements on
+nine temporary synthetic fixture cases, including rotations and mixed PDF text.
+Word/character edit rates and extraction provenance are recorded; native text
+must remain exact. CI runs Tesseract and uploads the measured report.
+
+Focused metric/category tests failed before implementation and passed afterwards.
+Full local regression: 151 passed, one optional Tesseract test skipped, 31 subtests
+passed. JavaScript, Ruff and Prettier checks passed. No production grading prompt
+has been changed from this experiment. Next: inspect hosted OCR results and
+publish the completed grading analysis with its unsuccessful candidate.

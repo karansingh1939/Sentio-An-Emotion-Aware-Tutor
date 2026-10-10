@@ -133,7 +133,11 @@ def measure_grading(dataset):
         rows.append(
             dict(
                 case,
-                category="exact" if exact else "semantic",
+                category="blank"
+                if not case["answer"].strip()
+                else "exact"
+                if exact
+                else "semantic",
                 latency_ms=(time.perf_counter() - start) * 1000,
                 **result,
             )
