@@ -1,0 +1,1 @@
+A database transaction groups operations into one unit. Atomicity means all operations commit together or none do. Isolation controls interference between concurrent transactions.

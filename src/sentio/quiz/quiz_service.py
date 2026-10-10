@@ -13,6 +13,7 @@ import uuid
 from copy import deepcopy
 from typing import Any, Dict, Optional, Tuple
 
+from sentio.ai.prompts import grading_prompt
 from sentio.ai.structured_parser import (
     QuizPayloadSchema,
     QuizScoringSchema,
@@ -287,6 +288,8 @@ Score: {avg_score:.1%} ({total_correct_score}/{len(questions)} correct)"""
         # 1. Exact string match short-circuit safeguard
         clean_student = student_answer.strip().lower()
         clean_correct = correct_answer.strip().lower()
+        if not clean_student:
+            return False, 0.0
         if clean_student and clean_student == clean_correct:
             return True, 1.0
 
@@ -295,23 +298,11 @@ Score: {avg_score:.1%} ({total_correct_score}/{len(questions)} correct)"""
             return self.grader_fn(question, correct_answer, student_answer)
 
         # 3. LLM semantic grading pipeline
-        prompt = f"""Grade student response semantically.
-Q: "{question}"
-Correct: "{correct_answer}"
-Student: "{student_answer}"
-
-Rules:
-- score (0.0 to 1.0)
-- is_correct (true if score >= 0.6, else false)
-- Respond ONLY with JSON matching the template.
-
-JSON Template:
-{{
-  "is_correct": <true|false>,
-  "score": <float>
-}}"""
+        prompt = grading_prompt(question, correct_answer)
         try:
-            raw_text, _ = self.agent.nlp._backend.complete(prompt, [], "Grade the answer.")
+            raw_text, _ = self.agent.nlp._backend.complete(
+                prompt, [], json.dumps({"student_answer": student_answer}), temperature=0.0
+            )
             cleaned = raw_text.strip()
             if cleaned.startswith("```json"):
                 cleaned = cleaned[7:]
