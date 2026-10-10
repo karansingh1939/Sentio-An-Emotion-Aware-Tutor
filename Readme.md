@@ -122,9 +122,10 @@ current development adds the package/lockfile migration, reliable authenticated
 study flows, privacy cleanup, regression coverage, and working History/Analytics.
 AI-assisted implementation is checked with tests and local runtime verification.
 
-The next milestones are reproducible retrieval/grading evaluations, measured
-local inference improvements, and optional OCR. Results will describe the actual
-hardware, dataset, model, and limits; successful model loading is not an accuracy
+Completed milestones include reproducible retrieval/grading evaluations, local
+CPU latency experiments, and optional OCR. Reports record the actual hardware,
+dataset, model, failures and limits. The speed experiments did not justify changing
+production generation settings, and successful model loading is not an accuracy
 claim. Commits use their real dates. See [development record](docs/DEVELOPMENT_LOG.md).
 
 ## Reproducible AI evaluations
