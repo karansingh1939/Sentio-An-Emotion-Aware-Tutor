@@ -78,3 +78,14 @@ weights and training data. No history rewrite or exclusion bypass was performed.
 The destination is still empty and Actions cannot run until publication is
 resolved. A user decision is required between allowing recoverable legacy LFS
 objects, keeping publication blocked, or authorizing a separate clean history.
+
+## 2026-10-11 — Authorized clean publication
+
+The owner authorized the recommended clean publishing history. Original history
+through `52455cc2` is retained locally on `preserved-original-history-2026-10-11`.
+A separate baseline snapshot and the four completed milestone commits retain
+MIT attribution and actual development dates. Six legacy generated document
+fixtures are omitted; all other published blobs match the tested snapshot before
+this documentation update. Original weights/training data and learner uploads
+are excluded. Versioned evaluation fixtures and reviewed reports remain included.
+The repository remains private. Publication and hosted CI verification follow.

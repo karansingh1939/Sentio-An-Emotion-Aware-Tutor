@@ -113,7 +113,11 @@ and static web assets. `tests/` contains unit, integration, and browser checks.
 ## Provenance and portfolio development
 
 This project builds on [AayushiNagar2411/Sentio-An-Emotion-Aware-Tutor](https://github.com/AayushiNagar2411/Sentio-An-Emotion-Aware-Tutor).
-The original history, authorship, and MIT license are preserved. Karan Singh's
+The MIT license and original-project credit are retained. The full original Git
+history is preserved locally on `preserved-original-history-2026-10-11`. The
+private GitHub repository uses a separately published clean history because the
+older history references unavailable model/training-data LFS objects. The clean
+baseline is a snapshot, not a claim that the upstream code was newly authored. Karan Singh's
 current development adds the package/lockfile migration, reliable authenticated
 study flows, privacy cleanup, regression coverage, and working History/Analytics.
 AI-assisted implementation is checked with tests and local runtime verification.
@@ -167,3 +171,13 @@ selection, limits, provenance and actionable errors.
 Docker OCR is optional: `docker build --build-arg ENABLE_OCR=1 -t sentio-ocr .`.
 Docker has not been verified on this machine. See the
 [dependency decision](docs/OCR_DEPENDENCY_DECISION.md) for resource and license details.
+
+## Publishing history
+
+On 2026-10-11, the owner authorized publishing a separate clean history after
+GitHub rejected the preserved history's 24 unavailable LFS objects (about 1.6 GB).
+The baseline and completed milestones were published with real timestamps and
+retained attribution. Model weights, training data, learner uploads, databases,
+logs and generated scratch documents are excluded. Versioned synthetic evaluation
+fixtures and explicitly reviewed measurement reports are included as evidence.
+The source checkout retains the original history and its previous/upstream remotes.
