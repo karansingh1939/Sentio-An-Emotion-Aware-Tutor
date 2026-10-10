@@ -1,0 +1,164 @@
+// Reusable Web Components for Sentio UI (ES Module)
+
+// 1. Toast Notification Component
+export class SentioToast extends HTMLElement {
+  connectedCallback() {
+    this.message = this.getAttribute('message') || '';
+    this.isError = this.hasAttribute('error');
+    this.duration = parseInt(this.getAttribute('duration')) || 4000;
+
+    this.render();
+    setTimeout(() => this.dismiss(), this.duration);
+  }
+
+  render() {
+    this.style.position = 'fixed';
+    this.style.bottom = '20px';
+    this.style.right = '20px';
+    this.style.zIndex = '10000';
+    this.style.display = 'flex';
+    this.style.alignItems = 'center';
+    this.style.gap = '10px';
+    this.style.padding = '12px 18px';
+    this.style.borderRadius = 'var(--radius)';
+    this.style.background = 'var(--bg2)';
+    this.style.border = `1px solid ${this.isError ? 'var(--red)' : 'var(--border)'}`;
+    this.style.boxShadow = '0 8px 30px rgba(0,0,0,0.5)';
+    this.style.color = this.isError ? 'var(--red)' : 'var(--accent)';
+    this.style.fontFamily = 'var(--mono)';
+    this.style.fontSize = '12px';
+    this.style.transition = 'opacity 0.3s, transform 0.3s';
+    this.style.transform = 'translateY(10px)';
+    this.style.opacity = '0';
+
+    this.innerHTML = `
+      <span>${this.isError ? '🛑' : '⚡'}</span>
+      <span>${this.message}</span>
+    `;
+
+    // Trigger animate-in
+    requestAnimationFrame(() => {
+      this.style.transform = 'translateY(0)';
+      this.style.opacity = '1';
+    });
+  }
+
+  dismiss() {
+    this.style.transform = 'translateY(-10px)';
+    this.style.opacity = '0';
+    this.addEventListener('transitionend', () => this.remove());
+  }
+}
+customElements.define('sentio-toast', SentioToast);
+
+// Global Toast helper
+export function toast(message, isError = false) {
+  const el = document.createElement('sentio-toast');
+  el.setAttribute('message', message);
+  if (isError) el.setAttribute('error', '');
+  document.body.appendChild(el);
+}
+
+// 2. Global Loader Spinner Component
+export class SentioLoader extends HTMLElement {
+  connectedCallback() {
+    this.style.display = 'inline-block';
+    this.style.width = this.getAttribute('size') || '18px';
+    this.style.height = this.getAttribute('size') || '18px';
+    this.style.border = '2px solid rgba(0, 200, 255, 0.1)';
+    this.style.borderTop = '2px solid var(--accent)';
+    this.style.borderRadius = '50%';
+    this.style.animation = 'spin 0.8s linear infinite';
+
+    // Inject keyframes if not present
+    if (!document.getElementById('sentio-spinner-style')) {
+      const style = document.createElement('style');
+      style.id = 'sentio-spinner-style';
+      style.innerHTML = `
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }
+}
+customElements.define('sentio-loader', SentioLoader);
+
+// 3. Card Component
+export class SentioCard extends HTMLElement {
+  connectedCallback() {
+    const title = this.getAttribute('title') || '';
+    const outline = this.hasAttribute('outline') ? '1px solid var(--border)' : 'none';
+    this.style.display = 'block';
+    this.style.background = 'var(--bg2)';
+    this.style.border = outline;
+    this.style.borderRadius = 'var(--radius)';
+    this.style.padding = '16px';
+    this.style.marginBottom = '16px';
+
+    const children = this.innerHTML;
+    this.innerHTML = `
+      ${title ? `<div style="font-family:var(--display);font-weight:700;margin-bottom:12px;color:var(--text);font-size:14px;">${title}</div>` : ''}
+      <div class="card-content">${children}</div>
+    `;
+  }
+}
+customElements.define('sentio-card', SentioCard);
+
+// 4. Modal Dialog Component
+export class SentioModal extends HTMLElement {
+  connectedCallback() {
+    this.title = this.getAttribute('title') || 'Alert';
+    this.style.position = 'fixed';
+    this.style.inset = '0';
+    this.style.zIndex = '9999';
+    this.style.display = 'flex';
+    this.style.alignItems = 'center';
+    this.style.justifyContent = 'center';
+    this.style.background = 'rgba(8, 12, 16, 0.85)';
+    this.style.backdropFilter = 'blur(4px)';
+
+    const bodyContent = this.innerHTML;
+    this.innerHTML = `
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);width:90%;max-width:500px;box-shadow:0 20px 50px rgba(0,0,0,0.6);display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;justify-content:between;padding:16px 20px;border-bottom:1px solid var(--border);background:var(--bg3);">
+          <span style="font-family:var(--display);font-weight:700;font-size:14px;">${this.title}</span>
+          <button id="modal-close-btn" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;outline:none;">&times;</button>
+        </div>
+        <div style="padding:20px;max-height:70vh;overflow-y:auto;font-family:var(--mono);">
+          ${bodyContent}
+        </div>
+      </div>
+    `;
+
+    this.querySelector('#modal-close-btn').onclick = () => this.close();
+  }
+
+  close() {
+    this.remove();
+  }
+}
+customElements.define('sentio-modal', SentioModal);
+
+// 5. Empty State View Component
+export class SentioEmptyState extends HTMLElement {
+  connectedCallback() {
+    const message = this.getAttribute('message') || 'No records found';
+    const icon = this.getAttribute('icon') || '📂';
+    this.style.display = 'flex';
+    this.style.flexDirection = 'column';
+    this.style.alignItems = 'center';
+    this.style.justifyContent = 'center';
+    this.style.padding = '40px 20px';
+    this.style.color = 'var(--text-dim)';
+    this.style.fontFamily = 'var(--mono)';
+
+    this.innerHTML = `
+      <div style="font-size:32px;margin-bottom:12px;">${icon}</div>
+      <div style="font-size:12px;text-align:center;">${message}</div>
+    `;
+  }
+}
+customElements.define('sentio-empty-state', SentioEmptyState);

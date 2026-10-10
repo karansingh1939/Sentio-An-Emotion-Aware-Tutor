@@ -1,0 +1,27 @@
+services:
+  sentio-api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+    environment:
+      ENV: production
+      ENFORCE_AUTH: "true"
+      API_SECRET: ${API_SECRET:?Set API_SECRET to a random secret before starting Compose}
+      DATABASE_URL: sqlite:////app/data/tutor_sessions.db
+      LLM_BACKEND: ollama
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-phi3:mini}
+      QDRANT_MODE: local
+    depends_on:
+      - ollama
+    restart: unless-stopped
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+volumes:
+  ollama-models:

@@ -1,0 +1,564 @@
+[
+  {
+    "query": "What is the mathematical definition of a limit?",
+    "expected_document": "calculus_basics.txt",
+    "expected_topic": "derivatives",
+    "expected_subject": "mathematics",
+    "keywords": [
+      "limit",
+      "function",
+      "approaches"
+    ]
+  },
+  {
+    "query": "How is a derivative formally defined?",
+    "expected_document": "calculus_basics.txt",
+    "expected_topic": "derivatives",
+    "expected_subject": "mathematics",
+    "keywords": [
+      "derivative",
+      "rate of change",
+      "tangent"
+    ]
+  },
+  {
+    "query": "What is the geometrical meaning of a derivative?",
+    "expected_document": "calculus_basics.txt",
+    "expected_topic": "derivatives",
+    "expected_subject": "mathematics",
+    "keywords": [
+      "slope",
+      "tangent",
+      "curve"
+    ]
+  },
+  {
+    "query": "Explain the limit definition using the h parameter.",
+    "expected_document": "calculus_basics.txt",
+    "expected_topic": "derivatives",
+    "expected_subject": "mathematics",
+    "keywords": [
+      "limit",
+      "h approaches",
+      "differentiable"
+    ]
+  },
+  {
+    "query": "What is the power rule for derivatives?",
+    "expected_document": "calculus_basics.txt",
+    "expected_topic": "derivatives",
+    "expected_subject": "mathematics",
+    "keywords": [
+      "power rule",
+      "exponent",
+      "polynomial"
+    ]
+  },
+  {
+    "query": "Give me an example of differentiating x^2.",
+    "expected_document": "calculus_basics.txt",
+    "expected_topic": "derivatives",
+    "expected_subject": "mathematics",
+    "keywords": [
+      "x^2",
+      "derivative is 2x",
+      "power rule"
+    ]
+  },
+  {
+    "query": "How do you take the derivative of x^3?",
+    "expected_document": "calculus_basics.txt",
+    "expected_topic": "derivatives",
+    "expected_subject": "mathematics",
+    "keywords": [
+      "x^3",
+      "3x^2",
+      "power rule"
+    ]
+  },
+  {
+    "query": "What is a composite function?",
+    "expected_document": "chain_rule_notes.txt",
+    "expected_topic": "derivatives",
+    "expected_subject": "mathematics",
+    "keywords": [
+      "composite",
+      "f(g(x))",
+      "inner",
+      "outer"
+    ]
+  },
+  {
+    "query": "What is the formula for the chain rule?",
+    "expected_document": "chain_rule_notes.txt",
+    "expected_topic": "derivatives",
+    "expected_subject": "mathematics",
+    "keywords": [
+      "chain rule",
+      "f'(g(x))",
+      "g'(x)"
+    ]
+  },
+  {
+    "query": "Explain the chain rule in Leibniz notation.",
+    "expected_document": "chain_rule_notes.txt",
+    "expected_topic": "derivatives",
+    "expected_subject": "mathematics",
+    "keywords": [
+      "Leibniz",
+      "dy/dx",
+      "dy/du",
+      "du/dx"
+    ]
+  },
+  {
+    "query": "Explain the gears analogy for the chain rule.",
+    "expected_document": "chain_rule_notes.txt",
+    "expected_topic": "derivatives",
+    "expected_subject": "mathematics",
+    "keywords": [
+      "gears",
+      "rotation",
+      "series",
+      "ratio"
+    ]
+  },
+  {
+    "query": "How do you differentiate sin(x^2)?",
+    "expected_document": "chain_rule_notes.txt",
+    "expected_topic": "derivatives",
+    "expected_subject": "mathematics",
+    "keywords": [
+      "sin(x^2)",
+      "2x",
+      "cos(x^2)"
+    ]
+  },
+  {
+    "query": "What is implicit differentiation?",
+    "expected_document": "implicit_diff.txt",
+    "expected_topic": "derivatives",
+    "expected_subject": "mathematics",
+    "keywords": [
+      "implicit",
+      "isolated",
+      "explicitly"
+    ]
+  },
+  {
+    "query": "How do you implicitly differentiate an equation with y?",
+    "expected_document": "implicit_diff.txt",
+    "expected_topic": "derivatives",
+    "expected_subject": "mathematics",
+    "keywords": [
+      "dy/dx",
+      "chain rule",
+      "respect to x"
+    ]
+  },
+  {
+    "query": "Find the derivative of the circle x^2 + y^2 = 25.",
+    "expected_document": "implicit_diff.txt",
+    "expected_topic": "derivatives",
+    "expected_subject": "mathematics",
+    "keywords": [
+      "circle",
+      "2x + 2y",
+      "dy/dx",
+      "-x/y"
+    ]
+  },
+  {
+    "query": "What is the slope of x^2 + y^2 = 25 at the point (3, 4)?",
+    "expected_document": "implicit_diff.txt",
+    "expected_topic": "derivatives",
+    "expected_subject": "mathematics",
+    "keywords": [
+      "point (3, 4)",
+      "tangent",
+      "-3/4"
+    ]
+  },
+  {
+    "query": "Solve for dy/dx in the circle equation.",
+    "expected_document": "implicit_diff.txt",
+    "expected_topic": "derivatives",
+    "expected_subject": "mathematics",
+    "keywords": [
+      "dy/dx",
+      "-x/y",
+      "circle"
+    ]
+  },
+  {
+    "query": "What does Newton's first law of motion state?",
+    "expected_document": "newtons_laws_guide.txt",
+    "expected_topic": "newtons_laws",
+    "expected_subject": "physics",
+    "keywords": [
+      "first law",
+      "rest",
+      "motion",
+      "constant velocity"
+    ]
+  },
+  {
+    "query": "Explain what inertia means in physics.",
+    "expected_document": "newtons_laws_guide.txt",
+    "expected_topic": "newtons_laws",
+    "expected_subject": "physics",
+    "keywords": [
+      "inertia",
+      "resist change",
+      "matter"
+    ]
+  },
+  {
+    "query": "Who first formulated the principle of inertia?",
+    "expected_document": "newtons_laws_guide.txt",
+    "expected_topic": "newtons_laws",
+    "expected_subject": "physics",
+    "keywords": [
+      "Galileo",
+      "inertia",
+      "Newton"
+    ]
+  },
+  {
+    "query": "What is the statement of Newton's second law?",
+    "expected_document": "newtons_laws_guide.txt",
+    "expected_topic": "newtons_laws",
+    "expected_subject": "physics",
+    "keywords": [
+      "second law",
+      "acceleration",
+      "force",
+      "mass"
+    ]
+  },
+  {
+    "query": "What is the equation for Newton's second law?",
+    "expected_document": "newtons_laws_guide.txt",
+    "expected_topic": "newtons_laws",
+    "expected_subject": "physics",
+    "keywords": [
+      "F = m * a",
+      "force",
+      "mass",
+      "acceleration"
+    ]
+  },
+  {
+    "query": "What is the SI unit of force?",
+    "expected_document": "newtons_laws_guide.txt",
+    "expected_topic": "newtons_laws",
+    "expected_subject": "physics",
+    "keywords": [
+      "Newton",
+      "unit of force",
+      "SI"
+    ]
+  },
+  {
+    "query": "What does F = ma stand for?",
+    "expected_document": "newtons_laws_guide.txt",
+    "expected_topic": "newtons_laws",
+    "expected_subject": "physics",
+    "keywords": [
+      "force",
+      "mass",
+      "acceleration",
+      "F = m * a"
+    ]
+  },
+  {
+    "query": "What is Newton's third law of motion?",
+    "expected_document": "newtons_laws_guide.txt",
+    "expected_topic": "newtons_laws",
+    "expected_subject": "physics",
+    "keywords": [
+      "third law",
+      "action",
+      "reaction",
+      "equal and opposite"
+    ]
+  },
+  {
+    "query": "Explain the concept of action-reaction force pairs.",
+    "expected_document": "newtons_laws_guide.txt",
+    "expected_topic": "newtons_laws",
+    "expected_subject": "physics",
+    "keywords": [
+      "force pairs",
+      "exerts",
+      "simultaneously"
+    ]
+  },
+  {
+    "query": "Can a single force exist in isolation?",
+    "expected_document": "newtons_laws_guide.txt",
+    "expected_topic": "newtons_laws",
+    "expected_subject": "physics",
+    "keywords": [
+      "isolated force",
+      "cannot exist",
+      "pairs"
+    ]
+  },
+  {
+    "query": "How is weight calculated using gravity?",
+    "expected_document": "newtons_laws_guide.txt",
+    "expected_topic": "newtons_laws",
+    "expected_subject": "physics",
+    "keywords": [
+      "weight",
+      "F = m * g",
+      "gravity"
+    ]
+  },
+  {
+    "query": "What is the value of acceleration due to gravity on Earth?",
+    "expected_document": "newtons_laws_guide.txt",
+    "expected_topic": "newtons_laws",
+    "expected_subject": "physics",
+    "keywords": [
+      "gravity",
+      "9.8 m/s^2",
+      "g"
+    ]
+  },
+  {
+    "query": "What is the force of gravity near the Earth's surface?",
+    "expected_document": "newtons_laws_guide.txt",
+    "expected_topic": "newtons_laws",
+    "expected_subject": "physics",
+    "keywords": [
+      "gravity",
+      "F = m * g",
+      "attractive"
+    ]
+  },
+  {
+    "query": "Explain Newton's third law using objects A and B.",
+    "expected_document": "newtons_laws_guide.txt",
+    "expected_topic": "newtons_laws",
+    "expected_subject": "physics",
+    "keywords": [
+      "Object A",
+      "Object B",
+      "force F",
+      "-F"
+    ]
+  },
+  {
+    "query": "How are force and acceleration related mathematically?",
+    "expected_document": "newtons_laws_guide.txt",
+    "expected_topic": "newtons_laws",
+    "expected_subject": "physics",
+    "keywords": [
+      "directly proportional",
+      "F = m * a",
+      "net force"
+    ]
+  },
+  {
+    "query": "Explain how mass affects acceleration when a force is applied.",
+    "expected_document": "newtons_laws_guide.txt",
+    "expected_topic": "newtons_laws",
+    "expected_subject": "physics",
+    "keywords": [
+      "inversely proportional",
+      "mass",
+      "acceleration"
+    ]
+  },
+  {
+    "query": "Define inertia and relate it to mass.",
+    "expected_document": "newtons_laws_guide.txt",
+    "expected_topic": "newtons_laws",
+    "expected_subject": "physics",
+    "keywords": [
+      "inertia",
+      "resist change",
+      "matter"
+    ]
+  },
+  {
+    "query": "What is the definition of recursion in computer science?",
+    "expected_document": "recursion_guide.txt",
+    "expected_topic": "recursion",
+    "expected_subject": "computer_science",
+    "keywords": [
+      "recursion",
+      "smaller instances",
+      "calls itself"
+    ]
+  },
+  {
+    "query": "What is a recursive function?",
+    "expected_document": "recursion_guide.txt",
+    "expected_topic": "recursion",
+    "expected_subject": "computer_science",
+    "keywords": [
+      "calls itself",
+      "directly or indirectly",
+      "execution"
+    ]
+  },
+  {
+    "query": "What are the two key pillars of a correct recursive function?",
+    "expected_document": "recursion_guide.txt",
+    "expected_topic": "recursion",
+    "expected_subject": "computer_science",
+    "keywords": [
+      "base case",
+      "recursive case"
+    ]
+  },
+  {
+    "query": "What is a base case in recursion?",
+    "expected_document": "recursion_guide.txt",
+    "expected_topic": "recursion",
+    "expected_subject": "computer_science",
+    "keywords": [
+      "base case",
+      "terminating",
+      "directly"
+    ]
+  },
+  {
+    "query": "Why do we need a base case?",
+    "expected_document": "recursion_guide.txt",
+    "expected_topic": "recursion",
+    "expected_subject": "computer_science",
+    "keywords": [
+      "loop infinitely",
+      "stack overflow",
+      "terminate"
+    ]
+  },
+  {
+    "query": "What is a recursive case?",
+    "expected_document": "recursion_guide.txt",
+    "expected_topic": "recursion",
+    "expected_subject": "computer_science",
+    "keywords": [
+      "recursive case",
+      "calls itself",
+      "smaller input"
+    ]
+  },
+  {
+    "query": "Explain what happens to the system call stack during recursion.",
+    "expected_document": "recursion_guide.txt",
+    "expected_topic": "recursion",
+    "expected_subject": "computer_science",
+    "keywords": [
+      "call stack",
+      "activation record",
+      "stack frame"
+    ]
+  },
+  {
+    "query": "What is a stack frame (activation record)?",
+    "expected_document": "recursion_guide.txt",
+    "expected_topic": "recursion",
+    "expected_subject": "computer_science",
+    "keywords": [
+      "stack frame",
+      "activation record",
+      "parameters",
+      "variables"
+    ]
+  },
+  {
+    "query": "How are stack frames handled when the base case is reached?",
+    "expected_document": "recursion_guide.txt",
+    "expected_topic": "recursion",
+    "expected_subject": "computer_science",
+    "keywords": [
+      "popping off",
+      "base case",
+      "returns"
+    ]
+  },
+  {
+    "query": "What causes a StackOverflowError?",
+    "expected_document": "recursion_guide.txt",
+    "expected_topic": "recursion",
+    "expected_subject": "computer_science",
+    "keywords": [
+      "too deep",
+      "memory limit",
+      "StackOverflowError"
+    ]
+  },
+  {
+    "query": "Give three examples of famous recursive algorithms.",
+    "expected_document": "recursion_guide.txt",
+    "expected_topic": "recursion",
+    "expected_subject": "computer_science",
+    "keywords": [
+      "Factorial",
+      "Fibonacci",
+      "Binary Search"
+    ]
+  },
+  {
+    "query": "What is the recursive relation for the Fibonacci sequence?",
+    "expected_document": "recursion_guide.txt",
+    "expected_topic": "recursion",
+    "expected_subject": "computer_science",
+    "keywords": [
+      "F(n-1) + F(n-2)",
+      "Fibonacci",
+      "F(0)",
+      "F(1)"
+    ]
+  },
+  {
+    "query": "What is the recursive definition of factorial?",
+    "expected_document": "recursion_guide.txt",
+    "expected_topic": "recursion",
+    "expected_subject": "computer_science",
+    "keywords": [
+      "n * (n-1)!",
+      "factorial",
+      "base case 0! = 1"
+    ]
+  },
+  {
+    "query": "Explain how recursive binary search works.",
+    "expected_document": "recursion_guide.txt",
+    "expected_topic": "recursion",
+    "expected_subject": "computer_science",
+    "keywords": [
+      "binary search",
+      "sorted list",
+      "dividing",
+      "half"
+    ]
+  },
+  {
+    "query": "What happens if a recursive function does not move closer to the base case?",
+    "expected_document": "recursion_guide.txt",
+    "expected_topic": "recursion",
+    "expected_subject": "computer_science",
+    "keywords": [
+      "infinite loop",
+      "stack overflow",
+      "base case"
+    ]
+  },
+  {
+    "query": "Compare parameters and local variables in a recursion stack.",
+    "expected_document": "recursion_guide.txt",
+    "expected_topic": "recursion",
+    "expected_subject": "computer_science",
+    "keywords": [
+      "parameters",
+      "local variables",
+      "activation record"
+    ]
+  }
+]

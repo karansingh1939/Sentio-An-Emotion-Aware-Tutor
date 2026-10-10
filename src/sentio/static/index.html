@@ -1,0 +1,713 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Emotion-Aware AI Tutor</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="static/css/styles.css" />
+    <script type="module">
+      import {
+        FilesetResolver,
+        FaceLandmarker,
+      } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/+esm';
+      window.FilesetResolver = FilesetResolver;
+      window.FaceLandmarker = FaceLandmarker;
+      if (typeof window.initMediaPipe === 'function' && !window.faceLandmarker) {
+        window.initMediaPipe();
+      }
+    </script>
+    <script type="module" src="static/js/app.js"></script>
+    <script src="static/js/core/tutor_runtime.js" defer></script>
+  </head>
+
+  <body>
+    <div
+      id="view-auth"
+      style="
+        display: none;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        width: 100vw;
+        background: var(--bg);
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 9999;
+      "
+    ></div>
+
+    <div id="app">
+      <!-- SIDEBAR NAV -->
+      <div id="sidebar">
+        <div class="sidebar-brand">
+          <div class="logo">
+            <div class="logo-icon">🧠</div>
+            Sentio HUD
+          </div>
+        </div>
+        <div class="nav-links">
+          <a href="#/dashboard" class="nav-link active">📊 Dashboard</a>
+          <a href="#/tutor" class="nav-link">🎓 Tutor Chat</a>
+          <a href="#/documents" class="nav-link">📁 Documents</a>
+          <a href="#/quizzes" class="nav-link">📝 Quizzes</a>
+          <a href="#/flashcards" class="nav-link">🗂️ Flashcards</a>
+          <a href="#/whiteboard" class="nav-link">🎨 Whiteboard</a>
+          <a href="#/analytics" class="nav-link">📈 Analytics</a>
+          <a href="#/history" class="nav-link">📜 History</a>
+          <a href="#/settings" class="nav-link">⚙️ Settings</a>
+        </div>
+      </div>
+
+      <!-- HEADER (Top Nav) -->
+      <header>
+        <div class="logo">
+          <div class="logo-icon">🧠</div>
+          Emotion-Aware AI Tutor
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px">
+          <div class="header-status">
+            <div class="dot" id="conn-dot"></div>
+            <span id="conn-label">No session</span>
+          </div>
+          <!-- E7 Privacy Indicators -->
+          <div
+            id="cam-active-indicator"
+            style="
+              display: none;
+              align-items: center;
+              gap: 6px;
+              color: var(--green);
+              font-size: 11px;
+              font-weight: bold;
+            "
+          >
+            <span
+              style="
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: var(--green);
+                box-shadow: 0 0 8px var(--green);
+                display: inline-block;
+              "
+            ></span>
+            <span>Camera Active</span>
+          </div>
+          <div
+            id="mic-active-indicator"
+            style="
+              display: none;
+              align-items: center;
+              gap: 6px;
+              color: var(--green);
+              font-size: 11px;
+              font-weight: bold;
+            "
+          >
+            <span
+              style="
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: var(--green);
+                box-shadow: 0 0 8px var(--green);
+                display: inline-block;
+              "
+            ></span>
+            <span>Microphone Active</span>
+          </div>
+        </div>
+        <div class="header-session" id="session-label">—</div>
+      </header>
+
+      <!-- MAIN CONTENT VIEWPORT -->
+      <div id="main-content">
+        <!-- 1. Dashboard View -->
+        <div id="view-dashboard" class="view-container"></div>
+
+        <!-- 2. Tutor Workspace View -->
+        <div id="view-tutor" class="view-container">
+          <!-- DOMINANT CHAT AREA -->
+          <div id="chat-area">
+            <!-- Session Setup Card (Prominent when no active session) -->
+            <div id="session-setup-card" class="session-card">
+              <div class="session-card-header">
+                <div class="session-card-title">
+                  <span class="session-icon">🎓</span>
+                  <div>
+                    <h3>Start Tutoring Session</h3>
+                    <p>Choose your subject and topic to begin interactive, adaptive learning.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="session-form-grid">
+                <input id="f-student" type="hidden" value="stu_001" />
+                <div class="field">
+                  <label for="f-subject">Subject</label>
+                  <select id="f-subject">
+                    <option value="physics" selected>Physics</option>
+                    <option value="mathematics">Mathematics</option>
+                    <option value="computer_science">Computer Science</option>
+                    <option value="chemistry">Chemistry</option>
+                    <option value="biology">Biology</option>
+                    <option value="history">History</option>
+                    <option value="literature">Literature</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="f-topic">Topic</label>
+                  <input
+                    id="f-topic"
+                    type="text"
+                    value="Newton's Laws"
+                    placeholder="e.g. Newton's Laws, Derivatives"
+                  />
+                </div>
+                <div class="field">
+                  <label for="f-difficulty">Difficulty</label>
+                  <select id="f-difficulty">
+                    <option value="beginner" selected>Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="session-action-row">
+                <button class="btn btn-primary" id="start-btn" onclick="startSession()">
+                  ▶ Start Session
+                </button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="f-grounding">Grounding Source</label>
+              <select id="f-grounding">
+                <option value="none">General Tutor (No grounding)</option>
+                <option value="all">All My Documents</option>
+              </select>
+            </div>
+
+            <!-- Active Session Header Bar (Shown when session is active) -->
+            <div id="session-active-bar" class="active-session-bar" style="display: none">
+              <div class="active-bar-info">
+                <span class="active-pulse-dot"></span>
+                <div class="active-details">
+                  <span class="active-topic-name" id="active-bar-topic"
+                    >Physics · Newton's Laws</span
+                  >
+                  <span class="active-sub-meta" id="active-bar-meta">Beginner · General Tutor</span>
+                </div>
+              </div>
+              <div class="active-bar-actions">
+                <!-- Optional Camera Toggle Button -->
+                <button
+                  id="cam-quick-toggle-btn"
+                  class="hud-pill-btn"
+                  onclick="toggleWebcamDirect()"
+                  title="Enable or disable emotion tracking via camera"
+                >
+                  <span id="cam-quick-icon">📷</span>
+                  <span id="cam-quick-text">Enable Camera</span>
+                </button>
+                <!-- Secondary HUD Toggle -->
+                <button
+                  id="hud-toggle-btn"
+                  class="hud-pill-btn"
+                  onclick="toggleHudDrawer()"
+                  title="View learning state, telemetry, and citations"
+                >
+                  📊 HUD & Context
+                </button>
+                <!-- End Session Button -->
+                <button
+                  class="btn btn-danger"
+                  id="end-btn"
+                  onclick="endSession()"
+                  style="width: auto; padding: 6px 14px; margin: 0; display: inline-block"
+                >
+                  ■ End Session
+                </button>
+              </div>
+            </div>
+
+            <!-- Chat Messages Scroll Container -->
+            <div id="chat-messages">
+              <div id="welcome">
+                <div class="welcome-icon">🎓</div>
+                <div class="welcome-title">Adaptive AI Tutor</div>
+                <div class="welcome-sub">
+                  Interactive learning copilot. Configure your topic above and click
+                  <strong>Start Session</strong> to begin chatting.
+                </div>
+                <div class="welcome-steps">
+                  <div class="step-chip"><span>1</span> Choose Subject & Topic</div>
+                  <div class="step-chip"><span>2</span> Click Start Session</div>
+                  <div class="step-chip"><span>3</span> Ask questions freely</div>
+                  <div class="step-chip">
+                    <span>4</span> Optional: Turn on camera for emotion adaptation
+                  </div>
+                </div>
+              </div>
+              <div id="typing-indicator">
+                <div
+                  class="msg-avatar"
+                  style="background: linear-gradient(135deg, var(--accent2), var(--accent))"
+                >
+                  🧠
+                </div>
+                <div class="typing-dots"><span></span><span></span><span></span></div>
+              </div>
+            </div>
+
+            <!-- Input Bar -->
+            <div id="input-bar">
+              <div class="input-controls-left">
+                <button
+                  id="mic-btn"
+                  onclick="toggleVoice()"
+                  disabled
+                  title="Toggle Voice Conversation Mode"
+                >
+                  🎤
+                </button>
+                <button
+                  id="play-speech-btn"
+                  onclick="replayLastTutorResponse()"
+                  disabled
+                  title="Replay Last Tutor Response"
+                >
+                  ▶
+                </button>
+                <button
+                  id="stop-speech-btn"
+                  onclick="stopTutorSpeech()"
+                  disabled
+                  title="Stop Tutor Speech"
+                >
+                  ⏹
+                </button>
+                <button id="speaker-btn" onclick="toggleMute()" title="Mute/Unmute Tutor Voice">
+                  🔊
+                </button>
+              </div>
+              <textarea
+                id="msg-input"
+                placeholder="Start a session first..."
+                rows="1"
+                disabled
+              ></textarea>
+              <button id="send-btn" onclick="sendMessage()" disabled title="Send message (Enter)">
+                <span>➤</span>
+                <span class="send-text">Send</span>
+              </button>
+            </div>
+          </div>
+          <!-- END #chat-area -->
+
+          <!-- COLLAPSIBLE SECONDARY HUD DRAWER -->
+          <div id="tutor-hud-drawer" class="hud-drawer">
+            <div class="drawer-header">
+              <div class="drawer-title">
+                <span>📊 Real-Time HUD & Context</span>
+              </div>
+              <button class="drawer-close-btn" onclick="toggleHudDrawer()" title="Close HUD panel">
+                &times;
+              </button>
+            </div>
+
+            <div class="drawer-tabs">
+              <button
+                class="drawer-tab active"
+                data-tab="tab-state"
+                onclick="switchDrawerTab('tab-state')"
+              >
+                Telemetry & State
+              </button>
+              <button
+                class="drawer-tab"
+                data-tab="tab-citations"
+                onclick="switchDrawerTab('tab-citations')"
+              >
+                Citations
+              </button>
+              <button
+                class="drawer-tab"
+                data-tab="tab-history"
+                onclick="switchDrawerTab('tab-history')"
+              >
+                Sessions
+              </button>
+            </div>
+
+            <!-- Tab 1: Telemetry & Learning State -->
+            <div id="tab-state" class="drawer-tab-content active">
+              <!-- Camera / Video Feed Box -->
+              <div class="drawer-section">
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 8px;
+                  "
+                >
+                  <div class="panel-label" style="margin: 0">Live Focus & Attention Feed</div>
+                  <button
+                    id="cam-toggle-btn"
+                    class="strat-chip"
+                    onclick="toggleWebcamDirect()"
+                    style="margin: 0; font-size: 10px; cursor: pointer"
+                    disabled
+                  >
+                    CAM ON
+                  </button>
+                </div>
+                <div id="cam-wrap">
+                  <video id="cam-video" autoplay muted playsinline></video>
+                  <canvas id="cam-canvas"></canvas>
+                  <div id="cam-overlay">
+                    <span class="cam-emotion-badge" id="cam-badge" style="color: var(--neutral)"
+                      >NO SESSION</span
+                    >
+                  </div>
+                  <div id="cam-no-session">Start a session to enable attention tracking</div>
+                </div>
+
+                <!-- Privacy Controls -->
+                <div style="display: flex; gap: 6px; margin-top: 8px">
+                  <button
+                    id="disable-cam-btn"
+                    class="btn"
+                    onclick="disableCamera()"
+                    style="
+                      font-size: 10px;
+                      padding: 6px;
+                      margin: 0;
+                      background: transparent;
+                      border: 1px solid var(--border);
+                      color: var(--text-dim);
+                    "
+                    disabled
+                  >
+                    Stop Cam
+                  </button>
+                  <button
+                    id="disable-mic-btn"
+                    class="btn"
+                    onclick="disableMicrophone()"
+                    style="
+                      font-size: 10px;
+                      padding: 6px;
+                      margin: 0;
+                      background: transparent;
+                      border: 1px solid var(--border);
+                      color: var(--text-dim);
+                    "
+                    disabled
+                  >
+                    Stop Mic
+                  </button>
+                  <button
+                    id="disable-all-tracking-btn"
+                    class="btn btn-danger"
+                    onclick="disableAllTracking()"
+                    style="
+                      font-size: 10px;
+                      padding: 6px;
+                      margin: 0;
+                      background: var(--red);
+                      color: var(--bg);
+                    "
+                    disabled
+                  >
+                    Disable All
+                  </button>
+                </div>
+              </div>
+
+              <!-- Learning State Card -->
+              <div class="drawer-section">
+                <div class="panel-label">Learning State</div>
+                <div id="state-card" style="padding: 10px 0 0 0; border: none">
+                  <div class="state-emotion-display">
+                    <div class="state-emotion-icon" id="state-icon">😐</div>
+                    <div>
+                      <div class="state-emotion-name" id="state-name" style="color: var(--neutral)">
+                        Neutral
+                      </div>
+                      <div class="state-emotion-sub" id="state-strategy">Strategy: Standard</div>
+                    </div>
+                  </div>
+                  <div class="engage-track">
+                    <div class="engage-fill" id="engage-bar" style="width: 50%"></div>
+                  </div>
+                  <div class="stat-row">
+                    <span class="stat-key">Engagement</span>
+                    <span class="stat-val accent" id="stat-engage">50%</span>
+                  </div>
+                  <div class="stat-row">
+                    <span class="stat-key">Confidence</span>
+                    <span class="stat-val" id="stat-conf">—</span>
+                  </div>
+                  <div class="stat-row">
+                    <span class="stat-key">Difficulty</span>
+                    <span class="stat-val green" id="stat-diff">—</span>
+                  </div>
+                  <div class="stat-row">
+                    <span class="stat-key">Exchanges</span>
+                    <span class="stat-val" id="stat-exchanges">0</span>
+                  </div>
+                  <div class="stat-row">
+                    <span class="stat-key">Duration</span>
+                    <span class="stat-val" id="stat-duration">0m 0s</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Attention Telemetry Card -->
+              <div class="drawer-section">
+                <div class="panel-label">Attention Telemetry</div>
+                <div
+                  id="attention-card"
+                  style="
+                    background: var(--bg3);
+                    border: 1px solid var(--border);
+                    border-radius: var(--radius);
+                    padding: 10px;
+                  "
+                >
+                  <div class="stat-row">
+                    <span class="stat-key">Focus Score</span>
+                    <span class="stat-val accent" id="stat-attention-score">—</span>
+                  </div>
+                  <div class="stat-row">
+                    <span class="stat-key">Status</span>
+                    <span class="stat-val" id="stat-focus-status">—</span>
+                  </div>
+                  <div class="stat-row">
+                    <span class="stat-key">Blinks</span>
+                    <span class="stat-val" id="stat-blink-count">0</span>
+                  </div>
+                  <div class="stat-row">
+                    <span class="stat-key">Yaw / Pitch</span>
+                    <span class="stat-val" id="stat-pose-yaw-pitch">—</span>
+                  </div>
+                  <div class="stat-row">
+                    <span class="stat-key">Frame Rate</span>
+                    <span class="stat-val" id="stat-tracking-fps">-- FPS</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Emotion Bars -->
+              <div class="drawer-section">
+                <div class="panel-label" style="padding: 0 0 6px 0">Emotion Distribution</div>
+                <div id="emotion-bars" style="padding: 0">
+                  <div id="bars-container"></div>
+                </div>
+              </div>
+
+              <!-- Strategy Chips -->
+              <div class="drawer-section">
+                <div class="panel-label" style="margin-bottom: 8px">Active Strategy</div>
+                <div class="strategy-chips" id="strategy-chips">
+                  <div class="strat-chip" data-s="challenge">challenge</div>
+                  <div class="strat-chip" data-s="standard">standard</div>
+                  <div class="strat-chip" data-s="explore">explore</div>
+                  <div class="strat-chip" data-s="simplify">simplify</div>
+                  <div class="strat-chip" data-s="reassure">reassure</div>
+                  <div class="strat-chip" data-s="reframe">reframe</div>
+                  <div class="strat-chip active" data-s="motivate">motivate</div>
+                </div>
+              </div>
+
+              <!-- Topics List & Session Log -->
+              <div class="drawer-section">
+                <div id="topics-list">
+                  <div class="panel-label">Topics Covered</div>
+                  <div id="topics-chips">
+                    <span style="font-size: 10px; color: var(--text-muted)">None yet</span>
+                  </div>
+                </div>
+                <div id="session-log" style="margin-top: 12px">
+                  <div class="panel-label">Session Log</div>
+                  <div id="log-entries">
+                    <div class="log-entry">
+                      <span class="log-time">--:--</span>
+                      <div class="log-dot" style="background: var(--text-muted)"></div>
+                      <span>Waiting for session...</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab 2: Citations -->
+            <div id="tab-citations" class="drawer-tab-content">
+              <div class="drawer-section">
+                <div class="panel-label">Document Grounding Citations</div>
+                <div
+                  id="tutor-citations-container"
+                  style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px"
+                >
+                  <sentio-empty-state
+                    message="No citations retrieved. Ask your tutor a question."
+                    icon="📄"
+                  ></sentio-empty-state>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab 3: Session History -->
+            <div id="tab-history" class="drawer-tab-content">
+              <div class="drawer-section">
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 10px;
+                  "
+                >
+                  <span class="panel-label" style="margin: 0">Recent Sessions</span>
+                  <button
+                    id="tutor-new-session-btn"
+                    style="
+                      background: none;
+                      border: none;
+                      color: var(--accent);
+                      cursor: pointer;
+                      font-size: 11px;
+                      font-weight: bold;
+                    "
+                  >
+                    + New
+                  </button>
+                </div>
+                <div
+                  id="tutor-sessions-container"
+                  style="display: flex; flex-direction: column; gap: 6px"
+                ></div>
+              </div>
+            </div>
+          </div>
+          <!-- END #tutor-hud-drawer -->
+        </div>
+
+        <!-- 3. Document Library View -->
+        <div id="view-documents" class="view-container"></div>
+
+        <!-- 4. Quiz View -->
+        <div id="view-quizzes" class="view-container"></div>
+
+        <!-- 5. Flashcard View -->
+        <div id="view-flashcards" class="view-container"></div>
+
+        <!-- 6. Whiteboard View -->
+        <div id="view-whiteboard" class="view-container"></div>
+
+        <!-- 7. Analytics View -->
+        <div id="view-analytics" class="view-container"></div>
+
+        <!-- 8. History View -->
+        <div id="view-history" class="view-container"></div>
+
+        <!-- 9. Settings View -->
+        <div id="view-settings" class="view-container"></div>
+      </div>
+    </div>
+
+    <!-- Global Loading Indicator -->
+    <div
+      id="global-spinner"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(8, 12, 16, 0.7);
+        z-index: 10000;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(2px);
+      "
+    >
+      <sentio-loader size="48px"></sentio-loader>
+    </div>
+
+    <!-- Privacy Consent Modal (E7) -->
+    <div
+      id="privacy-consent-modal"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(8, 12, 16, 0.85);
+        z-index: 10001;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+      "
+    >
+      <div
+        style="
+          background: var(--bg2);
+          border: 1px solid var(--border-glow);
+          border-radius: var(--radius-lg);
+          padding: 24px;
+          max-width: 440px;
+          width: 90%;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        "
+      >
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span style="font-size: 24px">📷</span>
+          <h3
+            style="
+              font-family: var(--display);
+              font-size: 16px;
+              font-weight: 700;
+              color: var(--text);
+            "
+          >
+            Enable Emotion & Attention Tracking
+          </h3>
+        </div>
+        <p style="font-size: 12px; color: var(--text-dim); line-height: 1.6">
+          Sentio analyzes facial expressions and gaze orientation in real time to adapt tutoring
+          difficulty. All video processing happens locally in your browser and on your private
+          server. No video is recorded or stored.
+        </p>
+        <div style="display: flex; gap: 10px; margin-top: 8px">
+          <button
+            id="consent-accept-btn"
+            class="btn btn-primary"
+            onclick="acceptPrivacyConsent()"
+            style="flex: 1"
+          >
+            Allow Camera
+          </button>
+          <button
+            id="consent-decline-btn"
+            class="btn btn-danger"
+            onclick="declinePrivacyConsent()"
+            style="flex: 1; margin: 0"
+          >
+            Decline
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast"></div>
+  </body>
+</html>

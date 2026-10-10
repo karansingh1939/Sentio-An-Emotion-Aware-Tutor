@@ -1,0 +1,101 @@
+// Main Application Entry Point for Sentio (ES Module)
+import { store } from './core/store.js';
+import { router } from './core/router.js';
+import { toast } from './components/ui.js';
+import { DashboardView } from './views/dashboard.js';
+import { SettingsView } from './views/settings.js';
+import { DocumentsView } from './views/documents.js';
+import { QuizzesView } from './views/quizzes.js';
+import { FlashcardsView } from './views/flashcards.js';
+import { WhiteboardView } from './views/whiteboard.js';
+import { AnalyticsView } from './views/analytics.js';
+import { HistoryView } from './views/history.js';
+import { TutorView } from './views/tutor.js';
+import { AuthView } from './views/auth.js';
+
+// Setup view controllers mapping
+const viewControllers = {
+  dashboard: new DashboardView('view-dashboard'),
+  tutor: new TutorView('view-tutor'),
+  settings: new SettingsView('view-settings'),
+  documents: new DocumentsView('view-documents'),
+  quizzes: new QuizzesView('view-quizzes'),
+  flashcards: new FlashcardsView('view-flashcards'),
+  whiteboard: new WhiteboardView('view-whiteboard'),
+  analytics: new AnalyticsView('view-analytics'),
+  history: new HistoryView('view-history'),
+};
+
+// Global App Initialization
+function initApp() {
+  console.log('Initializing Sentio Web HUD App Shell...');
+  window.store = store;
+  window.tutorView = viewControllers['tutor'];
+
+  // Initialize auth overlay check
+  new AuthView('view-auth').init();
+
+  // Initialize view modules
+  Object.values(viewControllers).forEach((view) => {
+    try {
+      view.init();
+    } catch (e) {
+      console.error('Failed to initialize view controller:', e);
+    }
+  });
+
+  store.subscribe('currentUser', (user) => {
+    if (user) router.handleRouting();
+  });
+  router.init();
+
+  // Telemetry consent monitoring based on routing
+  store.subscribe('activeRoute', (route) => {
+    handleWebcamStateForRoute(route);
+  });
+
+  // Global loading overlay toggle
+  store.subscribe('loading', (isLoading) => {
+    const spinner = document.getElementById('global-spinner');
+    if (spinner) {
+      spinner.style.display = isLoading ? 'flex' : 'none';
+    }
+  });
+}
+
+// Automatically start/stop webcam depending on route rules
+function handleWebcamStateForRoute(route) {
+  const telemetryRoutes = ['#/tutor', '#/quizzes', '#/flashcards'];
+  const telemetryDot = document.getElementById('telemetry-status-dot');
+
+  if (telemetryRoutes.includes(route)) {
+    // If route requires telemetry and consent is enabled, start it
+    if (store.getState('telemetryActive')) {
+      if (telemetryDot) {
+        telemetryDot.className = 'dot live';
+        telemetryDot.title = 'Camera telemetry tracking is active';
+      }
+      // Trigger camera capture start if window.startWebcam exists (from legacy script)
+      if (typeof window.startWebcam === 'function' && !window.camStream) {
+        window.startWebcam();
+      }
+    } else {
+      if (telemetryDot) {
+        telemetryDot.className = 'dot';
+        telemetryDot.title = 'Telemetry consent disabled in Settings';
+      }
+    }
+  } else {
+    // Stop camera on dashboard, docs, analytics, history, settings
+    if (telemetryDot) {
+      telemetryDot.className = 'dot';
+      telemetryDot.title = 'Telemetry inactive on this screen';
+    }
+    if (typeof window.stopWebcam === 'function' && window.camStream) {
+      window.stopWebcam();
+    }
+  }
+}
+
+// Start application on DOM content ready
+document.addEventListener('DOMContentLoaded', initApp);

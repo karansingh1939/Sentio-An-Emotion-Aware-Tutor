@@ -1,0 +1,83 @@
+# ─────────────────────────────────────────────
+# Python & General Builds
+# ─────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+node_modules/
+dist/
+build/
+coverage/
+
+# ─────────────────────────────────────────────
+# Security & Environment Configs
+# ─────────────────────────────────────────────
+.env
+.env.*
+*.local
+credentials.json
+client_secret.json
+
+# ─────────────────────────────────────────────
+# Local Databases & Vector DBs
+# ─────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+qdrant_storage/
+vector_storage/
+
+# ─────────────────────────────────────────────
+# Logs & Temp Files
+# ─────────────────────────────────────────────
+logs/
+*.log
+tmp/
+temp/
+
+# ─────────────────────────────────────────────
+# Backups & Personal Artifacts
+# ─────────────────────────────────────────────
+backups/
+*.backup
+*.bak
+
+# ─────────────────────────────────────────────
+# IDE Configs & OS Trash
+# ─────────────────────────────────────────────
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ─────────────────────────────────────────────
+# Deep Learning Weights & Large Model Caches
+# ─────────────────────────────────────────────
+*.h5
+*.keras
+models/emotion_model.h5
+models/checkpoints/
+data/fer2013.csv
+.cache/
+huggingface/
+sentence_transformers/
+test_env/
+
+
+
+# Local runtime and generated analysis
+.venv/
+*.egg-info/
+*.db-shm
+*.db-wal
+data/qdrant_db/
+data/documents/stu_*/
+graphify-out/
+!.env.example
+
+# New learner uploads and experiment scratch output
+data/documents/
+.pytest_cache/
+.ruff_cache/
