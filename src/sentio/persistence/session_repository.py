@@ -269,6 +269,14 @@ class SessionPersister:
                 text("CREATE INDEX IF NOT EXISTS idx_chunks_doc_id ON document_chunks(document_id)")
             )
 
+            document_columns = {
+                row[1] for row in conn.execute(text("PRAGMA table_info(documents)"))
+            }
+            if "extraction_method" not in document_columns:
+                conn.execute(
+                    text("ALTER TABLE documents ADD COLUMN extraction_method TEXT DEFAULT 'text'")
+                )
+
             # Safe migration to add 'student_id' column to documents if not already present
             try:
                 cols = [
@@ -534,12 +542,13 @@ class SessionPersister:
         try:
             doc_copy = dict(doc)
             doc_copy.setdefault("student_id", "stu_001")
+            doc_copy.setdefault("extraction_method", "text")
             with self._engine.connect() as conn:
                 conn.execute(
                     text("""
                     INSERT OR REPLACE INTO documents 
-                    (id, filename, file_type, category, subject, upload_date, last_modified, chunk_count, embedding_count, status, last_indexed, checksum, student_id)
-                    VALUES (:id, :filename, :file_type, :category, :subject, :upload_date, :last_modified, :chunk_count, :embedding_count, :status, :last_indexed, :checksum, :student_id)
+                    (id, filename, file_type, category, subject, upload_date, last_modified, chunk_count, embedding_count, status, last_indexed, checksum, student_id, extraction_method)
+                    VALUES (:id, :filename, :file_type, :category, :subject, :upload_date, :last_modified, :chunk_count, :embedding_count, :status, :last_indexed, :checksum, :student_id, :extraction_method)
                 """),
                     doc_copy,
                 )
@@ -559,7 +568,7 @@ class SessionPersister:
         try:
             with self._engine.connect() as conn:
                 query = """
-                    SELECT id, filename, file_type, category, subject, upload_date, last_modified, chunk_count, embedding_count, status, last_indexed, checksum, student_id
+                    SELECT id, filename, file_type, category, subject, upload_date, last_modified, chunk_count, embedding_count, status, last_indexed, checksum, student_id, extraction_method
                     FROM documents WHERE checksum = :checksum
                 """
                 params = {"checksum": checksum}
@@ -584,7 +593,7 @@ class SessionPersister:
         try:
             with self._engine.connect() as conn:
                 query = """
-                    SELECT id, filename, file_type, category, subject, upload_date, last_modified, chunk_count, embedding_count, status, last_indexed, checksum, student_id
+                    SELECT id, filename, file_type, category, subject, upload_date, last_modified, chunk_count, embedding_count, status, last_indexed, checksum, student_id, extraction_method
                     FROM documents WHERE filename = :filename
                 """
                 params = {"filename": filename}
@@ -624,7 +633,7 @@ class SessionPersister:
         try:
             with self._engine.connect() as conn:
                 query = """
-                    SELECT id, filename, file_type, category, subject, upload_date, last_modified, chunk_count, embedding_count, status, last_indexed, checksum, student_id
+                    SELECT id, filename, file_type, category, subject, upload_date, last_modified, chunk_count, embedding_count, status, last_indexed, checksum, student_id, extraction_method
                     FROM documents
                 """
                 params = {}

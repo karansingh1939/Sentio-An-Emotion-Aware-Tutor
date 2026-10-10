@@ -24,6 +24,7 @@ class DocumentIngestionPipeline:
         self.sm = sm or SessionManager()
         self.vdb = vdb or QdrantVectorDB()
         self._embedding_model = None
+        self.last_error = None
 
         # Ensure directories exist
         self.docs_root = DATA_DIR / "documents"
@@ -70,17 +71,9 @@ class DocumentIngestionPipeline:
         return [{"page_number": 1, "text": text}]
 
     def parse_pdf(self, filepath: Path) -> List[Dict[str, Any]]:
-        """Parse PDF document using pypdf. Returns page-by-page text content."""
-        from pypdf import PdfReader
+        from sentio.ingestion.ocr import pdf_pages
 
-        reader = PdfReader(filepath)
-        parsed_pages = []
-
-        for idx, page in enumerate(reader.pages):
-            text = page.extract_text() or ""
-            parsed_pages.append({"page_number": idx + 1, "text": text})
-
-        return parsed_pages
+        return pdf_pages(filepath)
 
     def parse_docx(self, filepath: Path) -> List[Dict[str, Any]]:
         """Parse Word DOCX document. Returns list of paragraph blocks."""
@@ -120,6 +113,7 @@ class DocumentIngestionPipeline:
     ) -> bool:
         """Parse, chunk, index, and save a document if it is new or modified."""
         filename = filepath.name
+        self.last_error = None
         suffix = filepath.suffix.lower()
         checksum = self.compute_checksum(filepath)
         mtime = os.path.getmtime(filepath)
@@ -158,15 +152,6 @@ class DocumentIngestionPipeline:
             "checksum": checksum,
         }
 
-        # Future OCR Detection Fallback
-        if suffix in [".png", ".jpg", ".jpeg"]:
-            logger.warning(f"File {filename} is an image. Routing to future OCR queue.")
-            doc_record["status"] = "failed"
-            doc_record["last_indexed"] = time.time()
-            if not existing_doc:
-                self.sm.register_document(doc_record)
-            return False
-
         try:
             # 1. Parse text based on format
             if suffix == ".txt":
@@ -175,20 +160,17 @@ class DocumentIngestionPipeline:
                 pages = self.parse_pdf(filepath)
             elif suffix == ".docx":
                 pages = self.parse_docx(filepath)
+            elif suffix in [".png", ".jpg", ".jpeg"]:
+                from sentio.ingestion.ocr import image_page
+
+                pages = image_page(filepath)
             else:
                 raise ValueError(f"Unsupported file format: {suffix}")
 
-            # Detect scanned PDFs (0 characters extracted)
-            total_chars = sum([len(p["text"]) for p in pages])
-            if suffix == ".pdf" and total_chars < 50:
-                logger.warning(
-                    f"PDF {filename} appears to be scanned/empty. Routing to future OCR queue."
-                )
-                doc_record["status"] = "failed"
-                doc_record["last_indexed"] = time.time()
-                if not existing_doc:
-                    self.sm.register_document(doc_record)
-                return False
+            methods = {p.get("extraction_method", "text") for p in pages}
+            doc_record["extraction_method"] = (
+                "mixed" if len(methods) > 1 else next(iter(methods), "text")
+            )
 
             # 2. Chunk text and retain page numbers
             chunks_to_save = []
@@ -231,6 +213,9 @@ class DocumentIngestionPipeline:
                     chunk_index += 1
 
             if not chunks_to_save:
+                self.last_error = (
+                    "No usable text found. Upload a readable document or clearer scan."
+                )
                 logger.warning(f"No text extracted from document {filename}.")
                 doc_record["status"] = "failed"
                 doc_record["last_indexed"] = time.time()
@@ -273,6 +258,7 @@ class DocumentIngestionPipeline:
             return True
 
         except Exception as e:
+            self.last_error = str(e)
             logger.error(f"Failed to process document {filename}: {e}")
             doc_record["status"] = "failed"
             doc_record["last_indexed"] = time.time()

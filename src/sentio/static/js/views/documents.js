@@ -9,6 +9,7 @@ export class DocumentsView {
     this.container = document.getElementById(containerId);
     this.documents = [];
     this.filterQuery = '';
+    this.ocrReady = false;
   }
 
   async init() {
@@ -28,7 +29,11 @@ export class DocumentsView {
     `;
 
     try {
-      const res = await sentioAPI.get('/documents');
+      const [res, capabilities] = await Promise.all([
+        sentioAPI.get('/documents'),
+        sentioAPI.get('/documents/capabilities'),
+      ]);
+      this.ocrReady = capabilities.ocr_available;
       this.documents = res.documents || [];
       this.render();
       this.bindEvents();
@@ -85,7 +90,7 @@ export class DocumentsView {
                     <tr style="border-bottom:1px solid var(--border);color:var(--text-dim);">
                       <th style="padding:10px;">Filename</th>
                       <th style="padding:10px;">Category</th>
-                      <th style="padding:10px;">Chunks</th>
+                      <th style="padding:10px;">Extraction</th><th style="padding:10px;">Chunks</th>
                       <th style="padding:10px;">Status</th>
                       <th style="padding:10px;text-align:right;">Actions</th>
                     </tr>
@@ -107,7 +112,7 @@ export class DocumentsView {
                             ${escapeHtml(d.filename)}
                           </td>
                           <td style="padding:10px;text-transform:capitalize;color:var(--text-dim);">${escapeHtml(d.category)}</td>
-                          <td style="padding:10px;font-family:var(--mono);">${d.chunk_count || 0}</td>
+                          <td style="padding:10px;">${escapeHtml(d.extraction_method || 'text')}</td><td style="padding:10px;font-family:var(--mono);">${d.chunk_count || 0}</td>
                           <td style="padding:10px;">
                             <span style="color:${statusColor};font-weight:bold;font-size:10px;">
                               ${statusIcon} ${escapeHtml(d.status ? d.status.toUpperCase() : 'PENDING')}
@@ -135,10 +140,10 @@ export class DocumentsView {
               <span style="font-size:32px;">📄</span>
               <span style="font-size:11px;font-weight:bold;color:var(--text);">Drag & Drop your file here</span>
               <span style="font-size:10px;color:var(--text-dim);">or click to browse filesystem</span>
-              <input type="file" id="file-uploader" style="display:none;" accept=".pdf,.docx,.txt" />
+              <input type="file" id="file-uploader" style="display:none;" accept="${this.ocrReady ? '.pdf,.docx,.txt,.png,.jpg,.jpeg' : '.pdf,.docx,.txt'}" />
             </div>
 
-            <div style="margin-top:16px;">
+            <p style="font-size:11px;color:var(--text-dim);">20 MiB maximum. ${this.ocrReady ? 'English OCR enabled; up to 20 scanned pages.' : 'Scans and images require the optional OCR tools.'}</p><div style="margin-top:16px;">
               <label style="display:block;font-size:10px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Subject Category</label>
               <select id="upload-category" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;">
                 <option value="uploaded">General Uploads</option>
@@ -269,9 +274,12 @@ export class DocumentsView {
 
     try {
       if (fill) fill.style.width = '40%';
+      if (progressText)
+        progressText.textContent = 'Extracting text and indexing; scanned pages may take longer...';
       await sentioAPI.request('/documents/upload', {
         method: 'POST',
         body: formData,
+        timeout: 2500000,
       });
 
       if (fill && progressText) {

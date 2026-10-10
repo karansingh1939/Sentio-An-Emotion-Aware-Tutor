@@ -16,6 +16,17 @@ router = APIRouter()
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 
 
+@router.get(PREFIX + "/documents/capabilities", tags=["Documents"])
+def document_capabilities(user: dict = Depends(get_current_user)):
+    from sentio.ingestion.ocr import ExtractionError, require_ocr
+
+    try:
+        require_ocr(pdf=True)
+        return {"ocr_available": True, "ocr_language": "eng", "max_ocr_pages": 20}
+    except ExtractionError as exc:
+        return {"ocr_available": False, "ocr_setup": str(exc), "max_ocr_pages": 20}
+
+
 def _index_upload(filepath, category, subject, student_id):
     from sentio.ingestion.pipeline import DocumentIngestionPipeline
 
@@ -29,7 +40,8 @@ def _index_upload(filepath, category, subject, student_id):
         if not pipeline.process_file(filepath, category, subject, student_id=student_id):
             raise HTTPException(
                 status_code=422,
-                detail="No usable text could be indexed. Upload a text PDF, DOCX or TXT file.",
+                detail=pipeline.last_error
+                or "No usable text could be indexed. Upload a readable document.",
             )
     return agent.sm.get_document_by_filename(
         filepath.name, student_id=student_id, category=category
@@ -56,9 +68,10 @@ async def upload_document(
         raise HTTPException(status_code=400, detail="Invalid document category.")
     if not file.filename or any(char in file.filename for char in ("/", "\\", ":")):
         raise HTTPException(status_code=400, detail="Filename must not contain a path.")
-    if Path(file.filename).suffix.lower() not in [".pdf", ".docx", ".txt"]:
+    if Path(file.filename).suffix.lower() not in [".pdf", ".docx", ".txt", ".png", ".jpg", ".jpeg"]:
         raise HTTPException(
-            status_code=400, detail="Upload a text PDF, DOCX or TXT file. Images require OCR."
+            status_code=400,
+            detail="Upload PDF, DOCX, TXT, PNG or JPEG. Scans and images require OCR.",
         )
     dest_dir = BASE_DIR / "data/documents" / user["student_id"] / category
     dest_dir.mkdir(parents=True, exist_ok=True)
@@ -87,6 +100,7 @@ async def upload_document(
         "filepath": str(filepath),
         "document_id": document["id"],
         "indexing_mode": "semantic" if document["embedding_count"] else "keyword",
+        "extraction_method": document.get("extraction_method", "text"),
     }
 
 

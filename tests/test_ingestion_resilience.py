@@ -85,8 +85,34 @@ def test_sync_scans_owned_directories_and_prunes_exact_identity(pipeline, tmp_pa
     assert report["indexed_count"] == 2
     assert len(pipeline.sm.list_documents(student_id="alice")) == 1
     assert len(pipeline.sm.list_documents(student_id="bob")) == 1
+
     (pipeline.docs_root / "alice" / "notes" / "guide.txt").unlink()
     report = pipeline.scan_and_sync()
     assert report["deleted_count"] == 1
     assert not pipeline.sm.list_documents(student_id="alice")
     assert len(pipeline.sm.list_documents(student_id="bob")) == 1
+
+
+def test_ocr_provenance_and_page_numbers_survive_persistence(pipeline, tmp_path, monkeypatch):
+    path = tmp_path / "scan.pdf"
+    path.write_bytes(b"fixture; extraction is injected")
+    monkeypatch.setattr(
+        pipeline,
+        "parse_pdf",
+        lambda _: [
+            {
+                "page_number": 1,
+                "text": "A native text page about force.",
+                "extraction_method": "text",
+            },
+            {
+                "page_number": 2,
+                "text": "An OCR page explaining acceleration.",
+                "extraction_method": "ocr",
+            },
+        ],
+    )
+    assert pipeline.process_file(path, "notes", "physics", "owner")
+    document = pipeline.sm.list_documents(student_id="owner")[0]
+    assert document["extraction_method"] == "mixed"
+    assert [c["page_number"] for c in pipeline.sm.get_document_chunks(document["id"])] == [1, 2]
