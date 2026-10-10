@@ -14,7 +14,8 @@ class SentioAPIClient {
 
     // Setup AbortController for timeouts/cancellations
     const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), options.timeout || this.defaultTimeout);
+    const generationTimeout = endpoint.endsWith('/generate') ? 370000 : this.defaultTimeout;
+    const id = setTimeout(() => controller.abort(), options.timeout || generationTimeout);
 
     const headers = {
       ...options.headers,
@@ -124,11 +125,14 @@ class SentioAPIClient {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 200000);
     try {
       const response = await fetch(url, {
         method: 'POST',
         headers,
         body: JSON.stringify(body),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -154,6 +158,8 @@ class SentioAPIClient {
     } catch (error) {
       if (onError) onError(error);
       else console.error('Streaming response error:', error);
+    } finally {
+      clearTimeout(timer);
     }
   }
 }

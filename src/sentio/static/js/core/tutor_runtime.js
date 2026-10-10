@@ -8,6 +8,7 @@ let camInterval = null;
 let durationTimer = null;
 let sessionStart = null;
 let exchangeCount = 0;
+let generationInProgress = false;
 
 function getActiveSessionId() {
   return (
@@ -379,7 +380,12 @@ async function sendMessage() {
   const input = document.getElementById('msg-input');
   const msg = input.value.trim();
   const currentSessionId = getActiveSessionId();
-  if (!msg || !currentSessionId) return;
+  if (!msg || !currentSessionId || generationInProgress) return;
+  generationInProgress = true;
+  const controller = new AbortController();
+  const generationTimer = setTimeout(() => controller.abort(), 200000);
+  const sendButton = document.getElementById('send-btn');
+  if (sendButton) sendButton.disabled = true;
 
   if (!sessionStart) {
     sessionStart = Date.now();
@@ -416,8 +422,10 @@ async function sendMessage() {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify({ message: msg, frame_b64: frameb64 }),
+      signal: controller.signal,
     });
     const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Tutor generation failed. Please retry.');
     showTyping(false);
 
     if (data.text) {
@@ -444,10 +452,14 @@ async function sendMessage() {
     }
   } catch (e) {
     showTyping(false);
-    toast('Connection error. Is the server running?', true);
+    toast(e.name === 'AbortError' ? 'Generation timed out. Please retry.' : e.message, true);
     if (voiceModeActive) {
       restartVoiceCapture();
     }
+  } finally {
+    clearTimeout(generationTimer);
+    generationInProgress = false;
+    if (sendButton) sendButton.disabled = false;
   }
 }
 window.sendMessage = sendMessage;
