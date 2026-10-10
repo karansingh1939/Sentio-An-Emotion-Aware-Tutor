@@ -1,0 +1,226 @@
+{
+  "timestamp": "2026-10-10T20:43:38.851735+00:00",
+  "dataset": {
+    "version": "1.0",
+    "text": "Energy is measured in joules.\nA base case stops repeated calls.\nHeat flows from hot to cold.",
+    "native_text": "Native text retains its original page citation.",
+    "cases": [
+      {
+        "id": "png",
+        "format": "png"
+      },
+      {
+        "id": "jpeg",
+        "format": "jpeg"
+      },
+      {
+        "id": "rotated_90",
+        "format": "png",
+        "angle": 90
+      },
+      {
+        "id": "rotated_180",
+        "format": "png",
+        "angle": 180
+      },
+      {
+        "id": "rotated_270",
+        "format": "png",
+        "angle": 270
+      },
+      {
+        "id": "blurred",
+        "format": "png",
+        "blur_radius": 1
+      },
+      {
+        "id": "scanned_pdf",
+        "format": "pdf"
+      },
+      {
+        "id": "mixed_pdf",
+        "format": "pdf",
+        "native_first": true
+      },
+      {
+        "id": "blank",
+        "format": "png",
+        "blank": true
+      }
+    ]
+  },
+  "dataset_sha256": "3b43b5e91604bf190d45c9cc31e3a7c77e46fe0d811a0460aa609648fd14b4e0",
+  "provenance": "Author-generated labelled English scans. No learner data. Not real-world or independently reviewed OCR accuracy.",
+  "hardware": {
+    "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+    "cpu": "x86_64"
+  },
+  "configuration": {
+    "engine": "tesseract 5.3.4",
+    "language": "eng",
+    "psm": 6,
+    "pdf_dpi": 150,
+    "font": "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "font_sha256": "ae7b7855e115a5966d8b1b3f80f254ccc117ec86f9965e202ee2940453837280",
+    "pillow": "12.3.0",
+    "pypdfium2": "5.14.0",
+    "normalization": "casefold, punctuation removed, whitespace collapsed"
+  },
+  "cases": [
+    {
+      "id": "png",
+      "fixture_sha256": "fe55c1e186f60b1b7375ddfcf6291a0473564dcb007b987a78b0c0f938f3061e",
+      "structure_pass": true,
+      "pages": [
+        {
+          "page_number": 1,
+          "text": "Energy is measured in joules. A base case stops repeated calls. Heat flows from hot to cold.",
+          "extraction_method": "ocr",
+          "reference": "Energy is measured in joules.\nA base case stops repeated calls.\nHeat flows from hot to cold.",
+          "word_error_rate": 0,
+          "character_error_rate": 0
+        }
+      ],
+      "latency_ms": 388.97932999998375
+    },
+    {
+      "id": "jpeg",
+      "fixture_sha256": "0a4d136b808d06d41ea13f676c884ed658d688b158c90921c5d0f99c3aabe84a",
+      "structure_pass": true,
+      "pages": [
+        {
+          "page_number": 1,
+          "text": "Energy is measured in joules. A base case stops repeated calls. Heat flows from hot to cold.",
+          "extraction_method": "ocr",
+          "reference": "Energy is measured in joules.\nA base case stops repeated calls.\nHeat flows from hot to cold.",
+          "word_error_rate": 0,
+          "character_error_rate": 0
+        }
+      ],
+      "latency_ms": 373.0034280000041
+    },
+    {
+      "id": "rotated_90",
+      "fixture_sha256": "52171984eb3781212d66c2e2e491da843f59ab549d797ddc6491ce4f5ee6134e",
+      "structure_pass": true,
+      "pages": [
+        {
+          "page_number": 1,
+          "text": "Energy is measured in joules. A base case stops repeated calls. Heat flows from hot to cold.",
+          "extraction_method": "ocr",
+          "reference": "Energy is measured in joules.\nA base case stops repeated calls.\nHeat flows from hot to cold.",
+          "word_error_rate": 0,
+          "character_error_rate": 0
+        }
+      ],
+      "latency_ms": 1870.7801209999957
+    },
+    {
+      "id": "rotated_180",
+      "fixture_sha256": "5bbdfba14079a0a81755ed0676466919ebdce171896268caa7a22f83d065b55d",
+      "structure_pass": true,
+      "pages": [
+        {
+          "page_number": 1,
+          "text": "Energy is measured in joules. A base case stops repeated calls. Heat flows from hot to cold.",
+          "extraction_method": "ocr",
+          "reference": "Energy is measured in joules.\nA base case stops repeated calls.\nHeat flows from hot to cold.",
+          "word_error_rate": 0,
+          "character_error_rate": 0
+        }
+      ],
+      "latency_ms": 1876.3190349999945
+    },
+    {
+      "id": "rotated_270",
+      "fixture_sha256": "4a678aca7c5b97f347abf64cdfbdeafc8eb56ea79ea3a88d7471a0bbb6dbb4a9",
+      "structure_pass": true,
+      "pages": [
+        {
+          "page_number": 1,
+          "text": "Energy is measured in joules. A base case stops repeated calls. Heat flows from hot to cold.",
+          "extraction_method": "ocr",
+          "reference": "Energy is measured in joules.\nA base case stops repeated calls.\nHeat flows from hot to cold.",
+          "word_error_rate": 0,
+          "character_error_rate": 0
+        }
+      ],
+      "latency_ms": 1868.6180699999966
+    },
+    {
+      "id": "blurred",
+      "fixture_sha256": "9e428368976c231e3b6368914d86da3fbb4edf588318531805d6ee919a8d8b9b",
+      "structure_pass": true,
+      "pages": [
+        {
+          "page_number": 1,
+          "text": "Energy is measured in joules. A base case stops repeated calls. Heat flows from hot to cold.",
+          "extraction_method": "ocr",
+          "reference": "Energy is measured in joules.\nA base case stops repeated calls.\nHeat flows from hot to cold.",
+          "word_error_rate": 0,
+          "character_error_rate": 0
+        }
+      ],
+      "latency_ms": 369.87733600000183
+    },
+    {
+      "id": "scanned_pdf",
+      "fixture_sha256": "4f75a769b72805e676a848567e6f276b564123be8338dbc678f87befef667bdb",
+      "structure_pass": true,
+      "pages": [
+        {
+          "page_number": 1,
+          "text": "Energy is measured in joules. A base case stops repeated calls. Heat flows from hot to cold.",
+          "extraction_method": "ocr",
+          "reference": "Energy is measured in joules.\nA base case stops repeated calls.\nHeat flows from hot to cold.",
+          "word_error_rate": 0,
+          "character_error_rate": 0
+        }
+      ],
+      "latency_ms": 392.66110200000526
+    },
+    {
+      "id": "mixed_pdf",
+      "fixture_sha256": "9a66a1f889f92c903d26323216ab9f1f5c9d88e5b39141a662327f72ce5de036",
+      "structure_pass": true,
+      "pages": [
+        {
+          "page_number": 1,
+          "text": "Native text retains its original page citation.",
+          "extraction_method": "text",
+          "reference": "Native text retains its original page citation.",
+          "word_error_rate": 0,
+          "character_error_rate": 0
+        },
+        {
+          "page_number": 2,
+          "text": "Energy is measured in joules. A base case stops repeated calls. Heat flows from hot to cold.",
+          "extraction_method": "ocr",
+          "reference": "Energy is measured in joules.\nA base case stops repeated calls.\nHeat flows from hot to cold.",
+          "word_error_rate": 0,
+          "character_error_rate": 0
+        }
+      ],
+      "latency_ms": 378.01107200002093
+    },
+    {
+      "id": "blank",
+      "fixture_sha256": "0a72d62a78aa61407cf2a4b6f771c9e874df1c30a0edaa63eac4af8a79c6325e",
+      "error": "No readable English text found. Upload a clearer scan or a text document.",
+      "structure_pass": true,
+      "latency_ms": 493.5506129999965
+    }
+  ],
+  "summary": {
+    "structure_passed": 9,
+    "total_cases": 9,
+    "ocr_pages_measured": 8,
+    "mean_word_error_rate": 0,
+    "mean_character_error_rate": 0
+  },
+  "execution": {
+    "source": "GitHub Actions",
+    "commit": "abb91ed784de14277ab159dd845586da29f6c309",
+    "run_url": "https://github.com/karansingh-1939/Sentio-An-Emotion-Aware-Tutor/actions/runs/38084720600"
+  }
+}

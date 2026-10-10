@@ -6,6 +6,9 @@ incomplete answers, and requests to change the grade. The v2 labels are syntheti
 and author-written. They are development data, not an independently labelled test
 set. Exact and blank answers are reported separately from model inference.
 
+Completed measurements: [grading comparison](../reports/GRADING_FOLLOWUP_2026-10-11.md)
+and [synthetic OCR evaluation](../reports/OCR_EVALUATION_2026-10-11.md).
+
 ```powershell
 uv run python scripts/evaluate_grading.py --repeats 3 --output reports/grading-comparison.json
 ```

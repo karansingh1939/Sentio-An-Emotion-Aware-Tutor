@@ -123,3 +123,22 @@ Full local regression: 151 passed, one optional Tesseract test skipped, 31 subte
 passed. JavaScript, Ruff and Prettier checks passed. No production grading prompt
 has been changed from this experiment. Next: inspect hosted OCR results and
 publish the completed grading analysis with its unsuccessful candidate.
+
+## 2026-10-11 — Grading decision and real OCR evidence
+
+Completed three repeats per grading profile: each passed 23/28 rubrics (20/25
+semantic cases). The candidate removed two false positives but added two false
+negatives per repeat; no production prompt change was adopted. A second targeted
+context probe also retained failures. Raw results and readable decisions are
+published in the grading follow-up report. Exact/blank checks remain separate.
+
+Hosted Linux CI passed 152 tests and 31 subtests, including real Tesseract. The
+synthetic OCR benchmark passed all nine cases, measured zero normalized word/
+character errors on eight generated scans, and preserved native mixed-PDF text
+and citations. Recorded the actual report with CI run provenance, engine/font
+versions, hashes and per-case latency. These are synthetic observations, not
+real-world accuracy claims. No learner data or model weights were published.
+
+Next: obtain independently reviewed realistic OCR/grading labels and compare a
+stronger suitable local grader before changing grading behavior. Docker execution
+and emotion accuracy remain unverified. Keep repository visibility private.
