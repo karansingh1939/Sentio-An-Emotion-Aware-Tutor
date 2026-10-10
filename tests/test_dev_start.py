@@ -6,11 +6,20 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 
-def test_launcher_uses_project_python_and_propagates_failure(monkeypatch):
+def test_launcher_uses_project_python_and_propagates_failure(monkeypatch, tmp_path):
     root = Path(__file__).resolve().parents[1]
     spec = importlib.util.spec_from_file_location("dev_start", root / "scripts/dev_start.py")
     launcher = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(launcher)
+    root = tmp_path
+    executable = (
+        root
+        / ".venv"
+        / ("Scripts/python.exe" if launcher.sys.platform == "win32" else "bin/python")
+    )
+    executable.parent.mkdir(parents=True)
+    executable.touch()
+    monkeypatch.setattr(launcher, "BASE_DIR", root)
     run = Mock(return_value=SimpleNamespace(returncode=7))
     monkeypatch.setattr(launcher.subprocess, "run", run)
     monkeypatch.setattr(launcher.sys, "argv", ["dev_start.py", "--port", "8001"])
