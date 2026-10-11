@@ -41,6 +41,27 @@ startup can take about a minute while the machine-learning libraries load.
 
 ## Checks
 
+## Local recovery and readiness
+
+`GET /api/v1/ready` reports storage, the exact configured Ollama model, retrieval,
+OCR and optional camera separately. Normal startup does not import TensorFlow or
+load camera weights. Saved materials remain usable when AI is unavailable.
+
+Stop Sentio before a full snapshot. Backups contain private files and secrets;
+keep them local. Restore only into an empty directory, then set `SENTIO_HOME` to
+that directory to run the restored installation.
+
+```powershell
+uv run python scripts/backup_local.py create "C:\ai project" "C:\ai project\backups\my-snapshot"
+uv run python scripts/backup_local.py verify "C:\ai project\backups\my-snapshot"
+uv run python scripts/backup_local.py restore "C:\ai project\backups\my-snapshot" "C:\ai project\backups\restored-home"
+```
+
+The active overhaul and measured checkpoints are recorded in [tasks/plan.md](tasks/plan.md)
+and [tasks/continuation.md](tasks/continuation.md).
+
+## Checks
+
 ```powershell
 uv run python scripts/check_environment.py
 uv run playwright install chromium

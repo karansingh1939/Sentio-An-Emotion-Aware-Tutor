@@ -26,27 +26,21 @@ Usage:
     detector.run_webcam_loop(callback=my_fn)
 """
 
+from __future__ import annotations
+
 import logging
 from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Callable, List, Optional, Tuple
 
 import cv2
 import numpy as np
-import tensorflow as tf
 
-# ---------------------------------------------------------------------------
-# Keras compatibility shim
-# TensorFlow < 2.16  : keras lives inside tensorflow  -> use tf.keras
-# TensorFlow >= 2.16 : keras is a standalone package  -> import keras directly
-# This block handles both cases automatically.
-# ---------------------------------------------------------------------------
-try:
-    import keras
-    from keras import Model, layers, regularizers
-    from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, TensorBoard
-except ImportError:
+from sentio.config import CHECKPOINT_DIR, LOG_DIR, emotion_cfg
+
+if TYPE_CHECKING:
+    import tensorflow as tf
     from tensorflow import keras
     from tensorflow.keras import Model, layers, regularizers
     from tensorflow.keras.callbacks import (
@@ -56,7 +50,26 @@ except ImportError:
         TensorBoard,
     )
 
-from sentio.config import CHECKPOINT_DIR, LOG_DIR, emotion_cfg
+
+# ---------------------------------------------------------------------------
+# Keras compatibility shim
+# TensorFlow < 2.16  : keras lives inside tensorflow  -> use tf.keras
+# TensorFlow >= 2.16 : keras is a standalone package  -> import keras directly
+# This block handles both cases automatically.
+# ---------------------------------------------------------------------------
+def _load_keras():
+    """Import heavy training/inference libraries only for an explicit camera action."""
+    if "keras" in globals():
+        return
+    import tensorflow as tf
+    from tensorflow import keras
+
+    globals().update(
+        tf=tf, keras=keras, Model=keras.Model, layers=keras.layers, regularizers=keras.regularizers
+    )
+    for name in ("EarlyStopping", "ModelCheckpoint", "ReduceLROnPlateau", "TensorBoard"):
+        globals()[name] = getattr(keras.callbacks, name)
+
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +130,7 @@ class EmotionModelBuilder:
         self.cfg = cfg
 
     def build(self) -> Model:
+        _load_keras()
         backbone = self.cfg.BACKBONE
         logger.info(f"Building model with backbone: {backbone}")
 
@@ -379,6 +393,7 @@ class EmotionDetector:
         return self.model
 
     def _compile(self):
+        _load_keras()
         self.model.compile(
             optimizer=keras.optimizers.Adam(learning_rate=self.cfg.LEARNING_RATE),
             loss="categorical_crossentropy",
@@ -395,7 +410,7 @@ class EmotionDetector:
         path = path or self.cfg.MODEL_PATH
         try:
             if Path(path).exists():
-                print("Loading model from:", path)
+                _load_keras()
                 self.model = keras.models.load_model(str(path), compile=False)
                 logger.info(f"Model loaded from {path}")
             else:
@@ -412,6 +427,7 @@ class EmotionDetector:
 
     def get_callbacks(self) -> list:
         """Standard training callbacks."""
+        _load_keras()
         return [
             ModelCheckpoint(
                 filepath=str(

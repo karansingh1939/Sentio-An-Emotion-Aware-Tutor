@@ -155,6 +155,11 @@ class TutorAgent:
         self.intelligence = None
         self.orchestrator = None
         self._loaded = False
+        self.startup_errors = {}
+        self._camera_attempted = False
+        from threading import RLock
+
+        self._camera_lock = RLock()
 
     # ── Lifecycle ──────────────────────────────
 
@@ -169,10 +174,13 @@ class TutorAgent:
         logger.info("TutorAgent: loading subsystems...")
         t0 = time.perf_counter()
 
-        self.detector.load_model()
-        self.kb.load()
-        self.nlp.load()
         self.sm.load()
+        for name, service in (("retrieval", self.kb), ("ai", self.nlp)):
+            try:
+                service.load()
+            except Exception:
+                self.startup_errors[name] = "Initialization failed; see local diagnostics."
+                logger.exception("Optional %s initialization failed", name)
 
         from sentio.intelligence.intelligence_service import IntelligenceService
 
@@ -567,10 +575,19 @@ class TutorAgent:
         Returns a neutral EmotionResult if frame is None or detection fails.
         """
         if frame is not None and isinstance(frame, np.ndarray):
+            self.ensure_camera()
             result = self.detector.detect_from_frame(frame, session_id=session_id)
             if result is not None:
                 return result
         return self._neutral_emotion_result()
+
+    def ensure_camera(self):
+        """Load once on demand; normal studying never requires camera weights."""
+        with self._camera_lock:
+            if not self._camera_attempted:
+                self._camera_attempted = True
+                self.detector.load_model()
+        return self.detector.model is not None
 
     def _retrieve_content(self, session_id, subject, topic, difficulty, learning_state, query):
         """Wrapper around KnowledgeBase.retrieve with error guard."""

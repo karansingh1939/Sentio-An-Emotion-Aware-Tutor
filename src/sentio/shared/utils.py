@@ -459,15 +459,11 @@ def system_health_check():
     report["python_version"] = py_version
     logger.info("Python %s", py_version)
 
-    # TensorFlow + GPU
+    # Installed package metadata only; camera runtime is deliberately lazy.
     try:
-        import tensorflow as tf
-
-        gpus = tf.config.list_physical_devices("GPU")
-        report["tensorflow"] = tf.__version__
-        report["gpu_count"] = len(gpus)
-        logger.info("TensorFlow %s | GPUs: %d", tf.__version__, len(gpus))
-    except ImportError:
+        report["tensorflow"] = version("tensorflow")
+        report["gpu_count"] = None
+    except PackageNotFoundError:
         report["tensorflow"] = None
         report["gpu_count"] = 0
         logger.warning("TensorFlow not installed.")
@@ -514,19 +510,8 @@ def system_health_check():
     report["webcam_available"] = False
     logger.info("Webcam available: %s (headless server context)", report["webcam_available"])
 
-    # Qdrant status
-    try:
-        from sentio.rag.vector_db import QdrantVectorDB
-
-        qdb = QdrantVectorDB()
-        qdb_connected = qdb.connect()
-        if qdb_connected:
-            report["qdrant_status"] = "in-memory" if qdb.location == ":memory:" else "external"
-        else:
-            report["qdrant_status"] = "unavailable"
-    except Exception as e:
-        report["qdrant_status"] = "unavailable"
-        logger.warning("Qdrant status check failed: %s", e)
+    # Never acquire a second persistent vector-store owner during health probes.
+    report["qdrant_status"] = "not probed; use /api/v1/ready"
 
     # Ollama status
     try:
