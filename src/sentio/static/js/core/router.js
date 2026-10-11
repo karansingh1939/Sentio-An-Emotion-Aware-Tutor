@@ -25,6 +25,17 @@ class SentioRouter {
 
   handleRouting() {
     let hash = window.location.hash;
+    const aliases = {
+      '#/today': '#/dashboard',
+      '#/library': '#/documents',
+      '#/study': '#/tutor',
+      '#/review': '#/quizzes',
+      '#/progress': '#/analytics',
+    };
+    if (aliases[hash]) {
+      window.location.replace(aliases[hash]);
+      return;
+    }
     if (!hash || !this.routes.includes(hash)) {
       hash = this.defaultRoute;
       window.location.hash = hash;
@@ -37,8 +48,9 @@ class SentioRouter {
 
     // We will bypass auth check if backend has authentication disabled (which we check dynamically)
     // For now, update route state
-    store.setState('activeRoute', hash);
     this.updateViewVisibility(hash);
+    if (store.getState('activeRoute') === hash) store.notify('activeRoute', hash);
+    else store.setState('activeRoute', hash);
   }
 
   updateViewVisibility(activeHash) {

@@ -1,4 +1,5 @@
 // Reusable Web Components for Sentio UI (ES Module)
+import { escapeHtml } from '../core/html.js';
 
 // 1. Toast Notification Component
 export class SentioToast extends HTMLElement {
@@ -33,7 +34,7 @@ export class SentioToast extends HTMLElement {
 
     this.innerHTML = `
       <span>${this.isError ? '🛑' : '⚡'}</span>
-      <span>${this.message}</span>
+      <span>${escapeHtml(this.message)}</span>
     `;
 
     // Trigger animate-in
@@ -53,6 +54,7 @@ customElements.define('sentio-toast', SentioToast);
 
 // Global Toast helper
 export function toast(message, isError = false) {
+  document.querySelectorAll('sentio-toast').forEach((old) => old.remove());
   const el = document.createElement('sentio-toast');
   el.setAttribute('message', message);
   if (isError) el.setAttribute('error', '');
@@ -100,7 +102,7 @@ export class SentioCard extends HTMLElement {
 
     const children = this.innerHTML;
     this.innerHTML = `
-      ${title ? `<div style="font-family:var(--display);font-weight:700;margin-bottom:12px;color:var(--text);font-size:14px;">${title}</div>` : ''}
+      ${title ? `<div style="font-family:var(--display);font-weight:700;margin-bottom:12px;color:var(--text);font-size:16px;">${escapeHtml(title)}</div>` : ''}
       <div class="card-content">${children}</div>
     `;
   }
@@ -124,8 +126,8 @@ export class SentioModal extends HTMLElement {
     this.innerHTML = `
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);width:90%;max-width:500px;box-shadow:0 20px 50px rgba(0,0,0,0.6);display:flex;flex-direction:column;overflow:hidden;">
         <div style="display:flex;align-items:center;justify-content:between;padding:16px 20px;border-bottom:1px solid var(--border);background:var(--bg3);">
-          <span style="font-family:var(--display);font-weight:700;font-size:14px;">${this.title}</span>
-          <button id="modal-close-btn" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;outline:none;">&times;</button>
+          <span style="font-family:var(--display);font-weight:700;font-size:16px;">${escapeHtml(this.title)}</span>
+          <button id="modal-close-btn" aria-label="Close dialog" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;">&times;</button>
         </div>
         <div style="padding:20px;max-height:70vh;overflow-y:auto;font-family:var(--mono);">
           ${bodyContent}

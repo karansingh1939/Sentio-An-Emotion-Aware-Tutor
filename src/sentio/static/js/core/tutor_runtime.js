@@ -11,6 +11,7 @@ let exchangeCount = 0;
 let generationInProgress = false;
 
 function getActiveSessionId() {
+  if (window.store) return window.store.getState('activeSessionId');
   return (
     sessionId ||
     window.sessionId ||
@@ -96,7 +97,11 @@ window.initBars = initBars;
 async function startSession() {
   const studentId = document.getElementById('f-student').value.trim() || 'stu_001';
   const subject = document.getElementById('f-subject').value;
-  const topic = document.getElementById('f-topic').value.trim() || 'derivatives';
+  const topic = document.getElementById('f-topic').value.trim();
+  if (!topic) {
+    toast('Choose a topic to study.', true);
+    return;
+  }
   const difficulty = document.getElementById('f-difficulty').value;
   const grounding = document.getElementById('f-grounding')
     ? document.getElementById('f-grounding').value
@@ -123,6 +128,8 @@ async function startSession() {
     }
     const data = await res.json();
     window.setLegacySessionId(data.session_id);
+    if (window.store)
+      window.store.setState('activeSession', { ...data, metadata: { document_id: grounding } });
 
     // Set up grounding change listener
     const groundingSelect = document.getElementById('f-grounding');
@@ -252,6 +259,7 @@ function cleanupSession() {
   window.sessionId = null;
   if (window.store && typeof window.store.setState === 'function') {
     window.store.setState('activeSessionId', null);
+    window.store.setState('activeSession', null);
   }
   stopWebcam();
   if (wsEmotion) {
@@ -943,9 +951,11 @@ async function toggleWebcamDirect() {
 async function initMediaPipe() {
   try {
     if (!window.FilesetResolver || !window.FaceLandmarker) {
-      console.warn('MediaPipe libraries not ready yet. Retrying in 1s...');
-      setTimeout(initMediaPipe, 1000);
-      return;
+      const vision = await import(
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/+esm'
+      );
+      window.FilesetResolver = vision.FilesetResolver;
+      window.FaceLandmarker = vision.FaceLandmarker;
     }
     filesetResolver = await window.FilesetResolver.forVisionTasks(
       'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/wasm',

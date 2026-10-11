@@ -17,16 +17,16 @@ export class SettingsView {
     this.container.innerHTML = `
       <div class="view-header">
         <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">Settings</h2>
-        <p style="color:var(--text-dim);font-size:11px;">Configure your profile, view logs, or manage privacy and GDPR controls.</p>
+        <p style="color:var(--text-dim);font-size:14px;">Configure your profile, view logs, or manage privacy and GDPR controls.</p>
       </div>
 
       <div style="margin-top:20px;width:100%;">
         <sentio-card title="Privacy & GDPR Actions">
           <div style="display:flex;flex-direction:column;gap:12px;">
-            <p style="color:var(--text-dim);font-size:12px;">Under GDPR, you have the right to export your personal learning data or delete all historical records from our database.</p>
+            <p style="color:var(--text-dim);font-size:14px;">Under GDPR, you have the right to export your personal learning data or delete all historical records from our database.</p>
             <div style="display:flex;gap:12px;margin-top:8px;">
-              <button id="export-data-btn" style="background:var(--accent);color:var(--bg);border:none;padding:8px 16px;border-radius:var(--radius);font-family:var(--mono);cursor:pointer;font-size:11px;font-weight:bold;">📥 Export My Data</button>
-              <button id="purge-data-btn" style="background:none;color:var(--red);border:1px solid var(--red);padding:8px 16px;border-radius:var(--radius);font-family:var(--mono);cursor:pointer;font-size:11px;font-weight:bold;">🗑️ Purge My Account Data</button>
+              <button id="export-data-btn" style="background:var(--accent);color:var(--bg);border:none;padding:8px 16px;border-radius:var(--radius);font-family:var(--mono);cursor:pointer;font-size:14px;font-weight:bold;">📥 Export My Data</button>
+              <button id="purge-data-btn" style="background:none;color:var(--red);border:1px solid var(--red);padding:8px 16px;border-radius:var(--radius);font-family:var(--mono);cursor:pointer;font-size:14px;font-weight:bold;">🗑️ Purge My Account Data</button>
             </div>
           </div>
         </sentio-card>
@@ -34,8 +34,8 @@ export class SettingsView {
         <sentio-card title="Preferences">
           <div style="display:flex;align-items:center;justify-content:between;">
             <div>
-              <div style="font-weight:bold;font-size:12px;">Telemetry Tracking Consent</div>
-              <div style="color:var(--text-dim);font-size:11px;margin-top:2px;">Allow attention and emotion detection webcam processing.</div>
+              <div style="font-weight:bold;font-size:14px;">Telemetry Tracking Consent</div>
+              <div style="color:var(--text-dim);font-size:14px;margin-top:2px;">Allow attention and emotion detection webcam processing.</div>
             </div>
             <input type="checkbox" id="consent-cb" ${store.getState('telemetryActive') ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;" />
           </div>
@@ -43,8 +43,8 @@ export class SettingsView {
 
         <sentio-card title="Account Actions">
           <div style="display:flex;flex-direction:column;gap:12px;">
-            <p style="color:var(--text-dim);font-size:11px;">Sign out of your active student session on this machine.</p>
-            <button id="signout-btn" style="background:none;border:1px solid var(--red);color:var(--red);padding:8px 16px;border-radius:var(--radius);font-family:var(--mono);cursor:pointer;font-size:11px;font-weight:bold;align-self:flex-start;transition:background 0.2s;">🚪 Sign Out of Sentio</button>
+            <p style="color:var(--text-dim);font-size:14px;">Sign out of your active student session on this machine.</p>
+            <button id="signout-btn" style="background:none;border:1px solid var(--red);color:var(--red);padding:8px 16px;border-radius:var(--radius);font-family:var(--mono);cursor:pointer;font-size:14px;font-weight:bold;align-self:flex-start;transition:background 0.2s;">🚪 Sign Out of Sentio</button>
           </div>
         </sentio-card>
       </div>

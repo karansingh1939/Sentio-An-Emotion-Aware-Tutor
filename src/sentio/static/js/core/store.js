@@ -17,7 +17,7 @@ class SentioStore {
       activeRoute: '#/dashboard',
       notifications: [],
       loading: false,
-      theme: localStorage.getItem('sentio_theme') || 'dark',
+      theme: localStorage.getItem('sentio_theme') || 'light',
       telemetryActive: false,
       telemetryLog: [],
       currentMastery: {}, // Topic-wise mastery map

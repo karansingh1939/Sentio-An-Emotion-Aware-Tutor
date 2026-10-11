@@ -87,17 +87,17 @@ export class WhiteboardView {
       <div class="view-header" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
         <div>
           <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">Intelligent Whiteboard</h2>
-          <p style="color:var(--text-dim);font-size:11px;">Sketch study maps or paste and render Mermaid diagrams directly from the AI tutor.</p>
+          <p style="color:var(--text-dim);font-size:14px;">Sketch study maps or paste and render Mermaid diagrams directly from the AI tutor.</p>
         </div>
         <div style="display:flex;gap:10px;align-items:center;">
-          <span id="wb-unsaved-badge" style="font-size:10px;font-family:var(--mono);color:var(--orange);display:${this.hasUnsavedChanges ? 'inline' : 'none'};">● Unsaved Changes</span>
-          <button id="wb-save-btn" style="background:var(--accent);color:var(--bg);border:none;padding:6px 12px;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:bold;">Save Canvas</button>
+          <span id="wb-unsaved-badge" style="font-size:14px;font-family:var(--mono);color:var(--orange);display:${this.hasUnsavedChanges ? 'inline' : 'none'};">● Unsaved Changes</span>
+          <button id="wb-save-btn" style="background:var(--accent);color:var(--bg);border:none;padding:6px 12px;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;">Save Canvas</button>
           
-          <select id="wb-export-format" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11px;padding:5px;border-radius:var(--radius);">
+          <select id="wb-export-format" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:14px;padding:5px;border-radius:var(--radius);">
             <option value="png">PNG Image</option>
             <option value="pdf">PDF Doc</option>
           </select>
-          <button id="wb-export-btn" style="background:none;border:1px solid var(--accent);color:var(--accent);padding:5px 12px;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:bold;">Export</button>
+          <button id="wb-export-btn" style="background:none;border:1px solid var(--accent);color:var(--accent);padding:5px 12px;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;">Export</button>
         </div>
       </div>
 
@@ -121,14 +121,14 @@ export class WhiteboardView {
             <div style="display:flex;align-items:center;gap:12px;">
               <!-- Color picker -->
               <div style="display:flex;gap:4px;align-items:center;">
-                <span style="font-size:9px;color:var(--text-dim);font-weight:bold;">COLOR</span>
+                <span style="font-size:14px;color:var(--text-dim);font-weight:bold;">COLOR</span>
                 <input type="color" id="wb-color-picker" value="#00c8ff" style="border:none;background:none;width:24px;height:24px;cursor:pointer;" />
               </div>
 
               <!-- Stroke width -->
               <div style="display:flex;align-items:center;gap:4px;">
-                <span style="font-size:9px;color:var(--text-dim);font-weight:bold;">SIZE</span>
-                <select id="wb-stroke-size" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:10px;padding:4px;border-radius:var(--radius);">
+                <span style="font-size:14px;color:var(--text-dim);font-weight:bold;">SIZE</span>
+                <select id="wb-stroke-size" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:14px;padding:4px;border-radius:var(--radius);">
                   <option value="2">2px</option>
                   <option value="4" selected>4px</option>
                   <option value="8">8px</option>
@@ -138,9 +138,9 @@ export class WhiteboardView {
 
               <!-- Undo/Redo -->
               <div style="display:flex;gap:4px;">
-                <button id="wb-undo-btn" title="Undo" style="background:none;border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;">↩️</button>
-                <button id="wb-redo-btn" title="Redo" style="background:none;border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;">↪️</button>
-                <button id="wb-clear-btn" title="Clear Canvas" style="background:none;border:1px solid var(--border);color:var(--red);padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:bold;">Clear</button>
+                <button id="wb-undo-btn" title="Undo" style="background:none;border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;cursor:pointer;font-size:14px;">↩️</button>
+                <button id="wb-redo-btn" title="Redo" style="background:none;border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;cursor:pointer;font-size:14px;">↪️</button>
+                <button id="wb-clear-btn" title="Clear Canvas" style="background:none;border:1px solid var(--border);color:var(--red);padding:4px 8px;border-radius:4px;cursor:pointer;font-size:14px;font-weight:bold;">Clear</button>
               </div>
             </div>
           </div>
@@ -150,7 +150,7 @@ export class WhiteboardView {
             <canvas id="whiteboard-canvas" width="1000" height="750" style="position:absolute;top:0;left:0;cursor:crosshair;"></canvas>
             
             <!-- Floating zoom indicators -->
-            <div style="position:absolute;bottom:14px;right:14px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:9px;font-family:var(--mono);color:var(--text);display:flex;gap:8px;align-items:center;">
+            <div style="position:absolute;bottom:14px;right:14px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:14px;font-family:var(--mono);color:var(--text);display:flex;gap:8px;align-items:center;">
               <button id="zoom-out-btn" style="background:none;border:none;color:var(--text);cursor:pointer;font-weight:bold;">-</button>
               <span id="zoom-label">100%</span>
               <button id="zoom-in-btn" style="background:none;border:none;color:var(--text);cursor:pointer;font-weight:bold;">+</button>
@@ -161,15 +161,15 @@ export class WhiteboardView {
         <!-- Right: Mermaid Diagram Integration -->
         <div style="display:flex;flex-direction:column;gap:14px;height:100%;overflow-y:auto;">
           <sentio-card title="🧜‍♀️ Mermaid Render Engine">
-            <p style="font-size:10px;color:var(--text-dim);line-height:1.4;margin-bottom:10px;">Paste a flow diagram generated by your AI tutor to automatically render it as editable vector shapes.</p>
-            <textarea id="mermaid-code-input" placeholder="graph TD&#10;  A[Tutor] --> B[RAG]&#10;  B --> C[Whiteboard]" style="width:100%;height:160px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:10px;outline:none;resize:vertical;"></textarea>
-            <button id="render-mermaid-btn" style="margin-top:12px;width:100%;background:var(--accent);color:var(--bg);border:none;padding:10px;border-radius:var(--radius);font-family:var(--mono);font-size:11px;font-weight:bold;cursor:pointer;">
+            <p style="font-size:14px;color:var(--text-dim);line-height:1.4;margin-bottom:10px;">Paste a flow diagram generated by your AI tutor to automatically render it as editable vector shapes.</p>
+            <textarea id="mermaid-code-input" placeholder="graph TD&#10;  A[Tutor] --> B[RAG]&#10;  B --> C[Whiteboard]" style="width:100%;height:160px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;resize:vertical;"></textarea>
+            <button id="render-mermaid-btn" style="margin-top:12px;width:100%;background:var(--accent);color:var(--bg);border:none;padding:10px;border-radius:var(--radius);font-family:var(--mono);font-size:14px;font-weight:bold;cursor:pointer;">
               Render Flowchart Shapes
             </button>
           </sentio-card>
           
           <sentio-card title="💡 Annotations & Snippets">
-            <p style="font-size:10px;color:var(--text-dim);line-height:1.4;">Drag text blocks, cite sources, or type text note shapes on the canvas to annotate your concepts.</p>
+            <p style="font-size:14px;color:var(--text-dim);line-height:1.4;">Drag text blocks, cite sources, or type text note shapes on the canvas to annotate your concepts.</p>
           </sentio-card>
         </div>
       </div>

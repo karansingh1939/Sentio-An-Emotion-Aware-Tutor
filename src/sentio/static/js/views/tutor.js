@@ -95,7 +95,7 @@ export class TutorView {
     if (!listContainer) return;
 
     if (this.sessionsList.length === 0) {
-      listContainer.innerHTML = `<span style="font-size:10px;color:var(--text-dim);text-align:center;padding:12px 0;">No sessions</span>`;
+      listContainer.innerHTML = `<span style="font-size:14px;color:var(--text-dim);text-align:center;padding:12px 0;">No sessions</span>`;
       return;
     }
 
@@ -110,10 +110,10 @@ export class TutorView {
         return `
         <div class="session-item-row ${activeClass}" data-id="${escapeHtml(s.session_id)}" style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:var(--radius);border:1px solid ${s.session_id === currentSessionId ? 'var(--border-glow)' : 'transparent'};background:${s.session_id === currentSessionId ? 'var(--bg3)' : 'transparent'};cursor:pointer;transition:background 0.2s;">
           <div class="select-session-btn" data-id="${escapeHtml(s.session_id)}" style="display:flex;flex-direction:column;gap:2px;flex:1;">
-            <div style="font-weight:bold;font-size:11px;color:${s.session_id === currentSessionId ? 'var(--accent)' : 'var(--text)'};text-transform:capitalize;">${escapeHtml(topicName)}</div>
-            <div style="font-size:9px;color:var(--text-dim);text-transform:capitalize;">${escapeHtml(s.subject)} · ${escapeHtml(difficulty)}</div>
+            <div style="font-weight:bold;font-size:14px;color:${s.session_id === currentSessionId ? 'var(--accent)' : 'var(--text)'};text-transform:capitalize;">${escapeHtml(topicName)}</div>
+            <div style="font-size:14px;color:var(--text-dim);text-transform:capitalize;">${escapeHtml(s.subject)} · ${escapeHtml(difficulty)}</div>
           </div>
-          <button class="delete-session-btn" data-id="${escapeHtml(s.session_id)}" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:10px;padding:4px;">&times;</button>
+          <button class="delete-session-btn" data-id="${escapeHtml(s.session_id)}" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:4px;">&times;</button>
         </div>
       `;
       })
@@ -151,17 +151,13 @@ export class TutorView {
 
   async resumeSession(sessionId) {
     try {
-      store.setState('activeSessionId', sessionId);
       toast('Resuming tutoring session...');
 
       // Update global states inside legacy context
-      window.sessionId = sessionId;
-      if (typeof window.setLegacySessionId === 'function') {
-        window.setLegacySessionId(sessionId);
-      }
-
       // Load session details to verify status
       const res = await sentioAPI.get(`/sessions/${sessionId}`);
+      store.setState('activeSession', res);
+      window.setLegacySessionId(sessionId);
 
       // Load/refresh grounding options
       const docs = await this.loadGroundingDocuments();
@@ -296,8 +292,8 @@ export class TutorView {
     modal.innerHTML = `
       <div style="display:flex;flex-direction:column;gap:12px;">
         <div>
-          <label style="display:block;font-size:10px;color:var(--text-dim);margin-bottom:6px;">Subject</label>
-          <select id="new-sess-subject" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:11px;">
+          <label for="new-sess-subject" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;">Subject</label>
+<select id="new-sess-subject" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;">
             <option value="mathematics">Mathematics</option>
             <option value="physics">Physics</option>
             <option value="computer_science">Computer Science</option>
@@ -306,20 +302,20 @@ export class TutorView {
           </select>
         </div>
         <div>
-          <label style="display:block;font-size:10px;color:var(--text-dim);margin-bottom:6px;">Topic</label>
-          <input type="text" id="new-sess-topic" value="thermodynamics" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:11px;" />
+          <label for="new-sess-topic" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;">Topic</label>
+<input type="text" id="new-sess-topic" value="thermodynamics" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;" />
         </div>
         <div>
-          <label style="display:block;font-size:10px;color:var(--text-dim);margin-bottom:6px;">Difficulty</label>
-          <select id="new-sess-difficulty" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:11px;">
+          <label for="new-sess-difficulty" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;">Difficulty</label>
+<select id="new-sess-difficulty" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;">
             <option value="beginner">Beginner</option>
             <option value="intermediate" selected>Intermediate</option>
             <option value="advanced">Advanced</option>
           </select>
         </div>
         <div>
-          <label style="display:block;font-size:10px;color:var(--text-dim);margin-bottom:6px;">Grounding Source</label>
-          <select id="new-sess-grounding" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:11px;">
+          <label for="new-sess-grounding" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;">Grounding Source</label>
+<select id="new-sess-grounding" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;">
             <option value="none">General Tutor (No grounding)</option>
             <option value="all">All My Documents</option>
             ${docs.map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.filename)}</option>`).join('')}
@@ -346,15 +342,11 @@ export class TutorView {
       modal.close();
       store.setState('loading', true);
       try {
-        const res = await sentioAPI.post('/sessions', {
-          student_id: studentId,
-          subject,
-          topic,
-          difficulty,
-          metadata: { document_id: grounding },
-        });
-
-        await this.resumeSession(res.session_id);
+        document.getElementById('f-subject').value = subject;
+        document.getElementById('f-topic').value = topic;
+        document.getElementById('f-difficulty').value = difficulty;
+        document.getElementById('f-grounding').value = grounding;
+        await window.startSession();
       } catch (err) {
         toast('Failed to create session: ' + err.message, true);
       } finally {
@@ -420,17 +412,17 @@ export class TutorView {
         return `
         <div class="citation-card" style="border:1px solid var(--border);border-radius:var(--radius);padding:10px;background:var(--bg3);display:flex;flex-direction:column;gap:6px;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-weight:bold;font-size:11px;color:var(--accent);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(filename)}">
+            <span style="font-weight:bold;font-size:14px;color:var(--accent);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(filename)}">
               📄 ${escapeHtml(filename)}
             </span>
-            <span style="font-size:9px;color:var(--text-dim);background:var(--border);padding:2px 4px;border-radius:4px;">
+            <span style="font-size:14px;color:var(--text-dim);background:var(--border);padding:2px 4px;border-radius:4px;">
               Score: ${score}%
             </span>
           </div>
-          <div style="font-size:9px;color:var(--text-dim);">Page: ${escapeHtml(page)}</div>
+          <div style="font-size:14px;color:var(--text-dim);">Page: ${escapeHtml(page)}</div>
           <details style="margin-top:4px;">
-            <summary style="font-size:10px;color:var(--accent);cursor:pointer;outline:none;">Preview Source Text</summary>
-            <p style="font-size:10px;color:var(--text);margin-top:6px;line-height:1.4;background:var(--bg2);padding:6px;border-radius:4px;border:1px solid var(--border);max-height:140px;overflow-y:auto;white-space:pre-wrap;">${escapeHtml(textSnippet)}</p>
+            <summary style="font-size:14px;color:var(--accent);cursor:pointer;outline:none;">Preview Source Text</summary>
+            <p style="font-size:14px;color:var(--text);margin-top:6px;line-height:1.4;background:var(--bg2);padding:6px;border-radius:4px;border:1px solid var(--border);max-height:140px;overflow-y:auto;white-space:pre-wrap;">${escapeHtml(textSnippet)}</p>
           </details>
         </div>
       `;

@@ -47,15 +47,15 @@ export class QuizzesView {
     this.container.innerHTML = `
       <div class="view-header" style="margin-bottom:20px;">
         <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">Interactive Quizzes</h2>
-        <p style="color:var(--text-dim);font-size:11px;">Generate adaptive assessments using RAG and student memory context.</p>
+        <p style="color:var(--text-dim);font-size:14px;">Generate adaptive assessments using RAG and student memory context.</p>
       </div>
 
       <div style="max-width:550px;width:100%;margin:0 auto;">
         <sentio-card title="Configure Quiz Generation">
           <div style="display:flex;flex-direction:column;gap:14px;margin-top:10px;">
             <div>
-              <label style="display:block;font-size:10px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Subject</label>
-              <select id="quiz-subject" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;">
+              <label for="quiz-subject" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Subject</label>
+<select id="quiz-subject" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;">
                 <option value="physics">Physics</option>
                 <option value="computer_science">Computer Science</option>
                 <option value="mathematics">Mathematics</option>
@@ -65,22 +65,22 @@ export class QuizzesView {
             </div>
 
             <div>
-              <label style="display:block;font-size:10px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Topic</label>
-              <input type="text" id="quiz-topic" value="thermodynamics" placeholder="Enter topic..." style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;" />
+              <label for="quiz-topic" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Topic</label>
+<input type="text" id="quiz-topic" value="" placeholder="Choose a study topic" aria-label="Quiz topic" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;" />
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
               <div>
-                <label style="display:block;font-size:10px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Difficulty</label>
-                <select id="quiz-difficulty" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;">
+                <label for="quiz-difficulty" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Difficulty</label>
+<select id="quiz-difficulty" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;">
                   <option value="beginner">Beginner</option>
                   <option value="intermediate" selected>Intermediate</option>
                   <option value="advanced">Advanced</option>
                 </select>
               </div>
               <div>
-                <label style="display:block;font-size:10px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Number of Questions</label>
-                <select id="quiz-num-questions" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;">
+                <label for="quiz-num-questions" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Number of Questions</label>
+<select id="quiz-num-questions" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;">
                   <option value="3" selected>3 Questions</option>
                   <option value="5">5 Questions</option>
                   <option value="10">10 Questions</option>
@@ -88,7 +88,7 @@ export class QuizzesView {
               </div>
             </div>
 
-            <button id="generate-quiz-btn" style="margin-top:10px;background:var(--accent);color:var(--bg);border:none;padding:12px;border-radius:var(--radius);font-family:var(--mono);font-weight:bold;cursor:pointer;font-size:11px;transition:opacity 0.2s;">
+            <button id="generate-quiz-btn" style="margin-top:10px;background:var(--accent);color:var(--bg);border:none;padding:12px;border-radius:var(--radius);font-family:var(--mono);font-weight:bold;cursor:pointer;font-size:14px;transition:opacity 0.2s;">
               ⚡ Generate Dynamic Quiz
             </button>
           </div>
@@ -134,7 +134,7 @@ export class QuizzesView {
     this.container.innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60%;gap:12px;">
         <sentio-loader size="36px"></sentio-loader>
-        <span style="font-size:11px;color:var(--accent);font-weight:bold;font-family:var(--mono);">AI is custom-crafting your assessment...</span>
+        <span style="font-size:14px;color:var(--accent);font-weight:bold;font-family:var(--mono);">AI is custom-crafting your assessment...</span>
       </div>
     `;
 
@@ -172,9 +172,9 @@ export class QuizzesView {
       <div class="view-header" style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
         <div>
           <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">${escapeHtml(this.quiz.title || 'Dynamic Assessment')}</h2>
-          <p style="color:var(--text-dim);font-size:11px;">Select your answer and navigate using the controls below.</p>
+          <p style="color:var(--text-dim);font-size:14px;">Select your answer and navigate using the controls below.</p>
         </div>
-        <span style="font-family:var(--mono);font-size:10px;background:var(--border);padding:4px 8px;border-radius:4px;color:var(--accent);font-weight:bold;">
+        <span style="font-family:var(--mono);font-size:14px;background:var(--border);padding:4px 8px;border-radius:4px;color:var(--accent);font-weight:bold;">
           Question ${this.currentQuestionIdx + 1} of ${totalQ}
         </span>
       </div>
@@ -195,33 +195,33 @@ export class QuizzesView {
                       return `
                 <label style="border:1px solid ${isChecked ? 'var(--accent)' : 'var(--border)'};background:${isChecked ? 'rgba(0,200,255,0.05)' : 'var(--bg3)'};border-radius:var(--radius);padding:12px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color 0.2s, background 0.2s;">
                   <input type="radio" name="quiz-opt" value="${char}" ${isChecked ? 'checked' : ''} style="accent-color:var(--accent);" />
-                  <span style="font-family:var(--mono);font-size:11px;font-weight:bold;color:var(--accent);">${char}.</span>
-                  <span style="font-size:11px;color:var(--text);">${escapeHtml(opt)}</span>
+                  <span style="font-family:var(--mono);font-size:14px;font-weight:bold;color:var(--accent);">${char}.</span>
+                  <span style="font-size:14px;color:var(--text);">${escapeHtml(opt)}</span>
                 </label>
               `;
                     })
                     .join('')
                 : `
-              <input type="text" id="short-answer-input" value="${escapeHtml(selectedAns)}" placeholder="Type your answer here..." style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;" />
+              <input type="text" id="short-answer-input" value="${escapeHtml(selectedAns)}" placeholder="Type your answer here..." style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;" />
             `
             }
           </div>
         </sentio-card>
 
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <button id="prev-question-btn" ${this.currentQuestionIdx === 0 ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : ''} style="background:none;border:1px solid var(--border);color:var(--text);padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:11px;">
+          <button id="prev-question-btn" ${this.currentQuestionIdx === 0 ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : ''} style="background:none;border:1px solid var(--border);color:var(--text);padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;">
             ◀ Previous
           </button>
           
           ${
             this.currentQuestionIdx === totalQ - 1
               ? `
-            <button id="submit-quiz-btn" style="background:var(--green);color:var(--bg);border:none;padding:8px 20px;border-radius:var(--radius);font-weight:bold;cursor:pointer;font-family:var(--mono);font-size:11px;">
+            <button id="submit-quiz-btn" style="background:var(--green);color:var(--bg);border:none;padding:8px 20px;border-radius:var(--radius);font-weight:bold;cursor:pointer;font-family:var(--mono);font-size:14px;">
               Submit Quiz
             </button>
           `
               : `
-            <button id="next-question-btn" style="background:var(--accent);color:var(--bg);border:none;padding:8px 20px;border-radius:var(--radius);font-weight:bold;cursor:pointer;font-family:var(--mono);font-size:11px;">
+            <button id="next-question-btn" style="background:var(--accent);color:var(--bg);border:none;padding:8px 20px;border-radius:var(--radius);font-weight:bold;cursor:pointer;font-family:var(--mono);font-size:14px;">
               Next ▶
             </button>
           `
@@ -281,7 +281,7 @@ export class QuizzesView {
     this.container.innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60%;gap:12px;">
         <sentio-loader size="36px"></sentio-loader>
-        <span style="font-size:11px;color:var(--accent);font-weight:bold;font-family:var(--mono);">Grading responses and updating student memory...</span>
+        <span style="font-size:14px;color:var(--accent);font-weight:bold;font-family:var(--mono);">Grading responses and updating student memory...</span>
       </div>
     `;
 
@@ -312,7 +312,7 @@ export class QuizzesView {
     this.container.innerHTML = `
       <div class="view-header" style="margin-bottom:20px;">
         <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">Assessment Results</h2>
-        <p style="color:var(--text-dim);font-size:11px;">Review explanations and pedagogical feedback to improve retention.</p>
+        <p style="color:var(--text-dim);font-size:14px;">Review explanations and pedagogical feedback to improve retention.</p>
       </div>
 
       <div style="max-width:700px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:20px;">
@@ -321,13 +321,13 @@ export class QuizzesView {
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
             <div>
               <div style="font-size:32px;font-weight:bold;color:${passed ? 'var(--green)' : 'var(--red)'};">${scorePct}%</div>
-              <div style="font-size:10px;color:var(--text-dim);margin-top:4px;">Correct answers: <strong>${correctCount} of ${totalQ}</strong></div>
+              <div style="font-size:14px;color:var(--text-dim);margin-top:4px;">Correct answers: <strong>${correctCount} of ${totalQ}</strong></div>
             </div>
-            <span style="background:${passed ? 'rgba(78,205,196,0.1)' : 'rgba(255,80,96,0.1)'};color:${passed ? 'var(--green)' : 'var(--red)'};border:1px solid ${passed ? 'rgba(78,205,196,0.2)' : 'rgba(255,80,96,0.2)'};padding:6px 12px;border-radius:20px;font-size:11px;font-weight:bold;font-family:var(--mono);">
+            <span style="background:${passed ? 'rgba(78,205,196,0.1)' : 'rgba(255,80,96,0.1)'};color:${passed ? 'var(--green)' : 'var(--red)'};border:1px solid ${passed ? 'rgba(78,205,196,0.2)' : 'rgba(255,80,96,0.2)'};padding:6px 12px;border-radius:20px;font-size:14px;font-weight:bold;font-family:var(--mono);">
               ${passed ? 'PASSED' : 'RETRY ADVISED'}
             </span>
           </div>
-          <p style="font-size:11px;line-height:1.5;color:var(--text-dim);">${escapeHtml(this.results.summary)}</p>
+          <p style="font-size:14px;line-height:1.5;color:var(--text-dim);">${escapeHtml(this.results.summary)}</p>
         </sentio-card>
 
         <!-- Detailed Feedback -->
@@ -339,19 +339,19 @@ export class QuizzesView {
                 return `
                 <div style="border:1px solid var(--border);border-radius:var(--radius);padding:12px;background:var(--bg3);display:flex;flex-direction:column;gap:6px;">
                   <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <span style="font-weight:bold;font-size:11px;color:var(--text);">Question ${idx + 1}</span>
-                    <span style="color:${f.is_correct ? 'var(--green)' : 'var(--red)'};font-weight:bold;font-size:10px;">
+                    <span style="font-weight:bold;font-size:14px;color:var(--text);">Question ${idx + 1}</span>
+                    <span style="color:${f.is_correct ? 'var(--green)' : 'var(--red)'};font-weight:bold;font-size:14px;">
                       ${f.is_correct ? '✅ CORRECT' : '❌ INCORRECT'}
                     </span>
                   </div>
-                  <p style="font-size:11px;color:var(--text);line-height:1.4;margin:4px 0;">${escapeHtml(qOriginal.question_text)}</p>
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:10px;background:var(--bg2);padding:8px;border-radius:var(--radius);border:1px solid var(--border);">
+                  <p style="font-size:14px;color:var(--text);line-height:1.4;margin:4px 0;">${escapeHtml(qOriginal.question_text)}</p>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:14px;background:var(--bg2);padding:8px;border-radius:var(--radius);border:1px solid var(--border);">
                     <div>Your Answer: <strong style="color:${f.is_correct ? 'var(--green)' : 'var(--red)'};">${f.student_answer || 'N/A'}</strong></div>
                     <div>Correct Answer: <strong style="color:var(--green);">${escapeHtml(f.correct_answer)}</strong></div>
                   </div>
                   <details style="margin-top:6px;">
-                    <summary style="font-size:10px;color:var(--accent);cursor:pointer;outline:none;">Explanation</summary>
-                    <p style="font-size:10px;color:var(--text-dim);line-height:1.4;margin-top:6px;">${escapeHtml(f.explanation)}</p>
+                    <summary style="font-size:14px;color:var(--accent);cursor:pointer;outline:none;">Explanation</summary>
+                    <p style="font-size:14px;color:var(--text-dim);line-height:1.4;margin-top:6px;">${escapeHtml(f.explanation)}</p>
                   </details>
                 </div>
               `;
@@ -360,7 +360,7 @@ export class QuizzesView {
           </div>
         </sentio-card>
 
-        <button id="close-quiz-btn" style="background:var(--accent);color:var(--bg);border:none;padding:12px;border-radius:var(--radius);font-weight:bold;cursor:pointer;font-family:var(--mono);font-size:11px;">
+        <button id="close-quiz-btn" style="background:var(--accent);color:var(--bg);border:none;padding:12px;border-radius:var(--radius);font-weight:bold;cursor:pointer;font-family:var(--mono);font-size:14px;">
           Return to Learning Center
         </button>
       </div>

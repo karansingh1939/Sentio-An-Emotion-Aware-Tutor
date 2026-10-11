@@ -12,6 +12,7 @@ import { AnalyticsView } from './views/analytics.js';
 import { HistoryView } from './views/history.js';
 import { TutorView } from './views/tutor.js';
 import { AuthView } from './views/auth.js';
+import { initWorkspace } from './core/workspace.js';
 
 // Setup view controllers mapping
 const viewControllers = {
@@ -28,6 +29,7 @@ const viewControllers = {
 
 // Global App Initialization
 function initApp() {
+  initWorkspace();
   console.log('Initializing Sentio Web HUD App Shell...');
   window.store = store;
   window.tutorView = viewControllers['tutor'];

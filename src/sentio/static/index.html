@@ -3,28 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Emotion-Aware AI Tutor</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap"
-      rel="stylesheet"
-    />
+    <title>Sentio · Your study workspace</title>
     <link rel="stylesheet" href="static/css/styles.css" />
-    <script type="module">
-      import {
-        FilesetResolver,
-        FaceLandmarker,
-      } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/+esm';
-      window.FilesetResolver = FilesetResolver;
-      window.FaceLandmarker = FaceLandmarker;
-      if (typeof window.initMediaPipe === 'function' && !window.faceLandmarker) {
-        window.initMediaPipe();
-      }
-    </script>
+    <link rel="stylesheet" href="static/css/workspace.css" />
     <script type="module" src="static/js/app.js"></script>
     <script src="static/js/core/tutor_runtime.js" defer></script>
   </head>
 
   <body>
+    <a class="skip-link" href="#main-content">Skip to workspace</a>
     <div
       id="view-auth"
       style="
@@ -46,28 +33,31 @@
       <div id="sidebar">
         <div class="sidebar-brand">
           <div class="logo">
-            <div class="logo-icon">🧠</div>
-            Sentio HUD
+            <div class="logo-icon" aria-hidden="true">S</div>
+            Sentio
           </div>
         </div>
         <div class="nav-links">
-          <a href="#/dashboard" class="nav-link active">📊 Dashboard</a>
-          <a href="#/tutor" class="nav-link">🎓 Tutor Chat</a>
-          <a href="#/documents" class="nav-link">📁 Documents</a>
-          <a href="#/quizzes" class="nav-link">📝 Quizzes</a>
-          <a href="#/flashcards" class="nav-link">🗂️ Flashcards</a>
-          <a href="#/whiteboard" class="nav-link">🎨 Whiteboard</a>
-          <a href="#/analytics" class="nav-link">📈 Analytics</a>
-          <a href="#/history" class="nav-link">📜 History</a>
-          <a href="#/settings" class="nav-link">⚙️ Settings</a>
+          <a href="#/dashboard" class="nav-link active">Today</a>
+          <a href="#/documents" class="nav-link">Library</a>
+          <a href="#/tutor" class="nav-link">Study</a>
+          <a href="#/quizzes" class="nav-link">Review</a>
+          <a href="#/analytics" class="nav-link">Progress</a>
+        </div>
+        <div class="sidebar-footer">
+          <a href="#/history" class="nav-link">Study history</a>
+          <a href="#/settings" class="nav-link">Settings</a>
+          <button id="theme-toggle" type="button" aria-label="Switch colour theme">
+            Dark theme
+          </button>
+          <p class="local-note">Your notes. Your machine.</p>
         </div>
       </div>
 
       <!-- HEADER (Top Nav) -->
       <header>
         <div class="logo">
-          <div class="logo-icon">🧠</div>
-          Emotion-Aware AI Tutor
+          <span id="workspace-title">Your study workspace</span>
         </div>
         <div style="display: flex; align-items: center; gap: 16px">
           <div class="header-status">
@@ -82,7 +72,7 @@
               align-items: center;
               gap: 6px;
               color: var(--green);
-              font-size: 11px;
+              font-size: 14px;
               font-weight: bold;
             "
           >
@@ -105,7 +95,7 @@
               align-items: center;
               gap: 6px;
               color: var(--green);
-              font-size: 11px;
+              font-size: 14px;
               font-weight: bold;
             "
           >
@@ -126,7 +116,8 @@
       </header>
 
       <!-- MAIN CONTENT VIEWPORT -->
-      <div id="main-content">
+      <main id="main-content" tabindex="-1">
+        <nav id="workspace-tools" aria-label="Workspace tools"></nav>
         <!-- 1. Dashboard View -->
         <div id="view-dashboard" class="view-container"></div>
 
@@ -364,7 +355,7 @@
                     id="cam-toggle-btn"
                     class="strat-chip"
                     onclick="toggleWebcamDirect()"
-                    style="margin: 0; font-size: 10px; cursor: pointer"
+                    style="margin: 0; font-size: 14px; cursor: pointer"
                     disabled
                   >
                     CAM ON
@@ -388,7 +379,7 @@
                     class="btn"
                     onclick="disableCamera()"
                     style="
-                      font-size: 10px;
+                      font-size: 14px;
                       padding: 6px;
                       margin: 0;
                       background: transparent;
@@ -404,7 +395,7 @@
                     class="btn"
                     onclick="disableMicrophone()"
                     style="
-                      font-size: 10px;
+                      font-size: 14px;
                       padding: 6px;
                       margin: 0;
                       background: transparent;
@@ -420,7 +411,7 @@
                     class="btn btn-danger"
                     onclick="disableAllTracking()"
                     style="
-                      font-size: 10px;
+                      font-size: 14px;
                       padding: 6px;
                       margin: 0;
                       background: var(--red);
@@ -534,7 +525,7 @@
                 <div id="topics-list">
                   <div class="panel-label">Topics Covered</div>
                   <div id="topics-chips">
-                    <span style="font-size: 10px; color: var(--text-muted)">None yet</span>
+                    <span style="font-size: 14px; color: var(--text-muted)">None yet</span>
                   </div>
                 </div>
                 <div id="session-log" style="margin-top: 12px">
@@ -585,7 +576,7 @@
                       border: none;
                       color: var(--accent);
                       cursor: pointer;
-                      font-size: 11px;
+                      font-size: 14px;
                       font-weight: bold;
                     "
                   >
@@ -622,7 +613,7 @@
 
         <!-- 9. Settings View -->
         <div id="view-settings" class="view-container"></div>
-      </div>
+      </main>
     </div>
 
     <!-- Global Loading Indicator -->
@@ -683,7 +674,7 @@
             Enable Emotion & Attention Tracking
           </h3>
         </div>
-        <p style="font-size: 12px; color: var(--text-dim); line-height: 1.6">
+        <p style="font-size: 14px; color: var(--text-dim); line-height: 1.6">
           Sentio analyzes facial expressions and gaze orientation in real time to adapt tutoring
           difficulty. All video processing happens locally in your browser and on your private
           server. No video is recorded or stored.

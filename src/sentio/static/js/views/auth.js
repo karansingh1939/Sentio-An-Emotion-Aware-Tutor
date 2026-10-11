@@ -52,46 +52,46 @@ export class AuthView {
           <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-top:10px;">
             ${this.isRegisterMode ? 'Create Student Account' : 'Welcome to Sentio'}
           </h2>
-          <p style="color:var(--text-dim);font-size:11px;margin-top:6px;">
-            ${this.isRegisterMode ? 'Register to start your emotion-aware tutoring journey' : 'Login using your student credentials'}
+          <p style="color:var(--text-dim);font-size:14px;margin-top:6px;">
+            ${this.isRegisterMode ? 'Keep your notes, practice and progress together' : 'Sign in to your local study workspace'}
           </p>
         </div>
 
         <div style="display:flex;flex-direction:column;gap:12px;margin-top:10px;">
           <div>
-            <label style="display:block;font-size:10px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Email Address</label>
-            <input type="email" id="auth-email" placeholder="student@sentio.edu" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;" />
+            <label for="auth-email" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Email Address</label>
+<input type="email" id="auth-email" placeholder="student@sentio.edu" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;" />
           </div>
 
           <div>
-            <label style="display:block;font-size:10px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Password</label>
-            <input type="password" id="auth-password" placeholder="••••••••" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;" />
+            <label for="auth-password" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Password</label>
+<input type="password" id="auth-password" placeholder="••••••••" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;" />
           </div>
 
           ${
             this.isRegisterMode
               ? `
             <div>
-              <label style="display:block;font-size:10px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Confirm Password</label>
-              <input type="password" id="auth-confirm-password" placeholder="••••••••" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;" />
+              <label for="auth-confirm-password" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Confirm Password</label>
+<input type="password" id="auth-confirm-password" placeholder="••••••••" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;" />
             </div>
           `
               : ''
           }
 
-          <button id="auth-submit-btn" style="margin-top:10px;background:var(--accent);color:var(--bg);border:none;padding:12px;border-radius:var(--radius);font-family:var(--mono);font-weight:bold;cursor:pointer;font-size:11px;">
+          <button id="auth-submit-btn" style="margin-top:10px;background:var(--accent);color:var(--bg);border:none;padding:12px;border-radius:var(--radius);font-family:var(--mono);font-weight:bold;cursor:pointer;font-size:14px;">
             ${this.isRegisterMode ? 'Register Account' : 'Sign In'}
           </button>
         </div>
 
-        <div style="text-align:center;font-size:11px;color:var(--text-dim);margin-top:10px;">
+        <div style="text-align:center;font-size:14px;color:var(--text-dim);margin-top:10px;">
           ${
             this.isRegisterMode
               ? `
-            Already have an account? <span id="auth-toggle-btn" style="color:var(--accent);cursor:pointer;font-weight:bold;text-decoration:underline;">Sign In</span>
+            Already have an account? <button type="button" id="auth-toggle-btn" style="color:var(--accent);cursor:pointer;font-weight:bold;text-decoration:underline;">Sign In</button>
           `
               : `
-            New to Sentio? <span id="auth-toggle-btn" style="color:var(--accent);cursor:pointer;font-weight:bold;text-decoration:underline;">Create Account</span>
+            New to Sentio? <button type="button" id="auth-toggle-btn" style="color:var(--accent);cursor:pointer;font-weight:bold;text-decoration:underline;">Create Account</button>
           `
           }
         </div>

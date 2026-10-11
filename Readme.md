@@ -39,8 +39,6 @@ uv run sentio --port 8001
 Ollama and `phi3:mini` are already available on this machine. Initial server
 startup can take about a minute while the machine-learning libraries load.
 
-## Checks
-
 ## Local recovery and readiness
 
 `GET /api/v1/ready` reports storage, the exact configured Ollama model, retrieval,
@@ -59,6 +57,11 @@ uv run python scripts/backup_local.py restore "C:\ai project\backups\my-snapshot
 
 The active overhaul and measured checkpoints are recorded in [tasks/plan.md](tasks/plan.md)
 and [tasks/continuation.md](tasks/continuation.md).
+
+The study workspace groups tools into Today, Library, Study, Review and Progress.
+Use the sidebar to switch light/dark themes; the preference survives reload.
+Core pages use bundled assets and system fonts. Optional camera experiments
+still require their external MediaPipe resources and load only when enabled.
 
 ## Checks
 

@@ -23,8 +23,20 @@ one optional OCR skip; all five JavaScript checks passed.
 
 ## Next action
 
-Milestones 3–4: redesign shell/themes, introduce shared study context and honest
-dashboard states, then real browser checks at 390/768/desktop in both themes.
+Shell and shared-state slice implemented: five destinations, contextual tools,
+light/dark themes, legible controls, keyboard focus/labels, no core external asset
+requests, Today with explicit partial errors and assessment wording. Session
+creation now uses one path; resume verifies before replacing active context;
+requests respect external cancellation and concurrent loading state.
+
+Evidence: real Chromium offline checks pass for all nine existing screens at
+390/768/1440 widths in both themes; page errors and external requests absent.
+Screenshots inspected at tmp/workspace-preview (test-only accounts). Existing
+browser study/ownership regressions: 3 passed. JS checks and Ruff pass.
+
+Next: durable migration/job infrastructure, document previews/progress/recovery,
+then streaming with cancellation and persisted deduplication. Finish remaining
+source/session synchronization as the job and streaming clients migrate.
 
 Never publish, expose secrets, replace learner data, invent labels/results or mark
 unfinished milestones complete. Record actual verification here.

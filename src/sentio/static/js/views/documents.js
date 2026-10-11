@@ -42,7 +42,7 @@ export class DocumentsView {
         <div style="padding:40px;text-align:center;">
           <div style="font-size:24px;margin-bottom:12px;">⚠️</div>
           <div style="color:var(--red);font-weight:bold;">Failed to load Document Library</div>
-          <div style="color:var(--text-dim);font-size:11px;margin-top:8px;">${escapeHtml(e.message)}</div>
+          <div style="color:var(--text-dim);font-size:14px;margin-top:8px;">${escapeHtml(e.message)}</div>
           <button id="retry-docs-btn" style="margin-top:16px;background:var(--accent);color:var(--bg);border:none;padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);">Retry</button>
         </div>
       `;
@@ -63,9 +63,9 @@ export class DocumentsView {
       <div class="view-header" style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
         <div>
           <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">Document Library</h2>
-          <p style="color:var(--text-dim);font-size:11px;">Upload textbooks, lecture slides, and notes for context-grounded AI tutoring.</p>
+          <p style="color:var(--text-dim);font-size:14px;">Upload textbooks, lecture slides, and notes for context-grounded AI tutoring.</p>
         </div>
-        <button ${store.getState('currentUser')?.role === 'admin' ? '' : 'hidden'} id="sync-library-btn" style="background:none;color:var(--accent);border:1px solid var(--accent);padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:bold;transition:background 0.2s;">
+        <button ${store.getState('currentUser')?.role === 'admin' ? '' : 'hidden'} id="sync-library-btn" style="background:none;color:var(--accent);border:1px solid var(--accent);padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;transition:background 0.2s;">
           🔄 Sync Disk Folder
         </button>
       </div>
@@ -75,7 +75,7 @@ export class DocumentsView {
         <div style="display:flex;flex-direction:column;gap:16px;">
           <sentio-card title="Registered Study Materials">
             <div style="display:flex;gap:10px;margin-bottom:16px;">
-              <input type="text" id="doc-search-input" value="${escapeHtml(this.filterQuery)}" placeholder="Search files by name or category..." style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;" />
+              <input type="text" id="doc-search-input" value="${escapeHtml(this.filterQuery)}" placeholder="Search files by name or category..." style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;" />
             </div>
 
             ${
@@ -85,7 +85,7 @@ export class DocumentsView {
             `
                 : `
               <div style="overflow-x:auto;">
-                <table style="width:100%;border-collapse:collapse;font-size:11px;text-align:left;">
+                <table style="width:100%;border-collapse:collapse;font-size:14px;text-align:left;">
                   <thead>
                     <tr style="border-bottom:1px solid var(--border);color:var(--text-dim);">
                       <th style="padding:10px;">Filename</th>
@@ -114,12 +114,12 @@ export class DocumentsView {
                           <td style="padding:10px;text-transform:capitalize;color:var(--text-dim);">${escapeHtml(d.category)}</td>
                           <td style="padding:10px;">${escapeHtml(d.extraction_method || 'text')}</td><td style="padding:10px;font-family:var(--mono);">${d.chunk_count || 0}</td>
                           <td style="padding:10px;">
-                            <span style="color:${statusColor};font-weight:bold;font-size:10px;">
+                            <span style="color:${statusColor};font-weight:bold;font-size:14px;">
                               ${statusIcon} ${escapeHtml(d.status ? d.status.toUpperCase() : 'PENDING')}
                             </span>
                           </td>
                           <td style="padding:10px;text-align:right;">
-                            <button class="delete-doc-btn" data-id="${escapeHtml(d.id)}" style="background:none;border:none;color:var(--red);cursor:pointer;font-family:var(--mono);font-size:11px;">Delete</button>
+                            <button class="delete-doc-btn" data-id="${escapeHtml(d.id)}" style="background:none;border:none;color:var(--red);cursor:pointer;font-family:var(--mono);font-size:14px;">Delete</button>
                           </td>
                         </tr>
                       `;
@@ -138,14 +138,14 @@ export class DocumentsView {
           <sentio-card title="📤 Add Study Material">
             <div id="drop-zone" style="border:2px dashed var(--border);border-radius:var(--radius-lg);padding:24px 16px;text-align:center;background:var(--bg3);cursor:pointer;transition:border-color 0.2s, background 0.2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
               <span style="font-size:32px;">📄</span>
-              <span style="font-size:11px;font-weight:bold;color:var(--text);">Drag & Drop your file here</span>
-              <span style="font-size:10px;color:var(--text-dim);">or click to browse filesystem</span>
+              <span style="font-size:14px;font-weight:bold;color:var(--text);">Drag & Drop your file here</span>
+              <span style="font-size:14px;color:var(--text-dim);">or click to browse filesystem</span>
               <input type="file" id="file-uploader" style="display:none;" accept="${this.ocrReady ? '.pdf,.docx,.txt,.png,.jpg,.jpeg' : '.pdf,.docx,.txt'}" />
             </div>
 
-            <p style="font-size:11px;color:var(--text-dim);">20 MiB maximum. ${this.ocrReady ? 'English OCR enabled; up to 20 scanned pages.' : 'Scans and images require the optional OCR tools.'}</p><div style="margin-top:16px;">
-              <label style="display:block;font-size:10px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Subject Category</label>
-              <select id="upload-category" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;">
+            <p style="font-size:14px;color:var(--text-dim);">20 MiB maximum. ${this.ocrReady ? 'English OCR enabled; up to 20 scanned pages.' : 'Scans and images require the optional OCR tools.'}</p><div style="margin-top:16px;">
+              <label for="upload-category" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Subject Category</label>
+<select id="upload-category" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;">
                 <option value="uploaded">General Uploads</option>
                 <option value="textbooks">Textbooks</option>
                 <option value="notes">Lecture Notes</option>
@@ -157,7 +157,7 @@ export class DocumentsView {
             <div id="upload-progress-bar" style="display:none;margin-top:16px;background:var(--border);height:6px;border-radius:3px;overflow:hidden;position:relative;">
               <div id="upload-progress-fill" style="width:0%;background:var(--accent);height:100%;transition:width 0.2s;"></div>
             </div>
-            <div id="upload-progress-text" style="display:none;font-size:10px;color:var(--accent);text-align:center;margin-top:6px;font-weight:bold;">Uploading...</div>
+            <div id="upload-progress-text" style="display:none;font-size:14px;color:var(--accent);text-align:center;margin-top:6px;font-weight:bold;">Uploading...</div>
           </sentio-card>
         </div>
       </div>

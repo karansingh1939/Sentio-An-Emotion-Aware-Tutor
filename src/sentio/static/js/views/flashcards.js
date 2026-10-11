@@ -77,9 +77,9 @@ export class FlashcardsView {
       <div class="view-header" style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
         <div>
           <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">Flashcard Decks</h2>
-          <p style="color:var(--text-dim);font-size:11px;">Spaced Repetition reviews (SM-2) for formulas, definitions, and concepts.</p>
+          <p style="color:var(--text-dim);font-size:14px;">Spaced Repetition reviews (SM-2) for formulas, definitions, and concepts.</p>
         </div>
-        <button id="show-create-deck-modal" style="background:var(--accent);color:var(--bg);border:none;padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:bold;">
+        <button id="show-create-deck-modal" style="background:var(--accent);color:var(--bg);border:none;padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;">
           + Create Deck
         </button>
       </div>
@@ -100,13 +100,13 @@ export class FlashcardsView {
                     (d) => `
                   <div class="deck-item-card" data-id="${escapeHtml(d.deck_id)}" style="border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;background:var(--bg3);cursor:pointer;position:relative;transition:border-color 0.2s, box-shadow 0.2s;">
                     <h3 style="font-size:13px;font-weight:bold;margin-bottom:6px;text-transform:capitalize;color:var(--text);">${escapeHtml(d.deck_name)}</h3>
-                    <div style="font-size:10px;color:var(--text-dim);margin-bottom:12px;">Created: ${new Date(d.created_at * 1000).toLocaleDateString()}</div>
+                    <div style="font-size:14px;color:var(--text-dim);margin-bottom:12px;">Created: ${new Date(d.created_at * 1000).toLocaleDateString()}</div>
                     
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
-                      <span style="font-size:10px;font-weight:bold;font-family:var(--mono);color:${d.due_count > 0 ? 'var(--orange)' : 'var(--green)'};">
+                      <span style="font-size:14px;font-weight:bold;font-family:var(--mono);color:${d.due_count > 0 ? 'var(--orange)' : 'var(--green)'};">
                         ${d.due_count} Due Cards
                       </span>
-                      <button class="start-review-btn" data-id="${escapeHtml(d.deck_id)}" ${d.due_count === 0 ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : 'style="background:var(--accent);color:var(--bg);border:none;padding:4px 8px;border-radius:var(--radius);font-family:var(--mono);font-size:10px;font-weight:bold;cursor:pointer;"'}>
+                      <button class="start-review-btn" data-id="${escapeHtml(d.deck_id)}" ${d.due_count === 0 ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : 'style="background:var(--accent);color:var(--bg);border:none;padding:4px 8px;border-radius:var(--radius);font-family:var(--mono);font-size:14px;font-weight:bold;cursor:pointer;"'}>
                         Review
                       </button>
                     </div>
@@ -122,33 +122,33 @@ export class FlashcardsView {
 
         <!-- Right: AI Flashcard Generator Form -->
         <div>
-          <sentio-card title="⚡ AI Flashcard Ingestion">
-            <p style="font-size:10px;color:var(--text-dim);line-height:1.4;margin-bottom:12px;">Auto-generate Space Repetition cards from RAG summaries of curriculum concepts.</p>
+          <sentio-card title="⚡ Create practice cards">
+            <p style="font-size:14px;color:var(--text-dim);line-height:1.4;margin-bottom:12px;">Auto-generate Space Repetition cards from RAG summaries of curriculum concepts.</p>
             
             <div style="display:flex;flex-direction:column;gap:12px;">
               <div>
-                <label style="display:block;font-size:10px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Select Target Deck</label>
-                <select id="gen-deck-select" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;">
+                <label for="gen-deck-select" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Select Target Deck</label>
+<select id="gen-deck-select" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;">
                   ${this.decks.map((d) => `<option value="${escapeHtml(d.deck_id)}">${escapeHtml(d.deck_name)}</option>`).join('')}
                   ${this.decks.length === 0 ? `<option value="">No decks available</option>` : ''}
                 </select>
               </div>
 
               <div>
-                <label style="display:block;font-size:10px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Educational Concept (Topic ID)</label>
-                <input type="text" id="gen-topic-input" value="thermodynamics" placeholder="e.g. recursion" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;" />
+                <label for="gen-topic-input" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Study topic</label>
+<input type="text" id="gen-topic-input" value="${escapeHtml(store.getState('activeSession')?.topic || '')}" placeholder="e.g. recursion" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;" />
               </div>
 
               <div>
-                <label style="display:block;font-size:10px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Number of Cards</label>
-                <select id="gen-cards-num" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;">
+                <label for="gen-cards-num" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Number of Cards</label>
+<select id="gen-cards-num" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;">
                   <option value="5" selected>5 Cards</option>
                   <option value="8">8 Cards</option>
                   <option value="12">12 Cards</option>
                 </select>
               </div>
 
-              <button id="generate-flashcards-btn" style="background:var(--accent);color:var(--bg);border:none;padding:10px;border-radius:var(--radius);font-family:var(--mono);font-size:11px;font-weight:bold;cursor:pointer;transition:opacity 0.2s;">
+              <button id="generate-flashcards-btn" style="background:var(--accent);color:var(--bg);border:none;padding:10px;border-radius:var(--radius);font-family:var(--mono);font-size:14px;font-weight:bold;cursor:pointer;transition:opacity 0.2s;">
                 ⚡ Generate Cards
               </button>
             </div>
@@ -188,8 +188,8 @@ export class FlashcardsView {
     modal.innerHTML = `
       <div style="display:flex;flex-direction:column;gap:12px;">
         <div>
-          <label style="display:block;font-size:10px;color:var(--text-dim);margin-bottom:6px;">Deck Name</label>
-          <input type="text" id="create-deck-name" placeholder="e.g. Calculus Formulas" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;" />
+          <label for="create-deck-name" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;">Deck Name</label>
+<input type="text" id="create-deck-name" placeholder="e.g. Calculus Formulas" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;" />
         </div>
         <button id="create-deck-submit" style="margin-top:10px;background:var(--accent);color:var(--bg);border:none;padding:10px;border-radius:var(--radius);font-family:var(--mono);font-weight:bold;cursor:pointer;">Create</button>
       </div>
@@ -238,7 +238,7 @@ export class FlashcardsView {
     this.container.innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60%;gap:12px;">
         <sentio-loader size="36px"></sentio-loader>
-        <span style="font-size:11px;color:var(--accent);font-weight:bold;font-family:var(--mono);">Extracting concepts and generating spaced cards...</span>
+        <span style="font-size:14px;color:var(--accent);font-weight:bold;font-family:var(--mono);">Extracting concepts and generating spaced cards...</span>
       </div>
     `;
 
@@ -285,8 +285,8 @@ export class FlashcardsView {
         <div style="padding:40px;text-align:center;max-width:500px;margin:0 auto;display:flex;flex-direction:column;gap:16px;align-items:center;justify-content:center;height:60%;">
           <div style="font-size:42px;">🎉</div>
           <h3 style="font-weight:bold;color:var(--green);font-size:16px;">Deck Fully Reviewed!</h3>
-          <p style="color:var(--text-dim);font-size:11px;line-height:1.5;">You've completed all due cards in this deck. Come back later for scheduled repetitions.</p>
-          <button id="finish-review-btn" style="background:var(--accent);color:var(--bg);border:none;padding:10px 20px;border-radius:var(--radius);font-family:var(--mono);font-size:11px;font-weight:bold;cursor:pointer;">
+          <p style="color:var(--text-dim);font-size:14px;line-height:1.5;">You've completed all due cards in this deck. Come back later for scheduled repetitions.</p>
+          <button id="finish-review-btn" style="background:var(--accent);color:var(--bg);border:none;padding:10px 20px;border-radius:var(--radius);font-family:var(--mono);font-size:14px;font-weight:bold;cursor:pointer;">
             Close Reviews
           </button>
         </div>
@@ -305,9 +305,9 @@ export class FlashcardsView {
       <div class="view-header" style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
         <div>
           <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">Active Review Session</h2>
-          <p style="color:var(--text-dim);font-size:11px;">Click on the card to flip it, then rank your response quality.</p>
+          <p style="color:var(--text-dim);font-size:14px;">Click on the card to flip it, then rank your response quality.</p>
         </div>
-        <span style="font-family:var(--mono);font-size:10px;background:var(--border);padding:4px 8px;border-radius:4px;color:var(--accent);font-weight:bold;">
+        <span style="font-family:var(--mono);font-size:14px;background:var(--border);padding:4px 8px;border-radius:4px;color:var(--accent);font-weight:bold;">
           Card ${this.currentCardIdx + 1} of ${total}
         </span>
       </div>
@@ -318,16 +318,16 @@ export class FlashcardsView {
           <div class="flashcard-inner ${this.isFlipped ? 'flipped' : ''}">
             <!-- Front -->
             <div class="flashcard-front" style="border:1px solid var(--border);background:var(--bg2);box-shadow:0 6px 20px rgba(0,0,0,0.2);">
-              <span style="font-size:10px;color:var(--accent);font-family:var(--mono);margin-bottom:12px;font-weight:bold;">QUESTION / TERM</span>
+              <span style="font-size:14px;color:var(--accent);font-family:var(--mono);margin-bottom:12px;font-weight:bold;">QUESTION / TERM</span>
               <p style="font-size:14px;color:var(--text);text-align:center;line-height:1.5;font-weight:500;">
                 ${escapeHtml(card.front_text)}
               </p>
-              <span style="font-size:9px;color:var(--text-dim);margin-top:20px;">[ Click Card to Flip ]</span>
+              <span style="font-size:14px;color:var(--text-dim);margin-top:20px;">[ Click Card to Flip ]</span>
             </div>
             
             <!-- Back -->
             <div class="flashcard-back" style="border:1px solid var(--accent);box-shadow:0 6px 25px rgba(0,200,255,0.15);">
-              <span style="font-size:10px;color:var(--green);font-family:var(--mono);margin-bottom:12px;font-weight:bold;">EXPLANATION / ANSWER</span>
+              <span style="font-size:14px;color:var(--green);font-family:var(--mono);margin-bottom:12px;font-weight:bold;">EXPLANATION / ANSWER</span>
               <p style="font-size:13px;color:var(--text);text-align:center;line-height:1.5;">
                 ${escapeHtml(card.back_text)}
               </p>
@@ -340,7 +340,7 @@ export class FlashcardsView {
                 )
                   .map(
                     (t) => `
-                  <span style="background:var(--border);color:var(--text-dim);padding:2px 6px;border-radius:4px;font-size:9px;">#${escapeHtml(t)}</span>
+                  <span style="background:var(--border);color:var(--text-dim);padding:2px 6px;border-radius:4px;font-size:14px;">#${escapeHtml(t)}</span>
                 `,
                   )
                   .join('')}
@@ -351,24 +351,24 @@ export class FlashcardsView {
 
         <!-- Feedback / Rating Panel (Visible only when flipped) -->
         <div id="rating-controls-panel" style="display:${this.isFlipped ? 'flex' : 'none'};flex-direction:column;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;animation:fadeIn 0.3s;">
-          <label style="display:block;font-size:10px;color:var(--text-dim);text-align:center;font-weight:bold;">How well did you recall this concept?</label>
+          <label style="display:block;font-size:14px;color:var(--text-dim);text-align:center;font-weight:bold;">How well did you recall this concept?</label>
           
           <div style="display:grid;grid-template-columns:repeat(6, 1fr);gap:8px;">
-            <button class="rate-btn" data-score="0" style="background:#e63946;color:#fff;border:none;padding:8px 0;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:bold;" title="Forgot completely">0</button>
-            <button class="rate-btn" data-score="1" style="background:#f77f00;color:#fff;border:none;padding:8px 0;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:bold;" title="Incorrect, but recognized">1</button>
-            <button class="rate-btn" data-score="2" style="background:#fcbf49;color:#000;border:none;padding:8px 0;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:bold;" title="Incorrect, but easily recalled when shown">2</button>
-            <button class="rate-btn" data-score="3" style="background:#eae2b7;color:#000;border:none;padding:8px 0;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:bold;" title="Correct, but required effort">3</button>
-            <button class="rate-btn" data-score="4" style="background:#8ac926;color:#000;border:none;padding:8px 0;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:bold;" title="Correct after a brief hesitation">4</button>
-            <button class="rate-btn" data-score="5" style="background:#4ecdc4;color:#000;border:none;padding:8px 0;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:bold;" title="Perfect immediate recall">5</button>
+            <button class="rate-btn" data-score="0" style="background:#e63946;color:#fff;border:none;padding:8px 0;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;" title="Forgot completely">0</button>
+            <button class="rate-btn" data-score="1" style="background:#f77f00;color:#fff;border:none;padding:8px 0;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;" title="Incorrect, but recognized">1</button>
+            <button class="rate-btn" data-score="2" style="background:#fcbf49;color:#000;border:none;padding:8px 0;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;" title="Incorrect, but easily recalled when shown">2</button>
+            <button class="rate-btn" data-score="3" style="background:#eae2b7;color:#000;border:none;padding:8px 0;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;" title="Correct, but required effort">3</button>
+            <button class="rate-btn" data-score="4" style="background:#8ac926;color:#000;border:none;padding:8px 0;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;" title="Correct after a brief hesitation">4</button>
+            <button class="rate-btn" data-score="5" style="background:#4ecdc4;color:#000;border:none;padding:8px 0;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;" title="Perfect immediate recall">5</button>
           </div>
 
-          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-dim);margin-top:4px;padding:0 4px;">
+          <div style="display:flex;justify-content:space-between;font-size:14px;color:var(--text-dim);margin-top:4px;padding:0 4px;">
             <span>Blackout</span>
             <span>Perfect</span>
           </div>
         </div>
 
-        <button id="tutor-abort-review" style="background:none;border:1px solid var(--border);color:var(--red);padding:6px;border-radius:var(--radius);font-family:var(--mono);font-size:10px;cursor:pointer;margin-top:10px;">
+        <button id="tutor-abort-review" style="background:none;border:1px solid var(--border);color:var(--red);padding:6px;border-radius:var(--radius);font-family:var(--mono);font-size:14px;cursor:pointer;margin-top:10px;">
           Abort Session
         </button>
       </div>
