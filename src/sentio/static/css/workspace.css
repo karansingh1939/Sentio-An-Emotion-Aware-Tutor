@@ -462,3 +462,12 @@ th {
     transition-duration: 0.01ms !important;
   }
 }
+/* Native hidden controls must remain hidden despite shared button rules. */
+[hidden] {
+  display: none !important;
+}
+.study-job {
+  max-width: 35rem;
+  margin: 3rem auto;
+  text-align: center;
+}

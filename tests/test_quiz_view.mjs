@@ -28,6 +28,12 @@ const api = {
   },
 };
 const imports = {
+  '../core/jobs.js': {
+    runPracticeJob: async (path, body) => {
+      submission = { path, body };
+      return { questions: [] };
+    },
+  },
   '../core/html.js': { escapeHtml },
   '../core/api.js': { sentioAPI: api },
   '../core/store.js': {
@@ -58,10 +64,9 @@ assert.equal(fields['#generate-quiz-btn'].disabled, false);
 fields['#quiz-num-questions'] = { value: '3' };
 view.render = () => {};
 await view.generateQuiz();
-assert.equal(submission.path, '/quizzes/generate');
+assert.equal(submission.path, '/quizzes/jobs');
 assert.equal(submission.body.topic, session.topic);
 assert.equal(submission.body.session_id, 'session-a');
-assert.equal(submission.options.timeout, 370000);
 
 for (const options of [
   ['True', 'False'],

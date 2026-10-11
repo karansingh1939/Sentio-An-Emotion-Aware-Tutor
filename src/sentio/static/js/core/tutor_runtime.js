@@ -9,6 +9,7 @@ let durationTimer = null;
 let sessionStart = null;
 let exchangeCount = 0;
 let generationInProgress = false;
+let generationRequest = null;
 
 function getActiveSessionId() {
   if (window.store) return window.store.getState('activeSessionId');
@@ -134,26 +135,7 @@ async function startSession() {
     // Set up grounding change listener
     const groundingSelect = document.getElementById('f-grounding');
     if (groundingSelect) {
-      groundingSelect.onchange = async (e) => {
-        const sid = getActiveSessionId();
-        if (!sid) return;
-        const docId = e.target.value;
-        try {
-          const gRes = await fetch(`${API}/sessions/${sid}/grounding`, {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ document_id: docId }),
-          });
-          if (gRes.ok) {
-            toast('Grounding source updated mid-session!');
-          } else {
-            const err = await gRes.json();
-            toast('Failed to update grounding: ' + (err.detail || 'Error'), true);
-          }
-        } catch (err) {
-          toast('Failed to update grounding: ' + err.message, true);
-        }
-      };
+      groundingSelect.onchange = (event) => window.updateGrounding(event.target.value);
     }
 
     // UI
@@ -255,6 +237,14 @@ async function endSession() {
 }
 
 function cleanupSession() {
+  window.stopGeneration?.();
+  document
+    .getElementById('chat-messages')
+    ?.querySelectorAll('.msg')
+    .forEach((message) => message.remove());
+  const input = document.getElementById('msg-input');
+  if (input) input.value = '';
+  window.tutorView?.renderCitations([]);
   sessionId = null;
   window.sessionId = null;
   if (window.store && typeof window.store.setState === 'function') {
@@ -419,21 +409,55 @@ async function sendMessage() {
   appendMessage('student', msg);
   showTyping(true);
 
-  // Capture frame
-  let frameb64 = null;
+  const pendingKey = `sentio_turn:${currentSessionId}`;
+  let pending;
   try {
-    frameb64 = captureFrame();
-  } catch (e) {}
-
+    pending = JSON.parse(window.localStorage?.getItem(pendingKey) || 'null');
+  } catch (_) {}
+  const requestId =
+    pending?.message === msg
+      ? pending.request_id
+      : globalThis.crypto?.randomUUID?.() || `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  window.localStorage?.setItem(pendingKey, JSON.stringify({ request_id: requestId, message: msg }));
+  generationRequest = { controller, sessionId: currentSessionId, requestId, stopped: false };
+  const stopButton = document.getElementById('stop-generation-btn');
+  if (stopButton) stopButton.hidden = false;
+  let partial = null;
+  let data = null;
   try {
-    const res = await fetch(`${API}/sessions/${currentSessionId}/chat`, {
+    const res = await fetch(`${API}/sessions/${currentSessionId}/chat/stream`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ message: msg, frame_b64: frameb64 }),
+      body: JSON.stringify({ message: msg, request_id: requestId }),
       signal: controller.signal,
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || 'Tutor generation failed. Please retry.');
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.detail || 'Tutor generation failed. Please retry.');
+    }
+    await readTutorEvents(res, (kind, value) => {
+      if (getActiveSessionId() !== currentSessionId) return;
+      if (kind === 'delta') {
+        showTyping(false);
+        if (!partial) partial = appendMessage('tutor', '');
+        const bubble = partial.querySelector('.msg-bubble');
+        bubble.style.whiteSpace = 'pre-wrap';
+        bubble.textContent += value.text;
+        partial.querySelector('.msg-meta').textContent = 'Tutor · Draft answer';
+      } else if (kind === 'status') {
+        const progress = document.querySelector('#typing-indicator > span');
+        if (progress) progress.textContent = value.stage;
+      } else if (kind === 'complete') {
+        data = value;
+      } else if (kind === 'cancelled' || kind === 'error') {
+        throw new Error(value.detail);
+      }
+    });
+    if (!data)
+      throw new Error('The connection ended before the answer was saved. Retry this question.');
+    if (getActiveSessionId() !== currentSessionId) return;
+    partial?.remove();
+    window.localStorage?.removeItem(pendingKey);
     showTyping(false);
 
     if (data.text) {
@@ -459,18 +483,107 @@ async function sendMessage() {
       }
     }
   } catch (e) {
+    if (getActiveSessionId() !== currentSessionId) {
+      partial?.remove();
+      return;
+    }
     showTyping(false);
-    toast(e.name === 'AbortError' ? 'Generation timed out. Please retry.' : e.message, true);
+    if (partial) partial.querySelector('.msg-meta').textContent = 'Tutor · Incomplete answer';
+    input.value = msg;
+    toast(
+      e.name === 'AbortError'
+        ? generationRequest?.stopped
+          ? 'Answer stopped before completion.'
+          : 'Generation timed out. Retry this question.'
+        : e.message,
+      true,
+    );
     if (voiceModeActive) {
       restartVoiceCapture();
     }
   } finally {
     clearTimeout(generationTimer);
+    if (!data) window.cancelTutorRequest?.(currentSessionId, requestId);
+    generationRequest = null;
+    if (stopButton) stopButton.hidden = true;
     generationInProgress = false;
-    if (sendButton) sendButton.disabled = false;
+    if (sendButton && getActiveSessionId() === currentSessionId) sendButton.disabled = false;
   }
 }
 window.sendMessage = sendMessage;
+
+async function readTutorEvents(response, onEvent) {
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      buffer += done ? decoder.decode() : decoder.decode(value, { stream: true });
+      let end;
+      while ((end = buffer.indexOf('\n\n')) >= 0) {
+        const block = buffer.slice(0, end);
+        buffer = buffer.slice(end + 2);
+        const kind = block.match(/^event: (.+)$/m)?.[1];
+        const payload = block
+          .split('\n')
+          .filter((line) => line.startsWith('data: '))
+          .map((line) => line.slice(6))
+          .join('\n');
+        if (kind && payload) onEvent(kind, JSON.parse(payload));
+      }
+      if (done) break;
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+window.cancelTutorRequest = async (sid, requestId) => {
+  try {
+    const response = await fetch(`${API}/sessions/${sid}/chat/${requestId}/cancel`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+    return response.ok && (await response.json()).accepted;
+  } catch (_) {
+    return false;
+  }
+};
+window.stopGeneration = async () => {
+  const request = generationRequest;
+  if (!request) return;
+  const accepted = await window.cancelTutorRequest(request.sessionId, request.requestId);
+  if (accepted && generationRequest === request) {
+    request.stopped = true;
+    request.controller.abort();
+  }
+};
+window.updateGrounding = async (documentId) => {
+  await window.stopGeneration();
+  const sid = getActiveSessionId();
+  if (!sid) return;
+  try {
+    const response = await fetch(`${API}/sessions/${sid}/grounding`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ document_id: documentId }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.detail || 'Source update failed.');
+    if (getActiveSessionId() !== sid) return;
+    const context = window.store?.getState('activeSession') || {};
+    window.store?.setState('activeSession', {
+      ...context,
+      metadata: { ...context.metadata, document_id: documentId },
+    });
+    toast('Study source updated.');
+  } catch (error) {
+    document.getElementById('f-grounding').value =
+      window.store?.getState('activeSession')?.metadata?.document_id || 'none';
+    toast(error.message, true);
+  }
+};
 
 // ── RENDER MESSAGES ──────────────────────────
 function appendMessage(role, text) {
@@ -485,6 +598,7 @@ function appendMessage(role, text) {
     </div>`;
   container.insertBefore(div, document.getElementById('typing-indicator'));
   container.scrollTop = container.scrollHeight;
+  return div;
 }
 
 function appendTutorMessage(data) {

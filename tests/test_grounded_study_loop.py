@@ -70,7 +70,7 @@ def study(tmp_path, monkeypatch):
     )
     monkeypatch.setattr(api.agent, "sm", sm)
     monkeypatch.setattr(api.agent, "kb", kb)
-    monkeypatch.setattr(api.agent, "nlp", SimpleNamespace(_backend=backend))
+    monkeypatch.setattr(api.agent, "nlp", SimpleNamespace(_backend=backend, clear_history=Mock()))
     monkeypatch.setattr(api.agent, "_loaded", True)
     monkeypatch.setattr(
         DocumentIngestionPipeline,
@@ -161,6 +161,7 @@ def test_switching_document_changes_generation_context(study):
         json={"document_id": s.doc_b},
     )
     assert response.status_code == 200
+    study.client.app.state.agent.nlp.clear_history.assert_called_once_with(study.session_id)
     assert s.generate().status_code == 200
     prompt = s.backend.complete.call_args.kwargs["system_prompt"]
     assert OTHER in prompt

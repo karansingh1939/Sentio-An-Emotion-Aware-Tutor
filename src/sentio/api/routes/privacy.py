@@ -7,6 +7,7 @@ from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
+    Request,
 )
 
 from sentio.api.dependencies import PREFIX, _verify_student_owner, agent
@@ -113,11 +114,14 @@ def export_student_data(student_id: str, user: dict = Depends(get_current_user))
 
 
 @router.delete(PREFIX + "/student/{student_id}/data", tags=["Privacy"])
-def delete_student_data(student_id: str, user: dict = Depends(get_current_user)):
+def delete_student_data(student_id: str, request: Request, user: dict = Depends(get_current_user)):
     """
     Permanently delete all user profile and learning data records (GDPR compliance).
     """
     _verify_student_owner(student_id, user)
+    jobs = getattr(request.app.state, "jobs", None)
+    if jobs:
+        jobs.cancel_owner(student_id)
     try:
         import shutil
 

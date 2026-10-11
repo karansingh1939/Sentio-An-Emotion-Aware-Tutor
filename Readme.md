@@ -209,6 +209,10 @@ The source checkout retains the original history and its previous/upstream remot
 
 ## Follow-up evaluations
 
+The current overhaul adds durable practice jobs, cancellable tutor streaming and
+saved-turn recovery. See [study runtime and interfaces](docs/STUDY_RUNTIME.md) and
+the [continuation ledger](tasks/continuation.md) for verified work and remaining gates.
+
 Repeated grading comparisons and labelled synthetic OCR measurements are
 documented in [docs/FOLLOWUP_EVALUATIONS.md](docs/FOLLOWUP_EVALUATIONS.md).
 These experiments keep exact-answer checks separate from semantic inference and

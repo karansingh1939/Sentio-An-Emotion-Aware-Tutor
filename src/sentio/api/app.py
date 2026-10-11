@@ -20,10 +20,12 @@ from sentio.api.routes import (
     documents,
     flashcards,
     intelligence,
+    jobs,
     memory,
     privacy,
     quizzes,
     sessions,
+    streaming,
     system,
     telemetry,
     tutoring,
@@ -46,12 +48,21 @@ async def lifespan(app):
 
     validate_security_config()
     agent.load()
+    from sentio.jobs.service import JobManager
+
+    app.state.jobs = JobManager(agent.sm.persister._engine)
+    from sentio.tutor.stream_service import StreamService
+
+    app.state.streams = StreamService(agent, app.state.jobs)
     report = system_health_check()
     print_health_report(report)
     logger.info("API ready on %s:%d", api_cfg.HOST, api_cfg.PORT)
-    yield
-    logger.info("Shutting down...")
-    agent.shutdown()
+    try:
+        yield
+    finally:
+        logger.info("Shutting down...")
+        app.state.jobs.close()
+        agent.shutdown()
 
 
 app = FastAPI(title="Sentio", version="2.0.0-rc1", lifespan=lifespan)
@@ -94,3 +105,5 @@ app.include_router(intelligence.router)
 app.include_router(analytics.router)
 app.include_router(documents.router)
 app.include_router(memory.router)
+app.include_router(jobs.router)
+app.include_router(streaming.router)

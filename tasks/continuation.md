@@ -40,3 +40,32 @@ source/session synchronization as the job and streaming clients migrate.
 
 Never publish, expose secrets, replace learner data, invent labels/results or mark
 unfinished milestones complete. Record actual verification here.
+
+## Durable jobs and tutoring checkpoint
+
+Versioned migrations add jobs, request IDs and recovery-operation inventory.
+Practice jobs capture session/source context; one worker per lane and eight-item
+queue. Owner-scoped status/Stop, terminal-state race protection, retention,
+interrupted-job recovery and publication barriers are implemented. Privacy export
+and deletion include the new records and cancel pending owned work.
+
+Tutor POST event streams publish only the JSON text field. Local inference is
+serialized; Stop closes upstream; disconnect cancels unpublished work. Strict final
+schema validation precedes the transaction that stores the response and exchange
+count. Repeated completed IDs replay without double counting. Saved turns restore
+the transcript and conversation context. Source updates cancel stale turns; latest
+resume revision prevents duplicate transcript rendering. Logout clears chat UI.
+
+Evidence: full Python/browser regression 176 passed, 1 optional OCR skipped,
+31 subtests passed. Six JavaScript checks, Ruff, Prettier and locked dependency
+checks pass. Real browser observes a draft, final answer, and one turn after
+refresh. Provider tests cover fragmented JSON escapes, invalid output, disconnect,
+upstream Stop and inference-slot release. Migration rollback and queued-turn
+cancellation are tested. Build performed for wheel/source distribution.
+
+Next exact task: prepare document text/embeddings without overwriting current
+records; publish files and SQL with a recovery journal; filter vector candidates
+against current SQL chunk IDs; add asynchronous ingestion, owner-scoped previews,
+progress/cancel/retry and interrupted replacement/deletion tests. Then finish
+planning/review services and the offline ML experiment track. No model-quality
+claims or trained-model adoption are justified yet.

@@ -14,12 +14,14 @@ from copy import deepcopy
 from typing import Any, Dict, Optional, Tuple
 
 from sentio.ai.prompts import grading_prompt
+from sentio.ai.streaming import output_schema
 from sentio.ai.structured_parser import (
     QuizPayloadSchema,
     QuizScoringSchema,
     ShortAnswerGrade,
     parse_structured_output,
 )
+from sentio.jobs.control import checkpoint, publish
 from sentio.persistence.quiz_repository import QuizRepository
 from sentio.shared.exceptions import LLMServiceUnavailableError
 
@@ -39,12 +41,13 @@ class QuizService:
         topic: str,
         difficulty: str,
         num_questions: int = 3,
+        study_session=None,
     ) -> Dict[str, Any]:
         """
         Generate a quiz matching the QuizPayloadSchema using RAG context and student memory.
         """
         logger.info(f"Generating quiz for student {student_id} on {topic} ({difficulty})")
-        session = self.agent.sm.get_or_raise(session_id)
+        session = study_session or self.agent.sm.get_or_raise(session_id)
         if session.student_id != student_id:
             raise PermissionError("Session does not belong to this student.")
         document_id = session.metadata.get("document_id")
@@ -55,6 +58,7 @@ class QuizService:
             if any(d not in owned for d in selected):
                 raise PermissionError("Access denied or document not found.")
 
+        checkpoint("retrieving sources")
         # 1. Retrieve RAG context
         retrieved = self.agent.kb.retrieve(
             subject=subject,
@@ -113,13 +117,14 @@ JSON Template:
 
         # 4. Helper function for LLM call with retry
         def llm_call(sys_p, hist, user_p):
-            return self.agent.nlp._backend.complete(
-                system_prompt=sys_p,
-                history=hist,
-                user_message=user_p,
-                max_tokens=1024,
-                temperature=0.7,
-            )
+            with output_schema(QuizPayloadSchema):
+                return self.agent.nlp._backend.complete(
+                    system_prompt=sys_p,
+                    history=hist,
+                    user_message=user_p,
+                    max_tokens=1024,
+                    temperature=0.7,
+                )
 
         original_args = {
             "system_prompt": system_prompt,
@@ -128,6 +133,7 @@ JSON Template:
         }
 
         # Call LLM
+        checkpoint("generating quiz")
         raw_text, tokens = llm_call(system_prompt, [], "Generate the quiz now.")
 
         # 5. Parse and validate
@@ -147,12 +153,14 @@ JSON Template:
 
         # 6. Generate quiz_id and save to database
         quiz_id = str(uuid.uuid4())
-        self.agent.sm.save_quiz(
-            quiz_id=quiz_id,
-            student_id=student_id,
-            session_id=session_id,
-            title=quiz_dict["title"],
-            questions=quiz_dict["questions"],
+        publish(
+            lambda: self.agent.sm.save_quiz(
+                quiz_id=quiz_id,
+                student_id=student_id,
+                session_id=session_id,
+                title=quiz_dict["title"],
+                questions=quiz_dict["questions"],
+            )
         )
 
         quiz_dict["quiz_id"] = quiz_id

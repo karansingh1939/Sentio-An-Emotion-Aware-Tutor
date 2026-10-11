@@ -9,7 +9,9 @@ import time
 import uuid
 from typing import Any, Dict, List, Optional
 
+from sentio.ai.streaming import output_schema
 from sentio.ai.structured_parser import FlashcardPayloadSchema, parse_structured_output
+from sentio.jobs.control import checkpoint, publish
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +38,7 @@ class FlashcardService:
         topic_id: str,
         num_cards: int = 5,
         session_id: Optional[str] = None,
+        study_session=None,
     ) -> Dict[str, Any]:
         """
         Generate flashcards from retrieved RAG context/curriculum.
@@ -44,7 +47,7 @@ class FlashcardService:
             f"Generating {num_cards} flashcards on topic {topic_id} for student {student_id}"
         )
 
-        session = (
+        session = study_session or (
             self.agent.sm.get_or_raise(session_id)
             if session_id
             else next(
@@ -59,6 +62,7 @@ class FlashcardService:
         if session and session.student_id != student_id:
             raise PermissionError("Session does not belong to this student.")
         document_id = session.metadata.get("document_id") if session else None
+        checkpoint("retrieving sources")
         # 1. Retrieve curriculum/RAG content
         retrieved = self.agent.kb.retrieve(
             subject=session.subject if session else "computer_science",
@@ -101,13 +105,14 @@ JSON Template:
 }}"""
 
         def llm_call(sys_p, hist, user_p):
-            return self.agent.nlp._backend.complete(
-                system_prompt=sys_p,
-                history=hist,
-                user_message=user_p,
-                max_tokens=1024,
-                temperature=0.6,
-            )
+            with output_schema(FlashcardPayloadSchema):
+                return self.agent.nlp._backend.complete(
+                    system_prompt=sys_p,
+                    history=hist,
+                    user_message=user_p,
+                    max_tokens=1024,
+                    temperature=0.6,
+                )
 
         original_args = {
             "system_prompt": system_prompt,
@@ -115,6 +120,7 @@ JSON Template:
             "user_message": "Generate flashcards now.",
         }
 
+        checkpoint("generating flashcards")
         raw_text, _ = llm_call(system_prompt, [], "Generate flashcards now.")
 
         # 3. Parse and validate
@@ -132,8 +138,13 @@ JSON Template:
         )
 
         # 4. Save cards to database
-        self.agent.sm.save_flashcards(
-            cards=flashcard_dict["cards"], student_id=student_id, topic_id=topic_id, deck_id=deck_id
+        publish(
+            lambda: self.agent.sm.save_flashcards(
+                cards=flashcard_dict["cards"],
+                student_id=student_id,
+                topic_id=topic_id,
+                deck_id=deck_id,
+            )
         )
 
         return flashcard_dict

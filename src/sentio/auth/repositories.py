@@ -83,6 +83,9 @@ class AuthRepository:
             "emotion_events": "session_id IN (SELECT session_id FROM sessions WHERE student_id = :sid)",
         }
         owned_tables = [
+            "jobs",
+            "chat_requests",
+            "recovery_operations",
             "refresh_tokens",
             "audit_logs",
             "consent_history",
@@ -106,6 +109,8 @@ class AuthRepository:
 
     def export_study_artifacts(self, student_id):
         inventory = {
+            "jobs": "student_id = :sid",
+            "chat_requests": "student_id = :sid",
             "documents": "student_id = :sid",
             "document_chunks": "document_id IN (SELECT id FROM documents WHERE student_id = :sid)",
             "quizzes": "student_id = :sid",

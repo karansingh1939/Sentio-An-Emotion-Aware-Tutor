@@ -3,7 +3,7 @@
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from sentio.api.dependencies import PREFIX, _verify_session_owner, agent
 from sentio.api.schemas import CreateSessionRequest, GroundingRequest
@@ -94,7 +94,7 @@ def resume_session(session_id: str, user: dict = Depends(get_current_user)):
 
 @router.post(PREFIX + "/sessions/{session_id}/grounding", tags=["Sessions"])
 def set_session_grounding(
-    session_id: str, req: GroundingRequest, user: dict = Depends(get_current_user)
+    session_id: str, req: GroundingRequest, request: Request, user: dict = Depends(get_current_user)
 ):
     """Update active document grounding source mid-session."""
     session = _verify_session_owner(session_id, user)
@@ -102,12 +102,20 @@ def set_session_grounding(
         docs = agent.sm.list_documents(student_id=user["student_id"])
         if not any(d["id"] == req.document_id for d in docs):
             raise HTTPException(status_code=403, detail="Access denied or document not found.")
+    streams = getattr(request.app.state, "streams", None)
+    if streams:
+        streams.cancel_session(user["student_id"], session_id)
+    previous = session.metadata.get("document_id")
     session.metadata["document_id"] = req.document_id
     if agent.sm.persister._use_db:
         try:
             agent.sm.persister.save_session(session)
         except Exception as e:
+            session.metadata["document_id"] = previous
             logger.warning(f"Failed to persist updated session grounding state: {e}")
+            raise HTTPException(503, "Source change could not be saved. Retry.") from e
+    agent.nlp.clear_history(session_id)
+    agent.kb.reset_session(session_id)
     return {"success": True, "document_id": req.document_id}
 
 

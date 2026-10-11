@@ -6,7 +6,9 @@ from typing import Any, Dict, List, Optional, TypedDict
 import psutil
 from langgraph.graph import END, StateGraph
 
+from sentio.ai.streaming import TutorPayload, output_schema
 from sentio.config import tutor_cfg
+from sentio.jobs.control import checkpoint, current_control
 
 logger = logging.getLogger(__name__)
 
@@ -255,7 +257,7 @@ class SentioOrchestrator:
             directive = "INSTRUCTION (Student requested harder challenge):\n- Present a deeper, more advanced conceptual example.\n- Ask a thought-provoking challenge question."
             try:
                 session = self.tutor_agent.sm.get_session(session_id)
-                if session:
+                if session and not getattr(current_control(), "defer_turn", False):
                     session.metadata["strategy"] = new_strategy
                     session.metadata["learning_state"] = new_state
                     if session.difficulty != new_difficulty:
@@ -283,7 +285,7 @@ class SentioOrchestrator:
             directive = "INSTRUCTION (Student expressed confusion):\n- Reframe the concept using an entirely different, vivid real-world analogy.\n- Break down the mechanism step by step with clear intuition."
             try:
                 session = self.tutor_agent.sm.get_session(session_id)
-                if session:
+                if session and not getattr(current_control(), "defer_turn", False):
                     session.metadata["strategy"] = new_strategy
                     session.metadata["learning_state"] = new_state
             except Exception:
@@ -313,7 +315,7 @@ class SentioOrchestrator:
             directive = "INSTRUCTION (Student requested simpler explanation):\n- Strip away jargon and present an elementary, intuitive example.\n- Focus only on core fundamentals."
             try:
                 session = self.tutor_agent.sm.get_session(session_id)
-                if session:
+                if session and not getattr(current_control(), "defer_turn", False):
                     session.metadata["strategy"] = new_strategy
                     session.metadata["learning_state"] = new_state
                     if session.difficulty != new_difficulty:
@@ -337,6 +339,9 @@ class SentioOrchestrator:
         return new_strategy, new_difficulty, new_state, None
 
     def route_after_memory(self, state: OrchestratorState) -> str:
+        control = current_control()
+        if control and getattr(control, "defer_turn", False):
+            return "research"
         msg = state["user_message"].lower()
 
         # Scalable routing logic
@@ -423,12 +428,16 @@ class SentioOrchestrator:
             confidence=1.0,
         )
 
-        raw_text, tokens = self.tutor_agent.nlp._backend.complete(
-            system_prompt=system_prompt,
-            history=state["history"],
-            user_message=user_message,
-            max_tokens=1024,
-        )
+        checkpoint("generating tutor response")
+        with output_schema(TutorPayload):
+            raw_text, tokens = self.tutor_agent.nlp._backend.complete(
+                system_prompt=system_prompt,
+                history=state["history"],
+                user_message=user_message,
+                max_tokens=1024,
+            )
+        if current_control() and getattr(current_control(), "defer_turn", False):
+            TutorPayload.model_validate_json(raw_text)
 
         t1 = time.perf_counter()
         latency = (t1 - t0) * 1000

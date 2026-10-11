@@ -1,11 +1,17 @@
+import json
 import logging
+import time
 from abc import ABC, abstractmethod
+from threading import BoundedSemaphore
 from typing import Dict, Generator, List
 
+from sentio.ai.streaming import current_schema, visible_text
 from sentio.config import nlp_cfg
+from sentio.jobs.control import WorkCancelled, checkpoint, current_control
 from sentio.shared.exceptions import LLMServiceUnavailableError
 
 logger = logging.getLogger(__name__)
+_local_inference = BoundedSemaphore(1)
 
 
 class LLMBackend(ABC):
@@ -259,25 +265,81 @@ class OllamaBackend(LLMBackend):
         payload = {
             "model": self.cfg.OLLAMA_MODEL,
             "messages": messages,
-            "stream": False,
+            "stream": True,
             "keep_alive": "15m",
             "options": {
                 "temperature": temperature,
                 "num_predict": max_tokens,
             },
-            "format": "json",
+            "format": current_schema().model_json_schema() if current_schema() else "json",
         }
 
+        control = current_control()
+        acquired = False
+        response = None
         try:
+            waiting = time.monotonic()
+            checkpoint("waiting for local AI")
+            while not _local_inference.acquire(timeout=0.1):
+                checkpoint()
+                if time.monotonic() - waiting > 180:
+                    raise TimeoutError("Local AI is busy. Retry after current work finishes.")
+            acquired = True
+            checkpoint("generating answer")
             response = self._session.post(
                 f"{self.cfg.OLLAMA_BASE_URL}/api/chat",
                 json=payload,
                 timeout=180,
+                stream=True,
             )
+            if control:
+                with control.lock:
+                    control.response = response
+                    control.check()
             response.raise_for_status()
-            data = response.json()
-            text = data["message"]["content"]
-            tokens = data.get("eval_count", len(text.split()))
-            return text, tokens
+            raw = ""
+            emitted = ""
+            tokens = 0
+            complete = False
+            for line in response.iter_lines():
+                checkpoint()
+                if not line:
+                    continue
+                data = json.loads(line)
+                if data.get("error"):
+                    raise ValueError("Local model rejected the request")
+                raw += data.get("message", {}).get("content", "")
+                if len(raw) > 200000:
+                    raise ValueError("Local model output exceeded the response limit")
+                if control and control.emit and current_schema():
+                    text = visible_text(raw)
+                    if text.startswith(emitted) and len(text) > len(emitted):
+                        control.emit("delta", {"text": text[len(emitted) :]})
+                        emitted = text
+                if data.get("done"):
+                    tokens = data.get("eval_count", len(raw.split()))
+                    complete = True
+                    break
+            checkpoint()
+            if not complete:
+                raise ValueError("Local model disconnected before completing the answer")
+            if current_schema():
+                current_schema().model_validate_json(raw)
+            return raw, tokens
+        except WorkCancelled:
+            raise
         except Exception as e:
+            if control:
+                control.check()
             raise LLMServiceUnavailableError("ollama", str(e))
+        finally:
+            if response is not None:
+                try:
+                    response.close()
+                except Exception:
+                    logger.debug("Model response could not close", exc_info=True)
+            if control:
+                with control.lock:
+                    control.response = None
+            if acquired:
+                _local_inference.release()

@@ -9,6 +9,7 @@ export class TutorView {
     this.container = document.getElementById(containerId);
     this.sessionsList = [];
     this.currentCitations = [];
+    this.resumeRevision = 0;
   }
 
   init() {
@@ -23,6 +24,9 @@ export class TutorView {
         if (activeSid && window.sessionId !== activeSid) {
           this.resumeSession(activeSid);
         }
+      } else {
+        this.resumeRevision++;
+        window.stopGeneration?.();
       }
     });
   }
@@ -150,34 +154,33 @@ export class TutorView {
   }
 
   async resumeSession(sessionId) {
+    const revision = ++this.resumeRevision;
+    const owner = store.getState('currentUser')?.id;
+    const current = () =>
+      revision === this.resumeRevision &&
+      store.getState('currentUser')?.id === owner &&
+      store.getState('activeRoute') === '#/tutor';
+    await window.stopGeneration?.();
     try {
       toast('Resuming tutoring session...');
 
       // Update global states inside legacy context
       // Load session details to verify status
       const res = await sentioAPI.get(`/sessions/${sessionId}`);
+      if (!current()) return;
       store.setState('activeSession', res);
       window.setLegacySessionId(sessionId);
 
       // Load/refresh grounding options
       const docs = await this.loadGroundingDocuments();
+      if (!current()) return;
       const groundingSelect = document.getElementById('f-grounding');
       if (groundingSelect) {
         const docId = res.metadata?.document_id || 'none';
         groundingSelect.value = docId;
 
         // Also attach grounding change listener in resume session
-        groundingSelect.onchange = async (e) => {
-          const sid = store.getState('activeSessionId');
-          if (!sid) return;
-          const newDocId = e.target.value;
-          try {
-            await sentioAPI.post(`/sessions/${sid}/grounding`, { document_id: newDocId });
-            toast('Grounding source updated mid-session!');
-          } catch (err) {
-            toast('Failed to update grounding: ' + err.message, true);
-          }
-        };
+        groundingSelect.onchange = (event) => window.updateGrounding(event.target.value);
       }
 
       // Update UI elements for active session
@@ -226,6 +229,12 @@ export class TutorView {
       const chatMessages = document.getElementById('chat-messages');
       if (chatMessages) {
         chatMessages.querySelectorAll('.msg').forEach((m) => m.remove());
+        const saved = await sentioAPI.get(`/sessions/${sessionId}/turns`);
+        if (!current() || store.getState('activeSessionId') !== sessionId) return;
+        for (const turn of saved.turns) {
+          window.appendMessage?.('student', turn.message);
+          window.appendTutorMessage?.(turn.response);
+        }
       }
 
       // Synchronize live Learning State panel, duration timer, and exchange counter

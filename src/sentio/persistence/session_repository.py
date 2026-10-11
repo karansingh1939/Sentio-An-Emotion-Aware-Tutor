@@ -45,6 +45,9 @@ class SessionPersister:
                 **pool_options,
             )
             self._init_db()
+            from sentio.persistence.migrations import apply_migrations
+
+            apply_migrations(self._engine)
             self._use_db = True
 
             from sentio.auth.auth_service import AuthService

@@ -118,55 +118,6 @@ class SentioAPIClient {
   delete(endpoint, options = {}) {
     return this.request(endpoint, { ...options, method: 'DELETE' });
   }
-
-  // Fetch streaming responses (specifically for tutor chat responses)
-  async fetchStream(endpoint, body, onChunk, onDone, onError) {
-    const url = `${API_BASE}${endpoint}`;
-    const token = store.getState('authToken');
-    const headers = {
-      'Content-Type': 'application/json',
-    };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 200000);
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        let errMessage = `Error ${response.status}`;
-        try {
-          const errData = await response.json();
-          errMessage = errData.detail || errMessage;
-        } catch (_) {}
-        throw new Error(errMessage);
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        onChunk(chunk);
-      }
-      if (onDone) onDone();
-    } catch (error) {
-      if (onError) onError(error);
-      else console.error('Streaming response error:', error);
-    } finally {
-      clearTimeout(timer);
-    }
-  }
 }
 
 export const sentioAPI = new SentioAPIClient();

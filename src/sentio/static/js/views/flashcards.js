@@ -3,6 +3,7 @@ import { escapeHtml } from '../core/html.js';
 import { sentioAPI } from '../core/api.js';
 import { store } from '../core/store.js';
 import { toast } from '../components/ui.js';
+import { runPracticeJob } from '../core/jobs.js';
 
 export class FlashcardsView {
   constructor(containerId) {
@@ -40,10 +41,14 @@ export class FlashcardsView {
     `;
 
     try {
-      const [decksRes, dueRes] = await Promise.all([
+      const sessionId = store.getState('activeSessionId');
+      const [decksRes, dueRes, session] = await Promise.all([
         sentioAPI.get(`/flashcards/decks?student_id=${this.studentId}`),
         sentioAPI.get(`/flashcards/reviews/due?student_id=${this.studentId}`),
+        sessionId ? sentioAPI.get(`/sessions/${sessionId}`) : Promise.resolve(null),
       ]);
+      if (store.getState('activeRoute') !== '#/flashcards') return;
+      if (session) store.setState('activeSession', session);
 
       this.decks = decksRes.decks || [];
       // Combine due count stats
@@ -243,13 +248,18 @@ export class FlashcardsView {
     `;
 
     try {
-      await sentioAPI.post('/flashcards/generate', {
-        student_id: this.studentId,
-        deck_id: deckId,
-        topic_id: topic,
-        num_cards: numCards,
-        session_id: store.getState('activeSessionId') || null,
-      });
+      const result = await runPracticeJob(
+        '/flashcards/jobs',
+        {
+          student_id: this.studentId,
+          deck_id: deckId,
+          topic_id: topic,
+          num_cards: numCards,
+          session_id: store.getState('activeSessionId') || null,
+        },
+        this.container,
+      );
+      if (!result) return;
 
       toast('Flashcards generated and synced successfully!');
       this.resetState();

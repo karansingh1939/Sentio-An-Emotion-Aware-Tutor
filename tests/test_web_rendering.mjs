@@ -17,7 +17,12 @@ async function loadView(name) {
         { context },
       );
     }
-    const imports = { sentioAPI: {}, store: { getState: () => null }, toast: () => {} };
+    const imports = {
+      sentioAPI: {},
+      store: { getState: () => null },
+      toast: () => {},
+      runPracticeJob: () => {},
+    };
     return new vm.SyntheticModule(
       Object.keys(imports),
       function () {

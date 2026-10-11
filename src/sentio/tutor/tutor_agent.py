@@ -269,6 +269,7 @@ class TutorAgent:
         quiz_answer=None,
         quiz_correct=None,
         response_time_sec=0.0,
+        defer_turn=False,
     ):
         """
         Process one student turn and return an AgentResponse.
@@ -298,23 +299,24 @@ class TutorAgent:
         emotion_result = self._detect_emotion(frame, session_id=session_id)
 
         # ── Step 2: Record emotion + maybe adapt difficulty ──
-        self.sm.record_emotion(
-            session_id,
-            emotion_result,
-            strategy_active=session.current_strategy,
-        )
-
-        # ── Step 3: Record quiz result if provided ──
-        if quiz_correct is not None:
-            self.sm.record_quiz_attempt(
-                session_id=session_id,
-                correct=quiz_correct,
-                topic=session.topic,
-                response_time_sec=response_time_sec,
-                question_preview=student_message[:120],
+        if not defer_turn:
+            self.sm.record_emotion(
+                session_id,
+                emotion_result,
+                strategy_active=session.current_strategy,
             )
 
-        # ── Step 4: Get live state snapshot ────
+            # ── Step 3: Record quiz result if provided ──
+            if quiz_correct is not None:
+                self.sm.record_quiz_attempt(
+                    session_id=session_id,
+                    correct=quiz_correct,
+                    topic=session.topic,
+                    response_time_sec=response_time_sec,
+                    question_preview=student_message[:120],
+                )
+
+            # ── Step 4: Get live state snapshot ────
         state = self.sm.get_current_state(session_id)
         learning_state = state["learning_state"]
         strategy = state["strategy"]
@@ -365,15 +367,16 @@ class TutorAgent:
         except Exception as e:
             logger.debug(f"Flashcard suggestion hook failed: {e}")
 
-        nlp_history.add_user(student_message)
-        nlp_history.add_assistant(tutor_resp.text)
+        if not defer_turn:
+            nlp_history.add_user(student_message)
+            nlp_history.add_assistant(tutor_resp.text)
 
-        # ── Step 6: Record exchange metrics ─────
-        self.sm.record_exchange(
-            session_id=session_id,
-            tokens=tutor_resp.tokens_used,
-            latency_ms=tutor_resp.latency_ms,
-        )
+            # ── Step 6: Record exchange metrics ─────
+            self.sm.record_exchange(
+                session_id=session_id,
+                tokens=tutor_resp.tokens_used,
+                latency_ms=tutor_resp.latency_ms,
+            )
 
         # Save diagnostics logs to session manager
         diagnostics = {
@@ -392,7 +395,8 @@ class TutorAgent:
             if ret_content.rag_diagnostics:
                 diagnostics["rag_diagnostics"] = ret_content.rag_diagnostics
 
-        self.sm.record_diagnostics(session_id, diagnostics)
+        if not defer_turn:
+            self.sm.record_diagnostics(session_id, diagnostics)
 
         total_ms = (time.perf_counter() - wall_start) * 1000
 

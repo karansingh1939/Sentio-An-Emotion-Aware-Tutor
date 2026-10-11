@@ -3,6 +3,7 @@ import { escapeHtml } from '../core/html.js';
 import { sentioAPI } from '../core/api.js';
 import { store } from '../core/store.js';
 import { toast } from '../components/ui.js';
+import { runPracticeJob } from '../core/jobs.js';
 
 export class QuizzesView {
   constructor(containerId) {
@@ -106,6 +107,7 @@ export class QuizzesView {
         for (const field of ['subject', 'topic', 'difficulty']) {
           const input = this.container.querySelector(`#quiz-${field}`);
           if (input) input.value = session[field];
+          if (input) input.disabled = true;
         }
         button.disabled = false;
       } catch (e) {
@@ -139,8 +141,8 @@ export class QuizzesView {
     `;
 
     try {
-      const res = await sentioAPI.post(
-        '/quizzes/generate',
+      const res = await runPracticeJob(
+        '/quizzes/jobs',
         {
           student_id: this.studentId,
           session_id: activeSessionId,
@@ -149,8 +151,9 @@ export class QuizzesView {
           difficulty,
           num_questions: numQuestions,
         },
-        { timeout: 370000 },
-      ); // Allow the backend's 180s model call plus one parser retry.
+        this.container,
+      );
+      if (!res) return;
 
       this.quiz = res;
       this.currentQuestionIdx = 0;

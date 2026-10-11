@@ -42,6 +42,7 @@ class SessionManager:
         if session_id not in self._diagnostics:
             self._diagnostics[session_id] = []
         self._diagnostics[session_id].append(diagnostics)
+        self._diagnostics[session_id] = self._diagnostics[session_id][-200:]
 
     def get_diagnostics(self, session_id: str) -> List[dict]:
         return self._diagnostics.get(session_id, [])

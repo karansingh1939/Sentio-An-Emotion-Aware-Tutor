@@ -8,6 +8,7 @@ from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
+    Request,
     WebSocket,
     WebSocketDisconnect,
 )
@@ -66,12 +67,20 @@ def chat(session_id: str, req: ChatRequest, user: dict = Depends(get_current_use
 
 
 @router.post(PREFIX + "/sessions/{session_id}/topic", tags=["Tutoring"])
-def switch_topic(session_id: str, req: SwitchTopicRequest, user: dict = Depends(get_current_user)):
+def switch_topic(
+    session_id: str,
+    req: SwitchTopicRequest,
+    request: Request,
+    user: dict = Depends(get_current_user),
+):
     """
     Switch the active topic mid-session.
     Clears conversation history so the LLM starts fresh on the new topic.
     """
     _verify_session_owner(session_id, user)
+    streams = getattr(request.app.state, "streams", None)
+    if streams:
+        streams.cancel_session(user["student_id"], session_id)
     updated_state = agent.switch_topic(
         session_id=session_id,
         new_topic=req.topic,
