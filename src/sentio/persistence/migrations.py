@@ -25,6 +25,15 @@ MIGRATIONS = {
         "ALTER TABLE chat_requests ADD COLUMN message TEXT NOT NULL DEFAULT ''",
         "ALTER TABLE chat_requests ADD COLUMN context TEXT NOT NULL DEFAULT ''",
     ],
+    3: [
+        """CREATE TABLE study_preferences (
+            student_id TEXT PRIMARY KEY, daily_minutes INTEGER NOT NULL DEFAULT 30,
+            updated_at REAL NOT NULL)""",
+        """CREATE TABLE daily_plans (
+            student_id TEXT NOT NULL, day TEXT NOT NULL, budget_minutes INTEGER NOT NULL,
+            tasks_json TEXT NOT NULL, created_at REAL NOT NULL,
+            PRIMARY KEY(student_id, day))""",
+    ],
 }
 
 

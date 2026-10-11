@@ -5,19 +5,34 @@ import { escapeHtml } from '../core/html.js';
 export class HistoryView {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
+    this.revision = 0;
+    this.sessions = [];
   }
   init() {
     store.subscribe('activeRoute', (route) => {
       if (route === '#/history') this.load();
+      else this.revision++;
     });
     this.render([]);
   }
-  async load() {
-    this.container.innerHTML = '<p role="status">Loading study history?</p>';
+  async load(offset = 0) {
+    const owner = store.getState('currentUser')?.id;
+    const revision = ++this.revision;
+    if (!offset) this.container.innerHTML = '<p role="status">Loading study history…</p>';
+    const current = () =>
+      revision === this.revision &&
+      store.getState('currentUser')?.id === owner &&
+      store.getState('activeRoute') === '#/history';
     try {
-      const result = await sentioAPI.get('/sessions');
-      this.render(result.sessions || []);
+      const result = await sentioAPI.get(`/sessions?limit=20&offset=${offset}`);
+      if (!current()) return;
+      this.sessions = offset
+        ? [...this.sessions, ...(result.sessions || [])]
+        : result.sessions || [];
+      this.nextOffset = result.next_offset;
+      this.render(this.sessions);
     } catch (error) {
+      if (!current()) return;
       this.container.innerHTML = `<p role="alert">${escapeHtml(error.message)}</p><button id="retry-history">Try again</button>`;
       this.container.querySelector('#retry-history').onclick = () => this.load();
     }
@@ -32,6 +47,13 @@ export class HistoryView {
       <tbody>${sessions.map((s) => `<tr><td>${escapeHtml(s.topic || 'General')}</td><td>${escapeHtml(s.subject)}</td><td>${escapeHtml(s.status)}</td><td>${escapeHtml(new Date(s.created_at * 1000).toLocaleString())}</td><td>${escapeHtml(s.total_exchanges ?? s.exchanges?.length ?? 0)}</td></tr>`).join('')}</tbody></table></div>`
           : '<p role="status">Your sessions will appear here after you start studying.</p>'
       }
+      ${this.nextOffset != null ? '<button class="workspace-action" id="history-more">Load more sessions</button>' : ''}
     `;
+    const more = this.container.querySelector('#history-more');
+    if (more)
+      more.onclick = () => {
+        more.disabled = true;
+        this.load(this.nextOffset);
+      };
   }
 }

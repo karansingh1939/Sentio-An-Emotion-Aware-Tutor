@@ -38,10 +38,12 @@ class GroundingRequest(BaseModel):
 
 
 class CreateGoalRequest(BaseModel):
-    goal_text: str = Field(..., description="The description of the learning goal")
+    goal_text: str = Field(
+        ..., min_length=1, max_length=500, description="The description of the learning goal"
+    )
     topic_id: Optional[str] = Field(None, description="Optional target topic ID")
     target_date: Optional[float] = Field(
-        None, description="Optional target completion date timestamp"
+        None, ge=0, allow_inf_nan=False, description="Optional target completion date timestamp"
     )
 
 

@@ -38,6 +38,15 @@ and `next_offset`. Existing synchronous upload remains compatible.
 
 ## Turn sequence
 
+Planning endpoints under `/api/v1/study`: GET/PUT `preferences` (5–240 daily
+minutes), GET `daily-plan?day=YYYY-MM-DD`, PATCH `daily-plan/{day}/tasks/{id}`
+with `completed`, and GET `feedback`. Plans freeze the day's task list and budget;
+new preferences affect new plans. Completion is self-reported and does not itself
+increase mastery. PATCH `/students/{id}/goals/{goal_id}` updates text, target
+timestamp or active/completed/cancelled status. History accepts `limit` (1–100)
+and `offset`, returning `total` and `next_offset`. All records are owner scoped
+and included in privacy export/deletion and full SQLite backups.
+
 ```mermaid
 sequenceDiagram
   participant B as Browser

@@ -509,6 +509,29 @@ class SessionPersister:
             return self._list_from_db(student_id, limit)
         return self._list_from_json(student_id, limit)
 
+    def session_page(self, owner, active_only=False, limit=50, offset=0):
+        from sqlalchemy import text
+
+        condition = "student_id=:owner" + (" AND status='active'" if active_only else "")
+        with self._engine.connect() as connection:
+            total = connection.execute(
+                text(f"SELECT COUNT(*) FROM sessions WHERE {condition}"), {"owner": owner}
+            ).scalar()
+            rows = connection.execute(
+                text(
+                    f"SELECT data_json FROM sessions WHERE {condition} ORDER BY created_at DESC,session_id DESC LIMIT :limit OFFSET :offset"
+                ),
+                {"owner": owner, "limit": limit, "offset": offset},
+            ).scalars()
+            sessions = [json.loads(row) for row in rows]
+        return {
+            "sessions": sessions,
+            "count": len(sessions),
+            "total": total,
+            "offset": offset,
+            "next_offset": offset + len(sessions) if offset + len(sessions) < total else None,
+        }
+
     def _list_from_db(self, student_id: Optional[str], limit: int) -> List[dict]:
         from sqlalchemy import text
 

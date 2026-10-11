@@ -163,6 +163,24 @@ async def test_workspace_is_readable_offline_and_honest_about_failed_data():
                 "Progress",
             ]
             assert await page.locator("html").get_attribute("data-theme") == "light"
+            await page.wait_for_selector("#daily-budget")
+            await page.fill("#daily-budget", "45")
+            await page.click('#budget-form button[type="submit"]')
+            await page.wait_for_selector('#plan-status:has-text("Budget saved")')
+            await page.check(".plan-complete")
+            await page.wait_for_selector('#plan-status:has-text("Task completion saved")')
+            await page.fill("#goal-text", "Prepare for my mechanics exam")
+            await page.fill("#goal-date", "2026-12-01")
+            await page.click('#goal-form button[type="submit"]')
+            await page.wait_for_selector(".goal-done")
+            await page.reload()
+            await page.wait_for_selector("#daily-budget")
+            assert await page.locator("#daily-budget").input_value() == "45"
+            assert await page.locator(".plan-complete").is_checked()
+            assert (
+                "Prepare for my mechanics exam"
+                in await page.locator("#view-dashboard").inner_text()
+            )
             for theme in ("light", "dark"):
                 if theme == "dark":
                     await page.click("#theme-toggle")

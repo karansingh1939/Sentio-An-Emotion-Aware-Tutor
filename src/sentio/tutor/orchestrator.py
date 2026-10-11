@@ -57,8 +57,8 @@ class SentioOrchestrator:
         workflow.add_node("research", self.research_node)
         workflow.add_node("tutor", self.tutor_node)
         workflow.add_node("quiz", self.quiz_node)
-        workflow.add_node("planner", self.planner_stub_node)
-        workflow.add_node("feedback", self.feedback_stub_node)
+        workflow.add_node("planner", self.planner_node)
+        workflow.add_node("feedback", self.feedback_node)
 
         # Set entry point
         workflow.set_entry_point("memory_lookup")
@@ -340,8 +340,7 @@ class SentioOrchestrator:
 
     def route_after_memory(self, state: OrchestratorState) -> str:
         control = current_control()
-        if control and getattr(control, "defer_turn", False):
-            return "research"
+        deferred = control and getattr(control, "defer_turn", False)
         msg = state["user_message"].lower()
 
         # Scalable routing logic
@@ -361,13 +360,13 @@ class SentioOrchestrator:
         ):
             return "research"
         elif any(kw in msg for kw in ["quiz", "test", "question", "evaluate", "assess"]):
-            return "quiz"
+            return "research" if deferred else "quiz"
         elif any(kw in msg for kw in ["plan", "schedule", "goals", "roadmap"]):
             return "planner"
         elif any(kw in msg for kw in ["feedback", "review", "grade"]):
             return "feedback"
         else:
-            return "tutor"
+            return "research" if deferred else "tutor"
 
     def research_node(self, state: OrchestratorState) -> OrchestratorState:
         t0 = time.perf_counter()
@@ -520,45 +519,75 @@ class SentioOrchestrator:
             "retrieval_latency_ms": state.get("retrieval_latency_ms", 0.0) + latency,
         }
 
-    def planner_stub_node(self, state: OrchestratorState) -> OrchestratorState:
+    def planner_node(self, state: OrchestratorState) -> OrchestratorState:
+        from sentio.study.planning import PlanningService
+
         t0 = time.perf_counter()
-        logger.info("Planner stub node executed.")
-        time.sleep(0.005)
+        checkpoint("reading revision plan")
+        plan = PlanningService(self.tutor_agent.sm.persister._engine).daily_plan(
+            state["student_id"], persist=False
+        )
+        summary = "Saved study plan (task completion is self-reported):\n" + "\n".join(
+            f"- {task['title']} ({task['minutes']} min; {'completed' if task['completed_at'] else 'pending'})"
+            for task in plan["tasks"]
+        )
         t1 = time.perf_counter()
 
         timeline = list(state["agent_timeline"])
         timeline.append(
             {
-                "agent": "planner_stub",
+                "agent": "planner",
                 "start_time": t0,
                 "end_time": t1,
                 "latency_ms": (t1 - t0) * 1000,
             }
         )
         route = list(state["selected_route"])
-        route.append("planner_stub")
+        route.append("planner")
 
-        return {**state, "agent_timeline": timeline, "selected_route": route}
+        return {
+            **state,
+            "student_memory": (state["student_memory"] or "") + "\n" + summary,
+            "agent_timeline": timeline,
+            "selected_route": route,
+        }
 
-    def feedback_stub_node(self, state: OrchestratorState) -> OrchestratorState:
+    def feedback_node(self, state: OrchestratorState) -> OrchestratorState:
+        from sentio.study.planning import PlanningService
+
         t0 = time.perf_counter()
-        logger.info("Feedback stub node executed.")
-        time.sleep(0.005)
+        checkpoint("reading practice evidence")
+        feedback = PlanningService(self.tutor_agent.sm.persister._engine).feedback(
+            state["student_id"]
+        )
+        summary = (
+            feedback["summary"]
+            + "\nRecent mistakes:\n"
+            + "\n".join(
+                f"- {mistake['topic']}: {mistake['question_text']}"
+                for mistake in feedback["mistakes"]
+            )
+        )
         t1 = time.perf_counter()
 
         timeline = list(state["agent_timeline"])
         timeline.append(
             {
-                "agent": "feedback_stub",
+                "agent": "feedback",
                 "start_time": t0,
                 "end_time": t1,
                 "latency_ms": (t1 - t0) * 1000,
             }
         )
         route = list(state["selected_route"])
-        route.append("feedback_stub")
+        route.append("feedback")
 
-        return {**state, "agent_timeline": timeline, "selected_route": route}
+        return {
+            **state,
+            "student_memory": (state["student_memory"] or "") + "\n" + summary,
+            "agent_timeline": timeline,
+            "selected_route": route,
+        }
 
     # ── Execute ───────────────────────────────
 

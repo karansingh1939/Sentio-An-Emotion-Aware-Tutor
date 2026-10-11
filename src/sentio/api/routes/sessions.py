@@ -3,7 +3,7 @@
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from sentio.api.dependencies import PREFIX, _verify_session_owner, agent
 from sentio.api.schemas import CreateSessionRequest, GroundingRequest
@@ -123,9 +123,22 @@ def set_session_grounding(
 def list_sessions(
     student_id: Optional[str] = None,
     active_only: bool = False,
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     user: dict = Depends(get_current_user),
 ):
     """List all sessions, optionally filtered by student or active status."""
     student_id = user["student_id"]
+    if agent.sm.persister._use_db:
+        return agent.sm.persister.session_page(student_id, active_only, limit, offset)
     sessions = agent.list_sessions(student_id=student_id, active_only=active_only)
-    return {"sessions": sessions, "count": len(sessions)}
+    sessions.sort(key=lambda row: (row.get("created_at", 0), row["session_id"]), reverse=True)
+    total = len(sessions)
+    page = sessions[offset : offset + limit]
+    return {
+        "sessions": page,
+        "count": len(page),
+        "total": total,
+        "offset": offset,
+        "next_offset": offset + len(page) if offset + len(page) < total else None,
+    }

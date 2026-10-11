@@ -12,13 +12,19 @@ def test_failed_migration_rolls_back_ddl_and_version(tmp_path, monkeypatch):
 
     engine = create_engine(f"sqlite:///{tmp_path / 'schema.db'}")
     apply_migrations(engine)
+    original_versions = len(migrations.MIGRATIONS)
     monkeypatch.setitem(
-        migrations.MIGRATIONS, 3, ["CREATE TABLE transient (id TEXT)", "INVALID SQL"]
+        migrations.MIGRATIONS,
+        max(migrations.MIGRATIONS) + 1,
+        ["CREATE TABLE transient (id TEXT)", "INVALID SQL"],
     )
     with pytest.raises(Exception):
         apply_migrations(engine)
     with engine.connect() as connection:
-        assert connection.execute(text("SELECT COUNT(*) FROM schema_migrations")).scalar() == 2
+        assert (
+            connection.execute(text("SELECT COUNT(*) FROM schema_migrations")).scalar()
+            == original_versions
+        )
         assert not connection.execute(
             text("SELECT name FROM sqlite_master WHERE name='transient'")
         ).first()
@@ -152,11 +158,15 @@ def test_restart_marks_interrupted_jobs_failed_without_replaying_side_effects(tm
 
 
 def test_migrations_are_repeatable_and_versions_are_recorded(tmp_path):
+    from sentio.persistence.migrations import MIGRATIONS
+
     engine = create_engine(f"sqlite:///{tmp_path / 'schema.db'}")
     apply_migrations(engine)
     apply_migrations(engine)
     with engine.connect() as connection:
-        assert connection.execute(text("SELECT COUNT(*) FROM schema_migrations")).scalar() == 2
+        assert connection.execute(text("SELECT COUNT(*) FROM schema_migrations")).scalar() == len(
+            MIGRATIONS
+        )
         assert connection.execute(text("SELECT COUNT(*) FROM jobs")).scalar() == 0
     engine.dispose()
 

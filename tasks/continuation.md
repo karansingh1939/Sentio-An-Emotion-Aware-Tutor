@@ -98,3 +98,20 @@ Manual label review remains required before supervised results justify adoption.
 Library checkpoint verification: 186 Python/browser tests passed, 1 optional OCR
 test skipped, 31 subtests passed. All six JavaScript checks, Ruff, formatting,
 lockfile checks and wheel/source packaging passed.
+
+## Planning and history checkpoint
+
+Migration 3 persists daily budgets and deterministic daily-plan snapshots. Due
+cards precede weak areas and dated goals; at most six tasks fit a 5–240 minute
+budget. Completion is explicitly self-reported, idempotent and owner scoped.
+Existing snapshots preserve completed work when budget/preferences change.
+Goal text/date/status updates persist. Today exposes these controls; browser
+checks prove goals, budget and completion survive reload. Planner and feedback
+nodes now read saved plans/practice records instead of sleeping stubs, including
+attempt counts and an unassessed state. Planner previews do not publish side
+effects during a cancellable turn. History uses bounded SQL pages and late-response
+owner/route guards.
+
+Verification: 189 Python/browser tests and 31 subtests passed; 1 optional OCR skip.
+Six JS checks and Ruff passed. Next: saved quiz access, mistake review, flashcard
+editing and atomic/deduplicated review publication; then tools/hardening and ML.
