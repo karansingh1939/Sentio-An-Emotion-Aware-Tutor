@@ -180,9 +180,7 @@ class TestSentioRegression(unittest.TestCase):
                     },
                 )
                 self.assertEqual(resp.status_code, 429)
-                self.assertEqual(
-                    resp.json()["detail"], "Too many requests. Retry shortly."
-                )
+                self.assertEqual(resp.json()["detail"], "Too many requests. Retry shortly.")
 
     def test_qdrant_vector_db(self):
         """Verify Qdrant client connection, collection creation, indexing, and search."""

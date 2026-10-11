@@ -10,6 +10,7 @@ export async function runPracticeJob(endpoint, body, container, options = {}) {
   const owner = store.getState('currentUser')?.id;
   const session = store.getState('activeSessionId');
   const key = pendingJobKey(endpoint, options.sessionScoped !== false);
+  const submissionKey = key + ':submission';
   const route = store.getState('activeRoute');
   let jobId = localStorage.getItem(key);
   let detached = false;
@@ -22,7 +23,14 @@ export async function runPracticeJob(endpoint, body, container, options = {}) {
   const stop = container.querySelector('button');
   try {
     if (!jobId) {
-      const job = options.submit ? await options.submit() : await sentioAPI.post(endpoint, body);
+      let requestId = localStorage.getItem(submissionKey);
+      if (!requestId) {
+        requestId = crypto.randomUUID();
+        localStorage.setItem(submissionKey, requestId);
+      }
+      const job = options.submit
+        ? await options.submit(requestId)
+        : await sentioAPI.post(endpoint, body, { headers: { 'Idempotency-Key': requestId } });
       jobId = job.job_id;
       localStorage.setItem(key, jobId);
     }
@@ -48,11 +56,13 @@ export async function runPracticeJob(endpoint, body, container, options = {}) {
         (options.sessionScoped === false || store.getState('activeSessionId') === session);
       if (job.status === 'succeeded') {
         localStorage.removeItem(key);
+        localStorage.removeItem(submissionKey);
         return current ? job.result : null;
       }
       if (!current) return null;
       if (['failed', 'cancelled'].includes(job.status)) {
         localStorage.removeItem(key);
+        localStorage.removeItem(submissionKey);
         throw new Error(job.error || 'Practice stopped before saving. You can try again.');
       }
       status.textContent = job.stage;
@@ -61,7 +71,10 @@ export async function runPracticeJob(endpoint, body, container, options = {}) {
     // Background work survives navigation; reopening this tool reconnects.
     return null;
   } catch (error) {
-    if (error.status === 404) localStorage.removeItem(key);
+    if ([404, 409, 410].includes(error.status)) {
+      localStorage.removeItem(key);
+      localStorage.removeItem(submissionKey);
+    }
     throw error;
   } finally {
     unsubscribe();

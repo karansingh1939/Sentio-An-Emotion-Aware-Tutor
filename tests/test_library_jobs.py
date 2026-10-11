@@ -61,3 +61,30 @@ def test_empty_replacement_job_preserves_existing_note():
         assert finished(client, response.json())["status"] == "failed"
         assert agent.sm.list_documents(student_id=owner) == previous
         assert agent.sm.get_document_chunks(first["document_id"]) == chunks
+
+
+def test_retried_upload_submission_replays_owned_job_and_rejects_changed_file():
+    with TestClient(app) as client:
+        owner = login_student(client)
+        headers = {"Idempotency-Key": "upload-intent-one"}
+        files = {"file": ("retry-safe.txt", b"Inertia preserves uniform motion.", "text/plain")}
+        first = client.post("/api/v1/documents/jobs", headers=headers, files=files)
+        repeated = client.post("/api/v1/documents/jobs", headers=headers, files=files)
+        assert first.status_code == repeated.status_code == 202
+        assert first.json()["job_id"] == repeated.json()["job_id"]
+        assert finished(client, first.json())["status"] == "succeeded"
+        assert len(agent.sm.list_documents(student_id=owner)) == 1
+        assert (
+            client.post(
+                "/api/v1/documents/jobs",
+                headers=headers,
+                files={"file": ("retry-safe.txt", b"Different evidence.", "text/plain")},
+            ).status_code
+            == 409
+        )
+        assert (
+            client.post(
+                "/api/v1/documents/jobs", headers={"Idempotency-Key": "bad"}, files=files
+            ).status_code
+            == 422
+        )

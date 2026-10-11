@@ -47,6 +47,13 @@ content with the same ID returns 409. Legacy rating calls remain supported.
 Read requests have a separate rate budget from submissions/authentication, so
 polling and browsing do not exhaust the write budget. Both remain limited.
 
+Asynchronous upload/practice submissions accept `Idempotency-Key` (8–80 safe
+characters). The browser persists it before sending. An identical owner-scoped
+intent replays the same queued/running/completed job, even after restart; changed
+payload/context returns 409. Submission receipts remain when old job status is
+pruned, returning 410 instead of silently recreating work. Check saved artifacts
+before explicitly starting a new intent. Legacy callers can omit the key.
+
 Planning endpoints under `/api/v1/study`: GET/PUT `preferences` (5–240 daily
 minutes), GET `daily-plan?day=YYYY-MM-DD`, PATCH `daily-plan/{day}/tasks/{id}`
 with `completed`, and GET `feedback`. Plans freeze the day's task list and budget;

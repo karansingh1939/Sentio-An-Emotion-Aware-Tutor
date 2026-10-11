@@ -1,5 +1,8 @@
 """Owner-scoped durable work, additive to the synchronous practice API."""
 
+import hashlib
+import json
+import re
 from copy import deepcopy
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -12,6 +15,7 @@ from sentio.api.dependencies import (
 )
 from sentio.api.schemas import GenerateFlashcardsRequest, QuizGenerateRequest
 from sentio.auth.middleware import get_current_user
+from sentio.repositories.job_repository import JobConflict, JobExpired
 
 router = APIRouter()
 
@@ -23,9 +27,30 @@ def get_jobs(request: Request):
     return manager
 
 
-def submit(manager, owner, kind, work):
+def submission_id(request):
+    value = request.headers.get("Idempotency-Key")
+    if value is not None and not re.fullmatch(r"[a-zA-Z0-9_-]{8,80}", value):
+        raise HTTPException(
+            422, "Use a submission ID of 8–80 letters, numbers, underscores or hyphens."
+        )
+    return value
+
+
+def fingerprint(payload):
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+
+
+def submit(manager, owner, kind, work, request_id=None, content=None):
     try:
-        return manager.submit(owner, kind, work)
+        return manager.submit(
+            owner, kind, work, request_id=request_id, fingerprint=fingerprint(content)
+        )
+    except JobConflict as exc:
+        raise HTTPException(409, str(exc)) from exc
+    except JobExpired as exc:
+        raise HTTPException(410, str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(429, str(exc)) from exc
 
@@ -47,7 +72,12 @@ def cancel(job_id: str, jobs=Depends(get_jobs), user=Depends(get_current_user)):
 
 
 @router.post(PREFIX + "/quizzes/jobs", tags=["Jobs"], status_code=202)
-def quiz_job(req: QuizGenerateRequest, jobs=Depends(get_jobs), user=Depends(get_current_user)):
+def quiz_job(
+    req: QuizGenerateRequest,
+    request: Request,
+    jobs=Depends(get_jobs),
+    user=Depends(get_current_user),
+):
     session = deepcopy(_verify_session_owner(req.session_id, user))
     # Freeze context at submission; mutable frontend fields are not a second authority.
     return submit(
@@ -63,12 +93,25 @@ def quiz_job(req: QuizGenerateRequest, jobs=Depends(get_jobs), user=Depends(get_
             num_questions=req.num_questions,
             study_session=session,
         ),
+        request_id=submission_id(request),
+        content={
+            "request": req.model_dump(),
+            "context": [
+                session.subject,
+                session.topic,
+                session.difficulty,
+                session.metadata.get("document_id"),
+            ],
+        },
     )
 
 
 @router.post(PREFIX + "/flashcards/jobs", tags=["Jobs"], status_code=202)
 def card_job(
-    req: GenerateFlashcardsRequest, jobs=Depends(get_jobs), user=Depends(get_current_user)
+    req: GenerateFlashcardsRequest,
+    request: Request,
+    jobs=Depends(get_jobs),
+    user=Depends(get_current_user),
 ):
     if not req.session_id:
         raise HTTPException(422, "Choose an active study session before generating cards.")
@@ -89,4 +132,14 @@ def card_job(
             session_id=session.session_id,
             study_session=session,
         ),
+        request_id=submission_id(request),
+        content={
+            "request": req.model_dump(),
+            "context": [
+                session.subject,
+                session.topic,
+                session.difficulty,
+                session.metadata.get("document_id"),
+            ],
+        },
     )

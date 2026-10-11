@@ -235,6 +235,7 @@ export class DocumentsView {
     const dropZone = this.container.querySelector('#drop-zone');
     const uploader = this.container.querySelector('#file-uploader');
     const categorySelect = this.container.querySelector('#upload-category');
+    if (uploader) uploader.disabled = this.uploadInProgress;
 
     if (dropZone && uploader) {
       dropZone.onclick = () => {
@@ -327,13 +328,43 @@ export class DocumentsView {
   }
 
   async uploadFile(file, category) {
-    if (this.uploadInProgress) return;
+    if (this.uploadInProgress) {
+      if (file) {
+        this.queuedUpload = { file, category, owner: store.getState('currentUser')?.id };
+        toast('This file will upload after the current library task finishes.');
+      }
+      return;
+    }
     this.uploadInProgress = true;
     const owner = store.getState('currentUser')?.id;
     const revision = this.revision;
     const uploader = this.container.querySelector('#file-uploader');
+    let refreshed = false;
     if (uploader) uploader.disabled = true;
     try {
+      // A newly chosen file is a new intent. Finish reconnecting the previous
+      // receipt before sending it, rather than consuming this file as a retry.
+      const pendingKey = pendingJobKey('/documents/jobs', false);
+      if (file && localStorage.getItem(pendingKey)) {
+        try {
+          await runPracticeJob(
+            '/documents/jobs',
+            null,
+            this.container.querySelector('#library-job'),
+            { sessionScoped: false },
+          );
+        } catch (error) {
+          if (localStorage.getItem(pendingKey)) throw error;
+        }
+        if (owner !== store.getState('currentUser')?.id || localStorage.getItem(pendingKey)) return;
+      }
+      // Navigation can replace the progress panel while the prior receipt is read.
+      if (!this.container.querySelector('#library-job')) await this.loadDocuments();
+      if (
+        owner !== store.getState('currentUser')?.id ||
+        !this.container.querySelector('#library-job')
+      )
+        return;
       const form = new FormData();
       if (file) {
         form.append('file', file);
@@ -347,9 +378,13 @@ export class DocumentsView {
         this.container.querySelector('#library-job'),
         {
           sessionScoped: false,
-          submit: () => {
+          submit: (requestId) => {
             if (!file) throw new Error('Choose the file again to retry this upload.');
-            return sentioAPI.request('/documents/jobs', { method: 'POST', body: form });
+            return sentioAPI.request('/documents/jobs', {
+              method: 'POST',
+              body: form,
+              headers: { 'Idempotency-Key': requestId },
+            });
           },
         },
       );
@@ -365,6 +400,7 @@ export class DocumentsView {
               : 'Ready for study.'),
         );
         this.loadDocuments();
+        refreshed = true;
       }
     } catch (error) {
       if (owner === store.getState('currentUser')?.id && revision === this.revision) {
@@ -375,13 +411,30 @@ export class DocumentsView {
     } finally {
       this.uploadInProgress = false;
       if (uploader) uploader.disabled = false;
+      const currentUploader = this.container.querySelector('#file-uploader');
+      if (currentUploader && owner === store.getState('currentUser')?.id)
+        currentUploader.disabled = false;
       if (
+        !refreshed &&
         revision !== this.revision &&
         store.getState('activeRoute') === '#/documents' &&
-        owner === store.getState('currentUser')?.id &&
-        localStorage.getItem(pendingJobKey('/documents/jobs', false))
+        owner === store.getState('currentUser')?.id
       )
         this.loadDocuments();
+      const next = this.queuedUpload;
+      this.queuedUpload = null;
+      if (
+        next &&
+        next.owner === store.getState('currentUser')?.id &&
+        store.getState('activeRoute') === '#/documents'
+      ) {
+        await this.loadDocuments();
+        if (
+          next.owner === store.getState('currentUser')?.id &&
+          store.getState('activeRoute') === '#/documents'
+        )
+          this.uploadFile(next.file, next.category);
+      }
     }
   }
 }

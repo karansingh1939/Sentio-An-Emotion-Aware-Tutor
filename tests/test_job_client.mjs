@@ -17,6 +17,7 @@ const state = {
   activeRoute: '#/quizzes',
 };
 const context = vm.createContext({
+  crypto: { randomUUID: () => 'request-unique-001' },
   localStorage: {
     getItem: (key) => saved.get(key),
     setItem: (key, value) => saved.set(key, value),
@@ -69,3 +70,15 @@ result = { status: 'cancelled' };
 await assert.rejects(run('/quizzes/jobs', {}, container), /stopped before saving/);
 assert.equal(saved.size, 0);
 console.log('Practice jobs reconnect after refresh and report cancellation without completion.');
+
+const receivedKeys = [];
+imports['./api.js'].sentioAPI.post = async (endpoint, body, options) => {
+  receivedKeys.push(options.headers['Idempotency-Key']);
+  if (receivedKeys.length === 1) throw new Error('Network response lost');
+  return { job_id: 'recovered-submission' };
+};
+result = { status: 'succeeded', result: { quiz_id: 'recovered' } };
+await assert.rejects(run('/quizzes/jobs', {}, container), /response lost/);
+assert.equal((await run('/quizzes/jobs', {}, container)).quiz_id, 'recovered');
+assert.equal(receivedKeys[0], receivedKeys[1], 'Unknown POST outcome must reuse the submission ID');
+assert.equal(saved.size, 0);

@@ -1,5 +1,6 @@
 """Documents API routes."""
 
+import hashlib
 import logging
 from pathlib import Path
 from typing import Optional
@@ -170,9 +171,11 @@ async def upload_job(
     subject: Optional[str] = None,
     user: dict = Depends(get_current_user),
 ):
-    from sentio.api.routes.jobs import get_jobs
+    from sentio.api.routes.jobs import fingerprint, get_jobs, submission_id
+    from sentio.repositories.job_repository import JobConflict, JobExpired
 
     jobs = get_jobs(request)
+    request_id = submission_id(request)
     temp, pending, destination, category, subject, recovery = await stage_upload(
         request, file, category, subject, user["student_id"]
     )
@@ -185,7 +188,22 @@ async def upload_job(
             ),
             lane="ingestion",
             on_done=temp.cleanup,
+            request_id=request_id,
+            fingerprint=fingerprint(
+                {
+                    "filename": destination.name,
+                    "category": category,
+                    "subject": subject,
+                    "checksum": hashlib.sha256(pending.read_bytes()).hexdigest(),
+                }
+            ),
         )
+    except JobConflict as exc:
+        temp.cleanup()
+        raise HTTPException(409, str(exc)) from exc
+    except JobExpired as exc:
+        temp.cleanup()
+        raise HTTPException(410, str(exc)) from exc
     except ValueError as exc:
         temp.cleanup()
         raise HTTPException(429, str(exc)) from exc

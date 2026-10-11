@@ -5,6 +5,14 @@ import uuid
 from sqlalchemy import text
 
 
+class JobConflict(ValueError):
+    pass
+
+
+class JobExpired(ValueError):
+    pass
+
+
 class JobRepository:
     def __init__(self, engine):
         self.engine = engine
@@ -24,10 +32,46 @@ class JobRepository:
                 {"cutoff": time.time() - 7 * 86400},
             )
 
-    def create(self, owner, kind, lane):
+    def replay(self, owner, kind, request_id, fingerprint):
+        if not request_id:
+            return None
+        with self.engine.connect() as connection:
+            previous = connection.execute(
+                text(
+                    "SELECT kind,fingerprint,job_id FROM job_requests WHERE student_id=:owner AND request_id=:request"
+                ),
+                {"owner": owner, "request": request_id},
+            ).first()
+        if previous is None:
+            return None
+        if previous[0] != kind or previous[1] != fingerprint:
+            raise JobConflict("Submission ID was reused with different content or study context.")
+        record = self.get(previous[2], owner)
+        if record is None:
+            raise JobExpired(
+                "This submission's job status has expired. Check saved work before starting a new submission."
+            )
+        return record
+
+    def create(self, owner, kind, lane, request_id=None, fingerprint=None):
         job_id = str(uuid.uuid4())
         now = time.time()
         with self.engine.begin() as conn:
+            conn.exec_driver_sql("BEGIN IMMEDIATE")
+            if request_id:
+                conn.execute(
+                    text(
+                        "INSERT INTO job_requests VALUES (:owner,:request,:kind,:fingerprint,:id,:now)"
+                    ),
+                    {
+                        "owner": owner,
+                        "request": request_id,
+                        "kind": kind,
+                        "fingerprint": fingerprint,
+                        "id": job_id,
+                        "now": now,
+                    },
+                )
             conn.execute(
                 text(
                     "DELETE FROM jobs WHERE student_id=:owner AND status IN ('succeeded','failed','cancelled') AND job_id NOT IN (SELECT job_id FROM jobs WHERE student_id=:owner ORDER BY updated_at DESC LIMIT 500)"

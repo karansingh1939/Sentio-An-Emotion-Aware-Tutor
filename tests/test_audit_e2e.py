@@ -79,6 +79,15 @@ async def test_sentio_real_browser_e2e_and_tenant_isolation():
             browser = await p.chromium.launch(headless=True)
             context = await browser.new_context(permissions=["camera"])
             page = await context.new_page()
+            failed_requests = []
+            page.on(
+                "response",
+                lambda response: (
+                    failed_requests.append((response.status, response.url.split("/api/v1/")[-1]))
+                    if response.status >= 400
+                    else None
+                ),
+            )
 
             # Enable logging of browser console messages and network traffic
             page.on("console", lambda msg: print(f"[BROWSER CONSOLE] {msg.type}: {msg.text}"))
@@ -126,9 +135,19 @@ async def test_sentio_real_browser_e2e_and_tenant_isolation():
             # Navigate to Documents View
             await page.click('a[href="#/documents"]')
             await page.wait_for_selector("#file-uploader", state="attached")
+            await page.wait_for_selector("#view-documents #drop-zone", state="visible")
+            await page.wait_for_function(
+                "document.getElementById('file-uploader')?.disabled === false"
+            )
 
             # Upload Document A
-            await page.set_input_files("#file-uploader", file_a_path)
+            async with page.expect_response(
+                lambda reply: (
+                    reply.url.endswith("/documents/jobs") and reply.request.method == "POST"
+                )
+            ) as submission:
+                await page.set_input_files("#file-uploader", file_a_path)
+            first_upload = await (await submission.value).json()
 
             # Wait for list update and confirm document appears in table
             await page.wait_for_selector("text=kinematics_test.txt", timeout=20000)
@@ -165,14 +184,25 @@ async def test_sentio_real_browser_e2e_and_tenant_isolation():
             # PHASE 4: MID-SESSION GROUNDING SWITCH
             # ----------------------------------------------------
             # Upload Document B
+            # Simulate leaving before the completed first job's receipt was cleared.
+            await page.evaluate(
+                "job => localStorage.setItem(`sentio_job:${window.store.getState('currentUser').id}:library:/documents/jobs`, job)",
+                first_upload["job_id"],
+            )
             await page.click('a[href="#/documents"]')
             await page.wait_for_selector("#file-uploader", state="attached")
+            await page.wait_for_selector("#view-documents #drop-zone", state="visible")
+            await page.wait_for_function(
+                "document.getElementById('file-uploader')?.disabled === false"
+            )
             await page.set_input_files("#file-uploader", file_b_path)
             # Wait for list update and confirm document appears in table
             try:
                 await page.wait_for_selector("text=thermodynamics_test.txt", timeout=20000)
             except Exception as exc:
-                raise AssertionError(await page.locator("#view-documents").inner_text()) from exc
+                raise AssertionError(
+                    (await page.locator("#view-documents").inner_text(), failed_requests)
+                ) from exc
 
             # Go back to Tutor View
             await page.click('a[href="#/tutor"]')

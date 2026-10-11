@@ -136,3 +136,17 @@ Verification: 191 Python/browser tests, 31 subtests passed; 1 optional OCR skip.
 All six JavaScript checks, Ruff/formatting and lockfile checks pass.
 Next: preserve ingestion/practice submission IDs before sending, so an unknown
 POST outcome can reconnect without duplicate jobs; finish hardening/tools and ML.
+
+## Submission recovery checkpoint
+
+Ingestion and practice retain a submission ID before their POST. Durable
+owner-scoped receipts replay matching jobs, reject changed payloads with 409,
+and return 410 for expired job records rather than duplicating completed work.
+Library navigation reconnects an earlier upload before submitting a newly chosen
+file. Browser regression deliberately restores the earlier completed receipt
+and verifies the second file still uploads.
+
+Verification: 193 Python/browser tests, 31 subtests passed; one optional OCR skip.
+Six JavaScript checks passed. Next: persistent protected local signing keys,
+storage-failure readiness, camera lifecycle and remaining hardening, then the
+reviewable dataset and reproducible model experiments. Labels remain unreviewed.

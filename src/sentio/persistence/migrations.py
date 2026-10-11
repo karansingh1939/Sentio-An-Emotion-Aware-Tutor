@@ -40,6 +40,12 @@ MIGRATIONS = {
             quality_score INTEGER NOT NULL, result_json TEXT NOT NULL, created_at REAL NOT NULL,
             PRIMARY KEY(student_id, request_id))""",
     ],
+    5: [
+        """CREATE TABLE job_requests (
+            student_id TEXT NOT NULL, request_id TEXT NOT NULL, kind TEXT NOT NULL,
+            fingerprint TEXT NOT NULL, job_id TEXT NOT NULL, created_at REAL NOT NULL,
+            PRIMARY KEY(student_id,request_id))""",
+    ],
 }
 
 
