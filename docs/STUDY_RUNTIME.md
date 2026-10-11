@@ -24,6 +24,18 @@ retains up to 500 recent records per learner and is pruned after seven days on
 startup. Interrupted jobs require an explicit retry; startup does not replay
 side effects. Completed tutoring turns remain study history.
 
+The library stages new file/text/vector revisions before publication. SQL chunk
+IDs are the retrieval authority, including citation text and metadata. A durable
+file journal restores an old revision when SQL publication fails, or retries
+cleanup after a committed replacement/deletion. Preview pages and ingestion job
+status require the owning account. Limits are 20 MiB per upload, 2 million
+extracted characters, and 2000 passages. Semantic models use the local CPU cache;
+without them, saved text remains searchable through keywords.
+
+`POST /api/v1/documents/jobs` accepts multipart uploads and returns a job ID.
+`GET /api/v1/documents/{id}/preview?limit=20&offset=0` returns extracted passages
+and `next_offset`. Existing synchronous upload remains compatible.
+
 ## Turn sequence
 
 ```mermaid

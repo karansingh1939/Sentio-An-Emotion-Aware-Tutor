@@ -3,6 +3,7 @@ import { escapeHtml } from '../core/html.js';
 import { sentioAPI } from '../core/api.js';
 import { toast } from '../components/ui.js';
 import { store } from '../core/store.js';
+import { pendingJobKey, runPracticeJob } from '../core/jobs.js';
 
 export class DocumentsView {
   constructor(containerId) {
@@ -10,6 +11,8 @@ export class DocumentsView {
     this.documents = [];
     this.filterQuery = '';
     this.ocrReady = false;
+    this.revision = 0;
+    this.uploadInProgress = false;
   }
 
   async init() {
@@ -17,11 +20,19 @@ export class DocumentsView {
     store.subscribe('activeRoute', (route) => {
       if (route === '#/documents') {
         this.loadDocuments();
+      } else {
+        this.revision++;
       }
     });
   }
 
   async loadDocuments() {
+    const revision = ++this.revision;
+    const owner = store.getState('currentUser')?.id;
+    const current = () =>
+      this.revision === revision &&
+      store.getState('currentUser')?.id === owner &&
+      store.getState('activeRoute') === '#/documents';
     this.container.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:center;height:60%;">
         <sentio-loader size="32px"></sentio-loader>
@@ -33,11 +44,14 @@ export class DocumentsView {
         sentioAPI.get('/documents'),
         sentioAPI.get('/documents/capabilities'),
       ]);
+      if (!current()) return;
       this.ocrReady = capabilities.ocr_available;
       this.documents = res.documents || [];
       this.render();
       this.bindEvents();
+      if (localStorage.getItem(pendingJobKey('/documents/jobs', false))) this.uploadFile(null);
     } catch (e) {
+      if (!current()) return;
       this.container.innerHTML = `
         <div style="padding:40px;text-align:center;">
           <div style="font-size:24px;margin-bottom:12px;">⚠️</div>
@@ -53,11 +67,7 @@ export class DocumentsView {
 
   render() {
     // Filter documents based on query
-    const filteredDocs = this.documents.filter(
-      (d) =>
-        d.filename.toLowerCase().includes(this.filterQuery.toLowerCase()) ||
-        d.category.toLowerCase().includes(this.filterQuery.toLowerCase()),
-    );
+    const filteredDocs = this.documents;
 
     this.container.innerHTML = `
       <div class="view-header" style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
@@ -85,6 +95,7 @@ export class DocumentsView {
             `
                 : `
               <div style="overflow-x:auto;">
+                <p id="doc-search-status" role="status"></p>
                 <table style="width:100%;border-collapse:collapse;font-size:14px;text-align:left;">
                   <thead>
                     <tr style="border-bottom:1px solid var(--border);color:var(--text-dim);">
@@ -107,7 +118,7 @@ export class DocumentsView {
                         const statusIcon =
                           d.status === 'indexed' ? '✅' : d.status === 'failed' ? '❌' : '⏳';
                         return `
-                        <tr style="border-bottom:1px solid var(--border);color:var(--text);">
+                        <tr class="document-row" data-search="${escapeHtml((d.filename + ' ' + d.category).toLowerCase())}" style="border-bottom:1px solid var(--border);color:var(--text);">
                           <td style="padding:10px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(d.filename)}">
                             ${escapeHtml(d.filename)}
                           </td>
@@ -119,6 +130,7 @@ export class DocumentsView {
                             </span>
                           </td>
                           <td style="padding:10px;text-align:right;">
+                            <button class="preview-doc-btn" data-id="${escapeHtml(d.id)}">Preview</button>
                             <button class="delete-doc-btn" data-id="${escapeHtml(d.id)}" style="background:none;border:none;color:var(--red);cursor:pointer;font-family:var(--mono);font-size:14px;">Delete</button>
                           </td>
                         </tr>
@@ -136,7 +148,7 @@ export class DocumentsView {
         <!-- Right: Upload Panel -->
         <div style="display:flex;flex-direction:column;gap:20px;">
           <sentio-card title="📤 Add Study Material">
-            <div id="drop-zone" style="border:2px dashed var(--border);border-radius:var(--radius-lg);padding:24px 16px;text-align:center;background:var(--bg3);cursor:pointer;transition:border-color 0.2s, background 0.2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
+            <div id="drop-zone" role="button" tabindex="0" aria-label="Choose a study material file" style="border:2px dashed var(--border);border-radius:var(--radius-lg);padding:24px 16px;text-align:center;background:var(--bg3);cursor:pointer;transition:border-color 0.2s, background 0.2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
               <span style="font-size:32px;">📄</span>
               <span style="font-size:14px;font-weight:bold;color:var(--text);">Drag & Drop your file here</span>
               <span style="font-size:14px;color:var(--text-dim);">or click to browse filesystem</span>
@@ -154,10 +166,8 @@ export class DocumentsView {
               </select>
             </div>
 
-            <div id="upload-progress-bar" style="display:none;margin-top:16px;background:var(--border);height:6px;border-radius:3px;overflow:hidden;position:relative;">
-              <div id="upload-progress-fill" style="width:0%;background:var(--accent);height:100%;transition:width 0.2s;"></div>
-            </div>
-            <div id="upload-progress-text" style="display:none;font-size:14px;color:var(--accent);text-align:center;margin-top:6px;font-weight:bold;">Uploading...</div>
+            <div id="library-job" role="region" aria-label="Upload progress"></div>
+
           </sentio-card>
         </div>
       </div>
@@ -170,10 +180,14 @@ export class DocumentsView {
     if (search) {
       search.oninput = (e) => {
         this.filterQuery = e.target.value;
-        this.render();
-        this.bindEvents(); // Rebind since HTML changed
+        this.applyFilter();
       };
     }
+
+    this.applyFilter();
+    this.container.querySelectorAll('.preview-doc-btn').forEach((button) => {
+      button.onclick = () => this.previewDocument(button.dataset.id);
+    });
 
     // 2. Sync Library Button binding
     const syncBtn = this.container.querySelector('#sync-library-btn');
@@ -223,7 +237,15 @@ export class DocumentsView {
     const categorySelect = this.container.querySelector('#upload-category');
 
     if (dropZone && uploader) {
-      dropZone.onclick = () => uploader.click();
+      dropZone.onclick = () => {
+        if (!this.uploadInProgress) uploader.click();
+      };
+      dropZone.onkeydown = (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          dropZone.click();
+        }
+      };
 
       // Drag events
       dropZone.ondragover = (e) => {
@@ -256,45 +278,110 @@ export class DocumentsView {
     }
   }
 
-  async uploadFile(file, category) {
-    const fill = this.container.querySelector('#upload-progress-fill');
-    const progressText = this.container.querySelector('#upload-progress-text');
-    const progressBar = this.container.querySelector('#upload-progress-bar');
+  applyFilter() {
+    let shown = 0;
+    this.container.querySelectorAll('.document-row').forEach((row) => {
+      row.hidden = !row.dataset.search.includes(this.filterQuery.toLowerCase());
+      if (!row.hidden) shown++;
+    });
+    const status = this.container.querySelector('#doc-search-status');
+    if (status) status.textContent = `${shown} matching material${shown === 1 ? '' : 's'}`;
+  }
 
-    if (progressBar && fill && progressText) {
-      progressBar.style.display = 'block';
-      progressText.style.display = 'block';
-      fill.style.width = '10%';
-      progressText.textContent = 'Uploading file content...';
-    }
-
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('category', category);
-
+  async previewDocument(documentId) {
+    const owner = store.getState('currentUser')?.id;
+    const revision = this.revision;
     try {
-      if (fill) fill.style.width = '40%';
-      if (progressText)
-        progressText.textContent = 'Extracting text and indexing; scanned pages may take longer...';
-      await sentioAPI.request('/documents/upload', {
-        method: 'POST',
-        body: formData,
-        timeout: 2500000,
-      });
+      const result = await sentioAPI.get(`/documents/${documentId}/preview`);
+      if (owner !== store.getState('currentUser')?.id || revision !== this.revision) return;
+      const modal = document.createElement('sentio-modal');
+      modal.setAttribute('title', result.document.filename);
+      modal.innerHTML =
+        '<p>Extracted source text. Check scans for recognition errors.</p><div class="document-preview"></div><button class="preview-more" type="button">Show more</button>';
+      document.body.appendChild(modal);
+      const append = (data) => {
+        for (const chunk of data.chunks) {
+          const section = document.createElement('section');
+          section.innerHTML = `<h3>Page ${escapeHtml(chunk.page_number || 1)}</h3><p style="white-space:pre-wrap">${escapeHtml(chunk.text_content)}</p>`;
+          modal.querySelector('.document-preview').appendChild(section);
+        }
+        const more = modal.querySelector('.preview-more');
+        more.hidden = data.next_offset === null;
+        more.onclick = async () => {
+          more.disabled = true;
+          try {
+            append(
+              await sentioAPI.get(`/documents/${documentId}/preview?offset=${data.next_offset}`),
+            );
+          } catch (error) {
+            toast(error.message, true);
+          } finally {
+            more.disabled = false;
+          }
+        };
+      };
+      append(result);
+    } catch (error) {
+      toast('Preview unavailable: ' + error.message, true);
+    }
+  }
 
-      if (fill && progressText) {
-        fill.style.width = '100%';
-        progressText.textContent = 'Indexing complete! Grounding active.';
+  async uploadFile(file, category) {
+    if (this.uploadInProgress) return;
+    this.uploadInProgress = true;
+    const owner = store.getState('currentUser')?.id;
+    const revision = this.revision;
+    const uploader = this.container.querySelector('#file-uploader');
+    if (uploader) uploader.disabled = true;
+    try {
+      const form = new FormData();
+      if (file) {
+        form.append('file', file);
+        form.append('category', category);
+        const subject = store.getState('activeSession')?.subject;
+        if (subject) form.append('subject', subject);
       }
-      toast('Document uploaded and indexed successfully!');
-      setTimeout(() => this.loadDocuments(), 1200);
-    } catch (e) {
-      if (fill && progressText) {
-        fill.style.width = '0%';
-        progressText.textContent = 'Upload failed!';
-        progressText.style.color = 'var(--red)';
+      const result = await runPracticeJob(
+        '/documents/jobs',
+        null,
+        this.container.querySelector('#library-job'),
+        {
+          sessionScoped: false,
+          submit: () => {
+            if (!file) throw new Error('Choose the file again to retry this upload.');
+            return sentioAPI.request('/documents/jobs', { method: 'POST', body: form });
+          },
+        },
+      );
+      if (
+        result &&
+        owner === store.getState('currentUser')?.id &&
+        store.getState('activeRoute') === '#/documents'
+      ) {
+        toast(
+          'Study material saved. ' +
+            (result.indexing_mode === 'keyword'
+              ? 'Keyword search is available; semantic indexing was unavailable.'
+              : 'Ready for study.'),
+        );
+        this.loadDocuments();
       }
-      toast('Upload failed: ' + e.message, true);
+    } catch (error) {
+      if (owner === store.getState('currentUser')?.id && revision === this.revision) {
+        this.container.querySelector('#library-job').textContent =
+          error.message + ' Choose the file again to retry.';
+        toast('Upload did not finish: ' + error.message, true);
+      }
+    } finally {
+      this.uploadInProgress = false;
+      if (uploader) uploader.disabled = false;
+      if (
+        revision !== this.revision &&
+        store.getState('activeRoute') === '#/documents' &&
+        owner === store.getState('currentUser')?.id &&
+        localStorage.getItem(pendingJobKey('/documents/jobs', false))
+      )
+        this.loadDocuments();
     }
   }
 }

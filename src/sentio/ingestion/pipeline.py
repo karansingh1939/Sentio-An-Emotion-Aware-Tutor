@@ -4,13 +4,17 @@ import os
 import time
 import uuid
 from pathlib import Path
+from threading import RLock
 from typing import Any, Dict, List, Optional
 
 from sentio.config import DATA_DIR, nlp_cfg
+from sentio.jobs.control import WorkCancelled, checkpoint, publish
 from sentio.rag.vector_db import QdrantVectorDB
+from sentio.repositories.document_repository import DocumentRepository
 from sentio.session.session_manager import SessionManager
 
 logger = logging.getLogger(__name__)
+_ingestion_lock = RLock()
 
 
 class DocumentIngestionPipeline:
@@ -44,7 +48,9 @@ class DocumentIngestionPipeline:
             try:
                 from sentence_transformers import SentenceTransformer
 
-                self._embedding_model = SentenceTransformer(nlp_cfg.EMBEDDING_MODEL)
+                self._embedding_model = SentenceTransformer(
+                    nlp_cfg.EMBEDDING_MODEL, device="cpu", local_files_only=True
+                )
                 logger.info(f"Loaded sentence transformer model: {nlp_cfg.EMBEDDING_MODEL}")
             except ImportError:
                 logger.error(
@@ -106,10 +112,30 @@ class DocumentIngestionPipeline:
 
     def process_file(
         self,
+        filepath,
+        category,
+        subject=None,
+        student_id=None,
+        publisher=None,
+        force=False,
+    ):
+        checkpoint("waiting for ingestion")
+        while not _ingestion_lock.acquire(timeout=0.1):
+            checkpoint()
+        try:
+            checkpoint()
+            return self._process_file(filepath, category, subject, student_id, publisher, force)
+        finally:
+            _ingestion_lock.release()
+
+    def _process_file(
+        self,
         filepath: Path,
         category: str,
         subject: Optional[str] = None,
         student_id: Optional[str] = None,
+        publisher=None,
+        force=False,
     ) -> bool:
         """Parse, chunk, index, and save a document if it is new or modified."""
         filename = filepath.name
@@ -128,12 +154,15 @@ class DocumentIngestionPipeline:
         )
 
         if existing_doc:
-            if existing_doc["checksum"] == checksum and existing_doc["status"] == "indexed":
+            if (
+                not force
+                and existing_doc["checksum"] == checksum
+                and existing_doc["status"] == "indexed"
+            ):
                 logger.debug(f"Document {filename} is already indexed and unmodified. Skipping.")
                 return False
             else:
                 logger.info(f"Document {filename} modified or failed. Re-indexing.")
-                # Clear existing chunks from SQLite and Qdrant before re-indexing
 
         # Register document as indexing
         doc_record = {
@@ -152,7 +181,9 @@ class DocumentIngestionPipeline:
             "checksum": checksum,
         }
 
+        chunks_to_save = []
         try:
+            checkpoint("extracting document text")
             # 1. Parse text based on format
             if suffix == ".txt":
                 pages = self.parse_txt(filepath)
@@ -167,6 +198,10 @@ class DocumentIngestionPipeline:
             else:
                 raise ValueError(f"Unsupported file format: {suffix}")
 
+            if sum(len(p["text"]) for p in pages) > 2_000_000:
+                raise ValueError(
+                    "Extracted text exceeds 2 million characters. Split this document into smaller files."
+                )
             methods = {p.get("extraction_method", "text") for p in pages}
             doc_record["extraction_method"] = (
                 "mixed" if len(methods) > 1 else next(iter(methods), "text")
@@ -182,8 +217,13 @@ class DocumentIngestionPipeline:
                 page_text = page["text"]
                 page_chunks = self.chunk_text(page_text)
                 for chunk_text in page_chunks:
+                    checkpoint()
+                    if chunk_index >= 2000:
+                        raise ValueError(
+                            "Document exceeds 2000 passages. Split it into smaller files."
+                        )
                     hex_hash = hashlib.md5(
-                        f"{doc_id}::p{page['page_number']}::c{chunk_index}".encode()
+                        f"{doc_id}::{checksum}::p{page['page_number']}::c{chunk_index}".encode()
                     ).hexdigest()
                     chunk_id = str(uuid.UUID(hex=hex_hash))
 
@@ -223,25 +263,23 @@ class DocumentIngestionPipeline:
                     self.sm.register_document(doc_record)
                 return False
 
-            # 3. Save chunks in SQLite database
-            self.sm.register_document(doc_record)
-            if not self.sm.save_document_chunks(doc_id, chunks_to_save):
-                raise RuntimeError("Failed to save document text.")
-
             # Text is usable for BM25 even when the embedding provider is offline.
             embedding_count = 0
             try:
+                checkpoint("preparing semantic index")
                 self._lazy_load_embedding_model()
                 embeddings = self._embedding_model.encode(
                     chunk_texts, batch_size=32, show_progress_bar=False
                 ).tolist()
-                self.vdb.delete_document_points(doc_id)
+                checkpoint("staging document vectors")
                 if self.vdb.index_chunks(
                     ids=[c["chunk_id"] for c in chunks_to_save],
                     vectors=embeddings,
                     payloads=chunk_metadata,
                 ):
                     embedding_count = len(chunks_to_save)
+            except WorkCancelled:
+                raise
             except Exception as exc:
                 logger.warning(
                     "Vector indexing unavailable for %s; using keyword search: %s", filename, exc
@@ -252,12 +290,33 @@ class DocumentIngestionPipeline:
             doc_record["chunk_count"] = len(chunks_to_save)
             doc_record["embedding_count"] = embedding_count
             doc_record["last_indexed"] = time.time()
-            self.sm.register_document(doc_record)
+            checkpoint("saving document")
+            repository = DocumentRepository(self.sm.persister)
+            old_chunks = self.sm.get_document_chunks(doc_id) if existing_doc else []
+            publish(
+                lambda: (
+                    publisher(doc_record, chunks_to_save, old_chunks)
+                    if publisher
+                    else repository.replace(doc_record, chunks_to_save)
+                )
+            )
+            if not publisher:
+                self.vdb.delete_chunk_points(
+                    [
+                        c["chunk_id"]
+                        for c in old_chunks
+                        if c["chunk_id"] not in {n["chunk_id"] for n in chunks_to_save}
+                    ]
+                )
 
             logger.info(f"Indexed document: {filename} ({len(chunks_to_save)} chunks)")
             return True
 
+        except WorkCancelled:
+            self._discard_staged(doc_id, chunks_to_save)
+            raise
         except Exception as e:
+            self._discard_staged(doc_id, chunks_to_save)
             self.last_error = str(e)
             logger.error(f"Failed to process document {filename}: {e}")
             doc_record["status"] = "failed"
@@ -265,6 +324,25 @@ class DocumentIngestionPipeline:
             if not existing_doc:
                 self.sm.register_document(doc_record)
             return False
+
+    def _discard_staged(self, document_id, chunks):
+        from sqlalchemy import text
+
+        try:
+            with self.sm.persister._engine.connect() as connection:
+                active = set(
+                    connection.execute(
+                        text("SELECT chunk_id FROM document_chunks WHERE document_id=:id"),
+                        {"id": document_id},
+                    ).scalars()
+                )
+            self.vdb.delete_chunk_points(
+                [c["chunk_id"] for c in chunks if c["chunk_id"] not in active]
+            )
+        except Exception:
+            logger.warning(
+                "Inactive vector cleanup deferred; current SQL evidence remains authoritative."
+            )
 
     def scan_and_sync(self, subject_map: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """

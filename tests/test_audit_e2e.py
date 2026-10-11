@@ -169,7 +169,10 @@ async def test_sentio_real_browser_e2e_and_tenant_isolation():
             await page.wait_for_selector("#file-uploader", state="attached")
             await page.set_input_files("#file-uploader", file_b_path)
             # Wait for list update and confirm document appears in table
-            await page.wait_for_selector("text=thermodynamics_test.txt", timeout=20000)
+            try:
+                await page.wait_for_selector("text=thermodynamics_test.txt", timeout=20000)
+            except Exception as exc:
+                raise AssertionError(await page.locator("#view-documents").inner_text()) from exc
 
             # Go back to Tutor View
             await page.click('a[href="#/tutor"]')

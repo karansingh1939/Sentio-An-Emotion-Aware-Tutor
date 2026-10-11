@@ -63,6 +63,32 @@ async def test_streaming_turn_is_readable_and_survives_refresh(monkeypatch):
                 '([tokens, session]) => { window.store.setState("authToken", tokens.access_token); window.store.setState("refreshToken", tokens.refresh_token); window.store.setState("currentUser", {id: tokens.student_id, email: tokens.email, role: tokens.role}); window.store.setState("activeSessionId", session.session_id); }',
                 [login, session],
             )
+            await page.goto(url + "/#/documents")
+            await page.wait_for_selector("#file-uploader", state="attached")
+            await page.set_input_files(
+                "#file-uploader",
+                {
+                    "name": "browser-inertia.txt",
+                    "mimeType": "text/plain",
+                    "buffer": b"Inertia means resistance to changes in motion. <script>window.previewInjected=true</script>",
+                },
+            )
+            await page.wait_for_selector(".preview-doc-btn")
+            await page.fill("#doc-search-input", "browser-inertia")
+            assert await page.locator("#doc-search-input").evaluate(
+                "element => element === document.activeElement"
+            )
+            await page.click(".preview-doc-btn")
+            await page.wait_for_selector('sentio-modal[role="dialog"]')
+            assert "<script>" in await page.locator("sentio-modal").inner_text()
+            assert not await page.evaluate("Boolean(window.previewInjected)")
+            await page.keyboard.press("Escape")
+            await page.wait_for_selector("sentio-modal", state="detached")
+            assert await page.locator(".preview-doc-btn").evaluate(
+                "element => element === document.activeElement"
+            )
+            await page.reload()
+            await page.wait_for_selector(".preview-doc-btn")
             await page.goto(url + "/#/tutor")
             await page.wait_for_selector("#msg-input:enabled")
             await page.fill("#msg-input", "Explain inertia")

@@ -69,3 +69,32 @@ against current SQL chunk IDs; add asynchronous ingestion, owner-scoped previews
 progress/cancel/retry and interrupted replacement/deletion tests. Then finish
 planning/review services and the offline ML experiment track. No model-quality
 claims or trained-model adoption are justified yet.
+
+## Library checkpoint
+
+Uploads submit bounded ingestion jobs with progress, Stop, saved job IDs and
+navigation/refresh recovery. Preview reads are paginated and owner scoped; source
+text is escaped and dialogs support keyboard dismissal and focus restoration.
+Search preserves input focus. Embedding/reranking models load from the local CPU
+cache; absent models retain searchable keyword passages.
+
+Prepared revisions use distinct vector IDs. Only committed SQL chunks can be
+retrieved; text and citation metadata come from SQLite. File publication/deletion
+use a recovery journal: failed SQL transactions restore old files, and committed
+cleanup retries never restore superseded revisions. Limits: 20 MiB uploads,
+2 million extracted characters and 2000 passages.
+
+Focused recovery/API tests cover ownership, empty replacements, failed publication,
+partial SQL writes, cancellation after vector staging, interrupted file moves,
+cleanup retry, unsafe paths and malformed journals. Chromium checks upload,
+preview escaping, keyboard focus, reload, second upload after tutoring and source
+switching. A navigation race discovered by that journey was fixed.
+
+Next: persistent daily budget/revision tasks, owner-scoped goal updates/completion,
+paginated history and real planner/feedback services using saved-study evidence.
+Then connected mistake review/card editing and versioned offline ML experiments.
+Manual label review remains required before supervised results justify adoption.
+
+Library checkpoint verification: 186 Python/browser tests passed, 1 optional OCR
+test skipped, 31 subtests passed. All six JavaScript checks, Ruff, formatting,
+lockfile checks and wheel/source packaging passed.

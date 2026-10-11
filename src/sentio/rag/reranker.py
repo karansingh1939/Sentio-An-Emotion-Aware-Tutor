@@ -93,7 +93,7 @@ class CrossEncoderReranker(BaseReranker):
         if self._model is None:
             from sentence_transformers import CrossEncoder
 
-            self._model = CrossEncoder(self.model_name)
+            self._model = CrossEncoder(self.model_name, device="cpu", local_files_only=True)
 
     def rerank(
         self, query: str, hits: List[Dict[str, Any]], limit: int = 5

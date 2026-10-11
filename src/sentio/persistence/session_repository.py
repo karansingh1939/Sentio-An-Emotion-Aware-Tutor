@@ -537,7 +537,7 @@ class SessionPersister:
             results.append(data)
         return results
 
-    def register_document(self, doc: dict) -> bool:
+    def register_document(self, doc: dict, connection=None) -> bool:
         if not self._use_db:
             return False
         from sqlalchemy import text
@@ -546,7 +546,11 @@ class SessionPersister:
             doc_copy = dict(doc)
             doc_copy.setdefault("student_id", "stu_001")
             doc_copy.setdefault("extraction_method", "text")
-            with self._engine.connect() as conn:
+            with (
+                nullcontext(connection)
+                if connection is not None
+                else self._engine.connect() as conn
+            ):
                 conn.execute(
                     text("""
                     INSERT OR REPLACE INTO documents 
@@ -555,7 +559,8 @@ class SessionPersister:
                 """),
                     doc_copy,
                 )
-                conn.commit()
+                if connection is None:
+                    conn.commit()
             return True
         except Exception as e:
             logger.error(f"Error registering document: {e}")
@@ -649,13 +654,17 @@ class SessionPersister:
             logger.error(f"Error listing documents: {e}")
             return []
 
-    def save_document_chunks(self, doc_id: str, chunks: List[dict]) -> bool:
+    def save_document_chunks(self, doc_id: str, chunks: List[dict], connection=None) -> bool:
         if not self._use_db:
             return False
         from sqlalchemy import text
 
         try:
-            with self._engine.connect() as conn:
+            with (
+                nullcontext(connection)
+                if connection is not None
+                else self._engine.connect() as conn
+            ):
                 conn.execute(
                     text("DELETE FROM document_chunks WHERE document_id = :doc_id"),
                     {"doc_id": doc_id},
@@ -674,7 +683,8 @@ class SessionPersister:
                             "text_content": chunk["text_content"],
                         },
                     )
-                conn.commit()
+                if connection is None:
+                    conn.commit()
             return True
         except Exception as e:
             logger.error(f"Error saving document chunks: {e}")

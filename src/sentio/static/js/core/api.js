@@ -77,7 +77,9 @@ class SentioAPIClient {
           const jsonErr = await response.json();
           errorMessage = jsonErr.detail || errorMessage;
         } catch (_) {}
-        throw new Error(errorMessage);
+        const failure = new Error(errorMessage);
+        failure.status = response.status;
+        throw failure;
       }
 
       // Handle raw responses or JSON

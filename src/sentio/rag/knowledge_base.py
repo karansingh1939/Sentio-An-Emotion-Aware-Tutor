@@ -261,7 +261,7 @@ class SemanticRetriever:
         try:
             from sentence_transformers import SentenceTransformer
 
-            self._model = SentenceTransformer(self.model_name)
+            self._model = SentenceTransformer(self.model_name, device="cpu", local_files_only=True)
             logger.info(f"Semantic retriever loaded: {self.model_name}")
         except ImportError:
             logger.warning(
@@ -584,13 +584,13 @@ class KnowledgeBase:
                 if hit["score"] < 0.35:
                     continue
                 cid = hit["id"]
-                text_content = hit["payload"].get("text", "") or db_chunk_map.get(cid, {}).get(
-                    "text_content", ""
-                )
+                if cid not in db_chunk_map:
+                    continue
+                text_content = db_chunk_map[cid]["text_content"]
                 merged_hits[cid] = {
                     "id": cid,
                     "text": text_content,
-                    "payload": hit["payload"],
+                    "payload": db_chunk_map[cid],
                     "vector_score": hit["score"],
                     "bm25_score": 0.0,
                 }

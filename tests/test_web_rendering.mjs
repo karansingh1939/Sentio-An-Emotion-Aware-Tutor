@@ -22,6 +22,7 @@ async function loadView(name) {
       store: { getState: () => null },
       toast: () => {},
       runPracticeJob: () => {},
+      pendingJobKey: () => '',
     };
     return new vm.SyntheticModule(
       Object.keys(imports),

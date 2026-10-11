@@ -41,7 +41,7 @@ class StreamService:
         session = self.agent.sm.get_or_raise(session_id)
         if session.student_id != owner:
             raise PermissionError("Session does not belong to this learner.")
-        context = study_fingerprint(session)
+        context = self.context(session)
         fingerprint = hashlib.sha256((message + context).encode()).hexdigest()
         params = {
             "owner": owner,
@@ -102,7 +102,7 @@ class StreamService:
                             history.add_assistant(turn["response"]["text"])
                     response = self.agent.chat(session_id, message, defer_turn=True)
                     control.check()
-                    if study_fingerprint(session) != context or not session.is_active:
+                    if self.context(session) != context or not session.is_active:
                         raise WorkCancelled("Study context changed")
 
                     def save():
@@ -121,6 +121,7 @@ class StreamService:
                             response.total_exchanges = session.total_exchanges
                             result = response.to_dict()
                             with self.engine.begin() as conn:
+                                conn.exec_driver_sql("BEGIN IMMEDIATE")
                                 if not conn.execute(
                                     text(
                                         "SELECT student_id FROM student_accounts WHERE student_id=:owner"
@@ -203,7 +204,7 @@ class StreamService:
             return False
 
     def turns(self, owner, session_id, limit=50, offset=0):
-        context = study_fingerprint(self.agent.sm.get_or_raise(session_id))
+        context = self.context(self.agent.sm.get_or_raise(session_id))
         with self.engine.connect() as conn:
             rows = (
                 conn.execute(
@@ -229,3 +230,14 @@ class StreamService:
             }
             for row in reversed(rows)
         ]
+
+    def context(self, session):
+        selected = session.metadata.get("document_id")
+        versions = []
+        if selected not in (None, "none"):
+            documents = self.agent.sm.list_documents(student_id=session.student_id)
+            ids = selected if isinstance(selected, list) else [selected]
+            versions = sorted(
+                (d["id"], d["checksum"]) for d in documents if selected == "all" or d["id"] in ids
+            )
+        return json.dumps([study_fingerprint(session), versions], sort_keys=True)

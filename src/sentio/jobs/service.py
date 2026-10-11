@@ -20,10 +20,11 @@ class JobManager:
             for lane in ("ai", "ingestion")
         }
         self.closed = False
+        self.revoked_owners = set()
 
     def submit(self, owner, kind, work, lane="ai", on_done=None):
         with self.lock:
-            if self.closed or lane not in self.executors:
+            if self.closed or lane not in self.executors or owner in self.revoked_owners:
                 raise ValueError("Job service is unavailable")
             if len(self.controls) >= self.queue_limit:
                 raise ValueError("Local work queue is full. Wait for a job to finish.")
@@ -91,6 +92,7 @@ class JobManager:
 
     def cancel_owner(self, owner):
         with self.lock:
+            self.revoked_owners.add(owner)
             for job_id in list(self.controls):
                 if self.get(job_id, owner):
                     self.cancel(job_id, owner)

@@ -112,7 +112,11 @@ customElements.define('sentio-card', SentioCard);
 // 4. Modal Dialog Component
 export class SentioModal extends HTMLElement {
   connectedCallback() {
+    this.previousFocus = document.activeElement;
     this.title = this.getAttribute('title') || 'Alert';
+    this.setAttribute('role', 'dialog');
+    this.setAttribute('aria-modal', 'true');
+    this.setAttribute('aria-label', this.title);
     this.style.position = 'fixed';
     this.style.inset = '0';
     this.style.zIndex = '9999';
@@ -136,6 +140,35 @@ export class SentioModal extends HTMLElement {
     `;
 
     this.querySelector('#modal-close-btn').onclick = () => this.close();
+    this.onKey = (event) => {
+      if (Array.from(document.querySelectorAll('sentio-modal')).at(-1) !== this) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.close();
+      }
+      if (event.key === 'Tab') {
+        const controls = Array.from(
+          this.querySelectorAll('button, input, select, textarea, a[href], [tabindex="0"]'),
+        ).filter((el) => !el.disabled && el.getClientRects().length);
+        const first = controls[0],
+          last = controls.at(-1);
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        }
+        if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener('keydown', this.onKey);
+    queueMicrotask(() => this.querySelector('#modal-close-btn')?.focus());
+  }
+
+  disconnectedCallback() {
+    document.removeEventListener('keydown', this.onKey);
+    if (this.previousFocus?.isConnected) this.previousFocus.focus();
   }
 
   close() {
@@ -158,8 +191,8 @@ export class SentioEmptyState extends HTMLElement {
     this.style.fontFamily = 'var(--mono)';
 
     this.innerHTML = `
-      <div style="font-size:32px;margin-bottom:12px;">${icon}</div>
-      <div style="font-size:12px;text-align:center;">${message}</div>
+      <div style="font-size:32px;margin-bottom:12px;">${escapeHtml(icon)}</div>
+      <div style="font-size:14px;text-align:center;">${escapeHtml(message)}</div>
     `;
   }
 }

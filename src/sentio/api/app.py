@@ -54,6 +54,12 @@ async def lifespan(app):
     from sentio.tutor.stream_service import StreamService
 
     app.state.streams = StreamService(agent, app.state.jobs)
+    from sentio.ingestion.recovery import DocumentRecovery
+
+    app.state.documents = DocumentRecovery(
+        agent.sm.persister, agent.kb.vdb, documents.BASE_DIR / "data/documents"
+    )
+    app.state.documents.recover()
     report = system_health_check()
     print_health_report(report)
     logger.info("API ready on %s:%d", api_cfg.HOST, api_cfg.PORT)

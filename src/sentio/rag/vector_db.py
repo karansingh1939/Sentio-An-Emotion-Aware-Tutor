@@ -196,6 +196,7 @@ class QdrantVectorDB:
                 "qdrant-client package is not installed. Skipping document points deletion."
             )
             return False
+
         if not self.client:
             raise RuntimeError("QdrantClient is not connected. Call .connect() first.")
         try:
@@ -213,6 +214,21 @@ class QdrantVectorDB:
             return True
         except Exception as e:
             logger.error(f"Failed to delete points for document {doc_id} from Qdrant: {e}")
+            return False
+
+    def delete_chunk_points(self, chunk_ids):
+        if not chunk_ids:
+            return True
+        if not self.client or not HAS_QDRANT:
+            return False
+        try:
+            self.client.delete(
+                collection_name=self.collection_name,
+                points_selector=models.PointIdsList(points=chunk_ids),
+            )
+            return True
+        except Exception:
+            logger.exception("Could not remove inactive document vectors")
             return False
 
 

@@ -238,6 +238,7 @@ async function endSession() {
 
 function cleanupSession() {
   window.stopGeneration?.();
+  document.querySelectorAll('sentio-modal').forEach((modal) => modal.remove());
   document
     .getElementById('chat-messages')
     ?.querySelectorAll('.msg')
