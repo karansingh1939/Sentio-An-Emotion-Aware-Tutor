@@ -38,6 +38,15 @@ and `next_offset`. Existing synchronous upload remains compatible.
 
 ## Turn sequence
 
+Saved quizzes are available through GET `/quizzes?limit=20&offset=0` and
+`/quizzes/{id}`, without generation. Review shows recent saved mistakes and
+explanations from each quiz. PATCH `/flashcards/{id}` saves edited front/back
+text. Card ratings accept an optional stable `request_id`; the schedule, mastery
+update and receipt commit together. Identical retries replay the result; changed
+content with the same ID returns 409. Legacy rating calls remain supported.
+Read requests have a separate rate budget from submissions/authentication, so
+polling and browsing do not exhaust the write budget. Both remain limited.
+
 Planning endpoints under `/api/v1/study`: GET/PUT `preferences` (5–240 daily
 minutes), GET `daily-plan?day=YYYY-MM-DD`, PATCH `daily-plan/{day}/tasks/{id}`
 with `completed`, and GET `feedback`. Plans freeze the day's task list and budget;

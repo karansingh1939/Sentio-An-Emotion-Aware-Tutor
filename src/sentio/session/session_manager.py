@@ -1124,13 +1124,21 @@ class SessionManager:
             }
 
     def update_flashcard_review(
-        self, card_id: str, interval: int, repetitions: int, ease_factor: float, next_review: float
+        self,
+        card_id: str,
+        interval: int,
+        repetitions: int,
+        ease_factor: float,
+        next_review: float,
+        connection=None,
     ):
         if not self.persister._use_db:
             return
         from sqlalchemy import text
 
-        with self.persister._engine.connect() as conn:
+        with (
+            nullcontext(connection) if connection is not None else self.persister._engine.connect()
+        ) as conn:
             conn.execute(
                 text("""
                     UPDATE flashcards 
@@ -1145,7 +1153,8 @@ class SessionManager:
                     "cid": card_id,
                 },
             )
-            conn.commit()
+            if connection is None:
+                conn.commit()
 
     def save_whiteboard(
         self,

@@ -37,6 +37,15 @@ async def test_streaming_turn_is_readable_and_survives_refresh(monkeypatch):
             browser = await browser_api.chromium.launch()
             page = await browser.new_page()
             errors = []
+            failed_requests = []
+            page.on(
+                "response",
+                lambda response: (
+                    failed_requests.append((response.status, response.url.split("/api/v1/")[-1]))
+                    if response.status >= 400
+                    else None
+                ),
+            )
             page.on("pageerror", lambda error: errors.append(str(error)))
             credentials = {"email": "stream-browser@example.com", "password": "StrongPassword123!"}
             assert (
@@ -112,6 +121,78 @@ async def test_streaming_turn_is_readable_and_survives_refresh(monkeypatch):
                 )
             ).json()
             assert state["total_exchanges"] == 1
+            from sentio.api.app import agent
+
+            agent.sm.save_quiz(
+                "browser-saved-quiz",
+                login["student_id"],
+                session["session_id"],
+                "Saved inertia practice",
+                [
+                    {
+                        "question_text": "Which force changes velocity?",
+                        "question_type": "multiple_choice",
+                        "options": ["Net force", "Color"],
+                        "correct_answer": "Net force",
+                        "explanation": "A net force produces acceleration.",
+                        "difficulty": "beginner",
+                        "topic": "Inertia",
+                    }
+                ],
+            )
+            await page.goto(url + "/#/quizzes")
+            await page.wait_for_selector(".saved-quiz")
+            await page.click(".saved-quiz")
+            await page.check('input[name="quiz-opt"][value="B"]')
+            await page.click("#submit-quiz-btn")
+            await page.wait_for_selector("text=Assessment Results")
+            await page.goto(url + "/#/documents")
+            await page.goto(url + "/#/quizzes")
+            await page.wait_for_selector('#saved-practice:has-text("Your answer: Color")')
+            deck = await (
+                await page.request.post(
+                    url + "/api/v1/flashcards/decks",
+                    headers=headers,
+                    data={"student_id": login["student_id"], "deck_name": "Browser review"},
+                )
+            ).json()
+            agent.sm.save_flashcards(
+                [{"front": "What is inertia?", "back": "Resistance to changes in motion."}],
+                login["student_id"],
+                "Inertia",
+                deck["deck_id"],
+            )
+            await page.goto(url + "/#/flashcards")
+            try:
+                await page.wait_for_selector(".start-review-btn:enabled")
+            except Exception as exc:
+                raise AssertionError(
+                    (await page.locator("#view-flashcards").inner_text(), failed_requests)
+                ) from exc
+            await page.click(".start-review-btn")
+            await page.wait_for_selector("#edit-current-card")
+            await page.click("#edit-current-card")
+            await page.fill("#card-back", "A body resists changes in its velocity.")
+            await page.click('sentio-modal button[type="submit"]')
+            await page.wait_for_selector("sentio-modal", state="detached")
+            await page.focus("#flashcard-flip-trigger")
+            await page.keyboard.press("Enter")
+            await page.wait_for_selector("#rating-controls-panel", state="visible")
+            assert (
+                "A body resists changes in its velocity."
+                in await page.locator("#view-flashcards").inner_text()
+            )
+            await page.click('.rate-btn[data-score="4"]')
+            await page.wait_for_selector("#finish-review-btn")
+            await page.click("#finish-review-btn")
+            await page.wait_for_selector("#show-create-deck-modal")
+            cards = await (
+                await page.request.get(
+                    url + "/api/v1/flashcards/reviews/due?student_id=" + login["student_id"],
+                    headers=headers,
+                )
+            ).json()
+            assert cards["due_count"] == 0
             assert errors == [], errors
             await browser.close()
     finally:

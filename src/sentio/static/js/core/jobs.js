@@ -42,10 +42,15 @@ export async function runPracticeJob(endpoint, body, container, options = {}) {
       (options.sessionScoped === false || store.getState('activeSessionId') === session)
     ) {
       const job = await sentioAPI.get(`/jobs/${jobId}`);
+      const current =
+        !detached &&
+        store.getState('currentUser')?.id === owner &&
+        (options.sessionScoped === false || store.getState('activeSessionId') === session);
       if (job.status === 'succeeded') {
         localStorage.removeItem(key);
-        return job.result;
+        return current ? job.result : null;
       }
+      if (!current) return null;
       if (['failed', 'cancelled'].includes(job.status)) {
         localStorage.removeItem(key);
         throw new Error(job.error || 'Practice stopped before saving. You can try again.');

@@ -14,15 +14,18 @@ export class FlashcardsView {
     this.dueCards = [];
     this.currentCardIdx = 0;
     this.isFlipped = false;
+    this.revision = 0;
+    this.ratingInProgress = false;
   }
 
   init() {
     store.subscribe('activeRoute', (route) => {
       if (route === '#/flashcards') {
+        this.revision++;
         this.studentId = store.getState('currentUser')?.id || 'stu_001';
         this.resetState();
         this.loadDecks();
-      }
+      } else this.revision++;
     });
   }
 
@@ -34,6 +37,8 @@ export class FlashcardsView {
   }
 
   async loadDecks() {
+    const revision = this.revision;
+    const owner = store.getState('currentUser')?.id;
     this.container.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:center;height:60%;">
         <sentio-loader size="32px"></sentio-loader>
@@ -47,7 +52,13 @@ export class FlashcardsView {
         sentioAPI.get(`/flashcards/reviews/due?student_id=${this.studentId}`),
         sessionId ? sentioAPI.get(`/sessions/${sessionId}`) : Promise.resolve(null),
       ]);
-      if (store.getState('activeRoute') !== '#/flashcards') return;
+      if (
+        store.getState('activeRoute') !== '#/flashcards' ||
+        revision !== this.revision ||
+        owner !== store.getState('currentUser')?.id ||
+        sessionId !== store.getState('activeSessionId')
+      )
+        return;
       if (session) store.setState('activeSession', session);
 
       this.decks = decksRes.decks || [];
@@ -64,8 +75,14 @@ export class FlashcardsView {
 
       this.render();
     } catch (e) {
-      toast('Failed to load flashcard decks: ' + e.message, true);
-      this.render();
+      if (
+        revision !== this.revision ||
+        owner !== store.getState('currentUser')?.id ||
+        store.getState('activeRoute') !== '#/flashcards'
+      )
+        return;
+      this.container.innerHTML = `<p role="alert">Saved cards could not be loaded: ${escapeHtml(e.message)}</p><button class="workspace-action" id="retry-card-load">Retry</button>`;
+      this.container.querySelector('#retry-card-load').onclick = () => this.loadDecks();
     }
   }
 
@@ -141,7 +158,7 @@ export class FlashcardsView {
 
               <div>
                 <label for="gen-topic-input" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Study topic</label>
-<input type="text" id="gen-topic-input" value="${escapeHtml(store.getState('activeSession')?.topic || '')}" placeholder="e.g. recursion" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;" />
+<input type="text" id="gen-topic-input" readonly value="${escapeHtml(store.getState('activeSession')?.topic || '')}" placeholder="e.g. recursion" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;" />
               </div>
 
               <div>
@@ -272,11 +289,19 @@ export class FlashcardsView {
   }
 
   async startReview(deckId) {
+    const revision = this.revision;
+    const owner = store.getState('currentUser')?.id;
     store.setState('loading', true);
     try {
       const res = await sentioAPI.get(
         `/flashcards/reviews/due?student_id=${this.studentId}&deck_id=${deckId}`,
       );
+      if (
+        revision !== this.revision ||
+        owner !== store.getState('currentUser')?.id ||
+        store.getState('activeRoute') !== '#/flashcards'
+      )
+        return;
       this.dueCards = res.cards || [];
       this.activeDeckId = deckId;
       this.currentCardIdx = 0;
@@ -323,8 +348,9 @@ export class FlashcardsView {
       </div>
 
       <div style="max-width:550px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:20px;">
+        <button class="workspace-action" type="button" id="edit-current-card">Edit this card</button>
         <!-- Flip Card Arena -->
-        <div id="flashcard-flip-trigger" style="perspective:1000px;cursor:pointer;width:100%;">
+        <div id="flashcard-flip-trigger" role="button" tabindex="0" aria-label="Flip flashcard" style="perspective:1000px;cursor:pointer;width:100%;">
           <div class="flashcard-inner ${this.isFlipped ? 'flipped' : ''}">
             <!-- Front -->
             <div class="flashcard-front" style="border:1px solid var(--border);background:var(--bg2);box-shadow:0 6px 20px rgba(0,0,0,0.2);">
@@ -388,8 +414,16 @@ export class FlashcardsView {
   }
 
   bindReviewEvents() {
+    const edit = this.container.querySelector('#edit-current-card');
+    if (edit) edit.onclick = () => this.editCurrentCard();
     const trigger = this.container.querySelector('#flashcard-flip-trigger');
     if (trigger) {
+      trigger.onkeydown = (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          trigger.click();
+        }
+      };
       trigger.onclick = () => {
         this.isFlipped = !this.isFlipped;
 
@@ -412,13 +446,34 @@ export class FlashcardsView {
       btn.onclick = async (e) => {
         e.stopPropagation();
         const score = parseInt(e.target.dataset.score, 10);
+        if (this.ratingInProgress) return;
+        this.ratingInProgress = true;
+        const revision = this.revision;
+        const owner = store.getState('currentUser')?.id;
         const card = this.dueCards[this.currentCardIdx];
+        const key = `sentio_review:${owner}:${card.card_id}`;
+        let requestId = localStorage.getItem(key);
+        if (!requestId) {
+          requestId = crypto.randomUUID();
+          localStorage.setItem(key, requestId);
+        }
+        this.container.querySelectorAll('.rate-btn').forEach((button) => {
+          button.disabled = true;
+        });
 
         store.setState('loading', true);
         try {
           await sentioAPI.post(`/flashcards/${card.card_id}/review`, {
             quality_score: score,
+            request_id: requestId,
           });
+          localStorage.removeItem(key);
+          if (
+            revision !== this.revision ||
+            owner !== store.getState('currentUser')?.id ||
+            store.getState('activeRoute') !== '#/flashcards'
+          )
+            return;
 
           this.isFlipped = false;
           this.currentCardIdx++;
@@ -426,6 +481,10 @@ export class FlashcardsView {
         } catch (err) {
           toast('Review failed: ' + err.message, true);
         } finally {
+          this.ratingInProgress = false;
+          this.container.querySelectorAll('.rate-btn').forEach((button) => {
+            button.disabled = false;
+          });
           store.setState('loading', false);
         }
       };
@@ -440,5 +499,41 @@ export class FlashcardsView {
         }
       };
     }
+  }
+
+  editCurrentCard() {
+    const card = this.dueCards[this.currentCardIdx];
+    const owner = store.getState('currentUser')?.id;
+    const revision = this.revision;
+    const modal = document.createElement('sentio-modal');
+    modal.setAttribute('title', 'Edit flashcard');
+    modal.innerHTML = `<form><label for="card-front">Question or term</label><textarea id="card-front" maxlength="2000" required>${escapeHtml(card.front_text)}</textarea><label for="card-back">Answer and explanation</label><textarea id="card-back" maxlength="5000" required>${escapeHtml(card.back_text)}</textarea><button class="workspace-action primary" type="submit">Save card</button><p role="status"></p></form>`;
+    document.body.appendChild(modal);
+    modal.querySelector('form').onsubmit = async (event) => {
+      event.preventDefault();
+      const front = modal.querySelector('#card-front').value.trim();
+      const back = modal.querySelector('#card-back').value.trim();
+      if (!front || !back) return;
+      const button = modal.querySelector('button[type="submit"]');
+      button.disabled = true;
+      try {
+        await sentioAPI.request(`/flashcards/${card.card_id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ front_text: front, back_text: back }),
+        });
+        card.front_text = front;
+        card.back_text = back;
+        modal.close();
+        if (
+          revision === this.revision &&
+          owner === store.getState('currentUser')?.id &&
+          store.getState('activeRoute') === '#/flashcards'
+        )
+          this.render();
+      } catch (error) {
+        modal.querySelector('[role="status"]').textContent = error.message;
+        button.disabled = false;
+      }
+    };
   }
 }

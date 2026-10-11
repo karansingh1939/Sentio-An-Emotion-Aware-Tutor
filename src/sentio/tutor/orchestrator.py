@@ -527,9 +527,12 @@ class SentioOrchestrator:
         plan = PlanningService(self.tutor_agent.sm.persister._engine).daily_plan(
             state["student_id"], persist=False
         )
-        summary = "Saved study plan (task completion is self-reported):\n" + "\n".join(
-            f"- {task['title']} ({task['minutes']} min; {'completed' if task['completed_at'] else 'pending'})"
-            for task in plan["tasks"]
+        summary = (
+            "Revision priorities from saved practice (completion is self-reported):\n"
+            + "\n".join(
+                f"- {task['title']} ({task['minutes']} min; {'completed' if task['completed_at'] else 'pending'})"
+                for task in plan["tasks"]
+            )
         )
         t1 = time.perf_counter()
 

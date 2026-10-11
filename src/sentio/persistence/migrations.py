@@ -34,6 +34,12 @@ MIGRATIONS = {
             tasks_json TEXT NOT NULL, created_at REAL NOT NULL,
             PRIMARY KEY(student_id, day))""",
     ],
+    4: [
+        """CREATE TABLE card_reviews (
+            student_id TEXT NOT NULL, request_id TEXT NOT NULL, card_id TEXT NOT NULL,
+            quality_score INTEGER NOT NULL, result_json TEXT NOT NULL, created_at REAL NOT NULL,
+            PRIMARY KEY(student_id, request_id))""",
+    ],
 }
 
 

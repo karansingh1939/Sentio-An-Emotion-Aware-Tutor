@@ -153,15 +153,38 @@ JSON Template:
         """Fetch all flashcards due for review."""
         return self.agent.sm.get_due_flashcards(student_id, deck_id)
 
-    def review_card(self, card_id: str, quality_score: int) -> dict:
+    def review_card(
+        self, card_id: str, quality_score: int, student_id=None, request_id=None
+    ) -> dict:
+        from sentio.repositories.practice_repository import PracticeRepository
+
+        if not 0 <= quality_score <= 5:
+            raise ValueError("Quality score must be between zero and five.")
+        card = self.agent.sm.get_flashcard(card_id)
+        if not card or student_id is not None and card["student_id"] != student_id:
+            raise ValueError("Flashcard not found.")
+        student_id = card["student_id"]
+        request_id = request_id or str(uuid.uuid4())
+        repository = PracticeRepository(self.agent.sm.persister._engine)
+        with repository.rating(student_id, card_id, request_id, quality_score) as (
+            connection,
+            card,
+            previous,
+        ):
+            if previous is not None:
+                return previous
+            result = self._apply_rating(card, quality_score, connection)
+            repository.save_rating(
+                connection, student_id, card_id, request_id, quality_score, result
+            )
+        return result
+
+    def _apply_rating(self, card, quality_score, connection):
         """
         Processes a card review attempt using SuperMemo SM-2.
         - quality_score: integer quality rating from 0 (forgot completely) to 5 (perfect response)
         """
-        card = self.agent.sm.get_flashcard(card_id)
-        if not card:
-            raise ValueError(f"Flashcard not found: {card_id}")
-
+        card_id = card["card_id"]
         student_id = card["student_id"]
         topic_id = card["topic_id"]
 
@@ -178,7 +201,11 @@ JSON Template:
 
             # Demote mastery in Student Memory loop
             self.agent.sm.update_topic_mastery(
-                student_id=student_id, topic_id=topic_id, correct=False, difficulty="intermediate"
+                student_id=student_id,
+                topic_id=topic_id,
+                correct=False,
+                difficulty="intermediate",
+                connection=connection,
             )
             logger.info(
                 f"Flashcard review failure (score {quality_score}) - Demoting mastery for topic {topic_id}"
@@ -201,7 +228,11 @@ JSON Template:
 
             # Boost mastery slightly since user got it right
             self.agent.sm.update_topic_mastery(
-                student_id=student_id, topic_id=topic_id, correct=True, difficulty="intermediate"
+                student_id=student_id,
+                topic_id=topic_id,
+                correct=True,
+                difficulty="intermediate",
+                connection=connection,
             )
             logger.info(
                 f"Flashcard review success (score {quality_score}) - Boosting mastery for topic {topic_id}"
@@ -216,6 +247,7 @@ JSON Template:
             repetitions=repetitions,
             ease_factor=ease_factor,
             next_review=next_review_at,
+            connection=connection,
         )
 
         return {

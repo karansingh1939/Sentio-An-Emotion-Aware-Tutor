@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -10,7 +12,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.rate = rate
         self.burst = burst
-        self.limiters = {}
+        self.limiters = OrderedDict()
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
@@ -19,13 +21,20 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         client_ip = request.client.host if request.client else "unknown"
-        if client_ip not in self.limiters:
-            self.limiters[client_ip] = RateLimiter(rate=self.rate, burst=self.burst)
+        # Browsing and job polling must not consume the submission/login budget.
+        read = request.method in {"GET", "HEAD", "OPTIONS"}
+        key = (client_ip, "read" if read else "write")
+        if key not in self.limiters:
+            if len(self.limiters) >= 4096:
+                self.limiters.popitem(last=False)
+            self.limiters[key] = RateLimiter(rate=self.rate * (10 if read else 1), burst=self.burst)
+        self.limiters.move_to_end(key)
 
-        if not self.limiters[client_ip].allow():
+        if not self.limiters[key].allow():
             return JSONResponse(
                 status_code=429,
-                content={"detail": "Too many requests. Rate limit exceeded (max 60/min)."},
+                content={"detail": "Too many requests. Retry shortly."},
+                headers={"Retry-After": "1"},
             )
 
         return await call_next(request)

@@ -2,7 +2,7 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from sentio.api.dependencies import (
     PREFIX,
@@ -17,6 +17,25 @@ from sentio.shared.exceptions import LLMServiceUnavailableError
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+@router.get(PREFIX + "/quizzes", tags=["Practice"])
+def saved_quizzes(
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    user: dict = Depends(get_current_user),
+):
+    from sentio.repositories.practice_repository import PracticeRepository
+
+    return PracticeRepository(agent.sm.persister._engine).quizzes(user["student_id"], limit, offset)
+
+
+@router.get(PREFIX + "/quizzes/{quiz_id}", tags=["Practice"])
+def saved_quiz(quiz_id: str, user: dict = Depends(get_current_user)):
+    quiz = agent.sm.get_quiz(quiz_id)
+    if not quiz or quiz["student_id"] != user["student_id"]:
+        raise HTTPException(404, "Quiz not found.")
+    return quiz
 
 
 @router.post(PREFIX + "/sessions/{session_id}/quiz", tags=["Tutoring"])

@@ -4,14 +4,33 @@ import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 
 from sentio.api.dependencies import PREFIX, _verify_session_owner, agent, flashcard_service
 from sentio.api.schemas import CreateDeckRequest, GenerateFlashcardsRequest, ReviewCardRequest
 from sentio.auth.middleware import get_current_user
+from sentio.repositories.practice_repository import PracticeRepository, ReviewConflict
 from sentio.shared.exceptions import LLMServiceUnavailableError
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+class CardEdit(BaseModel):
+    front_text: str = Field(min_length=1, max_length=2000)
+    back_text: str = Field(min_length=1, max_length=5000)
+
+
+@router.patch(PREFIX + "/flashcards/{card_id}", tags=["Flashcards"])
+def edit_card(card_id: str, body: CardEdit, user: dict = Depends(get_current_user)):
+    if not body.front_text.strip() or not body.back_text.strip():
+        raise HTTPException(422, "Both sides of the card must contain text.")
+    repository = PracticeRepository(agent.sm.persister._engine)
+    if not repository.edit_card(
+        user["student_id"], card_id, body.front_text.strip(), body.back_text.strip()
+    ):
+        raise HTTPException(404, "Flashcard not found.")
+    return {"saved": True, "card_id": card_id}
 
 
 @router.post(PREFIX + "/flashcards/decks", tags=["Flashcards"], status_code=201)
@@ -95,10 +114,16 @@ def review_flashcard(card_id: str, req: ReviewCardRequest, user: dict = Depends(
     if not card or card.get("student_id") != user["student_id"]:
         raise HTTPException(status_code=403, detail="Access denied or flashcard not found.")
     try:
-        result = flashcard_service.review_card(card_id, req.quality_score)
+        result = flashcard_service.review_card(
+            card_id, req.quality_score, user["student_id"], req.request_id
+        )
         return result
+    except ReviewConflict as exc:
+        raise HTTPException(409, str(exc)) from exc
     except ValueError as val_err:
         raise HTTPException(status_code=404, detail=str(val_err))
     except Exception as e:
         logger.exception("Failed to review flashcard")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=503, detail="Review could not be saved. Retry the same rating."
+        ) from e

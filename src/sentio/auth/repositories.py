@@ -85,6 +85,7 @@ class AuthRepository:
         owned_tables = [
             "study_preferences",
             "daily_plans",
+            "card_reviews",
             "jobs",
             "chat_requests",
             "recovery_operations",
@@ -113,6 +114,7 @@ class AuthRepository:
         inventory = {
             "study_preferences": "student_id = :sid",
             "daily_plans": "student_id = :sid",
+            "card_reviews": "student_id = :sid",
             "jobs": "student_id = :sid",
             "chat_requests": "student_id = :sid",
             "documents": "student_id = :sid",

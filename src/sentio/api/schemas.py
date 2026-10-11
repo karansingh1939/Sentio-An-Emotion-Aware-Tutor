@@ -77,6 +77,9 @@ class GenerateFlashcardsRequest(BaseModel):
 
 
 class ReviewCardRequest(BaseModel):
+    request_id: str | None = Field(
+        default=None, min_length=8, max_length=80, pattern=r"^[a-zA-Z0-9_-]+$"
+    )
     quality_score: int = Field(..., ge=0, le=5, description="SM-2 response quality score (0 to 5)")
 
 

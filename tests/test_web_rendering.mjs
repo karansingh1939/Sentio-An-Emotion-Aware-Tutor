@@ -46,6 +46,27 @@ quiz.bindQuizEvents = () => {};
 quiz.renderQuizActive();
 assert.ok(!container.innerHTML.includes(malicious), 'Quiz renders model output as executable HTML');
 assert.ok(container.innerHTML.includes('&lt;img'));
+quiz.results = {
+  total_score: 0,
+  passed: false,
+  summary: malicious,
+  feedback: [
+    {
+      is_correct: false,
+      question_index: 0,
+      student_answer: malicious,
+      correct_answer: malicious,
+      explanation: malicious,
+    },
+  ],
+};
+container.querySelector = () => ({});
+quiz.renderResults();
+assert.ok(
+  !container.innerHTML.includes(malicious),
+  'Quiz feedback renders student answers as HTML',
+);
+container.querySelector = () => null;
 
 const { FlashcardsView } = await loadView('flashcards');
 const cards = new FlashcardsView('view');

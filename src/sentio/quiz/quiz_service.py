@@ -164,6 +164,7 @@ JSON Template:
         )
 
         quiz_dict["quiz_id"] = quiz_id
+        quiz_dict["session_id"] = session_id
         return quiz_dict
 
     def score_quiz(

@@ -115,3 +115,24 @@ owner/route guards.
 Verification: 189 Python/browser tests and 31 subtests passed; 1 optional OCR skip.
 Six JS checks and Ruff passed. Next: saved quiz access, mistake review, flashcard
 editing and atomic/deduplicated review publication; then tools/hardening and ML.
+
+## Connected practice checkpoint
+
+Saved quizzes are paginated and reopen without AI; submissions use the quiz's
+original owned session. Review exposes recent mistakes alongside saved quizzes
+and explanations. Flashcards can be edited during review and flipped by keyboard.
+Card schedule, mastery update and request receipt now commit atomically; matching
+rating retries replay and conflicting IDs return 409. A failed schedule write
+rolls back mastery too. Privacy inventory includes rating receipts.
+
+Browser journey now verifies upload, escaped preview, streaming answer, reload,
+saved quiz, mistake review, card editing, keyboard flip and persisted review.
+It exposed that normal reads exhausted the shared rate budget: reads/writes now
+have separate bounded budgets, with retryable errors instead of false empty lists.
+Student answers in quiz feedback are escaped; late job completions and auth
+failures from a previous account cannot replace current account state.
+
+Verification: 191 Python/browser tests, 31 subtests passed; 1 optional OCR skip.
+All six JavaScript checks, Ruff/formatting and lockfile checks pass.
+Next: preserve ingestion/practice submission IDs before sending, so an unknown
+POST outcome can reconnect without duplicate jobs; finish hardening/tools and ML.

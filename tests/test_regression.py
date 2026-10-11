@@ -181,7 +181,7 @@ class TestSentioRegression(unittest.TestCase):
                 )
                 self.assertEqual(resp.status_code, 429)
                 self.assertEqual(
-                    resp.json()["detail"], "Too many requests. Rate limit exceeded (max 60/min)."
+                    resp.json()["detail"], "Too many requests. Retry shortly."
                 )
 
     def test_qdrant_vector_db(self):

@@ -48,6 +48,8 @@ class SentioAPIClient {
       const response = await fetch(url, fetchOptions);
 
       if (!response.ok) {
+        if (token !== store.getState('authToken'))
+          throw new Error('The account changed while this request was running.');
         if (response.status === 401 && !options._isRetry) {
           const refreshToken = store.getState('refreshToken');
           if (refreshToken) {

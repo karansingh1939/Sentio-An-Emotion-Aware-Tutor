@@ -14,6 +14,7 @@ export class QuizzesView {
     this.answers = {};
     this.results = null;
     this.isReviewMode = false;
+    this.revision = 0;
   }
 
   init() {
@@ -22,7 +23,7 @@ export class QuizzesView {
         this.studentId = store.getState('currentUser')?.id || 'stu_001';
         this.resetQuizState();
         this.render();
-      }
+      } else this.revision++;
     });
   }
 
@@ -45,6 +46,8 @@ export class QuizzesView {
   }
 
   async renderSetupForm() {
+    const revision = ++this.revision;
+    const owner = store.getState('currentUser')?.id;
     this.container.innerHTML = `
       <div class="view-header" style="margin-bottom:20px;">
         <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">Interactive Quizzes</h2>
@@ -97,6 +100,9 @@ export class QuizzesView {
       </div>
     `;
 
+    this.container.innerHTML +=
+      '<div id="saved-practice"><p role="status">Loading saved practice and mistakes…</p></div>';
+    this.loadSavedPractice(revision, owner);
     this.container.querySelector('#generate-quiz-btn').onclick = () => this.generateQuiz();
     const sessionId = store.getState('activeSessionId');
     if (sessionId) {
@@ -104,6 +110,7 @@ export class QuizzesView {
       button.disabled = true;
       try {
         const session = await sentioAPI.get(`/sessions/${sessionId}`);
+        if (revision !== this.revision || store.getState('currentUser')?.id !== owner) return;
         for (const field of ['subject', 'topic', 'difficulty']) {
           const input = this.container.querySelector(`#quiz-${field}`);
           if (input) input.value = session[field];
@@ -114,6 +121,44 @@ export class QuizzesView {
         toast('Failed to load quiz session: ' + e.message, true);
       }
     }
+  }
+
+  async loadSavedPractice(revision, owner) {
+    const panel = this.container.querySelector('#saved-practice');
+    if (!panel) return;
+    const [quizzes, feedback] = await Promise.allSettled([
+      sentioAPI.get('/quizzes?limit=20'),
+      sentioAPI.get('/study/feedback'),
+    ]);
+    if (
+      revision !== this.revision ||
+      store.getState('currentUser')?.id !== owner ||
+      store.getState('activeRoute') !== '#/quizzes'
+    )
+      return;
+    panel.innerHTML = `<sentio-card title="Saved quizzes">${quizzes.status === 'fulfilled' ? `<ul class="study-list">${(quizzes.value.quizzes || []).map((quiz) => `<li><button class="workspace-action saved-quiz" data-id="${escapeHtml(quiz.quiz_id)}">${escapeHtml(quiz.title)}</button></li>`).join('') || '<li>No saved quizzes yet.</li>'}</ul>` : '<p role="alert">Saved quizzes unavailable. Reopen Review to retry.</p>'}</sentio-card><sentio-card title="Mistake review">${feedback.status === 'fulfilled' ? `<p>${escapeHtml(feedback.value.summary)}</p><ul class="study-list">${feedback.value.mistakes.map((mistake) => `<li><strong>${escapeHtml(mistake.topic)}</strong><p>${escapeHtml(mistake.question_text)}</p><small>Your answer: ${escapeHtml(mistake.student_answer)}</small><p>Revisit the explanation in your saved quiz or study notes before trying again.</p></li>`).join('')}</ul>` : '<p role="alert">Practice evidence unavailable.</p>'}</sentio-card>`;
+    panel.querySelectorAll('.saved-quiz').forEach((button) => {
+      button.onclick = async () => {
+        button.disabled = true;
+        try {
+          const quiz = await sentioAPI.get(`/quizzes/${button.dataset.id}`);
+          if (
+            revision !== this.revision ||
+            store.getState('currentUser')?.id !== owner ||
+            store.getState('activeRoute') !== '#/quizzes'
+          )
+            return;
+          this.quiz = quiz;
+          this.answers = {};
+          this.currentQuestionIdx = 0;
+          this.results = null;
+          this.render();
+        } catch (error) {
+          toast(error.message, true);
+          button.disabled = false;
+        }
+      };
+    });
   }
 
   async generateQuiz() {
@@ -280,7 +325,9 @@ export class QuizzesView {
   }
 
   async submitQuiz() {
-    const activeSessionId = store.getState('activeSessionId');
+    const revision = this.revision;
+    const owner = store.getState('currentUser')?.id;
+    const activeSessionId = this.quiz?.session_id || store.getState('activeSessionId');
     this.container.innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60%;gap:12px;">
         <sentio-loader size="36px"></sentio-loader>
@@ -297,7 +344,12 @@ export class QuizzesView {
         },
         { timeout: 180000 * (this.quiz.questions.length + 1) + 10000 },
       );
-
+      if (
+        revision !== this.revision ||
+        owner !== store.getState('currentUser')?.id ||
+        store.getState('activeRoute') !== '#/quizzes'
+      )
+        return;
       this.results = res;
       this.render();
     } catch (e) {
@@ -349,7 +401,7 @@ export class QuizzesView {
                   </div>
                   <p style="font-size:14px;color:var(--text);line-height:1.4;margin:4px 0;">${escapeHtml(qOriginal.question_text)}</p>
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:14px;background:var(--bg2);padding:8px;border-radius:var(--radius);border:1px solid var(--border);">
-                    <div>Your Answer: <strong style="color:${f.is_correct ? 'var(--green)' : 'var(--red)'};">${f.student_answer || 'N/A'}</strong></div>
+                    <div>Your Answer: <strong style="color:${f.is_correct ? 'var(--green)' : 'var(--red)'};">${escapeHtml(f.student_answer || 'N/A')}</strong></div>
                     <div>Correct Answer: <strong style="color:var(--green);">${escapeHtml(f.correct_answer)}</strong></div>
                   </div>
                   <details style="margin-top:6px;">
