@@ -12,7 +12,9 @@ import math
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
+
+from sentio.whiteboard.canvas_schema import render_color, validate_canvas
 
 logger = logging.getLogger(__name__)
 
@@ -28,16 +30,29 @@ class WhiteboardService:
         session_id: str,
         title: str,
         canvas_state: Dict[str, Any],
+        require_owner=False,
     ):
         """Save/Sync the whiteboard canvas state JSON."""
-        state_str = json.dumps(canvas_state)
-        self.agent.sm.save_whiteboard(
-            whiteboard_id=whiteboard_id,
-            student_id=student_id,
-            session_id=session_id,
-            title=title,
-            canvas_state_json=state_str,
-        )
+        state_str = json.dumps(validate_canvas(canvas_state))
+
+        def save(connection=None):
+            self.agent.sm.save_whiteboard(
+                whiteboard_id=whiteboard_id,
+                student_id=student_id,
+                session_id=session_id,
+                title=title,
+                canvas_state_json=state_str,
+                connection=connection,
+            )
+
+        if require_owner:
+            from sentio.repositories.whiteboard_repository import WhiteboardRepository
+
+            repository = WhiteboardRepository(self.agent.sm.persister._engine)
+            with repository.publication(student_id, session_id, whiteboard_id) as connection:
+                save(connection)
+        else:
+            save()
         logger.info(f"Saved whiteboard {whiteboard_id} (title: '{title}')")
 
     def load_session(self, whiteboard_id: str) -> Optional[Dict[str, Any]]:
@@ -63,14 +78,16 @@ class WhiteboardService:
         if not wb_data:
             raise ValueError(f"Whiteboard not found: {whiteboard_id}")
 
-        canvas_state = wb_data["canvas_state"]
+        if format_type.lower() not in ("png", "pdf"):
+            raise ValueError("Choose PNG or PDF export")
+        canvas_state = validate_canvas(wb_data["canvas_state"])
         shapes = canvas_state.get("shapes", [])
 
         # Create a blank image with a grid paper background
         width = canvas_state.get("width", 1000)
         height = canvas_state.get("height", 800)
         img = Image.new("RGB", (width, height), "white")
-        draw = ImageDraw.Draw(img)
+        draw = ImageDraw.Draw(img, "RGBA")
 
         # Draw grid lines (subtle grid paper feel)
         grid_size = 40
@@ -82,7 +99,7 @@ class WhiteboardService:
         # Draw shapes
         for s in shapes:
             stype = s.get("type", "").lower()
-            color = s.get("color", "black")
+            color = render_color(s.get("color", "black"))
             stroke_width = int(s.get("strokeWidth", 2))
 
             x = float(s.get("x", 0))
@@ -112,9 +129,9 @@ class WhiteboardService:
                         self._draw_arrow_head(draw, p1, p2, color, stroke_width)
             elif stype == "text":
                 text_val = s.get("text", "")
-                int(s.get("fontSize", 16))
+                font = ImageFont.load_default(size=int(s.get("fontSize", 16)))
                 # Draw simple text annotation
-                draw.text((x, y), text_val, fill=color)
+                draw.text((x, y), text_val, fill=color, font=font)
 
         # Output to byte stream
         bio = io.BytesIO()

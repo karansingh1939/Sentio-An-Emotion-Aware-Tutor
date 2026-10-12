@@ -93,3 +93,34 @@ const { AnalyticsView } = await loadView('analytics');
 new AnalyticsView('view').render({ topic_mastery: { [malicious]: 0.7 }, overall_mastery: 0.7 });
 assert.ok(!container.innerHTML.includes(malicious));
 assert.ok(container.innerHTML.includes('70%'));
+
+const { WhiteboardView } = await loadView('whiteboard');
+const board = new WhiteboardView('view');
+board.title = malicious;
+board.render();
+assert.ok(!container.innerHTML.includes(malicious));
+board.redraw = () => {};
+board.shapes = [{ type: 'text', text: 'Saved sketch' }];
+board.undoStack = [JSON.parse(JSON.stringify(board.shapes))];
+board.shapes.push({ type: 'text', text: 'New note' });
+board.recordState();
+board.undo();
+assert.equal(board.shapes.length, 1);
+assert.equal(board.shapes[0].text, 'Saved sketch');
+board.redo();
+assert.equal(board.shapes.length, 2);
+board.undo();
+assert.equal(board.shapes.length, 1);
+board.canvas = {
+  width: 1000,
+  height: 750,
+  getBoundingClientRect: () => ({ left: 10, top: 20, width: 500, height: 375 }),
+};
+assert.equal(board.getMousePos({ clientX: 260, clientY: 207.5 }).x, 500);
+assert.equal(board.getMousePos({ clientX: 260, clientY: 207.5 }).y, 375);
+board.zoomLevel = 0.5;
+assert.equal(board.getMousePos({ clientX: 510, clientY: 395 }).x, 1000);
+assert.equal(board.getMousePos({ clientX: 510, clientY: 395 }).y, 750);
+console.log(
+  'Whiteboard titles are escaped; undo preserves loaded drawings and pointer coordinates scale correctly.',
+);

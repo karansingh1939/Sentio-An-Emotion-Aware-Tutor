@@ -2,20 +2,26 @@
 import { sentioAPI } from '../core/api.js';
 import { store } from '../core/store.js';
 import { toast } from '../components/ui.js';
+import { escapeHtml } from '../core/html.js';
 
 export class WhiteboardView {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
-    this.whiteboardId = 'wb_default_01';
-    this.title = 'Recursion Flow';
-    this.studentId = 'stu_001';
+    this.whiteboardId = null;
+    this.title = 'Study sketch';
+    this.studentId = null;
+    this.sessionId = null;
+    this.loadRevision = 0;
+    this.editRevision = 0;
+    this.saveOperation = null;
+    this.drafts = new Map();
 
     this.shapes = [];
     this.undoStack = [];
     this.redoStack = [];
 
     this.currentTool = 'pen'; // pen | highlighter | eraser | line | arrow | rectangle | circle | text
-    this.currentColor = '#00c8ff';
+    this.currentColor = '#24496b';
     this.currentWidth = 4;
     this.zoomLevel = 1.0;
     this.panX = 0;
@@ -32,13 +38,28 @@ export class WhiteboardView {
   init() {
     store.subscribe('activeRoute', (route) => {
       if (route === '#/whiteboard') {
-        this.studentId = store.getState('currentUser')?.id || 'stu_001';
-        this.whiteboardId = 'wb_session_' + (store.getState('activeSessionId') || 'general');
         this.loadSessionState();
-        this.startAutosave();
       } else {
+        this.loadRevision++;
+        if (this.hasUnsavedChanges) this.saveWhiteboard(true);
         this.stopAutosave();
       }
+    });
+    store.subscribe('currentUser', (user) => {
+      if (user?.id === this.studentId) return;
+      this.loadRevision++;
+      this.shapes = [];
+      this.drafts.clear();
+      this.undoStack = [];
+      this.redoStack = [];
+      this.hasUnsavedChanges = false;
+      this.stopAutosave();
+      this.ctx?.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.container.innerHTML = '';
+      if (user && store.getState('activeRoute') === '#/whiteboard') this.loadSessionState();
+    });
+    store.subscribe('activeSessionId', () => {
+      if (store.getState('activeRoute') === '#/whiteboard') this.loadSessionState();
     });
   }
 
@@ -59,6 +80,24 @@ export class WhiteboardView {
   }
 
   async loadSessionState() {
+    this.stopAutosave();
+    if (this.hasUnsavedChanges && this.studentId) this.captureDraft();
+    const revision = ++this.loadRevision;
+    const owner = store.getState('currentUser')?.id;
+    const session = store.getState('activeSessionId');
+    const current = () =>
+      revision === this.loadRevision &&
+      owner === store.getState('currentUser')?.id &&
+      session === store.getState('activeSessionId') &&
+      store.getState('activeRoute') === '#/whiteboard';
+    this.hasUnsavedChanges = false;
+    this.shapes = [];
+    this.isDrawing = false;
+    this.canvas = null;
+    this.ctx = null;
+    this.studentId = owner;
+    this.sessionId = session;
+    this.whiteboardId = `wb_${owner}_${session || 'draft'}`;
     this.container.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:center;height:60%;">
         <sentio-loader size="32px"></sentio-loader>
@@ -66,27 +105,58 @@ export class WhiteboardView {
     `;
 
     try {
-      const res = await sentioAPI.get(`/whiteboards/${this.whiteboardId}`);
+      let res = session
+        ? await sentioAPI.get(`/whiteboards/${this.whiteboardId}`)
+        : { canvas_state: { shapes: [] }, title: 'Study sketch' };
+      if (!current()) return;
       this.shapes = res.canvas_state?.shapes || [];
       this.title = res.title || 'Tutoring Space';
     } catch (e) {
-      // Create new session locally if 404
-      this.shapes = [];
-      this.title = 'Whiteboard Diagram';
+      if (!current()) return;
+      if (e.status !== 404) {
+        this.container.innerHTML = `<sentio-alert variant="error">Saved canvas could not load. Retry before editing.</sentio-alert><button id="wb-retry">Retry</button>`;
+        this.container.querySelector('#wb-retry').onclick = () => this.loadSessionState();
+        return;
+      }
+      // Preserve earlier session-linked canvases without sharing a default ID between accounts.
+      try {
+        const legacyId = 'wb_session_' + session;
+        const legacy = await sentioAPI.get(`/whiteboards/${legacyId}`);
+        if (!current()) return;
+        this.whiteboardId = legacyId;
+        this.shapes = legacy.canvas_state?.shapes || [];
+        this.title = legacy.title || 'Study sketch';
+      } catch (legacyError) {
+        if (!current()) return;
+        if (legacyError.status !== 404 && legacyError.status !== 403) {
+          this.container.innerHTML = `<sentio-alert variant="error">Saved canvas could not load. Retry before editing.</sentio-alert><button id="wb-retry">Retry</button>`;
+          this.container.querySelector('#wb-retry').onclick = () => this.loadSessionState();
+          return;
+        }
+        this.shapes = [];
+        this.title = 'Study sketch';
+      }
     }
 
-    this.undoStack = [];
+    if (!current()) return;
+    const recovered = this.drafts.get(`${owner}:${session || 'draft'}`);
+    if (recovered) {
+      this.shapes = recovered.shapes;
+      this.title = recovered.title;
+    }
+    this.undoStack = [JSON.parse(JSON.stringify(this.shapes))];
     this.redoStack = [];
-    this.hasUnsavedChanges = false;
+    this.hasUnsavedChanges = Boolean(recovered);
     this.render();
     this.initCanvas();
+    this.startAutosave();
   }
 
   render() {
     this.container.innerHTML = `
       <div class="view-header" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
         <div>
-          <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">Intelligent Whiteboard</h2>
+          <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">${escapeHtml(this.title)}</h2>
           <p style="color:var(--text-dim);font-size:14px;">Sketch study maps or paste and render Mermaid diagrams directly from the AI tutor.</p>
         </div>
         <div style="display:flex;gap:10px;align-items:center;">
@@ -101,12 +171,12 @@ export class WhiteboardView {
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 280px;gap:16px;width:100%;height:calc(100vh - 150px);overflow:hidden;">
+      <div class="wb-layout" style="display:grid;grid-template-columns:1fr 280px;gap:16px;width:100%;">
         <!-- Left: Workspace Controls + Canvas -->
         <div style="display:flex;flex-direction:column;gap:10px;height:100%;overflow:hidden;">
           <!-- Toolbar -->
           <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;flex-wrap:wrap;gap:8px;">
-            <div style="display:flex;align-items:center;gap:6px;">
+            <div class="wb-tool-group" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
               <button class="tool-btn" data-tool="pen" title="Freehand Pen" style="background:var(--accent);color:var(--bg);border:none;width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:14px;">✏️</button>
               <button class="tool-btn" data-tool="highlighter" title="Highlighter" style="background:none;border:1px solid var(--border);color:var(--text);width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:14px;">🖍️</button>
               <button class="tool-btn" data-tool="eraser" title="Eraser" style="background:none;border:1px solid var(--border);color:var(--text);width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:14px;">🧹</button>
@@ -122,7 +192,7 @@ export class WhiteboardView {
               <!-- Color picker -->
               <div style="display:flex;gap:4px;align-items:center;">
                 <span style="font-size:14px;color:var(--text-dim);font-weight:bold;">COLOR</span>
-                <input type="color" id="wb-color-picker" value="#00c8ff" style="border:none;background:none;width:24px;height:24px;cursor:pointer;" />
+                <input type="color" id="wb-color-picker" value="${this.currentColor}" aria-label="Stroke color" style="border:none;background:none;width:24px;height:24px;cursor:pointer;" />
               </div>
 
               <!-- Stroke width -->
@@ -146,8 +216,8 @@ export class WhiteboardView {
           </div>
 
           <!-- Canvas Viewport Box -->
-          <div style="flex:1;border:1px solid var(--border);border-radius:var(--radius-lg);position:relative;overflow:hidden;background:#fff;box-shadow:inset 0 4px 20px rgba(0,0,0,0.05);">
-            <canvas id="whiteboard-canvas" width="1000" height="750" style="position:absolute;top:0;left:0;cursor:crosshair;"></canvas>
+          <div class="wb-paper" style="flex:1;border:1px solid var(--border);border-radius:var(--radius-lg);position:relative;overflow:hidden;background:#fff;">
+            <canvas id="whiteboard-canvas" width="1000" height="750" aria-label="Drawing canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;cursor:crosshair;"></canvas>
             
             <!-- Floating zoom indicators -->
             <div style="position:absolute;bottom:14px;right:14px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:14px;font-family:var(--mono);color:var(--text);display:flex;gap:8px;align-items:center;">
@@ -160,9 +230,9 @@ export class WhiteboardView {
 
         <!-- Right: Mermaid Diagram Integration -->
         <div style="display:flex;flex-direction:column;gap:14px;height:100%;overflow-y:auto;">
-          <sentio-card title="🧜‍♀️ Mermaid Render Engine">
+          <sentio-card title="Flowchart">
             <p style="font-size:14px;color:var(--text-dim);line-height:1.4;margin-bottom:10px;">Paste a flow diagram generated by your AI tutor to automatically render it as editable vector shapes.</p>
-            <textarea id="mermaid-code-input" placeholder="graph TD&#10;  A[Tutor] --> B[RAG]&#10;  B --> C[Whiteboard]" style="width:100%;height:160px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;resize:vertical;"></textarea>
+            <textarea id="mermaid-code-input" aria-label="Flowchart code" placeholder="graph TD&#10;  A[Concept] --> B[Example]&#10;  B --> C[Practice]" style="width:100%;height:160px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;resize:vertical;"></textarea>
             <button id="render-mermaid-btn" style="margin-top:12px;width:100%;background:var(--accent);color:var(--bg);border:none;padding:10px;border-radius:var(--radius);font-family:var(--mono);font-size:14px;font-weight:bold;cursor:pointer;">
               Render Flowchart Shapes
             </button>
@@ -184,9 +254,18 @@ export class WhiteboardView {
     this.redraw();
 
     // Event bindings
-    this.canvas.onmousedown = (e) => this.handleMouseDown(e);
-    this.canvas.onmousemove = (e) => this.handleMouseMove(e);
-    this.canvas.onmouseup = (e) => this.handleMouseUp(e);
+    this.canvas.style.touchAction = 'none';
+    this.canvas.onpointerdown = (e) => {
+      if (e.button !== 0) return;
+      this.canvas.setPointerCapture(e.pointerId);
+      this.handleMouseDown(e);
+    };
+    this.canvas.onpointermove = (e) => this.handleMouseMove(e);
+    this.canvas.onpointerup = (e) => this.handleMouseUp(e);
+    this.canvas.onpointercancel = () => {
+      this.isDrawing = false;
+      this.currentPoints = [];
+    };
 
     // Save and export
     this.container.querySelector('#wb-save-btn').onclick = () => this.saveWhiteboard(false);
@@ -240,13 +319,18 @@ export class WhiteboardView {
   getMousePos(e) {
     const rect = this.canvas.getBoundingClientRect();
     // Account for zoom and bounding client size scale
-    const x = (e.clientX - rect.left) / this.zoomLevel;
-    const y = (e.clientY - rect.top) / this.zoomLevel;
-    return { x, y };
+    const x = ((e.clientX - rect.left) * this.canvas.width) / rect.width / this.zoomLevel;
+    const y = ((e.clientY - rect.top) * this.canvas.height) / rect.height / this.zoomLevel;
+    return {
+      x: Math.max(0, Math.min(this.canvas.width, x)),
+      y: Math.max(0, Math.min(this.canvas.height, y)),
+    };
   }
 
   handleMouseDown(e) {
+    if (this.isDrawing) return;
     this.isDrawing = true;
+    this.eraseChanged = false;
     const pos = this.getMousePos(e);
     this.startX = pos.x;
     this.startY = pos.y;
@@ -263,6 +347,7 @@ export class WhiteboardView {
     const pos = this.getMousePos(e);
 
     if (this.currentTool === 'pen' || this.currentTool === 'highlighter') {
+      if (this.currentPoints.length >= 2000) return;
       this.currentPoints.push([pos.x, pos.y]);
       this.redraw();
 
@@ -313,6 +398,7 @@ export class WhiteboardView {
       const prevLength = this.shapes.length;
       this.shapes = this.shapes.filter((s) => !this.isPointInShape(pos.x, pos.y, s));
       if (this.shapes.length !== prevLength) {
+        this.eraseChanged = true;
         this.markUnsaved();
         this.redraw();
       }
@@ -387,10 +473,12 @@ export class WhiteboardView {
 
     if (newShape) {
       this.shapes.push(newShape);
-      this.undoStack.push(JSON.parse(JSON.stringify(this.shapes)));
+      this.recordState();
       this.redoStack = [];
       this.markUnsaved();
       this.redraw();
+    } else if (this.currentTool === 'eraser' && this.eraseChanged) {
+      this.recordState();
     }
   }
 
@@ -433,7 +521,7 @@ export class WhiteboardView {
         color: this.currentColor,
         fontSize: 16,
       });
-      this.undoStack.push(JSON.parse(JSON.stringify(this.shapes)));
+      this.recordState();
       this.markUnsaved();
       this.redraw();
     }
@@ -504,7 +592,7 @@ export class WhiteboardView {
         this.ctx.stroke();
       } else if (s.type === 'text') {
         this.ctx.fillStyle = s.color;
-        this.ctx.font = `${s.fontSize || 16}px JetBrains Mono`;
+        this.ctx.font = `${s.fontSize || 16}px sans-serif`;
         this.ctx.fillText(s.text, s.x, s.y);
       }
     });
@@ -535,13 +623,10 @@ export class WhiteboardView {
   }
 
   undo() {
-    if (this.undoStack.length > 0) {
-      const last = this.undoStack.pop();
+    if (this.undoStack.length > 1) {
+      this.undoStack.pop();
       this.redoStack.push(JSON.parse(JSON.stringify(this.shapes)));
-      this.shapes =
-        this.undoStack.length > 0
-          ? JSON.parse(JSON.stringify(this.undoStack[this.undoStack.length - 1]))
-          : [];
+      this.shapes = JSON.parse(JSON.stringify(this.undoStack[this.undoStack.length - 1]));
       this.markUnsaved();
       this.redraw();
     }
@@ -550,8 +635,8 @@ export class WhiteboardView {
   redo() {
     if (this.redoStack.length > 0) {
       const next = this.redoStack.pop();
-      this.undoStack.push(JSON.parse(JSON.stringify(this.shapes)));
       this.shapes = next;
+      this.undoStack.push(JSON.parse(JSON.stringify(this.shapes)));
       this.markUnsaved();
       this.redraw();
     }
@@ -560,46 +645,82 @@ export class WhiteboardView {
   clearCanvas() {
     if (confirm('Clear all drawings from the canvas?')) {
       this.shapes = [];
-      this.undoStack.push([]);
+      this.recordState();
       this.redoStack = [];
       this.markUnsaved();
       this.redraw();
     }
   }
 
+  recordState() {
+    this.undoStack.push(JSON.parse(JSON.stringify(this.shapes)));
+    this.undoStack = this.undoStack.slice(-100);
+    this.redoStack = [];
+  }
+
+  captureDraft() {
+    this.drafts.set(`${this.studentId}:${this.sessionId || 'draft'}`, {
+      shapes: JSON.parse(JSON.stringify(this.shapes)),
+      title: this.title,
+    });
+  }
+
   markUnsaved() {
+    this.editRevision++;
     this.hasUnsavedChanges = true;
+    this.captureDraft();
     const badge = this.container.querySelector('#wb-unsaved-badge');
     if (badge) badge.style.display = 'inline';
   }
 
   async saveWhiteboard(isAutosave = false) {
-    const activeSessionId = store.getState('activeSessionId');
+    const activeSessionId = this.sessionId;
+    const owner = this.studentId;
+    const board = this.whiteboardId;
+    const edit = this.editRevision;
+    const revision = this.loadRevision;
+    if (owner !== store.getState('currentUser')?.id || !this.canvas) return false;
     if (!activeSessionId) {
       if (!isAutosave) toast('Please start or resume a tutoring session before saving.', true);
-      return;
+      return false;
+    }
+    if (this.saveOperation) {
+      await this.saveOperation;
+      if (owner !== store.getState('currentUser')?.id || board !== this.whiteboardId) return false;
+      if (!this.hasUnsavedChanges) return true;
+      return this.saveWhiteboard(isAutosave);
     }
 
+    const saving = sentioAPI.post('/whiteboards/sessions', {
+      whiteboard_id: board,
+      student_id: owner,
+      session_id: activeSessionId,
+      title: this.title,
+      canvas_state: { width: this.canvas.width, height: this.canvas.height, shapes: this.shapes },
+    });
+    this.saveOperation = saving.catch(() => {});
     try {
-      await sentioAPI.post('/whiteboards/sessions', {
-        whiteboard_id: this.whiteboardId,
-        student_id: this.studentId,
-        session_id: activeSessionId,
-        title: this.title,
-        canvas_state: {
-          width: this.canvas.width,
-          height: this.canvas.height,
-          shapes: this.shapes,
-        },
-      });
-
+      await saving;
+      if (
+        revision !== this.loadRevision ||
+        owner !== store.getState('currentUser')?.id ||
+        board !== this.whiteboardId
+      )
+        return false;
+      if (edit !== this.editRevision) return true; // Later drawing still needs its own save.
       this.hasUnsavedChanges = false;
+      this.drafts.delete(`${owner}:${activeSessionId}`);
       const badge = this.container.querySelector('#wb-unsaved-badge');
       if (badge) badge.style.display = 'none';
 
       if (!isAutosave) toast('Whiteboard synced successfully.');
+      return true;
     } catch (e) {
-      if (!isAutosave) toast('Save failed: ' + e.message, true);
+      if (!isAutosave && owner === store.getState('currentUser')?.id && board === this.whiteboardId)
+        toast('Save failed: ' + e.message, true);
+      return false;
+    } finally {
+      this.saveOperation = null;
     }
   }
 
@@ -607,7 +728,10 @@ export class WhiteboardView {
     const format = this.container.querySelector('#wb-export-format').value;
 
     // First, save canvas state to ensure latest vector rendering on Pillow
-    await this.saveWhiteboard(true);
+    const owner = this.studentId;
+    const board = this.whiteboardId;
+    if (!(await this.saveWhiteboard(false))) return;
+    if (this.hasUnsavedChanges && !(await this.saveWhiteboard(false))) return;
 
     toast('Exporting diagram stream...');
 
@@ -620,6 +744,12 @@ export class WhiteboardView {
 
       // Download response blob
       const blob = await res.blob();
+      if (
+        owner !== store.getState('currentUser')?.id ||
+        board !== this.whiteboardId ||
+        store.getState('activeRoute') !== '#/whiteboard'
+      )
+        return;
       const url = window.URL.createObjectURL(blob);
       const dlAnchor = document.createElement('a');
       dlAnchor.href = url;
@@ -636,6 +766,8 @@ export class WhiteboardView {
   }
 
   async renderMermaid() {
+    const revision = this.loadRevision;
+    const owner = this.studentId;
     const code = this.container.querySelector('#mermaid-code-input').value.trim();
     if (!code) {
       toast('Mermaid markup cannot be empty', true);
@@ -647,10 +779,16 @@ export class WhiteboardView {
       const res = await sentioAPI.post('/whiteboards/mermaid', {
         mermaid_code: code,
       });
+      if (
+        revision !== this.loadRevision ||
+        owner !== store.getState('currentUser')?.id ||
+        store.getState('activeRoute') !== '#/whiteboard'
+      )
+        return;
 
       if (res.shapes && res.shapes.length > 0) {
         this.shapes = [...this.shapes, ...res.shapes];
-        this.undoStack.push(JSON.parse(JSON.stringify(this.shapes)));
+        this.recordState();
         this.markUnsaved();
         this.redraw();
         toast('Diagram flowchart rendered successfully!');

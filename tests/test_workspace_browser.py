@@ -193,6 +193,32 @@ async def test_streaming_turn_is_readable_and_survives_refresh(monkeypatch):
                 )
             ).json()
             assert cards["due_count"] == 0
+            await page.goto(url + "/#/whiteboard")
+            canvas = page.locator("#whiteboard-canvas")
+            await canvas.wait_for(state="visible")
+            await page.click('.tool-btn[data-tool="highlighter"]')
+            await canvas.scroll_into_view_if_needed()
+            rectangle = await canvas.bounding_box()
+            await page.mouse.move(rectangle["x"] + 30, rectangle["y"] + 50)
+            await page.mouse.down()
+            await page.mouse.move(rectangle["x"] + 130, rectangle["y"] + 60, steps=6)
+            await page.mouse.up()
+            await page.click("#wb-save-btn")
+            await page.wait_for_selector("#wb-unsaved-badge", state="hidden")
+            async with page.expect_download() as exported:
+                await page.click("#wb-export-btn")
+            download = await exported.value
+            assert download.suggested_filename.endswith(".png")
+            from PIL import Image
+
+            image = Image.open(await download.path())
+            assert image.size == (1000, 750)
+            assert any(
+                red != green or green != blue for red, green, blue in image.get_flattened_data()
+            )
+            await page.reload()
+            await page.wait_for_selector("#whiteboard-canvas")
+            assert "Study sketch" in await page.locator("#view-whiteboard").inner_text()
             assert errors == [], errors
             await browser.close()
     finally:

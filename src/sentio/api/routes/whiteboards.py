@@ -13,6 +13,7 @@ from sentio.api.dependencies import (
 )
 from sentio.api.schemas import ExportWhiteboardRequest, MermaidRequest, SaveWhiteboardRequest
 from sentio.auth.middleware import get_current_user
+from sentio.jobs.control import WorkCancelled
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -34,8 +35,17 @@ def save_whiteboard_session(req: SaveWhiteboardRequest, user: dict = Depends(get
             session_id=req.session_id,
             title=req.title,
             canvas_state=req.canvas_state,
+            require_owner=True,
         )
         return {"saved": True, "whiteboard_id": req.whiteboard_id}
+    except PermissionError as exc:
+        raise HTTPException(403, str(exc)) from exc
+    except WorkCancelled as exc:
+        raise HTTPException(409, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(
+            422, "Drawing exceeds its limits or contains invalid vector data."
+        ) from exc
     except Exception as e:
         logger.exception("Failed to save whiteboard session")
         raise HTTPException(status_code=500, detail=str(e))
@@ -71,7 +81,9 @@ def export_whiteboard_session(
         media_type = "application/pdf" if req.format.lower() == "pdf" else "image/png"
         return Response(content=content, media_type=media_type)
     except ValueError as val_err:
-        raise HTTPException(status_code=404, detail=str(val_err))
+        raise HTTPException(
+            status_code=422, detail="Saved drawing cannot be exported in this format."
+        ) from val_err
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

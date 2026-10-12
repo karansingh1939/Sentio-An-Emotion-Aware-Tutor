@@ -1176,12 +1176,17 @@ class SessionManager:
         session_id: str,
         title: str,
         canvas_state_json: str,
+        connection=None,
     ):
         if not self.persister._use_db:
             return
         from sqlalchemy import text
 
-        with self.persister._engine.connect() as conn:
+        with (
+            nullcontext(connection)
+            if connection is not None
+            else self.persister._engine.connect() as conn
+        ):
             exists = conn.execute(
                 text("SELECT 1 FROM whiteboards WHERE whiteboard_id = :wid"), {"wid": whiteboard_id}
             ).scalar()
@@ -1202,7 +1207,7 @@ class SessionManager:
                     },
                 )
             else:
-                self.ensure_student_exists(student_id)
+                self.ensure_student_exists(student_id, connection=conn)
                 conn.execute(
                     text("""
                         INSERT INTO whiteboards (whiteboard_id, student_id, session_id, title, canvas_state_json, created_at, updated_at)
@@ -1217,7 +1222,8 @@ class SessionManager:
                         "ts": time.time(),
                     },
                 )
-            conn.commit()
+            if connection is None:
+                conn.commit()
 
     def get_whiteboard(self, whiteboard_id: str) -> Optional[dict]:
         if not self.persister._use_db:

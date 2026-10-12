@@ -1,5 +1,6 @@
 /* Shared study-workspace tokens and layout. Legacy tool geometry is retained. */
 :root {
+  --whiteboard-paper-height: 480px;
   color-scheme: light;
   --bg: #f5f6f8;
   --bg2: #ffffff;
@@ -21,6 +22,17 @@
   --mono: system-ui, -apple-system, 'Segoe UI', sans-serif;
   --display: system-ui, -apple-system, 'Segoe UI', sans-serif;
   --code: ui-monospace, Consolas, monospace;
+}
+
+.wb-paper {
+  min-height: var(--whiteboard-paper-height);
+}
+.wb-layout .tool-btn {
+  min-width: 44px;
+  min-height: 44px;
+}
+.wb-layout button {
+  min-height: 44px;
 }
 html[data-theme='dark'] {
   color-scheme: dark;
