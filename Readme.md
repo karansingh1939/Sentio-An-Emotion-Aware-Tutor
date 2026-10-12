@@ -1,6 +1,6 @@
 # Sentio
 
-A local emotion-aware tutor with document-grounded learning and study tools. The Python server also serves the web interface;
+A local study workspace for notes, cited tutoring, quizzes and scheduled review. The Python server also serves the web interface;
 there is no separate npm development server.
 
 ## Run on this Windows checkout
@@ -23,7 +23,7 @@ Use `--port 8000` if that port is free. Add `--reload` for development.
 Install Python 3.12, uv, and Ollama, then run from the project root:
 
 ```powershell
-uv sync
+uv sync --locked
 ```
 
 If `.env` does not exist, copy `.env.example` to `.env`. For local AI tutoring,
@@ -60,8 +60,10 @@ and [tasks/continuation.md](tasks/continuation.md).
 
 The study workspace groups tools into Today, Library, Study, Review and Progress.
 Use the sidebar to switch light/dark themes; the preference survives reload.
-Core pages use bundled assets and system fonts. Optional camera experiments
-still require their external MediaPipe resources and load only when enabled.
+Core pages use bundled assets and system fonts. Experimental camera and voice controls
+are excluded from the supported study interface. TensorFlow is an optional camera
+dependency, outside normal installation. See [the learner guide](docs/STUDY_GUIDE.md)
+and [remaining release work](docs/RELEASE_HANDOFF.md).
 
 ## Checks
 

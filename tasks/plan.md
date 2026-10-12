@@ -46,3 +46,12 @@ training/evaluation commands, measured report, demo, attribution and résumé
 bullets containing actual results only.
 
 Tasks: [todo.md](todo.md). Resume: [continuation.md](continuation.md).
+
+
+### User-priority adjustment, 2026-10-12
+
+First make the normal flow understandable: Today ? upload ? direct Study ?
+shared-context quiz/cards ? review. Add safe local recovery, real JWTs, preserve
+saved work and test the novice path. This checkpoint is implemented and measured
+in continuation.md. Source fallbacks keep provider failures explicit. Remaining
+milestones retain their original acceptance gates; see RELEASE_HANDOFF.md.

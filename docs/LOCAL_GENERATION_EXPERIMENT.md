@@ -99,3 +99,20 @@ The candidate's upstream documentation records its packaging and licence:
 Streaming/schema contracts follow the [Ollama chat API](https://docs.ollama.com/api/chat).
 The experiment runner, failure analysis and product guards are repository work;
 the generation models and inference engine are upstream components.
+
+
+## Usability checkpoint, 2026-10-12
+
+The supported flow is now Library ? Study ? practice ? review, with guided Today
+actions and no normal camera/voice controls. Authentication issues standard HS256
+JWTs; migration 8 adds hashed single-use recovery keys and token revocation versions.
+Legacy password hashes upgrade on successful login. See STUDY_GUIDE.md and
+RELEASE_HANDOFF.md for recovery, supported workflow and open release gates.
+
+A real three-item journey failed validation before fallback integration
+(reports/generation/live-journey-usability-3-v1.json). The next journey completed
+with source-excerpt tutoring and source-recall quizzes
+(reports/generation/live-journey-usability-3-fallback-v2.json). This is a recovery
+and persistence result, not an AI teaching or learning-quality improvement.
+Earlier unsupported-answer failures remain applicable; citation membership alone
+does not establish semantic support. No reviewed evidence-model result is claimed.

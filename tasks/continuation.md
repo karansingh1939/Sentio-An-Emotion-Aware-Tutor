@@ -329,3 +329,61 @@ unchecked milestones until their full gates pass. User does not yet know how to
 label: the guided reports/evidence/review-v1.html page is ready with examples,
 small batches, Skip and export. Zero real evidence labels are reviewed; no real
 classifier, calibration gain or adoption result may be claimed or synthesized.
+
+
+## User-priority checkpoint: simpler workflow and account recovery
+
+2026-10-12. User reports confusing workflow/unnecessary controls and missing
+password recovery. Prioritized these before goal binding. Details and remaining
+human/engineering tasks are in docs/RELEASE_HANDOFF.md; beginner instructions
+are in docs/STUDY_GUIDE.md.
+
+Implemented guided Today/Library/direct Study; shared practice context, three-item
+batches, automatic first card deck, accessible card flips and four ratings; normal
+camera/voice/telemetry controls removed. Upload stages/errors are readable, expected
+input failures do not leak internal errors. Resumption persists and failed session
+closure keeps the active session. Owned review receipts reconcile a committed grade
+whose response was lost, with one grade write verified in Chromium.
+
+Authentication now issues actual HS256 JWTs (previous SEN token was custom signed).
+Migration 8 adds token versions and hashed single-use local recovery keys. Forgot
+password rotates keys, revokes old access/refresh tokens and cancels pending jobs.
+Existing users create a key in Settings using their current password. PBKDF2-SHA256
+now uses 600,000 rounds; legacy 100,000-round hashes upgrade at successful login
+without overwriting a concurrent reset or losing existing recovery keys.
+
+Default install excludes TensorFlow; camera is an optional extra. Dev dependency
+includes pypdfium2 to retain optional OCR structural test coverage. A first run
+revealed an outdated Analytics label assertion; updated to Practice estimate and
+asserted its learning limitation copy. No failed tests were disabled.
+
+Final verification: 240 passed, 1 external-Tesseract skip, 31 subtests passed
+(tmp/usability-final-tests.log, 133.96s). Six JavaScript checks, Python/JS format,
+Ruff, uv lock, source/wheel builds pass. Wheel contains new fallback/recovery
+modules and UI. uv audit: no known vulnerabilities/adverse statuses in 202
+packages; npm audit: zero. Actual 390px novice/recovery journeys, lost-grade
+response, offline 390/768/desktop light/dark workspace and export checks pass.
+
+Before migration, a 1515-file private snapshot was verified and restored into an
+isolated directory; paths in ignored tmp/usability-backup-record.txt. SQLite integrity
+is ok; account/session/document/quiz/card counts match that snapshot. Docker absent;
+container acceptance unverified. No public publication or model download occurred.
+
+Real three-item live journey initially failed on uncited tutoring/invalid quiz
+(live-journey-usability-3-v1.json). After integration, mechanics complete using
+source_excerpt tutor + source_recall quiz, generated cards, review and restart
+(live-journey-usability-3-fallback-v2.json). Honest fallbacks are not validated
+teaching; semantically false answers with valid citations remain a release gate.
+
+Workspace server was stopped idle to sync dependencies and restarted supervised
+with `uv run python -m sentio --host 127.0.0.1 --port 8001`, exec session 46198,
+PID 31308. One earlier detached launch was blocked by automatic policy; supervised
+foreground launch succeeded. Startup diagnostics now use the actual readiness
+endpoint, not obsolete unused-camera health warnings or a hardcoded port.
+
+Next exact engineering slice: cancel/discard session-creation modal work after
+close and test late completion, then bind owned goals into shared context; finish
+practice provenance/quiz editing. Keep backend camera APIs excluded from supported
+use until consent and image limits are hardened. Subsequent gates: reviewed labels,
+MLflow tracing, held-out grounding, repeated live acceptance and student learning
+validation. No real evidence labels are reviewed; no classifier gains are claimed.

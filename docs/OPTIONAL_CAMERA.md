@@ -1,5 +1,9 @@
 # Optional camera assets
 
+Camera controls are excluded from the supported study interface at this checkpoint.
+For development only, TensorFlow can be installed with `uv sync --locked --extra camera`.
+This does not install browser assets or certify the consent/privacy lifecycle.
+
 Normal studying requires no camera or attention model. Camera consent starts off;
 navigation, logout, session changes and consent revocation stop capture, including
 late permission grants. Missing dependencies stop acquired tracks and report that
