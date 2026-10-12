@@ -55,6 +55,10 @@ jobs:
           docker compose config --quiet
       - name: Build locked application image
         run: docker build --tag sentio:ci .
+      - name: Record image size and remaining disk
+        run: |
+          docker image inspect sentio:ci --format '{{.Size}} bytes'
+          df -h /
       - name: Verify installed entry point
         run: docker run --rm sentio:ci sentio --help
       - name: Verify real Compose persistence and provider outage

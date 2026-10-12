@@ -25,6 +25,12 @@ Run one server process per persistent home. The storage lease prevents two proce
 
 ## Docker Compose
 
+Linux uses the official CPU-only PyTorch build for document embeddings, with an
+explicit uv index restricted to `torch`. Windows/macOS keep their PyPI builds.
+The base PyTorch version remains 2.14.0. This avoids installing CUDA libraries for
+the CPU retrieval runtime; Ollama's own inference backend is independent.
+The source selection follows [uv's PyTorch integration guidance](https://docs.astral.sh/uv/guides/integration/pytorch/).
+
 Install Docker with Compose. Docker is unavailable on the development Windows machine; the Docker CI job builds the image and runs a disposable Compose smoke test for authentication, saved work, restart, and provider outage. It deliberately installs no generation model and does not establish live model quality.
 
 In PowerShell, set a random secret for this terminal:

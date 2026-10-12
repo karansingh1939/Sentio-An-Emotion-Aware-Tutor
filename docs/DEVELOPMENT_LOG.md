@@ -8,6 +8,14 @@ artifact from being uploaded. Disabled retained uv caches in Docker layers and
 selected copy linking before rerunning the unchanged smoke acceptance checks.
 This is an image-footprint repair; the subsequent hosted result is required.
 
+Cache removal alone did not resolve a second runner disk exhaustion. The locked
+PyPI Linux PyTorch distribution pulled CUDA/triton libraries into a CPU retrieval
+runtime. Selected the official CPU index for Linux with an explicit torch source,
+retaining base version 2.14.0 and the Windows/macOS PyPI variants. Relocking removed
+19 unnecessary CUDA/triton packages without upgrading other libraries. CI now
+records image size and available disk before the Compose check. The official uv
+source configuration is linked in SETUP.md; hosted Linux tests cover this variant.
+
 Added a commit/test contribution map and aligned the package, normal tutor
 messages, and experimental camera wording with the supported study workspace.
 Runtime tutoring now sends owned source passages and learner memory as JSON user
