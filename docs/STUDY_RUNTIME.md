@@ -111,6 +111,8 @@ All paths below are under `/api/v1`.
 
 Synchronous study interfaces remain available during migration. New practice
 jobs use the session's subject/topic/difficulty and snapshot its selected source.
+Publication rechecks that snapshot, document revisions, account and deck inside
+the artifact transaction. Stale generation cannot create a saved quiz or cards.
 The quiz form shows this context instead of offering conflicting topic controls.
 
 Ollama streaming and schema support follow the [official chat API](https://docs.ollama.com/api/chat).

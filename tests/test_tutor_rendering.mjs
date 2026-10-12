@@ -36,6 +36,9 @@ const cameraContext = vm.createContext({
   camStream: null,
   camActive: false,
   faceLandmarker: null,
+  telemetryTimer: null,
+  resetTelemetryBuffer: () => {},
+  clearInterval: () => {},
   window: { store: { getState: (key) => state[key] } },
   navigator: {
     mediaDevices: {

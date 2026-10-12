@@ -23,6 +23,7 @@ from sentio.ai.structured_parser import (
 )
 from sentio.jobs.control import checkpoint, publish
 from sentio.persistence.quiz_repository import QuizRepository
+from sentio.repositories.practice_repository import PracticeRepository
 from sentio.shared.exceptions import LLMServiceUnavailableError
 
 logger = logging.getLogger(__name__)
@@ -42,6 +43,7 @@ class QuizService:
         difficulty: str,
         num_questions: int = 3,
         study_session=None,
+        source_snapshot=None,
     ) -> Dict[str, Any]:
         """
         Generate a quiz matching the QuizPayloadSchema using RAG context and student memory.
@@ -153,15 +155,25 @@ JSON Template:
 
         # 6. Generate quiz_id and save to database
         quiz_id = str(uuid.uuid4())
-        publish(
-            lambda: self.agent.sm.save_quiz(
+
+        def save(connection=None):
+            self.agent.sm.save_quiz(
                 quiz_id=quiz_id,
                 student_id=student_id,
                 session_id=session_id,
                 title=quiz_dict["title"],
                 questions=quiz_dict["questions"],
+                connection=connection,
             )
-        )
+
+        def save_current():
+            if source_snapshot is None:
+                return save()
+            repository = PracticeRepository(self.agent.sm.persister._engine)
+            with repository.publication(session, source_snapshot) as connection:
+                return save(connection)
+
+        publish(save_current)
 
         quiz_dict["quiz_id"] = quiz_id
         quiz_dict["session_id"] = session_id

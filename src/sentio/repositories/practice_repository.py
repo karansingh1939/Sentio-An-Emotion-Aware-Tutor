@@ -6,6 +6,8 @@ from contextlib import contextmanager
 
 from sqlalchemy import text
 
+from sentio.jobs.control import WorkCancelled
+
 
 class ReviewConflict(ValueError):
     pass
@@ -14,6 +16,75 @@ class ReviewConflict(ValueError):
 class PracticeRepository:
     def __init__(self, engine):
         self.engine = engine
+
+    def snapshot(self, session, connection=None):
+        from contextlib import nullcontext
+
+        source = session.metadata.get("document_id")
+        selected = source if isinstance(source, list) else [source]
+        with nullcontext(connection) if connection is not None else self.engine.connect() as conn:
+            documents = [
+                list(row)
+                for row in conn.execute(
+                    text("SELECT id,checksum FROM documents WHERE student_id=:owner ORDER BY id"),
+                    {"owner": session.student_id},
+                )
+                if source == "all" or row[0] in selected
+            ]
+        if source not in (None, "none", "all") and {r[0] for r in documents} != set(selected):
+            raise WorkCancelled("Selected notes are no longer available. Choose sources and retry.")
+        return {
+            "subject": session.subject,
+            "topic": session.topic,
+            "difficulty": session.difficulty,
+            "source": source,
+            "documents": documents,
+        }
+
+    @contextmanager
+    def publication(self, session, snapshot, deck_id=None):
+        from types import SimpleNamespace
+
+        with self.engine.connect() as connection:
+            connection.exec_driver_sql("BEGIN IMMEDIATE")
+            try:
+                owner = connection.execute(
+                    text("SELECT 1 FROM student_accounts WHERE student_id=:owner"),
+                    {"owner": session.student_id},
+                ).scalar()
+                stored = connection.execute(
+                    text(
+                        "SELECT data_json FROM sessions WHERE session_id=:id AND student_id=:owner"
+                    ),
+                    {"id": session.session_id, "owner": session.student_id},
+                ).scalar()
+                if not owner or not stored:
+                    raise WorkCancelled("Study account or session is no longer available.")
+                data = json.loads(stored)
+                current = SimpleNamespace(
+                    student_id=session.student_id,
+                    subject=data["subject"],
+                    topic=data["topic"],
+                    difficulty=data["difficulty"],
+                    metadata=data.get("metadata", {}),
+                )
+                if data.get("status") != "active" or self.snapshot(current, connection) != snapshot:
+                    raise WorkCancelled("Study context changed. Retry with the current notes.")
+                if (
+                    deck_id
+                    and not connection.execute(
+                        text(
+                            "SELECT 1 FROM flashcard_decks WHERE deck_id=:deck AND student_id=:owner"
+                        ),
+                        {"deck": deck_id, "owner": session.student_id},
+                    ).scalar()
+                ):
+                    raise WorkCancelled("Selected card deck is no longer available.")
+                yield connection
+                connection.commit()
+            except Exception:
+                connection.rollback()
+                raise
 
     def quizzes(self, owner, limit, offset):
         with self.engine.connect() as connection:

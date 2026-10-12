@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional
 from sentio.ai.streaming import output_schema
 from sentio.ai.structured_parser import FlashcardPayloadSchema, parse_structured_output
 from sentio.jobs.control import checkpoint, publish
+from sentio.repositories.practice_repository import PracticeRepository
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,7 @@ class FlashcardService:
         num_cards: int = 5,
         session_id: Optional[str] = None,
         study_session=None,
+        source_snapshot=None,
     ) -> Dict[str, Any]:
         """
         Generate flashcards from retrieved RAG context/curriculum.
@@ -138,14 +140,23 @@ JSON Template:
         )
 
         # 4. Save cards to database
-        publish(
-            lambda: self.agent.sm.save_flashcards(
+        def save(connection=None):
+            self.agent.sm.save_flashcards(
                 cards=flashcard_dict["cards"],
                 student_id=student_id,
                 topic_id=topic_id,
                 deck_id=deck_id,
+                connection=connection,
             )
-        )
+
+        def save_current():
+            if source_snapshot is None:
+                return save()
+            repository = PracticeRepository(self.agent.sm.persister._engine)
+            with repository.publication(session, source_snapshot, deck_id) as connection:
+                return save(connection)
+
+        publish(save_current)
 
         return flashcard_dict
 

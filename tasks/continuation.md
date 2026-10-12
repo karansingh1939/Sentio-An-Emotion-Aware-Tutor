@@ -171,3 +171,17 @@ Verification: seven focused key/readiness tests; 17 identity/browser tests plus
 31 subtests; all six JS checks including delayed media grants and model failure.
 Next: atomic practice publication against source/session revisions, remaining
 hardening and the reviewed-dataset/experiment track. No ML improvement is claimed.
+
+## Practice publication checkpoint
+
+Practice job fingerprints now include selected source checksums. Final quiz/card
+publication checks the persisted owner, active session, subject/topic/difficulty,
+selected sources and current document revisions inside the same SQLite write
+transaction as artifact creation. Stale context, removed accounts or missing
+decks cancel publication. Card prerequisites and card writes share the transaction.
+The camera stop path also clears its telemetry timer and unsent buffer.
+
+Verification: source-replacement and context-switch regressions pass for both
+practice tools. Full suite: 199 passed, one optional OCR skip, 31 subtests passed.
+Six JavaScript checks and Ruff pass. Next: authored corpus, frozen topic/source
+splits, manual review workflow and reproducible CPU evidence-model experiments.

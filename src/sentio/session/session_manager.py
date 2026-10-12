@@ -896,6 +896,7 @@ class SessionManager:
         session_id: Optional[str],
         title: str,
         questions: List[dict],
+        connection=None,
     ):
         if not self.persister._use_db:
             return
@@ -903,7 +904,11 @@ class SessionManager:
 
         from sqlalchemy import text
 
-        with self.persister._engine.connect() as conn:
+        with (
+            nullcontext(connection)
+            if connection is not None
+            else self.persister._engine.connect() as conn
+        ):
             # Verify session_id exists to avoid foreign key orphan records
             if session_id:
                 s_check = conn.execute(
@@ -945,7 +950,8 @@ class SessionManager:
                         "topic": q.get("topic", "general"),
                     },
                 )
-            conn.commit()
+            if connection is None:
+                conn.commit()
 
     def get_quiz(self, quiz_id: str) -> Optional[dict]:
         if not self.persister._use_db:
@@ -1023,7 +1029,9 @@ class SessionManager:
             ).fetchall()
             return [{"deck_id": r[0], "deck_name": r[1], "created_at": r[2]} for r in result]
 
-    def save_flashcards(self, cards: List[dict], student_id: str, topic_id: str, deck_id: str):
+    def save_flashcards(
+        self, cards: List[dict], student_id: str, topic_id: str, deck_id: str, connection=None
+    ):
         if not self.persister._use_db:
             return
         import json
@@ -1031,9 +1039,13 @@ class SessionManager:
 
         from sqlalchemy import text
 
-        with self.persister._engine.connect() as conn:
-            self.ensure_student_exists(student_id)
-            self.ensure_topic_exists(topic_id)
+        with (
+            nullcontext(connection)
+            if connection is not None
+            else self.persister._engine.connect() as conn
+        ):
+            self.ensure_student_exists(student_id, connection=conn)
+            self.ensure_topic_exists(topic_id, connection=conn)
             for c in cards:
                 card_id = str(uuid.uuid4())
                 conn.execute(
@@ -1054,7 +1066,8 @@ class SessionManager:
                         "tags": json.dumps(c.get("tags", [])),
                     },
                 )
-            conn.commit()
+            if connection is None:
+                conn.commit()
 
     def get_due_flashcards(self, student_id: str, deck_id: Optional[str] = None) -> List[dict]:
         if not self.persister._use_db:

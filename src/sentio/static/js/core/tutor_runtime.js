@@ -1048,6 +1048,9 @@ async function startWebcam() {
 function stopWebcam() {
   cameraEpoch++;
   cameraStarting = false;
+  if (telemetryTimer) clearInterval(telemetryTimer);
+  telemetryTimer = null;
+  resetTelemetryBuffer();
   stopAttentionTrackingLoop();
   camActive = false;
   window.camStream = null;
