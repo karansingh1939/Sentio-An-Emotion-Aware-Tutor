@@ -89,3 +89,5 @@ datasets/*/annotations-*.json
 reports/evidence/review-*.html
 reports/evidence/mlruns/
 reports/evidence/*/model.joblib
+reports/evidence/annotations-*.json
+reports/usability/

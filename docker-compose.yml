@@ -2,13 +2,13 @@ services:
   sentio-api:
     build: .
     ports:
-      - "8000:8000"
+      - '127.0.0.1:8000:8000'
     volumes:
       - ./data:/app/data
       - ./models:/app/models
     environment:
       ENV: production
-      ENFORCE_AUTH: "true"
+      ENFORCE_AUTH: 'true'
       API_SECRET: ${API_SECRET:?Set API_SECRET to a random secret before starting Compose}
       DATABASE_URL: sqlite:////app/data/tutor_sessions.db
       LLM_BACKEND: ollama
@@ -16,12 +16,30 @@ services:
       OLLAMA_MODEL: ${OLLAMA_MODEL:-phi3:mini}
       QDRANT_MODE: local
     depends_on:
-      - ollama
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'python',
+          '-c',
+          "import json, urllib.request; assert json.load(urllib.request.urlopen('http://127.0.0.1:8000/api/v1/ready', timeout=5))['storage']['ready']",
+        ]
+      interval: 10s
+      timeout: 8s
+      retries: 12
+      start_period: 30s
     restart: unless-stopped
   ollama:
     image: ollama/ollama:latest
     volumes:
       - ollama-models:/root/.ollama
+    healthcheck:
+      test: ['CMD', 'ollama', 'list']
+      interval: 5s
+      timeout: 5s
+      retries: 12
     restart: unless-stopped
 volumes:
   ollama-models:

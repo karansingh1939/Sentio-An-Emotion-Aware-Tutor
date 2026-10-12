@@ -57,3 +57,12 @@ jobs:
         run: docker build --tag sentio:ci .
       - name: Verify installed entry point
         run: docker run --rm sentio:ci sentio --help
+      - name: Verify real Compose persistence and provider outage
+        run: python scripts/smoke_compose.py --output reports/compose-ci.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compose-smoke-evaluation
+          path: reports/compose-ci.json
+          if-no-files-found: warn
+          retention-days: 14
