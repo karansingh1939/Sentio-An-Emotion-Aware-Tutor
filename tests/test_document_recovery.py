@@ -163,6 +163,18 @@ def test_recovery_rejects_paths_outside_the_owner_directory(material, tmp_path):
     assert outside.read_text() == "Must stay intact"
 
 
+def test_recovery_rejects_linked_owner_namespace(material, monkeypatch):
+    from pathlib import Path
+
+    _, journal, path, _ = material
+    original = Path.is_symlink
+    monkeypatch.setattr(
+        Path, "is_symlink", lambda value: value == journal.root / "owner" or original(value)
+    )
+    with pytest.raises(ValueError, match="link"):
+        journal.path(path, "owner")
+
+
 def test_partial_sql_write_rolls_back_metadata_and_chunks(material, monkeypatch):
     pipeline, journal, path, document = material
     original = pipeline.sm.get_document_chunks(document["id"])

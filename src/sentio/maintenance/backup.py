@@ -48,7 +48,7 @@ def create_backup(home: Path, destination: Path) -> Path:
             try:
                 locks.enter_context(portalocker.Lock(lock_file, mode="r+", timeout=0))
             except portalocker.exceptions.LockException as exc:
-                raise ValueError("Stop Sentio before backing up its vector store") from exc
+                raise ValueError("Stop Sentio before backing up its data") from exc
         with TemporaryDirectory(dir=destination.parent, prefix="snapshot-") as temporary:
             staging = Path(temporary) / "payload"
             staging.mkdir()

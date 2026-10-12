@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(app):
+async def application_lifespan(app):
     """Load all subsystems on startup; graceful shutdown on exit."""
     logger.info("Starting Emotion-Aware AI Tutor API...")
     from sentio.config import validate_security_config
@@ -85,6 +85,16 @@ async def lifespan(app):
         logger.info("Shutting down...")
         app.state.jobs.close()
         agent.shutdown()
+
+
+@asynccontextmanager
+async def lifespan(app):
+    from sentio.config import session_cfg
+    from sentio.maintenance.storage_lease import storage_lease
+
+    with storage_lease(session_cfg.DB_URL):
+        async with application_lifespan(app):
+            yield
 
 
 app = FastAPI(title="Sentio", version="2.0.0-rc1", lifespan=lifespan)

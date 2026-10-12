@@ -261,6 +261,8 @@ async def test_sentio_real_browser_e2e_and_tenant_isolation():
 
     finally:
         server.stop()
+        server.join(timeout=15)
+        assert not server.is_alive(), "Browser server must release storage before the next test"
         # Clean up test files
         for p_file in [file_a_path, file_b_path]:
             if os.path.exists(p_file):

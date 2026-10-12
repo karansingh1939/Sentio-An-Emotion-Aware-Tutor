@@ -82,6 +82,7 @@ data/documents/
 .pytest_cache/
 .ruff_cache/
 .sentio-secret
+data/.lock
 datasets/*/annotation-preview.json
 datasets/*/features-*.json
 datasets/*/annotations-*.json

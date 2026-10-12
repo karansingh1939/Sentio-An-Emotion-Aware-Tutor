@@ -16,6 +16,31 @@ def finished(client, job):
     raise AssertionError("Ingestion did not finish")
 
 
+def test_case_only_filename_collision_preserves_existing_document():
+    with TestClient(app) as client:
+        login_student(client)
+        first = client.post(
+            "/api/v1/documents/upload",
+            files={"file": ("Guide.txt", b"Inertia resists changes in motion.", "text/plain")},
+        )
+        assert first.status_code == 201, first.text
+        replaced = client.post(
+            "/api/v1/documents/upload",
+            files={
+                "file": (
+                    "guide.txt",
+                    b"Changed material must not replace the original.",
+                    "text/plain",
+                )
+            },
+        )
+        assert replaced.status_code == 409
+        documents = client.get("/api/v1/documents").json()["documents"]
+        assert len(documents) == 1
+        preview = client.get("/api/v1/documents/" + documents[0]["id"] + "/preview").json()
+        assert "Inertia resists" in preview["chunks"][0]["text_content"]
+
+
 def test_ingestion_jobs_are_owned_and_previews_are_paginated():
     with TestClient(app) as client:
         login_student(client)

@@ -101,6 +101,16 @@ async def stage_upload(request, file, category, subject, owner):
         raise HTTPException(
             400, "Upload PDF, DOCX, TXT, PNG or JPEG. Scans and images require OCR."
         )
+    for document in agent.sm.list_documents(student_id=owner):
+        if (
+            document["category"] == category
+            and document["filename"].casefold() == filename.casefold()
+            and document["filename"] != filename
+        ):
+            raise HTTPException(
+                409,
+                "A document with this filename already exists. Match its capitalization to replace it.",
+            )
     dest_dir = BASE_DIR / "data/documents" / owner / category
     dest_dir.mkdir(parents=True, exist_ok=True)
     recovery = get_recovery(request)

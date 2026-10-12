@@ -25,8 +25,18 @@ class DocumentRecovery:
         self.require_owner = require_owner
 
     def path(self, value, owner):
+        owner_path = self.root / owner
+        lexical = Path(value).absolute()
+        if not lexical.is_relative_to(owner_path) or any(
+            part.is_symlink() or (hasattr(part, "is_junction") and part.is_junction())
+            for part in (lexical, *lexical.parents)
+            if part == owner_path or part.is_relative_to(owner_path)
+        ):
+            raise ValueError(
+                "Document recovery path is outside the learner directory or uses a link."
+            )
         candidate = Path(value).resolve()
-        owned = (self.root / owner).resolve()
+        owned = owner_path.resolve()
         if (
             owned == self.root
             or not owned.is_relative_to(self.root)
@@ -103,6 +113,15 @@ class DocumentRecovery:
         }
         with self.lock:
             if self.require_owner:
+                for existing in self.repository.list_documents(student_id=owner):
+                    if (
+                        existing["category"] == document["category"]
+                        and existing["filename"].casefold() == document["filename"].casefold()
+                        and existing["id"] != document["id"]
+                    ):
+                        raise ValueError(
+                            "A document with this filename already exists; match its capitalization."
+                        )
                 with self.engine.connect() as connection:
                     if not connection.execute(
                         text("SELECT 1 FROM student_accounts WHERE student_id=:owner"),
