@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sentio evidence review</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f6f9;color:#182436;font:17px/1.6 system-ui,sans-serif}
+main{max-width:900px;margin:auto;padding:24px}section{background:white;padding:24px;margin:20px 0;border:1px solid #dce1ea;border-radius:14px}
+h1,h2{line-height:1.25}h2{font-size:22px}p{margin:12px 0}label{display:block;font-weight:600}input,select,textarea,button{font:inherit}
+input,select,textarea{max-width:100%;padding:10px;border:1px solid #738196;border-radius:6px;background:white;color:inherit}
+textarea{width:100%;min-height:100px}button{border:1px solid #365779;border-radius:7px;padding:10px 16px;background:#fff;color:#173957;cursor:pointer;min-height:44px}
+button.primary{background:#174d76;color:white}button:disabled{opacity:.55;cursor:default}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #cc7500;outline-offset:3px}
+.controls{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}.muted{color:#46556c}.passage{white-space:pre-wrap;border-left:4px solid #8ea9c2;padding-left:18px}
+#message{min-height:28px;color:#973700}details{margin:14px 0}summary{cursor:pointer;font-weight:600}@media(max-width:450px){main{padding:12px}section{padding:16px}}
+</style></head>
+<body><main>
+<h1>Can these notes answer the question?</h1>
+<p>This is label review for Sentio’s evidence experiment. You are judging the supplied passage, not writing an answer or checking an AI prediction.</p>
+<section aria-labelledby="guide"><h2 id="guide">Three simple steps</h2>
+<ol><li>Read the question and the whole passage.</li><li>Decide whether the passage contains every fact needed to answer.</li><li>Point to the evidence, explain the missing fact, or skip if unsure.</li></ol>
+<details open><summary>Examples before you start</summary>
+<p><strong>Enough evidence:</strong> Question: “What is the mean of 2 and 4?” Passage: “The mean is the sum divided by the number of values.” Rationale: “The formula lets me compute (2 + 4) / 2 = 3.” Simple arithmetic is allowed.</p>
+<p><strong>Missing evidence:</strong> Question: “What was our model’s measured accuracy?” Passage: “Accuracy is the fraction of predictions that are correct.” Rationale: “The definition is present, but our experiment’s result is missing.”</p>
+<p><strong>Unclear question:</strong> “How does it affect that?” Without clear referents, the passage cannot support a definite answer. Choose missing evidence and explain what needs clarification.</p>
+</details>
+<p class="muted">Use only this passage. Familiarity with the topic is not evidence that the passage answers it. Do not guess. Small batches are fine; these labels are not independent expert ground truth.</p>
+</section>
+<section><div class="controls"><div><label for="reviewer">Your name or reviewer ID</label><input id="reviewer" autocomplete="name" placeholder="Required to save a label"></div>
+<div><label for="split">Dataset group</label><select id="split"><option value="train">Training</option><option value="validation">Validation</option><option value="test">Frozen test</option></select></div></div>
+<p id="progress" role="status" aria-live="polite"></p><p id="batch" class="muted"></p>
+<h2 id="question" tabindex="-1"></h2><h3 id="title"></h3><p id="passage" class="passage"></p>
+<label for="rationale">Which sentence supports the answer, or what is missing?</label><textarea id="rationale" placeholder="A short explanation, at least 10 characters."></textarea>
+<div class="controls"><button id="yes" class="primary">Enough evidence</button><button id="no">Missing evidence</button><button id="skip">Unsure — skip</button></div>
+<p id="message" role="alert"></p>
+<p class="muted">Progress is saved in this browser when local storage is available. Download labels before closing or switching computers.</p>
+<div class="controls"><button id="download">Download reviewed labels</button><label for="import">Resume from a labels file<input id="import" type="file" accept="application/json,.json"></label></div>
+</section></main>
+<script id="data" type="application/json">__REVIEW_PAYLOAD__</script>
+<script>
+'use strict';
+const data=JSON.parse(document.getElementById('data').textContent);
+const key='sentio-evidence-review:'+data.corpus_hash;
+const el=id=>document.getElementById(id);
+const known=new Map(data.pairs.map(pair=>[pair.pair_id,pair]));
+let annotations=[], skipped=new Set(), current=null, batchCount=0;
+function valid(row){const pair=known.get(row.pair_id);return pair && row.pair_hash===pair.pair_hash && row.review_status==='human_reviewed' && (row.label===0 || row.label===1) && typeof row.reviewer==='string' && row.reviewer.trim() && typeof row.rationale==='string' && row.rationale.trim().length>=10;}
+try{const saved=JSON.parse(localStorage.getItem(key)||'[]');annotations=Array.isArray(saved)?saved.filter(valid):[];}catch{el('message').textContent='Local saving is unavailable. Download your labels to preserve them.';}
+function persist(){try{localStorage.setItem(key,JSON.stringify(annotations));}catch{el('message').textContent='Local saving failed. Download your labels now.';}}
+function render(focus=false){const done=new Set(annotations.map(row=>row.pair_id));const group=data.pairs.filter(pair=>pair.split===el('split').value);
+current=group.find(pair=>!done.has(pair.pair_id)&&!skipped.has(pair.pair_id));
+el('progress').textContent=`${group.filter(pair=>done.has(pair.pair_id)).length} of ${group.length} passages reviewed in this group; ${annotations.length} total.`;
+el('batch').textContent=`${batchCount} decisions this visit. A suggested batch is 10 decisions; take a break whenever you need.`;
+el('question').textContent=current?current.question:'No unreviewed passages remain in this visit.';el('title').textContent=current?current.title:'';el('passage').textContent=current?current.passage:'You can download completed labels or choose another dataset group. Skipped passages return when you reopen the page.';
+for(const id of ['yes','no','skip'])el(id).disabled=!current;
+el('rationale').value='';if(focus)el('question').focus();}
+function save(label){if(!current)return;const reviewer=el('reviewer').value.trim(),rationale=el('rationale').value.trim();
+if(!reviewer || rationale.length<10){el('message').textContent='Enter your reviewer name and a short explanation before saving.';(!reviewer?el('reviewer'):el('rationale')).focus();return;}
+annotations.push({pair_id:current.pair_id,pair_hash:current.pair_hash,label,reviewer,rationale,review_status:'human_reviewed'});batchCount++;el('message').textContent='Decision saved. Proposed AI labels were not used.';persist();render(true);}
+el('yes').onclick=()=>save(1);el('no').onclick=()=>save(0);el('skip').onclick=()=>{if(current)skipped.add(current.pair_id);el('message').textContent='Skipped. No label was created.';render(true);};el('split').onchange=()=>render(true);
+el('download').onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(annotations,null,2)+'\n'],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download='annotations-author.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+el('import').onchange=async event=>{try{const file=event.target.files[0];if(!file)return;if(file.size>5000000)throw Error('File is too large.');const rows=JSON.parse(await file.text());if(!Array.isArray(rows)||!rows.every(valid)||new Set(rows.map(row=>row.pair_id)).size!==rows.length)throw Error('This file has invalid, duplicate or different-corpus labels.');
+const merged=new Map(annotations.map(row=>[row.pair_id,row]));for(const row of rows){if(merged.has(row.pair_id)&&JSON.stringify(merged.get(row.pair_id))!==JSON.stringify(row))throw Error('Conflicting labels: keep separate reviewer files for disagreement review.');merged.set(row.pair_id,row);}annotations=[...merged.values()];persist();render();el('message').textContent='Reviewed labels restored.';}catch(error){el('message').textContent=error.message;}};
+render();
+</script></body></html>

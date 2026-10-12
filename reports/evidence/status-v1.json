@@ -1,0 +1,54 @@
+{
+  "status": "prepared_pending_human_review",
+  "corpus_hash": "dcca7a85be3a23e6cb734aaaf2e9b0c1d608165793fe1409b387a921bf8901cb",
+  "feature_packet_hash": "e5c03595cb29284d8b33bd242853f726320641eea2763118af581d1e04c126bb",
+  "documents": 30,
+  "questions": 120,
+  "pairs": 1584,
+  "reviewed_labels": 0,
+  "encoder": "all-MiniLM-L6-v2",
+  "encoder_digest": "2ccfbd59c98fdbab35b618e2b70cd7ea39ba0c1f3133823c1f6e28adbd5030ee",
+  "cross_encoder": null,
+  "failures": [
+    "Existing cross-encoder weights are unavailable in the local cache."
+  ],
+  "hardware": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "rss_bytes": 560689152
+  },
+  "versions": {
+    "numpy": "2.5.3",
+    "scikit-learn": "1.9.1",
+    "sentence-transformers": "5.7.0"
+  },
+  "collection_seconds_excluding_model_load": 1.601155900003505,
+  "latency_ms": {
+    "keyword": {
+      "count": 120,
+      "p50": 0.05409999721450731,
+      "p95": 0.10338500069337897
+    },
+    "dense": {
+      "count": 120,
+      "p50": 9.181749999697786,
+      "p95": 10.938490006083157
+    },
+    "hybrid": {
+      "count": 120,
+      "p50": 9.262600004149135,
+      "p95": 11.05576500413008
+    },
+    "cross_encoder": {
+      "status": "unavailable"
+    }
+  },
+  "quality_metrics": null,
+  "product_model": "baseline retained",
+  "limitations": [
+    "One warm query pass on a very small split-specific corpus.",
+    "Timings include embedding/BM25/fusion but not production Qdrant, model loading or generation.",
+    "Observed RSS is not peak RAM.",
+    "No model-quality or student-learning result exists before manual review."
+  ]
+}

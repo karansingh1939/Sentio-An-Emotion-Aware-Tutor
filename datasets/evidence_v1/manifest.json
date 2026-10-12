@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "corpus_hash": "dcca7a85be3a23e6cb734aaaf2e9b0c1d608165793fe1409b387a921bf8901cb",
+  "test_hash": "02ba53162b40cfbc497d9f9abaa65071b7b18c57b75168b6a5ca160f92156b57",
+  "splits": {
+    "train": [
+      "linear_algebra",
+      "calculus",
+      "probability",
+      "algorithms",
+      "databases",
+      "networks"
+    ],
+    "validation": [
+      "optimization",
+      "statistics"
+    ],
+    "test": [
+      "machine_learning",
+      "operating_systems"
+    ]
+  },
+  "labels": "unreviewed",
+  "duplicate_check": "cross-split token-set Jaccard >= 0.9"
+}

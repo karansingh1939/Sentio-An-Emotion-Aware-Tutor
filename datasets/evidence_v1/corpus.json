@@ -1,0 +1,1645 @@
+{
+  "version": 1,
+  "splits": {
+    "train": [
+      "linear_algebra",
+      "calculus",
+      "probability",
+      "algorithms",
+      "databases",
+      "networks"
+    ],
+    "validation": [
+      "optimization",
+      "statistics"
+    ],
+    "test": [
+      "machine_learning",
+      "operating_systems"
+    ]
+  },
+  "documents": [
+    {
+      "document_id": "linear_algebra-1",
+      "topic": "linear_algebra",
+      "split": "train",
+      "title": "Dot products",
+      "text": "For real vectors of equal length, the dot product is the sum of products of corresponding coordinates. For example, (1, 2) dotted with (3, 4) equals 11. The dot product also equals the product of the vector lengths and the cosine of the angle between them. Two nonzero vectors with zero dot product are perpendicular. A zero vector has zero dot product with every vector; it does not define a unique direction.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "linear_algebra-2",
+      "topic": "linear_algebra",
+      "split": "train",
+      "title": "Matrix multiplication",
+      "text": "If A has shape m by n and B has shape n by p, their product AB has shape m by p. Entry (i, j) of AB is the dot product of row i of A and column j of B. The inner dimensions must match. Matrix multiplication is generally not commutative: AB can differ from BA, and BA may not even be defined. The identity matrix preserves a compatible vector when multiplied by it.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "linear_algebra-3",
+      "topic": "linear_algebra",
+      "split": "train",
+      "title": "Linear independence",
+      "text": "Vectors are linearly independent when the only linear combination producing the zero vector uses zero for every coefficient. If a nontrivial combination produces zero, the vectors are dependent. A basis is a linearly independent set that spans the space. Every vector in that space then has a unique representation in the basis. In two-dimensional real space, two nonparallel nonzero vectors form a basis. Independence alone does not establish that a set spans a larger space.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "calculus-1",
+      "topic": "calculus",
+      "split": "train",
+      "title": "Derivatives",
+      "text": "The derivative of a real function at a point is the limit of its difference quotient as the input increment tends to zero, when that finite limit exists. It describes local rate of change and the slope of the tangent line. For f(x) = x squared, f prime(x) = 2x. A function can be continuous at a point without being differentiable there; the absolute-value function at zero is one such example.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "calculus-2",
+      "topic": "calculus",
+      "split": "train",
+      "title": "Chain rule",
+      "text": "For differentiable functions f and g, the derivative of f(g(x)) is f prime(g(x)) times g prime(x). The derivative of the outer function is evaluated at the inner function, then multiplied by the derivative of the inner function. For h(x) = (3x + 1) squared, h prime(x) = 6(3x + 1). Omitting the inner derivative gives an incorrect result. This rule concerns compositions rather than an arbitrary product of two functions.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "calculus-3",
+      "topic": "calculus",
+      "split": "train",
+      "title": "Definite integrals",
+      "text": "A definite integral gives signed accumulation over an interval. Regions below the horizontal axis contribute negatively, so signed integral and geometric area can differ. If F is an antiderivative of a continuous function f on [a, b], the integral of f from a to b is F(b) minus F(a). Reversing the integration limits changes the sign. The integral of x from zero to two is two.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "probability-1",
+      "topic": "probability",
+      "split": "train",
+      "title": "Conditional probability",
+      "text": "For events A and B with positive probability of B, P(A given B) equals P(A and B) divided by P(B). Conditioning restricts the reference population to outcomes in B. In general, P(A given B) is not equal to P(B given A). If A and B are independent and P(B) is positive, conditioning on B does not change the probability of A. Conditioning on a zero-probability event is not defined by this elementary ratio.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "probability-2",
+      "topic": "probability",
+      "split": "train",
+      "title": "Bayes rule",
+      "text": "For positive P(B), Bayes rule states P(A given B) = P(B given A) P(A) / P(B). The prior P(A) is updated using the likelihood P(B given A). The denominator normalizes the result. For a test with imperfect specificity, a positive result need not imply a high posterior probability when the condition is rare. Computing a numerical posterior requires the prior and the relevant conditional probabilities; the formula alone does not supply them.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "probability-3",
+      "topic": "probability",
+      "split": "train",
+      "title": "Expected value",
+      "text": "For a discrete random variable X, expected value is the sum of each possible value multiplied by its probability, when that sum is well defined. It is a probability-weighted average, not necessarily a possible outcome. For a fair six-sided die, the expectation is 3.5. Expectation is linear: E(X + Y) = E(X) + E(Y) when the expectations exist, even without independence. The same statement does not generally hold for products.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "algorithms-1",
+      "topic": "algorithms",
+      "split": "train",
+      "title": "Binary search",
+      "text": "Binary search locates a target in an ordered sequence by comparing it with a middle element and discarding the half that cannot contain it. Each step reduces the remaining search interval by about half. On a sorted random-access array of n elements, it uses O(log n) comparisons in the worst case. Its ordering assumption matters: applying it to an arbitrary unsorted array does not guarantee a correct result. An iterative implementation can maintain two interval boundaries.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "algorithms-2",
+      "topic": "algorithms",
+      "split": "train",
+      "title": "Breadth-first search",
+      "text": "Breadth-first search explores a graph in layers from a starting vertex using a queue. Vertices discovered from the current layer are visited before vertices farther away. With an adjacency-list representation, traversal takes O(V + E) time. For an unweighted graph it finds shortest paths measured by number of edges. This guarantee does not directly apply to arbitrary weighted paths. Recording discovered vertices prevents repeatedly scheduling the same vertex in a cycle.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "algorithms-3",
+      "topic": "algorithms",
+      "split": "train",
+      "title": "Merge sort",
+      "text": "Merge sort divides an array into smaller parts, sorts those parts, and merges sorted results. A conventional implementation performs O(n log n) comparisons in the worst case and uses O(n) auxiliary array space. During merging, choosing the left element first when equal values are compared preserves stability. Stability means equal-key records retain their previous relative order. This comparison bound does not establish a fixed running time on every machine or input.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "databases-1",
+      "topic": "databases",
+      "split": "train",
+      "title": "Transactions",
+      "text": "A database transaction groups operations into a unit of work. Atomicity means its changes either commit together or are rolled back together. Consistency concerns preservation of defined database constraints. Isolation controls how concurrent transactions can observe one another's changes. Durability means committed changes survive the failures covered by the storage system's guarantees. The acronym ACID names these four properties. Specific isolation levels and durability settings can change the guarantees a deployed database provides.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "databases-2",
+      "topic": "databases",
+      "split": "train",
+      "title": "Database indexes",
+      "text": "An index is an additional structure that helps locate matching rows without scanning every row. A B-tree index supports ordered key lookup and range queries. Maintaining indexes costs storage and additional work when indexed rows are inserted, updated, or deleted. An index is therefore a tradeoff rather than a universal speed improvement. A query planner decides whether an available index is useful for a particular query; table size and selectivity can affect that choice.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "databases-3",
+      "topic": "databases",
+      "split": "train",
+      "title": "Relational keys",
+      "text": "A primary key identifies a row uniquely and cannot be null. A foreign key constrains a reference to a key in another table or the same table. A composite key uses more than one column. These declarations express data relationships and integrity rules; they do not by themselves implement authorization. A student identifier may uniquely identify an account while still requiring an ownership check before a request reads that student's records.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "networks-1",
+      "topic": "networks",
+      "split": "train",
+      "title": "TCP delivery",
+      "text": "TCP provides an ordered byte stream between endpoints. Sequence numbers, acknowledgments, retransmissions, and flow control help deliver bytes reliably while the connection remains viable. The application receives a stream, so a single send operation need not correspond to a single receive operation. TCP does not by itself encrypt application data. A connection can still fail, and applications must decide how to retry operations without unintentionally repeating effects.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "networks-2",
+      "topic": "networks",
+      "split": "train",
+      "title": "DNS names",
+      "text": "The Domain Name System maps names to records, including addresses. A resolver can cache a response according to its time-to-live value. DNS lookup and HTTP request handling are separate steps: resolving a server name does not mean that server will answer an application request successfully. Different record types have different purposes, such as address records and mail-exchanger records. A cached record may continue to be used until its permitted cache lifetime ends.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "networks-3",
+      "topic": "networks",
+      "split": "train",
+      "title": "HTTP idempotency",
+      "text": "An operation is idempotent when repeating it has the same intended effect as performing it once. HTTP GET is intended for retrieval without a requested state change. An ordinary POST that creates a new record may repeat that effect if retried. Applications can attach an idempotency key and store a receipt so matching retries return the prior result. Reusing the same key for a different payload should be treated as a conflict rather than silently changing the operation.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "optimization-1",
+      "topic": "optimization",
+      "split": "validation",
+      "title": "Gradient descent",
+      "text": "Gradient descent updates parameters by subtracting a learning rate times the gradient of an objective. The gradient points toward local steepest increase under the Euclidean norm, so its negative is a descent direction at a differentiable point with nonzero gradient. A learning rate that is too large can cause overshooting or divergence. A small rate may make progress slow. A general nonconvex objective does not guarantee that this procedure reaches a global minimum.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "optimization-2",
+      "topic": "optimization",
+      "split": "validation",
+      "title": "Convex objectives",
+      "text": "A convex function evaluated on a line segment is no greater than the same interpolation of its endpoint values. For a convex optimization problem over a convex feasible set, every local minimum is a global minimum. Strict convexity can give uniqueness of a minimizer if one exists. Convexity alone does not imply that a minimum is attained on an unbounded or open domain. These mathematical properties must be checked for the actual objective and constraints.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "optimization-3",
+      "topic": "optimization",
+      "split": "validation",
+      "title": "Regularization",
+      "text": "Regularization adds a penalty or constraint to discourage certain fitted parameter choices. An L2 penalty discourages large squared coefficients, while an L1 penalty can produce zero coefficients. Regularization strength balances fit to training data against the penalty. Its value should be selected using development data rather than the final test set. A lower training error alone does not establish that the model generalizes better to new examples.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "statistics-1",
+      "topic": "statistics",
+      "split": "validation",
+      "title": "Mean and median",
+      "text": "The arithmetic mean is the sum of observations divided by their count. The median is the middle ordered value, or the average of the two middle values for an even count. Extreme observations can strongly affect the mean. The median is often more resistant to such extremes. For observations 1, 2, and 30, the mean is 11 and the median is 2. Neither summary alone describes the full spread or shape of a dataset.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "statistics-2",
+      "topic": "statistics",
+      "split": "validation",
+      "title": "Sampling uncertainty",
+      "text": "A statistic computed from a sample can vary across repeated samples. A confidence interval procedure with 95 percent coverage contains the fixed population parameter in 95 percent of repeated applications under its assumptions. It does not assign a 95 percent probability to that fixed parameter lying inside an already computed frequentist interval. Small or dependent samples can make common approximations unreliable. Resampling methods also require assumptions about how observations or groups were sampled.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "statistics-3",
+      "topic": "statistics",
+      "split": "validation",
+      "title": "Confounding",
+      "text": "A confounder can affect both an exposure and an outcome, creating an association that does not establish a causal effect of the exposure. Correlation alone therefore does not demonstrate causation. Random assignment can reduce systematic confounding between treatment groups, although other problems such as attrition may remain. Observational adjustment depends on assumptions about measured variables and the data-generating process. A study must explain its design before a causal interpretation is justified.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "machine_learning-1",
+      "topic": "machine_learning",
+      "split": "test",
+      "title": "Data splits",
+      "text": "A training split fits model parameters. A validation split supports choices such as hyperparameters and decision thresholds. A frozen test split estimates performance after those choices are fixed. Related examples can cause leakage if near duplicates or variants of a question cross splits. Grouping related sources and topics before splitting can make the evaluation more demanding. Repeatedly inspecting the test set while tuning turns it into development data and weakens the final estimate.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "machine_learning-2",
+      "topic": "machine_learning",
+      "split": "test",
+      "title": "Probability calibration",
+      "text": "A calibrated score of 0.8 means that among comparable predictions assigned that score, roughly 80 percent of events occur under the evaluation distribution. A relevance classifier's event can be passage support, not correctness of a later generated answer. Reliability plots compare predicted scores with observed event frequencies. The Brier score measures mean squared probability error and also depends on discrimination, so it is not a pure calibration measurement. Calibration data must be separate from data used to fit the underlying classifier.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "machine_learning-3",
+      "topic": "machine_learning",
+      "split": "test",
+      "title": "Precision and recall",
+      "text": "For a binary classifier, precision is true positives divided by predicted positives, when that denominator is nonzero. Recall is true positives divided by actual positives, when that denominator is nonzero. Raising an acceptance threshold changes which items are predicted positive and often trades recall for precision. The exact effect depends on the score distribution. Reporting both accepted unsupported questions and rejected answerable questions makes an evidence gate's tradeoffs more visible than a single aggregate accuracy number.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "operating_systems-1",
+      "topic": "operating_systems",
+      "split": "test",
+      "title": "Processes and threads",
+      "text": "A process typically has its own virtual address space. Threads within a process share that process's memory and other resources while maintaining their own execution state and stack. Shared mutable state can require synchronization. Separate processes can communicate through mechanisms such as pipes or shared memory, with explicit coordination. The fact that two tasks run concurrently does not imply they execute simultaneously on different processor cores.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "operating_systems-2",
+      "topic": "operating_systems",
+      "split": "test",
+      "title": "Deadlock",
+      "text": "Deadlock occurs when tasks cannot progress because each waits for a resource held by another in the waiting group. The classic necessary conditions are mutual exclusion, hold and wait, no preemption, and circular wait. Preventing one of these conditions can prevent this class of deadlock. A consistent resource-acquisition order can remove circular wait. Deadlock differs from starvation, where a task may keep being denied service while other tasks continue progressing.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    },
+    {
+      "document_id": "operating_systems-3",
+      "topic": "operating_systems",
+      "split": "test",
+      "title": "Virtual memory",
+      "text": "Virtual memory maps a process's virtual addresses to physical storage through address translation. A page table records mappings and permissions. A page fault can occur when a required mapping or resident page is unavailable, causing the operating system to handle the access. Virtual memory supports isolation and flexible allocation; it does not make physical memory infinite. Excessive paging can reduce performance substantially when the working set exceeds available memory.",
+      "licence": "MIT",
+      "provenance": "Original AI-assisted draft for Sentio; no learner uploads",
+      "review_status": "pending_human_review"
+    }
+  ],
+  "questions": [
+    {
+      "question_id": "linear_algebra-1-direct",
+      "topic": "linear_algebra",
+      "split": "train",
+      "variant_group": "linear_algebra-1",
+      "kind": "direct",
+      "text": "How is the dot product computed from coordinates?",
+      "proposed_support": [
+        "linear_algebra-1"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "linear_algebra-1-paraphrase",
+      "topic": "linear_algebra",
+      "split": "train",
+      "variant_group": "linear_algebra-1",
+      "kind": "paraphrase",
+      "text": "What calculation combines matching coordinates of two vectors?",
+      "proposed_support": [
+        "linear_algebra-1"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "linear_algebra-1-ambiguous",
+      "topic": "linear_algebra",
+      "split": "train",
+      "variant_group": "linear_algebra-1",
+      "kind": "ambiguous",
+      "text": "In linear algebra, how does dot products affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "linear_algebra-1-absent",
+      "topic": "linear_algebra",
+      "split": "train",
+      "variant_group": "linear_algebra-1",
+      "kind": "absent",
+      "text": "What is the numerical determinant of the matrix in this experiment?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "linear_algebra-2-direct",
+      "topic": "linear_algebra",
+      "split": "train",
+      "variant_group": "linear_algebra-2",
+      "kind": "direct",
+      "text": "What dimensions does AB have when A is m by n and B is n by p?",
+      "proposed_support": [
+        "linear_algebra-2"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "linear_algebra-2-paraphrase",
+      "topic": "linear_algebra",
+      "split": "train",
+      "variant_group": "linear_algebra-2",
+      "kind": "paraphrase",
+      "text": "For two compatible rectangular matrices, what is the shape of their product?",
+      "proposed_support": [
+        "linear_algebra-2"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "linear_algebra-2-ambiguous",
+      "topic": "linear_algebra",
+      "split": "train",
+      "variant_group": "linear_algebra-2",
+      "kind": "ambiguous",
+      "text": "In linear algebra, how does matrix multiplication affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "linear_algebra-2-absent",
+      "topic": "linear_algebra",
+      "split": "train",
+      "variant_group": "linear_algebra-2",
+      "kind": "absent",
+      "text": "What are the eigenvalues of the matrix used in yesterday's lecture?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "linear_algebra-3-direct",
+      "topic": "linear_algebra",
+      "split": "train",
+      "variant_group": "linear_algebra-3",
+      "kind": "direct",
+      "text": "What condition defines linear independence?",
+      "proposed_support": [
+        "linear_algebra-3"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "linear_algebra-3-paraphrase",
+      "topic": "linear_algebra",
+      "split": "train",
+      "variant_group": "linear_algebra-3",
+      "kind": "paraphrase",
+      "text": "When can a zero linear combination prove that vectors are independent?",
+      "proposed_support": [
+        "linear_algebra-3"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "linear_algebra-3-ambiguous",
+      "topic": "linear_algebra",
+      "split": "train",
+      "variant_group": "linear_algebra-3",
+      "kind": "ambiguous",
+      "text": "In linear algebra, how does linear independence affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "linear_algebra-3-absent",
+      "topic": "linear_algebra",
+      "split": "train",
+      "variant_group": "linear_algebra-3",
+      "kind": "absent",
+      "text": "What singular values belong to the class's sample matrix?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "calculus-1-direct",
+      "topic": "calculus",
+      "split": "train",
+      "variant_group": "calculus-1",
+      "kind": "direct",
+      "text": "What does a derivative describe locally?",
+      "proposed_support": [
+        "calculus-1"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "calculus-1-paraphrase",
+      "topic": "calculus",
+      "split": "train",
+      "variant_group": "calculus-1",
+      "kind": "paraphrase",
+      "text": "Which two local interpretations does the derivative have?",
+      "proposed_support": [
+        "calculus-1"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "calculus-1-ambiguous",
+      "topic": "calculus",
+      "split": "train",
+      "variant_group": "calculus-1",
+      "kind": "ambiguous",
+      "text": "In calculus, how does derivatives affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "calculus-1-absent",
+      "topic": "calculus",
+      "split": "train",
+      "variant_group": "calculus-1",
+      "kind": "absent",
+      "text": "What is the third derivative of the function assigned for homework?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "calculus-2-direct",
+      "topic": "calculus",
+      "split": "train",
+      "variant_group": "calculus-2",
+      "kind": "direct",
+      "text": "What is the chain rule for f(g(x))?",
+      "proposed_support": [
+        "calculus-2"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "calculus-2-paraphrase",
+      "topic": "calculus",
+      "split": "train",
+      "variant_group": "calculus-2",
+      "kind": "paraphrase",
+      "text": "How do the outer and inner derivatives combine for a composition?",
+      "proposed_support": [
+        "calculus-2"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "calculus-2-ambiguous",
+      "topic": "calculus",
+      "split": "train",
+      "variant_group": "calculus-2",
+      "kind": "ambiguous",
+      "text": "In calculus, how does chain rule affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "calculus-2-absent",
+      "topic": "calculus",
+      "split": "train",
+      "variant_group": "calculus-2",
+      "kind": "absent",
+      "text": "What is the exact integral of the function on the missing worksheet?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "calculus-3-direct",
+      "topic": "calculus",
+      "split": "train",
+      "variant_group": "calculus-3",
+      "kind": "direct",
+      "text": "How is a definite integral computed using an antiderivative?",
+      "proposed_support": [
+        "calculus-3"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "calculus-3-paraphrase",
+      "topic": "calculus",
+      "split": "train",
+      "variant_group": "calculus-3",
+      "kind": "paraphrase",
+      "text": "Which endpoint values give the integral when an antiderivative is known?",
+      "proposed_support": [
+        "calculus-3"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "calculus-3-ambiguous",
+      "topic": "calculus",
+      "split": "train",
+      "variant_group": "calculus-3",
+      "kind": "ambiguous",
+      "text": "In calculus, how does definite integrals affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "calculus-3-absent",
+      "topic": "calculus",
+      "split": "train",
+      "variant_group": "calculus-3",
+      "kind": "absent",
+      "text": "What convergence test proves the assigned infinite series converges?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "probability-1-direct",
+      "topic": "probability",
+      "split": "train",
+      "variant_group": "probability-1",
+      "kind": "direct",
+      "text": "What is the formula for P(A given B)?",
+      "proposed_support": [
+        "probability-1"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "probability-1-paraphrase",
+      "topic": "probability",
+      "split": "train",
+      "variant_group": "probability-1",
+      "kind": "paraphrase",
+      "text": "How does the intersection probability determine a conditional probability?",
+      "proposed_support": [
+        "probability-1"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "probability-1-ambiguous",
+      "topic": "probability",
+      "split": "train",
+      "variant_group": "probability-1",
+      "kind": "ambiguous",
+      "text": "In probability, how does conditional probability affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "probability-1-absent",
+      "topic": "probability",
+      "split": "train",
+      "variant_group": "probability-1",
+      "kind": "absent",
+      "text": "What is the actual probability of rain in our city tomorrow?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "probability-2-direct",
+      "topic": "probability",
+      "split": "train",
+      "variant_group": "probability-2",
+      "kind": "direct",
+      "text": "Which quantities appear in Bayes rule?",
+      "proposed_support": [
+        "probability-2"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "probability-2-paraphrase",
+      "topic": "probability",
+      "split": "train",
+      "variant_group": "probability-2",
+      "kind": "paraphrase",
+      "text": "How are prior and likelihood combined to obtain a posterior?",
+      "proposed_support": [
+        "probability-2"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "probability-2-ambiguous",
+      "topic": "probability",
+      "split": "train",
+      "variant_group": "probability-2",
+      "kind": "ambiguous",
+      "text": "In probability, how does bayes rule affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "probability-2-absent",
+      "topic": "probability",
+      "split": "train",
+      "variant_group": "probability-2",
+      "kind": "absent",
+      "text": "What posterior probability did our unnamed medical test produce?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "probability-3-direct",
+      "topic": "probability",
+      "split": "train",
+      "variant_group": "probability-3",
+      "kind": "direct",
+      "text": "What is the expected value of a fair six-sided die?",
+      "proposed_support": [
+        "probability-3"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "probability-3-paraphrase",
+      "topic": "probability",
+      "split": "train",
+      "variant_group": "probability-3",
+      "kind": "paraphrase",
+      "text": "What probability-weighted average results from rolling a fair die?",
+      "proposed_support": [
+        "probability-3"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "probability-3-ambiguous",
+      "topic": "probability",
+      "split": "train",
+      "variant_group": "probability-3",
+      "kind": "ambiguous",
+      "text": "In probability, how does expected value affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "probability-3-absent",
+      "topic": "probability",
+      "split": "train",
+      "variant_group": "probability-3",
+      "kind": "absent",
+      "text": "What is the variance of the biased die used in our laboratory?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "algorithms-1-direct",
+      "topic": "algorithms",
+      "split": "train",
+      "variant_group": "algorithms-1",
+      "kind": "direct",
+      "text": "What ordering assumption does binary search require?",
+      "proposed_support": [
+        "algorithms-1"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "algorithms-1-paraphrase",
+      "topic": "algorithms",
+      "split": "train",
+      "variant_group": "algorithms-1",
+      "kind": "paraphrase",
+      "text": "Why must the input sequence be ordered before halving the search interval?",
+      "proposed_support": [
+        "algorithms-1"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "algorithms-1-ambiguous",
+      "topic": "algorithms",
+      "split": "train",
+      "variant_group": "algorithms-1",
+      "kind": "ambiguous",
+      "text": "In algorithms, how does binary search affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "algorithms-1-absent",
+      "topic": "algorithms",
+      "split": "train",
+      "variant_group": "algorithms-1",
+      "kind": "absent",
+      "text": "How many nanoseconds did our binary-search benchmark take?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "algorithms-2-direct",
+      "topic": "algorithms",
+      "split": "train",
+      "variant_group": "algorithms-2",
+      "kind": "direct",
+      "text": "When does breadth-first search find shortest paths?",
+      "proposed_support": [
+        "algorithms-2"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "algorithms-2-paraphrase",
+      "topic": "algorithms",
+      "split": "train",
+      "variant_group": "algorithms-2",
+      "kind": "paraphrase",
+      "text": "For what edge-cost setting does layer-by-layer search give a shortest path?",
+      "proposed_support": [
+        "algorithms-2"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "algorithms-2-ambiguous",
+      "topic": "algorithms",
+      "split": "train",
+      "variant_group": "algorithms-2",
+      "kind": "ambiguous",
+      "text": "In algorithms, how does breadth-first search affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "algorithms-2-absent",
+      "topic": "algorithms",
+      "split": "train",
+      "variant_group": "algorithms-2",
+      "kind": "absent",
+      "text": "What weighted shortest path connects the unnamed cities in the assignment?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "algorithms-3-direct",
+      "topic": "algorithms",
+      "split": "train",
+      "variant_group": "algorithms-3",
+      "kind": "direct",
+      "text": "What does stability mean in sorting?",
+      "proposed_support": [
+        "algorithms-3"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "algorithms-3-paraphrase",
+      "topic": "algorithms",
+      "split": "train",
+      "variant_group": "algorithms-3",
+      "kind": "paraphrase",
+      "text": "Which ordering property is preserved for records with equal sort keys?",
+      "proposed_support": [
+        "algorithms-3"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "algorithms-3-ambiguous",
+      "topic": "algorithms",
+      "split": "train",
+      "variant_group": "algorithms-3",
+      "kind": "ambiguous",
+      "text": "In algorithms, how does merge sort affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "algorithms-3-absent",
+      "topic": "algorithms",
+      "split": "train",
+      "variant_group": "algorithms-3",
+      "kind": "absent",
+      "text": "What is our production server's measured merge-sort memory peak?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "databases-1-direct",
+      "topic": "databases",
+      "split": "train",
+      "variant_group": "databases-1",
+      "kind": "direct",
+      "text": "What does transaction atomicity guarantee?",
+      "proposed_support": [
+        "databases-1"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "databases-1-paraphrase",
+      "topic": "databases",
+      "split": "train",
+      "variant_group": "databases-1",
+      "kind": "paraphrase",
+      "text": "How does a transaction prevent only part of a grouped change being committed?",
+      "proposed_support": [
+        "databases-1"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "databases-1-ambiguous",
+      "topic": "databases",
+      "split": "train",
+      "variant_group": "databases-1",
+      "kind": "ambiguous",
+      "text": "In databases, how does transactions affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "databases-1-absent",
+      "topic": "databases",
+      "split": "train",
+      "variant_group": "databases-1",
+      "kind": "absent",
+      "text": "What isolation level is configured in our school's live database?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "databases-2-direct",
+      "topic": "databases",
+      "split": "train",
+      "variant_group": "databases-2",
+      "kind": "direct",
+      "text": "What costs accompany a database index?",
+      "proposed_support": [
+        "databases-2"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "databases-2-paraphrase",
+      "topic": "databases",
+      "split": "train",
+      "variant_group": "databases-2",
+      "kind": "paraphrase",
+      "text": "Why can adding an index increase storage and write work?",
+      "proposed_support": [
+        "databases-2"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "databases-2-ambiguous",
+      "topic": "databases",
+      "split": "train",
+      "variant_group": "databases-2",
+      "kind": "ambiguous",
+      "text": "In databases, how does database indexes affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "databases-2-absent",
+      "topic": "databases",
+      "split": "train",
+      "variant_group": "databases-2",
+      "kind": "absent",
+      "text": "What exact speedup will an index give our unknown table?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "databases-3-direct",
+      "topic": "databases",
+      "split": "train",
+      "variant_group": "databases-3",
+      "kind": "direct",
+      "text": "Does a relational key implement user authorization?",
+      "proposed_support": [
+        "databases-3"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "databases-3-paraphrase",
+      "topic": "databases",
+      "split": "train",
+      "variant_group": "databases-3",
+      "kind": "paraphrase",
+      "text": "Why is a unique student identifier insufficient to authorize reading a record?",
+      "proposed_support": [
+        "databases-3"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "databases-3-ambiguous",
+      "topic": "databases",
+      "split": "train",
+      "variant_group": "databases-3",
+      "kind": "ambiguous",
+      "text": "In databases, how does relational keys affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "databases-3-absent",
+      "topic": "databases",
+      "split": "train",
+      "variant_group": "databases-3",
+      "kind": "absent",
+      "text": "What are the column names of the school's confidential account table?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "networks-1-direct",
+      "topic": "networks",
+      "split": "train",
+      "variant_group": "networks-1",
+      "kind": "direct",
+      "text": "Does TCP preserve application message boundaries?",
+      "proposed_support": [
+        "networks-1"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "networks-1-paraphrase",
+      "topic": "networks",
+      "split": "train",
+      "variant_group": "networks-1",
+      "kind": "paraphrase",
+      "text": "Why cannot an application assume one send matches one receive?",
+      "proposed_support": [
+        "networks-1"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "networks-1-ambiguous",
+      "topic": "networks",
+      "split": "train",
+      "variant_group": "networks-1",
+      "kind": "ambiguous",
+      "text": "In networks, how does tcp delivery affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "networks-1-absent",
+      "topic": "networks",
+      "split": "train",
+      "variant_group": "networks-1",
+      "kind": "absent",
+      "text": "What was the measured packet-loss rate on our campus today?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "networks-2-direct",
+      "topic": "networks",
+      "split": "train",
+      "variant_group": "networks-2",
+      "kind": "direct",
+      "text": "What does a DNS time-to-live control?",
+      "proposed_support": [
+        "networks-2"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "networks-2-paraphrase",
+      "topic": "networks",
+      "split": "train",
+      "variant_group": "networks-2",
+      "kind": "paraphrase",
+      "text": "Which lifetime value controls how long a resolver may cache a response?",
+      "proposed_support": [
+        "networks-2"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "networks-2-ambiguous",
+      "topic": "networks",
+      "split": "train",
+      "variant_group": "networks-2",
+      "kind": "ambiguous",
+      "text": "In networks, how does dns names affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "networks-2-absent",
+      "topic": "networks",
+      "split": "train",
+      "variant_group": "networks-2",
+      "kind": "absent",
+      "text": "What IP address does our private development hostname resolve to right now?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "networks-3-direct",
+      "topic": "networks",
+      "split": "train",
+      "variant_group": "networks-3",
+      "kind": "direct",
+      "text": "How can an application avoid duplicate effects from a retried POST?",
+      "proposed_support": [
+        "networks-3"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "networks-3-paraphrase",
+      "topic": "networks",
+      "split": "train",
+      "variant_group": "networks-3",
+      "kind": "paraphrase",
+      "text": "What role do stored receipts and submission keys play in retry safety?",
+      "proposed_support": [
+        "networks-3"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "networks-3-ambiguous",
+      "topic": "networks",
+      "split": "train",
+      "variant_group": "networks-3",
+      "kind": "ambiguous",
+      "text": "In networks, how does http idempotency affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "networks-3-absent",
+      "topic": "networks",
+      "split": "train",
+      "variant_group": "networks-3",
+      "kind": "absent",
+      "text": "What retry delay does the undocumented external vendor require?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "optimization-1-direct",
+      "topic": "optimization",
+      "split": "validation",
+      "variant_group": "optimization-1",
+      "kind": "direct",
+      "text": "Why is the negative gradient used for a descent step?",
+      "proposed_support": [
+        "optimization-1"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "optimization-1-paraphrase",
+      "topic": "optimization",
+      "split": "validation",
+      "variant_group": "optimization-1",
+      "kind": "paraphrase",
+      "text": "Which local direction reduces a differentiable objective when its gradient is nonzero?",
+      "proposed_support": [
+        "optimization-1"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "optimization-1-ambiguous",
+      "topic": "optimization",
+      "split": "validation",
+      "variant_group": "optimization-1",
+      "kind": "ambiguous",
+      "text": "In optimization, how does gradient descent affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "optimization-1-absent",
+      "topic": "optimization",
+      "split": "validation",
+      "variant_group": "optimization-1",
+      "kind": "absent",
+      "text": "What learning rate is optimal for the unidentified training run?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "optimization-2-direct",
+      "topic": "optimization",
+      "split": "validation",
+      "variant_group": "optimization-2",
+      "kind": "direct",
+      "text": "What does convexity imply about a local minimum in a convex problem?",
+      "proposed_support": [
+        "optimization-2"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "optimization-2-paraphrase",
+      "topic": "optimization",
+      "split": "validation",
+      "variant_group": "optimization-2",
+      "kind": "paraphrase",
+      "text": "When is a local optimum also a global optimum?",
+      "proposed_support": [
+        "optimization-2"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "optimization-2-ambiguous",
+      "topic": "optimization",
+      "split": "validation",
+      "variant_group": "optimization-2",
+      "kind": "ambiguous",
+      "text": "In optimization, how does convex objectives affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "optimization-2-absent",
+      "topic": "optimization",
+      "split": "validation",
+      "variant_group": "optimization-2",
+      "kind": "absent",
+      "text": "What is the numerical minimum of the objective missing from the exercise?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "optimization-3-direct",
+      "topic": "optimization",
+      "split": "validation",
+      "variant_group": "optimization-3",
+      "kind": "direct",
+      "text": "Which data should select regularization strength?",
+      "proposed_support": [
+        "optimization-3"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "optimization-3-paraphrase",
+      "topic": "optimization",
+      "split": "validation",
+      "variant_group": "optimization-3",
+      "kind": "paraphrase",
+      "text": "Why should the final test set not be used to tune the penalty weight?",
+      "proposed_support": [
+        "optimization-3"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "optimization-3-ambiguous",
+      "topic": "optimization",
+      "split": "validation",
+      "variant_group": "optimization-3",
+      "kind": "ambiguous",
+      "text": "In optimization, how does regularization affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "optimization-3-absent",
+      "topic": "optimization",
+      "split": "validation",
+      "variant_group": "optimization-3",
+      "kind": "absent",
+      "text": "Which regularization value won our unreported validation experiment?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "statistics-1-direct",
+      "topic": "statistics",
+      "split": "validation",
+      "variant_group": "statistics-1",
+      "kind": "direct",
+      "text": "What are the mean and median of 1, 2, and 30?",
+      "proposed_support": [
+        "statistics-1"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "statistics-1-paraphrase",
+      "topic": "statistics",
+      "split": "validation",
+      "variant_group": "statistics-1",
+      "kind": "paraphrase",
+      "text": "How do the average and middle observation differ for the values 1, 2, 30?",
+      "proposed_support": [
+        "statistics-1"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "statistics-1-ambiguous",
+      "topic": "statistics",
+      "split": "validation",
+      "variant_group": "statistics-1",
+      "kind": "ambiguous",
+      "text": "In statistics, how does mean and median affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "statistics-1-absent",
+      "topic": "statistics",
+      "split": "validation",
+      "variant_group": "statistics-1",
+      "kind": "absent",
+      "text": "What is the median income in our city this year?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "statistics-2-direct",
+      "topic": "statistics",
+      "split": "validation",
+      "variant_group": "statistics-2",
+      "kind": "direct",
+      "text": "What does 95 percent coverage mean for a confidence interval procedure?",
+      "proposed_support": [
+        "statistics-2"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "statistics-2-paraphrase",
+      "topic": "statistics",
+      "split": "validation",
+      "variant_group": "statistics-2",
+      "kind": "paraphrase",
+      "text": "How should repeated-sample coverage of a frequentist interval be interpreted?",
+      "proposed_support": [
+        "statistics-2"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "statistics-2-ambiguous",
+      "topic": "statistics",
+      "split": "validation",
+      "variant_group": "statistics-2",
+      "kind": "ambiguous",
+      "text": "In statistics, how does sampling uncertainty affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "statistics-2-absent",
+      "topic": "statistics",
+      "split": "validation",
+      "variant_group": "statistics-2",
+      "kind": "absent",
+      "text": "What confidence interval did our unpublished survey produce?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "statistics-3-direct",
+      "topic": "statistics",
+      "split": "validation",
+      "variant_group": "statistics-3",
+      "kind": "direct",
+      "text": "Why does correlation alone not establish causation?",
+      "proposed_support": [
+        "statistics-3"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "statistics-3-paraphrase",
+      "topic": "statistics",
+      "split": "validation",
+      "variant_group": "statistics-3",
+      "kind": "paraphrase",
+      "text": "How can a shared cause produce an association without the claimed causal effect?",
+      "proposed_support": [
+        "statistics-3"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "statistics-3-ambiguous",
+      "topic": "statistics",
+      "split": "validation",
+      "variant_group": "statistics-3",
+      "kind": "ambiguous",
+      "text": "In statistics, how does confounding affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "statistics-3-absent",
+      "topic": "statistics",
+      "split": "validation",
+      "variant_group": "statistics-3",
+      "kind": "absent",
+      "text": "What causal effect did the unspecified student trial estimate?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "machine_learning-1-direct",
+      "topic": "machine_learning",
+      "split": "test",
+      "variant_group": "machine_learning-1",
+      "kind": "direct",
+      "text": "What is the purpose of a frozen test split?",
+      "proposed_support": [
+        "machine_learning-1"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "machine_learning-1-paraphrase",
+      "topic": "machine_learning",
+      "split": "test",
+      "variant_group": "machine_learning-1",
+      "kind": "paraphrase",
+      "text": "Which split estimates performance after model choices have been fixed?",
+      "proposed_support": [
+        "machine_learning-1"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "machine_learning-1-ambiguous",
+      "topic": "machine_learning",
+      "split": "test",
+      "variant_group": "machine_learning-1",
+      "kind": "ambiguous",
+      "text": "In machine learning, how does data splits affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "machine_learning-1-absent",
+      "topic": "machine_learning",
+      "split": "test",
+      "variant_group": "machine_learning-1",
+      "kind": "absent",
+      "text": "What accuracy does our unnamed classifier achieve on next year's cohort?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "machine_learning-2-direct",
+      "topic": "machine_learning",
+      "split": "test",
+      "variant_group": "machine_learning-2",
+      "kind": "direct",
+      "text": "What event does a passage-support probability describe?",
+      "proposed_support": [
+        "machine_learning-2"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "machine_learning-2-paraphrase",
+      "topic": "machine_learning",
+      "split": "test",
+      "variant_group": "machine_learning-2",
+      "kind": "paraphrase",
+      "text": "Why is evidence relevance probability different from generated-answer correctness?",
+      "proposed_support": [
+        "machine_learning-2"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "machine_learning-2-ambiguous",
+      "topic": "machine_learning",
+      "split": "test",
+      "variant_group": "machine_learning-2",
+      "kind": "ambiguous",
+      "text": "In machine learning, how does probability calibration affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "machine_learning-2-absent",
+      "topic": "machine_learning",
+      "split": "test",
+      "variant_group": "machine_learning-2",
+      "kind": "absent",
+      "text": "What Brier score did our unperformed evidence-model experiment obtain?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "machine_learning-3-direct",
+      "topic": "machine_learning",
+      "split": "test",
+      "variant_group": "machine_learning-3",
+      "kind": "direct",
+      "text": "How do precision and recall use different denominators?",
+      "proposed_support": [
+        "machine_learning-3"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "machine_learning-3-paraphrase",
+      "topic": "machine_learning",
+      "split": "test",
+      "variant_group": "machine_learning-3",
+      "kind": "paraphrase",
+      "text": "Which populations are counted beneath true positives for precision versus recall?",
+      "proposed_support": [
+        "machine_learning-3"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "machine_learning-3-ambiguous",
+      "topic": "machine_learning",
+      "split": "test",
+      "variant_group": "machine_learning-3",
+      "kind": "ambiguous",
+      "text": "In machine learning, how does precision and recall affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "machine_learning-3-absent",
+      "topic": "machine_learning",
+      "split": "test",
+      "variant_group": "machine_learning-3",
+      "kind": "absent",
+      "text": "What threshold meets our missing deployment team's error target?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "operating_systems-1-direct",
+      "topic": "operating_systems",
+      "split": "test",
+      "variant_group": "operating_systems-1",
+      "kind": "direct",
+      "text": "What memory relationship distinguishes threads within one process?",
+      "proposed_support": [
+        "operating_systems-1"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "operating_systems-1-paraphrase",
+      "topic": "operating_systems",
+      "split": "test",
+      "variant_group": "operating_systems-1",
+      "kind": "paraphrase",
+      "text": "Which resources do threads share compared with separate process address spaces?",
+      "proposed_support": [
+        "operating_systems-1"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "operating_systems-1-ambiguous",
+      "topic": "operating_systems",
+      "split": "test",
+      "variant_group": "operating_systems-1",
+      "kind": "ambiguous",
+      "text": "In operating systems, how does processes and threads affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "operating_systems-1-absent",
+      "topic": "operating_systems",
+      "split": "test",
+      "variant_group": "operating_systems-1",
+      "kind": "absent",
+      "text": "How many threads is the unknown background service using now?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "operating_systems-2-direct",
+      "topic": "operating_systems",
+      "split": "test",
+      "variant_group": "operating_systems-2",
+      "kind": "direct",
+      "text": "How can consistent lock ordering prevent deadlock?",
+      "proposed_support": [
+        "operating_systems-2"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "operating_systems-2-paraphrase",
+      "topic": "operating_systems",
+      "split": "test",
+      "variant_group": "operating_systems-2",
+      "kind": "paraphrase",
+      "text": "Which necessary deadlock condition does a fixed resource-acquisition order remove?",
+      "proposed_support": [
+        "operating_systems-2"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "operating_systems-2-ambiguous",
+      "topic": "operating_systems",
+      "split": "test",
+      "variant_group": "operating_systems-2",
+      "kind": "ambiguous",
+      "text": "In operating systems, how does deadlock affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "operating_systems-2-absent",
+      "topic": "operating_systems",
+      "split": "test",
+      "variant_group": "operating_systems-2",
+      "kind": "absent",
+      "text": "Which thread caused yesterday's unrecorded server outage?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "operating_systems-3-direct",
+      "topic": "operating_systems",
+      "split": "test",
+      "variant_group": "operating_systems-3",
+      "kind": "direct",
+      "text": "Why does virtual memory not make physical memory infinite?",
+      "proposed_support": [
+        "operating_systems-3"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "operating_systems-3-paraphrase",
+      "topic": "operating_systems",
+      "split": "test",
+      "variant_group": "operating_systems-3",
+      "kind": "paraphrase",
+      "text": "What happens to performance when a working set causes excessive paging?",
+      "proposed_support": [
+        "operating_systems-3"
+      ],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "operating_systems-3-ambiguous",
+      "topic": "operating_systems",
+      "split": "test",
+      "variant_group": "operating_systems-3",
+      "kind": "ambiguous",
+      "text": "In operating systems, how does virtual memory affect it?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    },
+    {
+      "question_id": "operating_systems-3-absent",
+      "topic": "operating_systems",
+      "split": "test",
+      "variant_group": "operating_systems-3",
+      "kind": "absent",
+      "text": "What page-fault count did our laptop record during the missing benchmark?",
+      "proposed_support": [],
+      "review_status": "pending_human_review"
+    }
+  ]
+}

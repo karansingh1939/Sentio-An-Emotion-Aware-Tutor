@@ -82,3 +82,9 @@ data/documents/
 .pytest_cache/
 .ruff_cache/
 .sentio-secret
+datasets/*/annotation-preview.json
+datasets/*/features-*.json
+datasets/*/annotations-*.json
+reports/evidence/review-*.html
+reports/evidence/mlruns/
+reports/evidence/*/model.joblib

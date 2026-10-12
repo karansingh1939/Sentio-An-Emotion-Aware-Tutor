@@ -185,3 +185,36 @@ Verification: source-replacement and context-switch regressions pass for both
 practice tools. Full suite: 199 passed, one optional OCR skip, 31 subtests passed.
 Six JavaScript checks and Ruff pass. Next: authored corpus, frozen topic/source
 splits, manual review workflow and reproducible CPU evidence-model experiments.
+
+## Evidence experiment and review checkpoint
+
+Frozen evidence_v1: 30 original AI-assisted academic drafts, ten topics,
+120 questions and 1584 complete within-split passage pairs. Manifest hashes and
+leakage checks keep sources, variant groups and near duplicates within splits.
+All labels remain unreviewed. The CLI and offline browser page require reviewer
+identity, rationale and a text-bound receipt, hide AI proposals, save progress,
+support skip/import/download, and never create a label for uncertainty. The user
+said they do not know how to review; the browser page now explains with examples.
+Open reports/evidence/review-v1.html; start with ten decisions, without claiming
+that the full label dataset is reviewed.
+
+Implemented CPU extraction, training-standardized class-balanced logistic
+regression, development-only regularization selection, separate calibration and
+selection topics, threshold selection, retrieval/support/coverage/calibration
+metrics, failure cases, bootstrap intervals and seven feature ablations. Reuses
+existing BM25/hybrid/cross-encoder code. Optional MLflow stays outside startup.
+Models are experiment artifacts, never automatically adopted. Production latency,
+live grounding review and the adoption gate remain required.
+
+Actual cached embedding collection succeeded. Cross-encoder weights are missing;
+its comparison is explicitly unavailable and no download was performed.
+reports/evidence/status-v1.json records hashes, installed versions, observed RSS
+and one warm small-corpus pass: hybrid p95 about 11.1ms. This excludes model
+loading, Qdrant and generation; it is not a production performance claim.
+
+Verification: 207 tests passed, one optional OCR skip, 31 subtests passed; six
+JavaScript checks pass. Full training/export mechanics pass only synthetic unit
+fixtures. No real classifier or accuracy result exists before manual review.
+Next: remaining hardening (bounded bodies/stable errors/recovery), tool exports,
+live CPU generation comparison and release/showcase records; review is independent
+of these tasks and must not be simulated by AI.
