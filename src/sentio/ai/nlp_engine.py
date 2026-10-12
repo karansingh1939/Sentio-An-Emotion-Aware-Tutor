@@ -82,7 +82,8 @@ class NLPEngine:
         strategy = tutor_cfg.STRATEGY_MAP.get(learning_state, "standard")
 
         # Build prompts
-        system_prompt = self.prompt_builder.build_system_prompt(
+        system_prompt, user_message = self.prompt_builder.build_study_messages(
+            student_message=student_message,
             subject=subject,
             topic=topic,
             difficulty=difficulty,
@@ -90,11 +91,6 @@ class NLPEngine:
             strategy=strategy,
             tone_instruction=tone_instruction,
             retrieved_content=retrieved_content,
-        )
-        user_message = self.prompt_builder.build_user_message(
-            student_message=student_message,
-            learning_state=learning_state,
-            confidence=emotion_confidence,
         )
 
         # Get conversation history for this session
@@ -149,6 +145,7 @@ class NLPEngine:
                     history=history,
                     user_message=user_message,
                     max_tokens=max_tokens,
+                    temperature=0.0,
                 )
                 latency = (time.perf_counter() - t0) * 1000
                 return text, tokens, latency

@@ -622,6 +622,13 @@ function appendTutorMessage(data) {
   div.className = 'msg tutor';
 
   let extra = '';
+  const answerLabel =
+    data.answer_mode === 'source_excerpt'
+      ? 'Source excerpt: relevant passages, not a generated explanation.'
+      : data.source_citations?.length
+        ? 'Generated explanation: check the claims against your notes.'
+        : '';
+  if (answerLabel) extra += `<div class="msg-encouragement">${answerLabel}</div>`;
   if (data.encouragement)
     extra += `<div class="msg-encouragement">${escHtml(data.encouragement)}</div>`;
   if (data.follow_up) extra += `<div class="msg-followup">🤔 ${escHtml(data.follow_up)}</div>`;

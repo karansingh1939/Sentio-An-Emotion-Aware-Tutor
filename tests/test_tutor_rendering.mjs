@@ -23,6 +23,33 @@ assert.equal(
 );
 console.log('Tutor rendering escapes HTML and preserves formatting.');
 
+let renderedTutor;
+context.document = {
+  createElement: () => ({}),
+  getElementById: () => ({
+    insertBefore: (element) => {
+      renderedTutor = element.innerHTML;
+    },
+  }),
+};
+context.STRATEGY_LABEL = {};
+context.timeNow = () => '';
+vm.runInContext(
+  source.slice(
+    source.indexOf('function appendTutorMessage('),
+    source.indexOf('function renderMarkdown('),
+  ),
+  context,
+);
+context.appendTutorMessage({ text: 'Quoted notes', answer_mode: 'source_excerpt' });
+assert.match(renderedTutor, /Source excerpt: relevant passages, not a generated explanation/);
+context.appendTutorMessage({
+  text: 'A generated claim',
+  answer_mode: 'ollama',
+  source_citations: [{}],
+});
+assert.match(renderedTutor, /Generated explanation: check the claims against your notes/);
+
 const cameraFunctions = source.slice(
   source.indexOf('async function startWebcam()'),
   source.indexOf('async function toggleWebcamDirect()'),

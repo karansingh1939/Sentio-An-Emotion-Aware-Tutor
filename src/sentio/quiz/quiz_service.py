@@ -11,6 +11,7 @@ import logging
 import re
 import uuid
 from copy import deepcopy
+from fractions import Fraction
 from typing import Any, Dict, Optional, Tuple
 
 from sentio.ai.practice_schema import practice_schema
@@ -27,6 +28,23 @@ from sentio.repositories.practice_repository import PracticeRepository
 from sentio.shared.exceptions import LLMServiceUnavailableError
 
 logger = logging.getLogger(__name__)
+
+
+def numeric_value(answer):
+    """Exact values for standalone decimals/fractions/percentages, never prose or units."""
+    text = answer.strip().lower()
+    if len(text) > 100:
+        return None
+    percent = text.endswith(("%", " percent"))
+    if percent:
+        text = text.removesuffix("%").removesuffix(" percent").strip()
+    if not re.fullmatch(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+|\d+/\d+)", text):
+        return None
+    try:
+        value = Fraction(text)
+        return value / 100 if percent else value
+    except (ValueError, ZeroDivisionError):
+        return None
 
 
 class QuizService:
@@ -334,6 +352,14 @@ Score: {avg_score:.1%} ({total_correct_score}/{len(questions)} correct)"""
             return False, 0.0
         if clean_student and clean_student == clean_correct:
             return True, 1.0
+
+        numeric_student, numeric_correct = (
+            numeric_value(clean_student),
+            numeric_value(clean_correct),
+        )
+        if numeric_student is not None and numeric_correct is not None:
+            correct = numeric_student == numeric_correct
+            return correct, float(correct)
 
         # 2. Custom injected grader dependency override (if provided)
         if self.grader_fn is not None:

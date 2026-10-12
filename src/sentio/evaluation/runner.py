@@ -110,7 +110,7 @@ def measure_retrieval(dataset_dir, dataset, model):
 
 def measure_grading(dataset):
     from sentio.ai.providers import OllamaBackend
-    from sentio.quiz.quiz_service import QuizService
+    from sentio.quiz.quiz_service import QuizService, numeric_value
 
     backend = OllamaBackend()
     backend.load()
@@ -137,6 +137,9 @@ def measure_grading(dataset):
                 if not case["answer"].strip()
                 else "exact"
                 if exact
+                else "numeric"
+                if numeric_value(case["answer"]) is not None
+                and numeric_value(case["reference"]) is not None
                 else "semantic",
                 latency_ms=(time.perf_counter() - start) * 1000,
                 **result,

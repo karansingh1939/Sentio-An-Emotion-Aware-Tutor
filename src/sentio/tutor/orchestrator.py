@@ -425,7 +425,8 @@ class SentioOrchestrator:
             }
 
         tone = state.get("tone_instruction", "Be encouraging.")
-        system_prompt = self.tutor_agent.nlp.prompt_builder.build_system_prompt(
+        system_prompt, user_message = self.tutor_agent.nlp.prompt_builder.build_study_messages(
+            student_message=state["user_message"],
             subject=state["subject"],
             topic=state["topic"],
             difficulty=state["difficulty"],
@@ -433,16 +434,7 @@ class SentioOrchestrator:
             strategy=state["strategy"],
             tone_instruction=tone,
             retrieved_content=state["retrieved_content"],
-        )
-
-        # Inject memory context into system instructions
-        if state["student_memory"]:
-            system_prompt = state["student_memory"] + "\n\n" + system_prompt
-
-        user_message = self.tutor_agent.nlp.prompt_builder.build_user_message(
-            student_message=state["user_message"],
-            learning_state=state["learning_state"],
-            confidence=1.0,
+            student_memory=state["student_memory"],
         )
 
         from sentio.ai.source_practice import source_excerpt
@@ -456,6 +448,7 @@ class SentioOrchestrator:
                     history=state["history"],
                     user_message=user_message,
                     max_tokens=1024,
+                    temperature=0.0,
                 )
             TutorPayload.model_validate_json(raw_text)
 

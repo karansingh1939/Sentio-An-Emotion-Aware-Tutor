@@ -394,6 +394,7 @@ export class QuizzesView {
             </span>
           </div>
           <p style="font-size:14px;line-height:1.5;color:var(--text-dim);">${escapeHtml(this.results.summary)}</p>
+          ${this.quiz.questions.some((q) => q.question_type === 'short_answer') ? '<p style="font-size:14px;line-height:1.5;color:var(--text-dim);">Short-answer scores are practice feedback. AI grading can misjudge valid wording; compare your answer with the reference and explanation below.</p>' : ''}
         </sentio-card>
 
         <!-- Detailed Feedback -->

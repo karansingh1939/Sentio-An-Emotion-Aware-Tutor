@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "sentio-tutor"
 version = "2.0.0rc1"
-description = "A local emotion-aware tutor with document-grounded study tools."
+description = "A local study workspace with document-grounded tutoring and scheduled review."
 requires-python = ">=3.12,<3.13"
 license = "MIT"
 dependencies = [

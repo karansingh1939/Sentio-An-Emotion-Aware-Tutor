@@ -45,6 +45,29 @@ def test_ocr_error_rates_count_substitutions_deletions_and_insertions():
         error_rates("", "unexpected")
 
 
+def test_numeric_grading_is_not_counted_as_model_inference(monkeypatch):
+    backend = Mock()
+    backend._session.get.return_value.json.return_value = {"models": []}
+    monkeypatch.setattr("sentio.ai.providers.OllamaBackend", lambda: backend)
+    rows = measure_grading(
+        {
+            "grading": [
+                {
+                    "id": "numeric",
+                    "question": "One quarter as a percentage?",
+                    "reference": "25 percent",
+                    "answer": "0.25%",
+                    "expected_correct": False,
+                    "score_range": [0, 0.59],
+                }
+            ]
+        }
+    )["cases"]
+    assert rows[0]["category"] == "numeric"
+    assert rows[0]["rubric_pass"]
+    backend.complete.assert_not_called()
+
+
 @pytest.mark.parametrize("recognized", ["correct", "wrong"])
 def test_ocr_evaluation_keeps_page_provenance_and_measures_engine_errors(monkeypatch, recognized):
     pytest.importorskip("pypdfium2")
