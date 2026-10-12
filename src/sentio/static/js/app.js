@@ -55,6 +55,11 @@ function initApp() {
   store.subscribe('activeRoute', (route) => {
     handleWebcamStateForRoute(route);
   });
+  store.subscribe('telemetryActive', () =>
+    handleWebcamStateForRoute(store.getState('activeRoute')),
+  );
+  store.subscribe('currentUser', () => window.stopWebcam?.());
+  store.subscribe('activeSessionId', () => window.stopWebcam?.());
 
   // Global loading overlay toggle
   store.subscribe('loading', (isLoading) => {
@@ -82,6 +87,7 @@ function handleWebcamStateForRoute(route) {
         window.startWebcam();
       }
     } else {
+      window.stopWebcam?.();
       if (telemetryDot) {
         telemetryDot.className = 'dot';
         telemetryDot.title = 'Telemetry consent disabled in Settings';
@@ -93,7 +99,7 @@ function handleWebcamStateForRoute(route) {
       telemetryDot.className = 'dot';
       telemetryDot.title = 'Telemetry inactive on this screen';
     }
-    if (typeof window.stopWebcam === 'function' && window.camStream) {
+    if (typeof window.stopWebcam === 'function') {
       window.stopWebcam();
     }
   }

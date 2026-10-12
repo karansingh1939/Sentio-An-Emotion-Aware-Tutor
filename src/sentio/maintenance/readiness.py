@@ -25,11 +25,15 @@ def ai_readiness():
 
 def readiness(agent):
     from sqlalchemy import text
+    from sqlalchemy.exc import SQLAlchemyError
 
     storage = False
     if agent.sm.persister._engine is not None:
-        with agent.sm.persister._engine.connect() as connection:
-            storage = connection.execute(text("SELECT 1")).scalar() == 1
+        try:
+            with agent.sm.persister._engine.connect() as connection:
+                storage = connection.execute(text("SELECT 1")).scalar() == 1
+        except SQLAlchemyError:
+            storage = False
     from sentio.ingestion.ocr import ExtractionError, require_ocr
 
     try:
@@ -38,11 +42,19 @@ def readiness(agent):
     except ExtractionError as exc:
         ocr = {"ready": False, "action": str(exc)}
     return {
-        "storage": {"ready": storage},
+        "storage": {
+            "ready": storage,
+            "action": ""
+            if storage
+            else "Check the data directory permissions and restore a verified backup if needed.",
+        },
         "ai": ai_readiness(),
         "retrieval": {
             "ready": "retrieval" not in agent.startup_errors and storage,
-            "semantic": agent.kb.vdb.is_available(),
+            "vector_store_ready": agent.kb.vdb.is_available(),
+            "semantic": storage
+            and agent.kb.vdb.is_available()
+            and agent.kb.retriever._model is not None,
         },
         "ocr": ocr,
         "camera": {

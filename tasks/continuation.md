@@ -150,3 +150,24 @@ Verification: 193 Python/browser tests, 31 subtests passed; one optional OCR ski
 Six JavaScript checks passed. Next: persistent protected local signing keys,
 storage-failure readiness, camera lifecycle and remaining hardening, then the
 reviewable dataset and reproducible model experiments. Labels remain unreviewed.
+
+## Local key and camera checkpoint
+
+Generated development keys persist beside SQLite, are published only after
+restricting file access, and are never written into global configuration.
+Windows access is limited to the current user and SYSTEM; Unix uses mode 0600.
+Corrupt keys fail with restore guidance. Explicit configured keys retain precedence.
+Isolated backup/restore verifies an earlier token remains valid. SQL errors hide
+query parameters. Storage readiness returns recovery guidance on a failed probe;
+vector-store availability is separate from a loaded semantic encoder.
+
+Camera startup checks current consent/owner/session and invalidates pending media
+on navigation, logout or consent changes. Late grants and failed optional model
+loading stop tracks. This exposed two legacy calls to nonexistent tracking-loop
+functions; they now use the actual attention loop. Consent is off by default and
+is no longer silently accepted if its modal is absent.
+
+Verification: seven focused key/readiness tests; 17 identity/browser tests plus
+31 subtests; all six JS checks including delayed media grants and model failure.
+Next: atomic practice publication against source/session revisions, remaining
+hardening and the reviewed-dataset/experiment track. No ML improvement is claimed.

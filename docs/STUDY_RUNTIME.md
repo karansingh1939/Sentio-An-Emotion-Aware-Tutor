@@ -117,6 +117,17 @@ Ollama streaming and schema support follow the [official chat API](https://docs.
 Final validation remains server-side. Deterministic provider tests and real browser
 checks prove mechanics, not the educational quality of the local model.
 
-Still pending: recoverable document publication, full planning/review journeys,
-live-model quality measurement, manually reviewed ML labels and release acceptance.
+Library publication uses a recovery journal and saved practice connects to daily
+plans and reviews. Local signing keys persist next to SQLite in `.sentio-secret`;
+they are protected with a current-user/SYSTEM ACL on Windows or mode 0600 on Unix.
+Private backups include the key. Restore the key with the database to retain login
+signatures. An explicit configured secret takes precedence; production still
+requires an explicit secure configuration. In-memory databases use ephemeral keys.
+
+Optional camera activation requires current consent, owner and study session.
+Late permission grants after navigation/logout are stopped; unavailable camera
+models stop acquired media and preserve text study.
+
+Still pending: full hardening and release acceptance, live-model quality
+measurement, manually reviewed ML labels and the model experiment.
 See `tasks/continuation.md` for the exact next task.

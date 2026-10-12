@@ -42,6 +42,7 @@ class SessionPersister:
             self._engine = create_engine(
                 session_cfg.DB_URL,
                 connect_args={"check_same_thread": False},
+                hide_parameters=True,
                 **pool_options,
             )
             self._init_db()
@@ -64,11 +65,9 @@ class SessionPersister:
                     )
             else:
                 if not secret or secret in KNOWN_INSECURE_SECRETS:
-                    import secrets
+                    from sentio.auth.local_secret import local_secret
 
-                    secret = secrets.token_urlsafe(32)
-                    # Configure API_SECRET for stable logins across restarts.
-                    api_cfg.API_SECRET = secret
+                    secret = local_secret(session_cfg.DB_URL)
 
             self.token_manager = TokenManager(secret_key=secret)
             self.auth_repo = AuthRepository(self)

@@ -81,3 +81,4 @@ graphify-out/
 data/documents/
 .pytest_cache/
 .ruff_cache/
+.sentio-secret

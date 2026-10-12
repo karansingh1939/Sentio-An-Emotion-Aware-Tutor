@@ -4,6 +4,8 @@ const API = `${window.location.origin}/api/v1`;
 let sessionId = null;
 let wsEmotion = null;
 let camStream = null;
+let cameraEpoch = 0;
+let cameraStarting = false;
 let camInterval = null;
 let durationTimer = null;
 let sessionStart = null;
@@ -835,12 +837,11 @@ const leftEyeIndices = [263, 362, 386, 374, 385, 373];
 const rightEyeIndices = [33, 133, 159, 145, 158, 144];
 
 // E7: Privacy Consent Global State
-let userPrivacyConsent = localStorage.getItem('sentio_privacy_consent') === 'true';
 let pendingConsentFeature = null;
 let pendingConsentCallback = null;
 
 function checkConsentAndActivate(feature, callback) {
-  if (userPrivacyConsent) {
+  if (window.store?.getState('telemetryActive')) {
     callback();
   } else {
     pendingConsentFeature = feature;
@@ -849,14 +850,14 @@ function checkConsentAndActivate(feature, callback) {
     if (modal) {
       modal.style.display = 'flex';
     } else {
-      acceptPrivacyConsent();
+      pendingConsentCallback = null;
+      toast('Enable optional camera consent in Settings first.', true);
     }
   }
 }
 
 function acceptPrivacyConsent() {
-  userPrivacyConsent = true;
-  localStorage.setItem('sentio_privacy_consent', 'true');
+  window.store?.setState('telemetryActive', true);
   const modal = document.getElementById('privacy-consent-modal');
   if (modal) modal.style.display = 'none';
   toast('Privacy consent granted. Activating feature...');
@@ -962,19 +963,42 @@ function disableAllTracking() {
 }
 
 async function startWebcam() {
+  if (camStream || cameraStarting || !window.store?.getState('telemetryActive')) return;
+  const owner = window.store.getState('currentUser')?.id;
+  const activeSession = getActiveSessionId();
+  if (!owner || !activeSession) return;
+  const epoch = ++cameraEpoch;
+  cameraStarting = true;
+  let acquired = null;
+  const stillCurrent = () =>
+    epoch === cameraEpoch &&
+    window.store.getState('telemetryActive') &&
+    window.store.getState('currentUser')?.id === owner &&
+    getActiveSessionId() === activeSession &&
+    ['#/tutor', '#/quizzes', '#/flashcards'].includes(window.store.getState('activeRoute'));
   try {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       throw new Error('MediaDevices API not supported');
     }
-    camStream = await navigator.mediaDevices.getUserMedia({
+    acquired = await navigator.mediaDevices.getUserMedia({
       video: { width: 320, height: 240, facingMode: 'user' },
       audio: false,
     });
+    if (!stillCurrent()) {
+      acquired.getTracks().forEach((track) => track.stop());
+      return;
+    }
+    camStream = acquired;
     window.camStream = camStream;
     const video = document.getElementById('cam-video');
     if (video) video.srcObject = camStream;
     if (!faceLandmarker) await initMediaPipe();
-    if (faceLandmarker) startTrackingLoop();
+    if (!stillCurrent()) {
+      acquired.getTracks().forEach((track) => track.stop());
+      return;
+    }
+    if (!faceLandmarker) throw new Error('Optional camera model unavailable');
+    if (faceLandmarker) startAttentionTrackingLoop();
     addLog('Camera started', 'var(--green)');
     camActive = true;
     const camActInd = document.getElementById('cam-active-indicator');
@@ -994,6 +1018,9 @@ async function startWebcam() {
       if (qIcon) qIcon.textContent = '🟢';
     }
   } catch (e) {
+    if (acquired) acquired.getTracks().forEach((track) => track.stop());
+    if (epoch !== cameraEpoch) return;
+    stopWebcam();
     addLog('Camera access denied/unavailable — standard tutoring active', 'var(--yellow)');
     toast('Camera access denied or unavailable. Standard text tutoring remains active.', false);
     camActive = false;
@@ -1013,11 +1040,15 @@ async function startWebcam() {
       const qIcon = document.getElementById('cam-quick-icon');
       if (qIcon) qIcon.textContent = '📷';
     }
+  } finally {
+    if (epoch === cameraEpoch) cameraStarting = false;
   }
 }
 
 function stopWebcam() {
-  stopTrackingLoop();
+  cameraEpoch++;
+  cameraStarting = false;
+  stopAttentionTrackingLoop();
   camActive = false;
   window.camStream = null;
   if (camStream) {

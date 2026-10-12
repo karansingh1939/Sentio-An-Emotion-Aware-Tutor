@@ -247,8 +247,15 @@ class TestLearningIdentity(unittest.TestCase):
             persister = SessionPersister()
             try:
                 persister.load()
-                self.assertGreaterEqual(len(api_cfg.API_SECRET), 32)
-                self.assertNotIn(api_cfg.API_SECRET, KNOWN_INSECURE_SECRETS)
+                secret = persister.token_manager.secret_key.decode("ascii")
+                self.assertGreaterEqual(len(secret), 32)
+                self.assertNotIn(secret, KNOWN_INSECURE_SECRETS)
+                second = SessionPersister()
+                try:
+                    second.load()
+                    assert second.token_manager.secret_key == persister.token_manager.secret_key
+                finally:
+                    second._engine.dispose()
             finally:
                 if persister._engine:
                     persister._engine.dispose()

@@ -35,6 +35,23 @@ def test_wrong_model_tag_does_not_report_ai_ready(monkeypatch):
     assert "phi3:mini" in body["ai"]["action"]
 
 
+def test_failed_storage_probe_returns_recovery_guidance(monkeypatch):
+    from sqlalchemy.exc import OperationalError
+
+    from sentio.maintenance.readiness import readiness
+
+    agent.sm.load()
+    monkeypatch.setattr(
+        agent.sm.persister._engine,
+        "connect",
+        Mock(side_effect=OperationalError("SELECT 1", {}, Exception("offline"))),
+    )
+    result = readiness(agent)
+    assert result["storage"]["ready"] is False
+    assert "backup" in result["storage"]["action"]
+    assert result["retrieval"]["ready"] is False
+
+
 def test_startup_never_loads_camera_and_survives_ai_failure():
     detector, kb, nlp, sm = Mock(), Mock(), Mock(), Mock()
     nlp.load.side_effect = RuntimeError("provider offline")
