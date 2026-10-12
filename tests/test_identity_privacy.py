@@ -23,7 +23,7 @@ class TestIdentityAndPrivacyPlatform(unittest.TestCase):
         # Initialize hasher, validator, and token manager
         self.hasher = PBKDF2PasswordHasher(iterations=1000)  # Fast iterations for testing speed
         self.validator = PasswordValidator()
-        self.token_manager = TokenManager(secret_key="test_secret_12345!")
+        self.token_manager = TokenManager(secret_key="test_secret_12345!_at_least_32_bytes")
 
         # Enable auth enforcement temporarily for specific token authorization tests
         self.original_enforce = getattr(api_cfg, "ENFORCE_AUTH", False)
@@ -36,7 +36,7 @@ class TestIdentityAndPrivacyPlatform(unittest.TestCase):
         """Verify PBKDF2 salts, hashes, and performs constant-time password matching."""
         pwd = "SecurePassword123!"
         hashed = self.hasher.hash_password(pwd)
-        self.assertTrue(hashed.startswith("0") or len(hashed.split("$")) == 2)
+        self.assertTrue(hashed.startswith("pbkdf2_sha256$1000$"))
 
         # Verify match
         self.assertTrue(self.hasher.verify_password(pwd, hashed))

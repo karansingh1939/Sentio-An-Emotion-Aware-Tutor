@@ -30,9 +30,12 @@ class AuthRepository:
             "INSERT OR IGNORE INTO students (student_id, created_at, metadata_json) VALUES (:sid, :created, '{}')",
             {"sid": account.student_id, "created": account.created_at},
         )
+
         self._execute(
-            "INSERT OR REPLACE INTO student_accounts (student_id, email, password_hash, role, created_at, consent_preferences) "
-            "VALUES (:sid, :email, :pwd, :role, :created, :consent)",
+            "INSERT INTO student_accounts (student_id, email, password_hash, role, created_at, consent_preferences, token_version) "
+            "VALUES (:sid, :email, :pwd, :role, :created, :consent, :version) "
+            "ON CONFLICT(student_id) DO UPDATE SET email=excluded.email, password_hash=excluded.password_hash, "
+            "role=excluded.role, consent_preferences=excluded.consent_preferences, token_version=excluded.token_version",
             {
                 "sid": account.student_id,
                 "email": account.email,
@@ -40,13 +43,21 @@ class AuthRepository:
                 "role": account.role,
                 "created": account.created_at,
                 "consent": account.consent_preferences,
+                "version": account.token_version,
             },
         )
+
+    def upgrade_password_hash(self, owner, previous_hash, replacement):
+        result = self._execute(
+            "UPDATE student_accounts SET password_hash=:replacement WHERE student_id=:owner AND password_hash=:previous",
+            {"owner": owner, "previous": previous_hash, "replacement": replacement},
+        )
+        return result.rowcount == 1
 
     def get_account_by_email(self, email: str) -> Optional[UserAccount]:
         """Looks up an account by login email."""
         res = self._execute(
-            "SELECT student_id, email, password_hash, role, created_at, consent_preferences "
+            "SELECT student_id, email, password_hash, role, created_at, consent_preferences, token_version "
             "FROM student_accounts WHERE email = :email",
             {"email": email},
         )
@@ -60,7 +71,7 @@ class AuthRepository:
     def get_account_by_student_id(self, student_id: str) -> Optional[UserAccount]:
         """Looks up an account by unique student ID."""
         res = self._execute(
-            "SELECT student_id, email, password_hash, role, created_at, consent_preferences "
+            "SELECT student_id, email, password_hash, role, created_at, consent_preferences, token_version "
             "FROM student_accounts WHERE student_id = :sid",
             {"sid": student_id},
         )

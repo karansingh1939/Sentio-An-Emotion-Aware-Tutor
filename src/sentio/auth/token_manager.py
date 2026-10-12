@@ -2,15 +2,18 @@ import base64
 import hashlib
 import hmac
 import json
+import math
 import time
 from typing import Any, Dict
+
+import jwt
 
 from sentio.auth.exceptions import ExpiredTokenError, InvalidTokenError
 
 
 class TokenManager:
     """
-    Manages custom secure, signed tokens using Python's standard library.
+    Issues standard HS256 JWTs and verifies unexpired legacy signed tokens.
     Encapsulates serialization, deserialization, and validation.
     """
 
@@ -28,53 +31,48 @@ class TokenManager:
         return base64.urlsafe_b64decode(data.encode("utf-8"))
 
     def create_token(self, payload: Dict[str, Any], expires_in_sec: int) -> str:
-        """Serializes and signs a custom token."""
-        header = {"alg": "HS256", "typ": "SEN"}
-
+        """Issue a standard HS256 JWT with required issuer and expiration."""
         full_payload = dict(payload)
         full_payload["iss"] = self.issuer
         full_payload["exp"] = time.time() + expires_in_sec
-
-        header_b64 = self._base64_url_encode(json.dumps(header).encode("utf-8"))
-        payload_b64 = self._base64_url_encode(json.dumps(full_payload).encode("utf-8"))
-
-        message = f"{header_b64}.{payload_b64}"
-        signature = hmac.new(self.secret_key, message.encode("utf-8"), hashlib.sha256).hexdigest()
-
-        return f"{message}.{signature}"
+        full_payload["iat"] = int(time.time())
+        return jwt.encode(full_payload, self.secret_key, algorithm="HS256")
 
     def verify_token(self, token: str) -> Dict[str, Any]:
         """Validates token structure, signature, and expiration."""
         try:
-            parts = token.split(".")
-            if len(parts) != 3:
+            if not isinstance(token, str) or len(token) > 8192:
                 raise InvalidTokenError("Malformed token structure.")
-
-            header_b64, payload_b64, signature = parts
-            message = f"{header_b64}.{payload_b64}"
-
-            # Compute target signature
-            expected_signature = hmac.new(
-                self.secret_key, message.encode("utf-8"), hashlib.sha256
-            ).hexdigest()
-
-            # Constant-time comparison
-            if not hmac.compare_digest(signature, expected_signature):
-                raise InvalidTokenError("Invalid token signature.")
-
-            payload_json = self._base64_url_decode(payload_b64)
-            payload = json.loads(payload_json.decode("utf-8"))
-
-            if payload.get("iss") != self.issuer:
+            header = jwt.get_unverified_header(token)
+            if header.get("alg") != "HS256":
+                raise InvalidTokenError("Unsupported token algorithm.")
+            if header.get("typ") == "SEN":
+                # Upgrade compatibility: old persisted sign-ins expire normally.
+                parts = token.split(".")
+                message = f"{parts[0]}.{parts[1]}"
+                signature = hmac.new(self.secret_key, message.encode(), hashlib.sha256).hexdigest()
+                if not hmac.compare_digest(parts[2], signature):
+                    raise InvalidTokenError("Invalid token signature.")
+                payload = json.loads(self._base64_url_decode(parts[1]))
+            elif header.get("typ") == "JWT":
+                payload = jwt.decode(
+                    token,
+                    self.secret_key,
+                    algorithms=["HS256"],
+                    issuer=self.issuer,
+                    options={"require": ["exp", "iss"], "verify_exp": False},
+                )
+            else:
+                raise InvalidTokenError("Unsupported token type.")
+            if not isinstance(payload, dict) or payload.get("iss") != self.issuer:
                 raise InvalidTokenError("Invalid token issuer.")
-
-            # Check expiration
-            if payload.get("exp", 0) < time.time():
+            expiry = payload.get("exp")
+            if type(expiry) not in (int, float) or not math.isfinite(expiry):
+                raise InvalidTokenError("Token expiration is required.")
+            if expiry <= time.time():
                 raise ExpiredTokenError("Token has expired.")
-
             return payload
-
         except (ExpiredTokenError, InvalidTokenError):
             raise
         except Exception as exc:
-            raise InvalidTokenError(f"Token parsing failed: {exc}")
+            raise InvalidTokenError("Token verification failed.") from exc

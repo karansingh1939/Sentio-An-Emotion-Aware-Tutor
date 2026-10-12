@@ -69,6 +69,8 @@ class ResponseHeadersMiddleware:
                     (b"x-frame-options", b"DENY"),
                     (b"content-security-policy", b"frame-ancestors 'none'"),
                 ]
+                if scope.get("path", "").startswith("/api/"):
+                    message["headers"].append((b"cache-control", b"no-store"))
             await send(message)
 
         await self.app(scope, receive, protected_send)

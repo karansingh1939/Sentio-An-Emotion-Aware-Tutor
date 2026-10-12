@@ -126,6 +126,16 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 
+class ResetPasswordRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=320)
+    recovery_key: str = Field(min_length=1, max_length=128)
+    new_password: str = Field(min_length=1, max_length=1024)
+
+
+class RecoveryKeyRequest(BaseModel):
+    current_password: str = Field(min_length=1, max_length=1024)
+
+
 class ConsentRequest(BaseModel):
     consent_version: str
     preferences: dict

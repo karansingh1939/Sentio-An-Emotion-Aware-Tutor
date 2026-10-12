@@ -22,6 +22,8 @@ def authenticate_access_token(persister, token: str) -> Dict[str, Any]:
         account = persister.auth_repo.get_account_by_student_id(payload["sub"])
         if account is None:
             raise InvalidTokenError("Associated account does not exist.")
+        if payload.get("version", 0) != account.token_version:
+            raise InvalidTokenError("Session ended after a password change. Sign in again.")
         return {"student_id": account.student_id, "email": account.email, "role": account.role}
     except ExpiredTokenError:
         raise HTTPException(status_code=401, detail="Token has expired.")

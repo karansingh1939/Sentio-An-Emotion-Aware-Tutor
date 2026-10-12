@@ -75,17 +75,31 @@ class AuthService:
             self.audit.log_event(account.student_id, "failed_login", ip_address=ip_address)
             raise CredentialsError("Invalid email or password.")
 
+        if self.hasher.needs_upgrade(account.password_hash):
+            replacement = self.hasher.hash_password(password)
+            if not self.repo.upgrade_password_hash(
+                account.student_id, account.password_hash, replacement
+            ):
+                raise CredentialsError("Account changed. Sign in again.")
+            account.password_hash = replacement
+
         # Create token pair
         access_payload = {
             "sub": account.student_id,
             "email": account.email,
             "role": account.role,
             "token_type": "access",
+            "version": account.token_version,
         }
         access_token = self.token_manager.create_token(access_payload, expires_in_sec=900)  # 15 min
 
         refresh_id = str(uuid.uuid4())
-        refresh_payload = {"sub": account.student_id, "jti": refresh_id, "token_type": "refresh"}
+        refresh_payload = {
+            "sub": account.student_id,
+            "jti": refresh_id,
+            "token_type": "refresh",
+            "version": account.token_version,
+        }
         refresh_token_str = self.token_manager.create_token(
             refresh_payload, expires_in_sec=2592000
         )  # 30 days
@@ -126,6 +140,8 @@ class AuthService:
         account = self.repo.get_account_by_student_id(student_id)
         if not account:
             raise InvalidTokenError("Associated account does not exist.")
+        if payload.get("version", 0) != account.token_version:
+            raise InvalidTokenError("Session ended after a password change. Sign in again.")
 
         # 3. Create fresh access token
         access_payload = {
@@ -133,6 +149,7 @@ class AuthService:
             "email": account.email,
             "role": account.role,
             "token_type": "access",
+            "version": account.token_version,
         }
         return self.token_manager.create_token(access_payload, expires_in_sec=900)
 

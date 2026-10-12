@@ -2087,6 +2087,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pyjwt"
+version = "2.15.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/43/ea/5194e52748b0da83d71e082d75496eaec6e58f419f5e184786ded517e6a9/pyjwt-2.15.1.tar.gz", hash = "sha256:4f259e80cdfb6b3fc18a7de51fd1ef9ec79652f25019bae68975ca2468a34df8", size = 121252, upload-time = "2026-09-28T18:40:42.598Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/50/ca/44de4e75f8aadc457f0634be3b542815078ded46dca30efb960edeecad6e/pyjwt-2.15.1-py3-none-any.whl", hash = "sha256:42d59d631f7768a1028a64c7ff581a9bf7519804daf91fc5b6c56e30eec5e193", size = 33860, upload-time = "2026-09-28T18:40:41.429Z" },
+]
+
+[[package]]
 name = "pyparsing"
 version = "3.3.3"
 source = { registry = "https://pypi.org/simple" }
@@ -2455,6 +2464,7 @@ dependencies = [
     { name = "portalocker" },
     { name = "psutil" },
     { name = "pydantic" },
+    { name = "pyjwt" },
     { name = "pypdf" },
     { name = "python-docx" },
     { name = "python-dotenv" },
@@ -2463,11 +2473,13 @@ dependencies = [
     { name = "requests" },
     { name = "sentence-transformers" },
     { name = "sqlalchemy" },
-    { name = "tensorflow" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
 [package.optional-dependencies]
+camera = [
+    { name = "tensorflow" },
+]
 experiments = [
     { name = "matplotlib" },
     { name = "mlflow" },
@@ -2490,6 +2502,7 @@ training = [
 [package.dev-dependencies]
 dev = [
     { name = "playwright" },
+    { name = "pypdfium2" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -2513,6 +2526,7 @@ requires-dist = [
     { name = "portalocker", specifier = ">=2.8,<4" },
     { name = "psutil", specifier = ">=5.9,<8" },
     { name = "pydantic", specifier = ">=2,<3" },
+    { name = "pyjwt", specifier = ">=2.10,<3" },
     { name = "pypdf", specifier = ">=5,<7" },
     { name = "pypdfium2", marker = "extra == 'ocr'", specifier = ">=5,<6" },
     { name = "python-docx", specifier = ">=1.1,<2" },
@@ -2523,14 +2537,15 @@ requires-dist = [
     { name = "scikit-learn", marker = "extra == 'experiments'", specifier = ">=1.6,<2" },
     { name = "sentence-transformers", specifier = ">=3,<6" },
     { name = "sqlalchemy", specifier = ">=2,<3" },
-    { name = "tensorflow", specifier = ">=2.16,<3" },
+    { name = "tensorflow", marker = "extra == 'camera'", specifier = ">=2.16,<3" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.29,<1" },
 ]
-provides-extras = ["ocr", "openai", "huggingface", "training", "experiments"]
+provides-extras = ["camera", "ocr", "openai", "huggingface", "training", "experiments"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "playwright", specifier = ">=1.48,<2" },
+    { name = "pypdfium2", specifier = ">=5,<6" },
     { name = "pytest", specifier = ">=8,<10" },
     { name = "pytest-asyncio", specifier = ">=0.24,<2" },
     { name = "pytest-cov", specifier = ">=5,<8" },

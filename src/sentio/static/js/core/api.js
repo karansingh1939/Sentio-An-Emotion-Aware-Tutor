@@ -70,6 +70,13 @@ class SentioAPIClient {
     const token = store.getState('authToken');
     const owner = store.getState('currentUser')?.id;
     const refreshToken = store.getState('refreshToken');
+    const needsSession = ![
+      '/auth/login',
+      '/auth/register',
+      '/auth/reset-password',
+      '/auth/refresh',
+      '/auth/logout',
+    ].includes(endpoint);
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -89,9 +96,14 @@ class SentioAPIClient {
         throw new Error('The account changed while this request was running.');
 
       if (!response.ok) {
-        if (response.status === 401 && token !== store.getState('authToken') && !options._isRetry)
+        if (
+          needsSession &&
+          response.status === 401 &&
+          token !== store.getState('authToken') &&
+          !options._isRetry
+        )
           return this.request(endpoint, { ...options, _isRetry: true });
-        if (response.status === 401 && !options._isRetry) {
+        if (needsSession && response.status === 401 && !options._isRetry) {
           if (refreshToken) {
             try {
               await this.refreshAccess(owner, refreshToken, controller.signal);

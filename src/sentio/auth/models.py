@@ -12,6 +12,7 @@ class UserAccount:
     role: str = "student"
     created_at: float = field(default_factory=float)
     consent_preferences: Optional[str] = None
+    token_version: int = 0
 
 
 @dataclass

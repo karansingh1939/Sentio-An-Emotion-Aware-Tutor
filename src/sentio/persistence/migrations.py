@@ -52,6 +52,15 @@ MIGRATIONS = {
             session_ids_json TEXT NOT NULL, created_at REAL NOT NULL)""",
     ],
     7: ["ALTER TABLE jobs ADD COLUMN context_json TEXT"],
+    8: [
+        """CREATE TABLE IF NOT EXISTS student_accounts (
+            student_id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'student',
+            created_at REAL NOT NULL, consent_preferences TEXT,
+            FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE)""",
+        "ALTER TABLE student_accounts ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE student_accounts ADD COLUMN recovery_key_hash TEXT",
+    ],
 }
 
 

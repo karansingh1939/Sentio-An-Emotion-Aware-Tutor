@@ -2,10 +2,19 @@
 
 import logging
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from sentio.api.dependencies import PREFIX, agent
-from sentio.api.schemas import LoginRequest, RefreshRequest, RegisterRequest
+from sentio.api.schemas import (
+    LoginRequest,
+    RecoveryKeyRequest,
+    RefreshRequest,
+    RegisterRequest,
+    ResetPasswordRequest,
+)
+from sentio.auth.exceptions import CredentialsError, InvalidTokenError, ValidationError
+from sentio.auth.middleware import get_current_user
+from sentio.auth.recovery import RecoveryRepository
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -18,14 +27,17 @@ def register_user(req: RegisterRequest):
     """
     try:
         account = agent.sm.persister.auth_service.register_student(req.email, req.password)
+        recovery_key = RecoveryRepository(agent.sm.persister._engine).issue(
+            account.student_id, account.password_hash
+        )
         return {
             "student_id": account.student_id,
             "email": account.email,
             "role": account.role,
             "created_at": account.created_at,
+            "recovery_key": recovery_key,
         }
-    except Exception as e:
-        logger.exception("Registration failed")
+    except ValidationError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -54,8 +66,7 @@ def login_user(req: LoginRequest, request: Request):
             "email": email,
             "role": account.role,
         }
-    except Exception as e:
-        logger.exception("Login failed")
+    except CredentialsError as e:
         raise HTTPException(status_code=401, detail=str(e))
 
 
@@ -67,8 +78,7 @@ def refresh_token(req: RefreshRequest):
     try:
         new_access_token = agent.sm.persister.auth_service.refresh_access_token(req.refresh_token)
         return {"access_token": new_access_token, "token_type": "bearer"}
-    except Exception as e:
-        logger.exception("Token refresh failed")
+    except InvalidTokenError as e:
         raise HTTPException(status_code=401, detail=str(e))
 
 
@@ -80,6 +90,49 @@ def logout_user(req: RefreshRequest):
     try:
         agent.sm.persister.auth_service.logout_student(req.refresh_token)
         return {"logged_out": True}
-    except Exception as e:
-        logger.exception("Logout failed")
+    except InvalidTokenError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post(PREFIX + "/auth/reset-password", tags=["Identity"])
+def reset_password(req: ResetPasswordRequest, request: Request):
+    service = agent.sm.persister.auth_service
+    try:
+        service.validator.validate(req.new_password)
+        password_hash = service.hasher.hash_password(req.new_password)
+        owner, key = RecoveryRepository(agent.sm.persister._engine).reset(
+            req.email.strip().lower(), req.recovery_key, password_hash
+        )
+        jobs = getattr(request.app.state, "jobs", None)
+        if jobs and not jobs.closed:
+            try:
+                jobs.cancel_owner(owner)
+            except Exception as exc:
+                logger.error(
+                    "Password recovery succeeded; pending work cancellation failed (%s)",
+                    type(exc).__name__,
+                )
+            finally:
+                jobs.resume_owner(owner)
+        return {"reset": True, "recovery_key": key}
+    except CredentialsError as exc:
+        raise HTTPException(401, str(exc)) from exc
+    except ValidationError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@router.post(PREFIX + "/auth/recovery-key", tags=["Identity"])
+def replace_recovery_key(req: RecoveryKeyRequest, user: dict = Depends(get_current_user)):
+    service = agent.sm.persister.auth_service
+    account = service.repo.get_account_by_student_id(user["student_id"])
+    if account is None or not service.hasher.verify_password(
+        req.current_password, account.password_hash
+    ):
+        raise HTTPException(400, "Current password is incorrect.")
+    try:
+        key = RecoveryRepository(agent.sm.persister._engine).issue(
+            account.student_id, account.password_hash
+        )
+        return {"recovery_key": key}
+    except CredentialsError as exc:
+        raise HTTPException(409, str(exc)) from exc

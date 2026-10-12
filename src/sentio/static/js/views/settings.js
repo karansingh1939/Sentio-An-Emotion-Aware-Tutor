@@ -2,6 +2,7 @@
 import { store } from '../core/store.js';
 import { toast } from '../components/ui.js';
 import { sentioAPI } from '../core/api.js';
+import { showRecoveryKey } from '../components/recovery.js';
 
 export class SettingsView {
   constructor(containerId) {
@@ -9,21 +10,23 @@ export class SettingsView {
   }
 
   init() {
-    this.render();
-    this.bindEvents();
+    store.subscribe('currentUser', () => {
+      this.render();
+      this.bindEvents();
+    });
   }
 
   render() {
     this.container.innerHTML = `
       <div class="view-header">
         <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">Settings</h2>
-        <p style="color:var(--text-dim);font-size:14px;">Configure your profile, view logs, or manage privacy and GDPR controls.</p>
+        <p style="color:var(--text-dim);font-size:14px;">Manage account recovery and your saved study data.</p>
       </div>
 
       <div style="margin-top:20px;width:100%;">
-        <sentio-card title="Privacy & GDPR Actions">
+        <sentio-card title="Your study data">
           <div style="display:flex;flex-direction:column;gap:12px;">
-            <p style="color:var(--text-dim);font-size:14px;">Under GDPR, you have the right to export your personal learning data or delete all historical records from our database.</p>
+            <p style="color:var(--text-dim);font-size:14px;">Download your saved study data, or delete your local account and its records.</p>
             <div style="display:flex;gap:12px;margin-top:8px;">
               <button id="export-data-btn" style="background:var(--accent);color:var(--bg);border:none;padding:8px 16px;border-radius:var(--radius);font-family:var(--mono);cursor:pointer;font-size:14px;font-weight:bold;">📥 Export My Data</button>
               <button id="purge-data-btn" style="background:none;color:var(--red);border:1px solid var(--red);padding:8px 16px;border-radius:var(--radius);font-family:var(--mono);cursor:pointer;font-size:14px;font-weight:bold;">🗑️ Purge My Account Data</button>
@@ -31,16 +34,13 @@ export class SettingsView {
           </div>
         </sentio-card>
 
-        <sentio-card title="Preferences">
-          <div style="display:flex;align-items:center;justify-content:between;">
-            <div>
-              <div style="font-weight:bold;font-size:14px;">Telemetry Tracking Consent</div>
-              <div style="color:var(--text-dim);font-size:14px;margin-top:2px;">Allow attention and emotion detection webcam processing.</div>
-            </div>
-            <input type="checkbox" id="consent-cb" ${store.getState('telemetryActive') ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;" />
-          </div>
+        <sentio-card title="Password recovery">
+          <p>Save a recovery key so you can reset a forgotten password. Generating a new key replaces your previous key.</p>
+          <label for="recovery-current-password">Current password</label>
+          <input id="recovery-current-password" type="password" autocomplete="current-password">
+          <button id="make-recovery-key" class="workspace-action" type="button">Generate recovery key</button>
+          <p id="recovery-error" role="alert"></p><div id="recovery-key-result"></div>
         </sentio-card>
-
         <sentio-card title="Account Actions">
           <div style="display:flex;flex-direction:column;gap:12px;">
             <p style="color:var(--text-dim);font-size:14px;">Sign out of your active student session on this machine.</p>
@@ -52,6 +52,25 @@ export class SettingsView {
   }
 
   bindEvents() {
+    const keyButton = this.container.querySelector('#make-recovery-key');
+    const owner = store.getState('currentUser')?.id;
+    keyButton.onclick = async () => {
+      if (keyButton.disabled || !owner) return;
+      keyButton.disabled = true;
+      try {
+        const result = await sentioAPI.post('/auth/recovery-key', {
+          current_password: this.container.querySelector('#recovery-current-password').value,
+        });
+        if (owner !== store.getState('currentUser')?.id) return;
+        this.container.querySelector('#recovery-current-password').value = '';
+        showRecoveryKey(this.container.querySelector('#recovery-key-result'), result.recovery_key);
+      } catch (error) {
+        if (owner === store.getState('currentUser')?.id)
+          this.container.querySelector('#recovery-error').textContent = error.message;
+      } finally {
+        keyButton.disabled = false;
+      }
+    };
     const cb = this.container.querySelector('#consent-cb');
     if (cb) {
       cb.onchange = (e) => {
