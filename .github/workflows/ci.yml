@@ -6,18 +6,22 @@ on:
     branches: [main, master, sentio-v2-upgrade]
 permissions:
   contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
         with:
-          version: "0.12.17"
+          version: '0.12.17'
           enable-cache: true
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: '22'
           cache: npm
       - run: sudo apt-get update && sudo apt-get install -y libgl1 libglib2.0-0 tesseract-ocr tesseract-ocr-eng fonts-dejavu-core
       - run: uv sync --locked --extra ocr
@@ -28,6 +32,8 @@ jobs:
       - run: npm run format:check
       - run: npm test
       - run: uv run python scripts/run_tests.py -q
+      - name: Build Python distribution
+        run: uv build
       - name: Evaluate labelled synthetic OCR scans
         run: uv run python scripts/evaluate_ocr.py --output reports/ocr-ci.json
       - uses: actions/upload-artifact@v4
@@ -37,3 +43,17 @@ jobs:
           path: reports/ocr-ci.json
           if-no-files-found: warn
           retention-days: 14
+  docker:
+    name: Docker build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Compose configuration
+        run: |
+          export API_SECRET="$(openssl rand -hex 32)"
+          docker compose config --quiet
+      - name: Build locked application image
+        run: docker build --tag sentio:ci .
+      - name: Verify installed entry point
+        run: docker run --rm sentio:ci sentio --help

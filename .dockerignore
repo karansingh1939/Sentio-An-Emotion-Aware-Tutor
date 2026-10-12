@@ -16,3 +16,10 @@ docs
 *.h5
 *.zip
 *.log
+tmp
+temp
+backups
+graphify-out
+datasets
+reports
+tasks
