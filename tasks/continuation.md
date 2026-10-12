@@ -256,3 +256,76 @@ Verification: 216 passed, one optional OCR skip, 31 subtests passed. Next: remai
 Windows library/context/tool checks and the installed-model CPU comparison, then
 release documentation and validation. Label review remains pending; the user's
 review page is ready with examples and saved progress.
+
+## Grounding, tools and live CPU checkpoint
+
+Selected notes without a relevance signal now produce an explicit insufficient-
+evidence response without calling the model or falling back to curriculum.
+Central teaching instructions require passage-based facts, clarification and
+actual supporting references; final validation rejects unknown/missing citations.
+This proves reference membership, not semantic support. The raw 0.35 cosine/term
+overlap gate is uncalibrated and still needs coverage/unsupported-acceptance
+evaluation. Offline raw-hybrid results must be brought into parity with this gate
+before learned-model adoption. Stream history is rebuilt from matching persisted
+source checksums, and the final write transaction rechecks document versions.
+
+Jobs now persist their submission context (migration 7) and expose it in owned
+status. GET /sessions/{id}/context supplies the current owned snapshot. Browser
+practice completion is saved but not painted into a different context. Shared
+token refresh and identity checks prevent late refresh/private JSON from replacing
+a new account; transient refresh failure preserves authentication. Tutor session
+and source lists distinguish failed reads and discard late responses.
+
+Whiteboards use owner/session IDs, preserve loaded undo state and per-visit drafts,
+handle touch/scaled pointer coordinates and retain unsaved work on errors. Save
+checks account/session/board ownership inside the publication transaction.
+PNG/PDF export validates bounded finite vectors, preserves highlight alpha and
+uses text font size; export waits for a successful current save. Real browser
+tests download a colored PNG and reload the saved drawing. Camera grants are
+invalidated on context/consent changes; optional SDK/WASM/model URLs are local,
+with no automatic CDN/model fetch. Assets and a physical-camera test are still
+missing; backend consent enforcement remains open.
+
+Windows case-only filename collisions now preserve existing notes. Recovery
+rejects linked/junction learner paths. A SQLite process lease excludes another
+API and offline backup while storage is owned. The lease exposed an existing
+browser-test shutdown race; the test now joins its server and asserts shutdown,
+without weakening ownership checks.
+
+Generation comparison: reports/generation/compare-cpu-v1.json and
+compare-grounding-v2.json retain 72 repeated CPU requests across two installed
+models and two prompt policies. Both answered the unsupported ethanol question;
+prompt-only grounding failed. Qwen is faster on these cases and is not adopted.
+Legacy and grounding prompt hashes are regression-tested for reproducibility.
+See docs/LOCAL_GENERATION_EXPERIMENT.md for the table, commands and limitations.
+
+Live journey v1 rejected an uncited answer. v2/v3 exposed a one-question request
+returning five with invalid options. Exact-count schemas now constrain generation
+and publication for quizzes/cards; a red/green regression rejects wrong counts.
+Shared deterministic fixtures now honor requested batch size so interruption
+tests reach their intended final publication guard. Providers reject output-limit
+termination and have a 180-second generation deadline even for continuing chunks.
+reports/generation/live-journey-v4.json records a complete real HTTP journey:
+upload, cited response, unsupported response, quiz/score, cards/review, preferences,
+task completion, restart and saved-work/token recovery. This is one authored
+mechanics run, not learning or model-quality validation. Earlier failures remain.
+The journey uses isolated data, stops its own Windows child processes, and stores
+failure logs only in ignored tmp, excluding credentials from published reports.
+
+Verification: uv run pytest -q --tb=short --show-capture=no: 232 passed,
+one optional OCR skip, 31 subtests passed (tmp/release-regression-final.log).
+After moving drawing ownership SQL into its repository, 12 focused tool/ownership/
+browser tests pass (tmp/whiteboard-final.log). npm test: six checks pass; Ruff,
+Python/JS format checks, uv lock --check and wheel/source packaging pass.
+Architecture/sequence diagrams and an honest course/résumé draft are in
+docs/ARCHITECTURE.md and docs/PORTFOLIO_REPORT_DRAFT.md.
+
+Next exact slice: bind an owned goal selection to the shared study context,
+persist its identity/version in practice and stream snapshots, and test goal
+changes during generation. Then finish practice provenance/quiz editing,
+backend camera consent and privacy lifecycle, remaining recovery/log bounds,
+held-out grounding/repeated live acceptance and release deliverables. Preserve
+unchecked milestones until their full gates pass. User does not yet know how to
+label: the guided reports/evidence/review-v1.html page is ready with examples,
+small batches, Skip and export. Zero real evidence labels are reviewed; no real
+classifier, calibration gain or adoption result may be claimed or synthesized.

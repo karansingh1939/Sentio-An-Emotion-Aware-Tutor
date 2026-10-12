@@ -1,0 +1,29 @@
+{
+  "timestamp": "2026-10-12T10:19:20.244427+00:00",
+  "model": "phi3:mini",
+  "steps": [
+    {
+      "name": "startup",
+      "status": "passed",
+      "seconds": 2.937000000005355
+    },
+    {
+      "name": "upload",
+      "status": "passed",
+      "seconds": 22.656000000002678
+    },
+    {
+      "name": "cited_explanation",
+      "status": "failed",
+      "failure": "ValueError",
+      "seconds": 56.546999999991385
+    }
+  ],
+  "limitations": [
+    "One authored physics journey, not a learning study or a model accuracy estimate.",
+    "Quiz submission copies the generated reference answer to test persistence only.",
+    "Qdrant uses memory mode; restart must recover evidence from persisted chunks."
+  ],
+  "status": "failed",
+  "failure": "ValueError"
+}

@@ -1,0 +1,72 @@
+{
+  "timestamp": "2026-10-12T10:29:30.377675+00:00",
+  "model": "phi3:mini",
+  "steps": [
+    {
+      "name": "startup",
+      "status": "passed",
+      "seconds": 2.937999999994645
+    },
+    {
+      "name": "upload",
+      "status": "passed",
+      "seconds": 7.8289999999979045
+    },
+    {
+      "name": "cited_explanation",
+      "status": "passed",
+      "seconds": 38.296000000002095
+    },
+    {
+      "name": "unsupported_question",
+      "status": "passed",
+      "seconds": 0.0629999999946449
+    },
+    {
+      "name": "quiz_generation",
+      "status": "passed",
+      "seconds": 12.703000000008615
+    },
+    {
+      "name": "quiz_submission",
+      "status": "passed",
+      "seconds": 5.796999999991385
+    },
+    {
+      "name": "card_generation",
+      "status": "passed",
+      "seconds": 6.092999999993481
+    },
+    {
+      "name": "card_review",
+      "status": "passed",
+      "seconds": 0.01600000000325963
+    },
+    {
+      "name": "preferences",
+      "status": "passed",
+      "seconds": 0.0
+    },
+    {
+      "name": "plan_completion",
+      "status": "passed",
+      "seconds": 0.01600000000325963
+    },
+    {
+      "name": "restart",
+      "status": "passed",
+      "seconds": 3.9680000000080327
+    },
+    {
+      "name": "saved_work_and_token_after_restart",
+      "status": "passed",
+      "seconds": 0.046999999991385266
+    }
+  ],
+  "limitations": [
+    "One authored physics journey, not a learning study or a model accuracy estimate.",
+    "Quiz submission copies the generated reference answer to test persistence only.",
+    "Qdrant uses memory mode; restart must recover evidence from persisted chunks."
+  ],
+  "status": "passed"
+}

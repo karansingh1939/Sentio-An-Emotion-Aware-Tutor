@@ -19,3 +19,12 @@ on feature/sentio-study-overhaul. No remote publication is authorized.
 
 Record changed behavior, test commands/results, known limits and exact next action
 in continuation.md before ending a session.
+
+Latest checkpoint: 232 Python tests and 31 subtests pass, one optional OCR skip;
+all six JavaScript checks pass. One real isolated phi3 study journey completes,
+with earlier citation and quiz failures retained in reports/generation.
+Whiteboard PNG download/reload and PDF rendering are verified. Milestone 10 stays
+open for physical camera/dependency/consent checks. Milestone 7 stays open for
+semantic grounding and held-out coverage, not merely citation membership.
+Model training stays blocked by actual manual labels; other implementation work
+continues independently. Next slice is owned goal selection in shared context.
