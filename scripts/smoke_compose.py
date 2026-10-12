@@ -132,6 +132,13 @@ def run(output):
             report["status"] = "passed"
         except Exception as exc:
             report.update(status="failed", failure=type(exc).__name__)
+            subprocess.run(
+                command + ["logs", "--no-color", "--tail", "100", "sentio-api"],
+                cwd=root,
+                env=env,
+                check=False,
+                timeout=30,
+            )
             raise
         finally:
             output.parent.mkdir(parents=True, exist_ok=True)
