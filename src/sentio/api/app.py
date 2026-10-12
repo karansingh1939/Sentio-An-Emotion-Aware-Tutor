@@ -7,13 +7,18 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from sentio.api.dependencies import PREFIX as PREFIX
 from sentio.api.dependencies import STATIC_DIR
 from sentio.api.dependencies import agent as agent
 from sentio.api.dependencies import quiz_service as quiz_service
 from sentio.api.dependencies import whiteboard_service as whiteboard_service
-from sentio.api.middleware import RateLimitMiddleware
+from sentio.api.middleware import (
+    BodyLimitMiddleware,
+    RateLimitMiddleware,
+    ResponseHeadersMiddleware,
+)
 from sentio.api.routes import (
     analytics,
     auth,
@@ -90,7 +95,32 @@ async def llm_service_unavailable_handler(request: Request, exc: LLMServiceUnava
     )
 
 
+@app.exception_handler(StarletteHTTPException)
+async def http_failure(request, exc):
+    detail = (
+        "The operation failed. Retry, or check local diagnostics if it persists."
+        if exc.status_code == 500
+        else exc.detail
+    )
+    return JSONResponse(
+        status_code=exc.status_code, content={"detail": detail}, headers=exc.headers
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_failure(request, exc):
+    logger.error("Unhandled request failure (%s)", type(exc).__name__)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "The operation failed. Retry, or check local diagnostics if it persists."
+        },
+    )
+
+
+app.add_middleware(BodyLimitMiddleware)
 app.add_middleware(RateLimitMiddleware, rate=1.0, burst=60.0)
+app.add_middleware(ResponseHeadersMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=api_cfg.CORS_ORIGINS,

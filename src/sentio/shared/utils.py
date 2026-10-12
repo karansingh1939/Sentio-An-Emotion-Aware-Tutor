@@ -430,6 +430,11 @@ class RateLimiter:
         while not self.allow():
             time.sleep(1.0 / self.rate)
 
+    def retry_after(self):
+        import math
+
+        return max(1, math.ceil((1 - self._tokens) / self.rate))
+
 
 # ─────────────────────────────────────────────
 # SYSTEM HEALTH CHECK

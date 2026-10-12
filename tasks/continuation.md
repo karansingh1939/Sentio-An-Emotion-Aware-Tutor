@@ -218,3 +218,18 @@ fixtures. No real classifier or accuracy result exists before manual review.
 Next: remaining hardening (bounded bodies/stable errors/recovery), tool exports,
 live CPU generation comparison and release/showcase records; review is independent
 of these tasks and must not be simulated by AI.
+
+## HTTP boundary checkpoint
+
+Request bodies are bounded before parsing/spooling: 2 MiB for ordinary requests,
+24 MiB for multipart upload requests, with the existing 20 MiB file limit retained.
+Actual chunked bytes are counted, not only declared Content-Length. Malformed
+lengths and oversize JSON/multipart bodies return stable errors. Internal HTTP
+500 details and unhandled SQL failures no longer expose private messages. Responses
+disable content sniffing, referrer forwarding and framing. Authentication has its
+own stricter budget; normal study reads/writes remain separate. Retry-After now
+reflects token replenishment and is tested by retrying after the indicated wait.
+
+Verification: 209 tests passed, one optional OCR skip, 31 subtests passed.
+Next: recoverable account/file cleanup on failed deletion, bounded recovery
+records, remaining tool/context guards and live-model release measurements.
