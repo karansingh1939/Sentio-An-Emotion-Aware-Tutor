@@ -95,11 +95,11 @@ class StreamService:
                 control.progress = lambda stage: emit("status", {"stage": stage})
                 try:
                     control.check()
+                    self.agent.nlp.clear_history(session_id)
                     history = self.agent.nlp._get_history(session_id)
-                    if not history.to_list():
-                        for turn in self.turns(owner, session_id, limit=10):
-                            history.add_user(turn["message"])
-                            history.add_assistant(turn["response"]["text"])
+                    for turn in self.turns(owner, session_id, limit=10):
+                        history.add_user(turn["message"])
+                        history.add_assistant(turn["response"]["text"])
                     response = self.agent.chat(session_id, message, defer_turn=True)
                     control.check()
                     if self.context(session) != context or not session.is_active:
@@ -129,6 +129,8 @@ class StreamService:
                                     params,
                                 ).first():
                                     raise WorkCancelled("Account is no longer available")
+                                if self.context(session, connection=conn) != context:
+                                    raise WorkCancelled("Study sources changed before saving")
                                 self.agent.sm.persister.save_session(session, connection=conn)
                                 conn.execute(
                                     text(
@@ -231,11 +233,21 @@ class StreamService:
             for row in reversed(rows)
         ]
 
-    def context(self, session):
+    def context(self, session, connection=None):
         selected = session.metadata.get("document_id")
         versions = []
         if selected not in (None, "none"):
-            documents = self.agent.sm.list_documents(student_id=session.student_id)
+            if connection is None:
+                documents = self.agent.sm.list_documents(student_id=session.student_id)
+            else:
+                documents = (
+                    connection.execute(
+                        text("SELECT id,checksum FROM documents WHERE student_id=:owner"),
+                        {"owner": session.student_id},
+                    )
+                    .mappings()
+                    .all()
+                )
             ids = selected if isinstance(selected, list) else [selected]
             versions = sorted(
                 (d["id"], d["checksum"]) for d in documents if selected == "all" or d["id"] in ids

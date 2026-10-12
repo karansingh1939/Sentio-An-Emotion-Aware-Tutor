@@ -660,7 +660,7 @@ class SessionPersister:
                 return [dict(r._mapping) for r in rows]
         except Exception as e:
             logger.error(f"Error listing documents: {e}")
-            return []
+            raise
 
     def save_document_chunks(self, doc_id: str, chunks: List[dict], connection=None) -> bool:
         if not self._use_db:
@@ -738,7 +738,7 @@ class SessionPersister:
                 return [dict(r._mapping) for r in rows]
         except Exception as e:
             logger.error(f"Error getting all chunks: {e}")
-            return []
+            raise
 
     def clear_all_documents_and_chunks(self) -> bool:
         if not self._use_db:

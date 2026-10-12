@@ -406,6 +406,24 @@ class SentioOrchestrator:
     def tutor_node(self, state: OrchestratorState) -> OrchestratorState:
         t0 = time.perf_counter()
 
+        from sentio.ai.grounding import MISSING_EVIDENCE, validate_references
+        from sentio.ai.models import TutorResponse
+
+        if getattr(state.get("retrieved_content"), "evidence_outcome", "general") == "insufficient":
+            checkpoint("insufficient selected evidence")
+            response = TutorResponse(
+                text=MISSING_EVIDENCE,
+                strategy_used=state["strategy"],
+                learning_state=state["learning_state"],
+                backend_used="evidence_gate",
+            )
+            return {
+                **state,
+                "agent_response": response,
+                "llm_latency_ms": 0,
+                "selected_route": [*state["selected_route"], "insufficient_evidence"],
+            }
+
         tone = state.get("tone_instruction", "Be encouraging.")
         system_prompt = self.tutor_agent.nlp.prompt_builder.build_system_prompt(
             subject=state["subject"],
@@ -449,6 +467,7 @@ class SentioOrchestrator:
             latency_ms=latency,
             backend_name=self.tutor_agent.nlp._backend.name,
         )
+        validate_references(tutor_resp.text, state.get("retrieved_content"))
 
         timeline = list(state["agent_timeline"])
         timeline.append({"agent": "tutor", "start_time": t0, "end_time": t1, "latency_ms": latency})

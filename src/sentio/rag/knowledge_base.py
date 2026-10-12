@@ -141,6 +141,7 @@ class RetrievedContent:
     source_citations: List[dict] = field(default_factory=list)
     rag_diagnostics: Dict[str, Any] = field(default_factory=dict)
     is_rag: bool = False
+    evidence_outcome: str = "general"
     rag_context: Optional[str] = None
 
     def has_content(self) -> bool:
@@ -613,8 +614,15 @@ class KnowledgeBase:
                     hit["bm25_score"] = self._compute_single_bm25_score(bm25_searcher, query, cid)
 
             # 5. Hybrid Reranking Pass
+            from sentio.rag.evidence_policy import has_relevance_signal
+
+            candidates = [
+                hit
+                for hit in merged_hits.values()
+                if has_relevance_signal(query, hit["text"], hit.get("vector_score", 0))
+            ]
             t_rank_start = time.perf_counter()
-            top_ranked = self.ranker.rerank(query, list(merged_hits.values()), limit=5)
+            top_ranked = self.ranker.rerank(query, candidates, limit=5)
             t_rank_end = time.perf_counter()
             ranking_latency = (t_rank_end - t_rank_start) * 1000
 
@@ -622,6 +630,7 @@ class KnowledgeBase:
 
             if top_ranked:
                 content.is_rag = True
+                content.evidence_outcome = "retrieved"
                 context_parts = []
                 citations = []
                 for idx, r in enumerate(top_ranked):
@@ -706,7 +715,11 @@ class KnowledgeBase:
                 }
                 return content
 
-        # Fallback to static curriculum
+        if document_id not in (None, "none"):
+            content.evidence_outcome = "insufficient"
+            return content
+
+        # Fallback to static curriculum only in the explicitly general tutor.
         priority_types = self.adapter.get_priority_types(strategy)
         chunks = self.store.query(subject, topic, diff)
 
