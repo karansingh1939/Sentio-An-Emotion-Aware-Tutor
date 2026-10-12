@@ -2,6 +2,7 @@ FROM ghcr.io/astral-sh/uv:0.12.17 AS uv
 FROM python:3.12-slim-bookworm
 COPY --from=uv /uv /uvx /bin/
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 SENTIO_HOME=/app
+ENV UV_NO_CACHE=1 UV_LINK_MODE=copy
 ENV PATH="/app/.venv/bin:$PATH"
 WORKDIR /app
 ARG ENABLE_OCR=0

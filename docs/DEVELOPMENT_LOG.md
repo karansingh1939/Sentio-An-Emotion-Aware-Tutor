@@ -2,6 +2,12 @@
 
 ## 2026-10-12 - Hiring-readiness repairs and real study stress tests
 
+The first real Compose CI attempt exhausted the runner's disk after a successful
+image build/CLI check. GitHub's worker crash prevented step logs and a Compose
+artifact from being uploaded. Disabled retained uv caches in Docker layers and
+selected copy linking before rerunning the unchanged smoke acceptance checks.
+This is an image-footprint repair; the subsequent hosted result is required.
+
 Added a commit/test contribution map and aligned the package, normal tutor
 messages, and experimental camera wording with the supported study workspace.
 Runtime tutoring now sends owned source passages and learner memory as JSON user
