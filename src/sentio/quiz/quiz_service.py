@@ -143,15 +143,29 @@ JSON Template:
 
         # Call LLM
         checkpoint("generating quiz")
-        raw_text, tokens = llm_call(system_prompt, [], "Generate the quiz now.")
+        from sentio.ai.source_practice import source_recall
+        from sentio.shared.exceptions import LLMServiceUnavailableError
 
-        # 5. Parse and validate
-        quiz_data = parse_structured_output(
-            raw_text=raw_text,
-            schema_class=batch_schema,
-            llm_call_fn=llm_call,
-            original_prompt_args=original_args,
-        )
+        try:
+            raw_text, tokens = llm_call(system_prompt, [], "Generate the quiz now.")
+
+            # 5. Parse and validate
+            quiz_data = parse_structured_output(
+                raw_text=raw_text,
+                schema_class=batch_schema,
+                llm_call_fn=llm_call,
+                original_prompt_args=original_args,
+            )
+        except (ValueError, LLMServiceUnavailableError):
+            if not grounded or not getattr(retrieved, "source_citations", []):
+                raise
+            checkpoint("making source recall practice")
+            quiz_data = batch_schema.model_validate(
+                {
+                    "title": f"Source recall: {topic}",
+                    "questions": source_recall(retrieved, num_questions),
+                }
+            )
 
         # Convert Pydantic object to dict
         quiz_dict = quiz_data.model_dump() if hasattr(quiz_data, "model_dump") else quiz_data.dict()

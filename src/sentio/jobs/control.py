@@ -12,6 +12,10 @@ class WorkCancelled(Exception):
     pass
 
 
+class WorkInputError(ValueError):
+    """A deliberately safe, actionable message for an owner-scoped job."""
+
+
 class WorkControl:
     def __init__(self, progress=None, emit=None):
         self.cancelled = Event()

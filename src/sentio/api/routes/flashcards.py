@@ -3,7 +3,7 @@
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Path
 from pydantic import BaseModel, Field
 
 from sentio.api.dependencies import PREFIX, _verify_session_owner, agent, flashcard_service
@@ -109,6 +109,20 @@ def get_due_reviews(
     except Exception as e:
         logger.exception("Failed to fetch due flashcards")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get(PREFIX + "/flashcards/{card_id}/reviews/{request_id}", tags=["Flashcards"])
+def get_review_receipt(
+    card_id: str,
+    request_id: str = Path(min_length=8, max_length=80, pattern=r"^[a-zA-Z0-9_-]+$"),
+    user: dict = Depends(get_current_user),
+):
+    receipt = PracticeRepository(agent.sm.persister._engine).review_receipt(
+        user["student_id"], card_id, request_id
+    )
+    if receipt is None:
+        raise HTTPException(404, "Review receipt not found.")
+    return receipt
 
 
 @router.post(PREFIX + "/flashcards/{card_id}/review", tags=["Flashcards"])

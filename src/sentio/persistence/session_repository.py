@@ -427,6 +427,23 @@ class SessionPersister:
         else:
             self._save_to_json(session.session_id, data)
 
+    def save_owned_session(self, session):
+        from sqlalchemy import text
+
+        if not self._use_db:
+            return self.save_session(session)
+        with self._engine.connect() as connection:
+            connection.exec_driver_sql("BEGIN IMMEDIATE")
+            if not connection.execute(
+                text(
+                    "SELECT 1 FROM sessions s JOIN student_accounts a ON a.student_id=s.student_id WHERE s.session_id=:session AND a.student_id=:owner"
+                ),
+                {"session": session.session_id, "owner": session.student_id},
+            ).scalar():
+                raise PermissionError("Study account or session is no longer available.")
+            self.save_session(session, connection=connection)
+            connection.commit()
+
     def _save_to_db(self, session: Session, data: dict, connection=None):
         from sqlalchemy import text
 

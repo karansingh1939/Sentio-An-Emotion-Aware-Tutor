@@ -165,6 +165,7 @@ async def upload_document(
     temp, pending, destination, category, subject, recovery = await stage_upload(
         request, file, category, subject, user["student_id"]
     )
+
     try:
         return await run_in_threadpool(
             ingest_staged, pending, destination, category, subject, user["student_id"], recovery
@@ -189,13 +190,24 @@ async def upload_job(
     temp, pending, destination, category, subject, recovery = await stage_upload(
         request, file, category, subject, user["student_id"]
     )
+
+    def work(control):
+        from sentio.jobs.control import WorkInputError
+
+        try:
+            return ingest_staged(
+                pending, destination, category, subject, user["student_id"], recovery
+            )
+        except HTTPException as exc:
+            if exc.status_code == 422:
+                raise WorkInputError(str(exc.detail)) from exc
+            raise
+
     try:
         return jobs.submit(
             user["student_id"],
             "ingestion",
-            lambda control: ingest_staged(
-                pending, destination, category, subject, user["student_id"], recovery
-            ),
+            work,
             lane="ingestion",
             on_done=temp.cleanup,
             request_id=request_id,

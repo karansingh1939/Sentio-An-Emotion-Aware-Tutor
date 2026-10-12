@@ -1,0 +1,84 @@
+{
+  "timestamp": "2026-10-12T12:38:03.448330+00:00",
+  "model": "phi3:mini",
+  "practice_count": 3,
+  "steps": [
+    {
+      "name": "startup",
+      "status": "passed",
+      "seconds": 2.9530000000086147
+    },
+    {
+      "name": "upload",
+      "status": "passed",
+      "seconds": 8.156000000002678
+    },
+    {
+      "name": "cited_explanation",
+      "status": "passed",
+      "seconds": 34.296999999991385
+    },
+    {
+      "name": "unsupported_question",
+      "status": "passed",
+      "seconds": 0.04700000000593718
+    },
+    {
+      "name": "quiz_generation",
+      "status": "passed",
+      "seconds": 34.01499999999942
+    },
+    {
+      "name": "quiz_submission",
+      "status": "passed",
+      "seconds": 4.860000000000582
+    },
+    {
+      "name": "card_generation",
+      "status": "passed",
+      "seconds": 11.452999999994063
+    },
+    {
+      "name": "card_review",
+      "status": "passed",
+      "seconds": 0.0
+    },
+    {
+      "name": "preferences",
+      "status": "passed",
+      "seconds": 0.0
+    },
+    {
+      "name": "plan_completion",
+      "status": "passed",
+      "seconds": 0.0
+    },
+    {
+      "name": "restart",
+      "status": "passed",
+      "seconds": 2.922000000005937
+    },
+    {
+      "name": "saved_work_and_token_after_restart",
+      "status": "passed",
+      "seconds": 0.04700000000593718
+    }
+  ],
+  "limitations": [
+    "One authored physics journey, not a learning study or a model accuracy estimate.",
+    "Quiz submission copies the generated reference answer to test persistence only.",
+    "Qdrant uses memory mode; restart must recover evidence from persisted chunks."
+  ],
+  "answer_modes": [
+    {
+      "question": "Explain Newton's first law and inertia using these notes.",
+      "mode": "source_excerpt"
+    },
+    {
+      "question": "What is the boiling point of ethanol?",
+      "mode": "evidence_gate"
+    }
+  ],
+  "quiz_generation_mode": "source_recall",
+  "status": "passed"
+}

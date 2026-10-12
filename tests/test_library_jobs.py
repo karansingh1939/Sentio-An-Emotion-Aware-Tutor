@@ -83,7 +83,9 @@ def test_empty_replacement_job_preserves_existing_note():
             "/api/v1/documents/jobs", files={"file": ("same.txt", b"", "text/plain")}
         )
         assert response.status_code == 202
-        assert finished(client, response.json())["status"] == "failed"
+        failed = finished(client, response.json())
+        assert failed["status"] == "failed"
+        assert "readable" in failed["error"].lower()
         assert agent.sm.list_documents(student_id=owner) == previous
         assert agent.sm.get_document_chunks(first["document_id"]) == chunks
 

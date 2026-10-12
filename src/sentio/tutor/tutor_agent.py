@@ -103,6 +103,7 @@ class AgentResponse:
         return {
             "session_id": self.session_id,
             "text": self.tutor_response.text,
+            "answer_mode": self.tutor_response.backend_used,
             "follow_up": self.tutor_response.follow_up_question,
             "encouragement": self.tutor_response.encouragement,
             "suggested_topic": self.tutor_response.suggested_topic,

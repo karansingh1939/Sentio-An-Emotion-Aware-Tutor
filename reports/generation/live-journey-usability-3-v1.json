@@ -1,0 +1,76 @@
+{
+  "timestamp": "2026-10-12T12:26:52.343388+00:00",
+  "model": "phi3:mini",
+  "practice_count": 3,
+  "steps": [
+    {
+      "name": "startup",
+      "status": "passed",
+      "seconds": 2.9530000000086147
+    },
+    {
+      "name": "upload",
+      "status": "passed",
+      "seconds": 53.84399999999732
+    },
+    {
+      "name": "cited_explanation",
+      "status": "failed",
+      "failure": "ValueError",
+      "seconds": 40.437000000005355
+    },
+    {
+      "name": "unsupported_question",
+      "status": "passed",
+      "seconds": 0.046999999991385266
+    },
+    {
+      "name": "quiz_generation",
+      "status": "failed",
+      "failure": "RuntimeError",
+      "seconds": 38.54700000000594
+    },
+    {
+      "name": "card_generation",
+      "status": "passed",
+      "seconds": 16.75
+    },
+    {
+      "name": "card_review",
+      "status": "passed",
+      "seconds": 0.0
+    },
+    {
+      "name": "preferences",
+      "status": "passed",
+      "seconds": 0.014999999999417923
+    },
+    {
+      "name": "plan_completion",
+      "status": "passed",
+      "seconds": 0.0
+    },
+    {
+      "name": "restart",
+      "status": "passed",
+      "seconds": 3.9839999999967404
+    },
+    {
+      "name": "saved_work_and_token_after_restart",
+      "status": "passed",
+      "seconds": 0.046999999991385266
+    }
+  ],
+  "limitations": [
+    "One authored physics journey, not a learning study or a model accuracy estimate.",
+    "Quiz submission copies the generated reference answer to test persistence only.",
+    "Qdrant uses memory mode; restart must recover evidence from persisted chunks."
+  ],
+  "stream_failures": [
+    {
+      "question": "Explain Newton's first law and inertia using these notes.",
+      "events": "event: status\ndata: {\"stage\": \"queued\", \"job_id\": \"ddc9d7d7-1c1e-487a-a4f1-e191b9643a39\"}\n\nevent: status\ndata: {\"stage\": \"generating tutor response\"}\n\nevent: status\ndata: {\"stage\": \"waiting for local AI\"}\n\nevent: status\ndata: {\"stage\": \"generating answer\"}\n\nevent: delta\ndata: {\"text\": \"New\"}\n\nevent: delta\ndata: {\"text\": \"ton\"}\n\nevent: delta\ndata: {\"text\": \"'\"}\n\nevent: delta\ndata: {\"text\": \"s\"}\n\nevent: delta\ndata: {\"text\": \" first\"}\n\nevent: delta\ndata: {\"text\": \" law\"}\n\nevent: delta\ndata: {\"text\": \",\"}\n\nevent: delta\ndata: {\"text\": \" also\"}\n\nevent: delta\ndata: {\"text\": \" known\"}\n\nevent: delta\ndata: {\"text\": \" as\"}\n\nevent: delta\ndata: {\"text\": \" the\"}\n\nevent: delta\ndata: {\"text\": \" law\"}\n\nevent: delta\ndata: {\"text\": \" of\"}\n\nevent: delta\ndata: {\"text\": \" in\"}\n\nevent: delta\ndata: {\"text\": \"ert\"}\n\nevent: delta\ndata: {\"text\": \"ia\"}\n\nevent: delta\ndata: {\"text\": \",\"}\n\nevent: delta\ndata: {\"text\": \" tells\"}\n\nevent: delta\ndata: {\"text\": \" us\"}\n\nevent: delta\ndata: {\"text\": \" that\"}\n\nevent: delta\ndata: {\"text\": \" an\"}\n\nevent: delta\ndata: {\"text\": \" object\"}\n\nevent: delta\ndata: {\"text\": \" that\"}\n\nevent: delta\ndata: {\"text\": \" is\"}\n\nevent: delta\ndata: {\"text\": \" at\"}\n\nevent: delta\ndata: {\"text\": \" rest\"}\n\nevent: delta\ndata: {\"text\": \" will\"}\n\nevent: delta\ndata: {\"text\": \" stay\"}\n\nevent: delta\ndata: {\"text\": \" at\"}\n\nevent: delta\ndata: {\"text\": \" rest\"}\n\nevent: delta\ndata: {\"text\": \",\"}\n\nevent: delta\ndata: {\"text\": \" and\"}\n\nevent: delta\ndata: {\"text\": \" an\"}\n\nevent: delta\ndata: {\"text\": \" object\"}\n\nevent: delta\ndata: {\"text\": \" in\"}\n\nevent: delta\ndata: {\"text\": \" motion\"}\n\nevent: delta\ndata: {\"text\": \" will\"}\n\nevent: delta\ndata: {\"text\": \" keep\"}\n\nevent: delta\ndata: {\"text\": \" moving\"}\n\nevent: delta\ndata: {\"text\": \" at\"}\n\nevent: delta\ndata: {\"text\": \" a\"}\n\nevent: delta\ndata: {\"text\": \" constant\"}\n\nevent: delta\ndata: {\"text\": \" speed\"}\n\nevent: delta\ndata: {\"text\": \" in\"}\n\nevent: delta\ndata: {\"text\": \" a\"}\n\nevent: delta\ndata: {\"text\": \" straight\"}\n\nevent: delta\ndata: {\"text\": \" line\"}\n\nevent: delta\ndata: {\"text\": \",\"}\n\nevent: delta\ndata: {\"text\": \" unless\"}\n\nevent: delta\ndata: {\"text\": \" something\"}\n\nevent: delta\ndata: {\"text\": \" causes\"}\n\nevent: delta\ndata: {\"text\": \" it\"}\n\nevent: delta\ndata: {\"text\": \" to\"}\n\nevent: delta\ndata: {\"text\": \" change\"}\n\nevent: delta\ndata: {\"text\": \".\"}\n\nevent: delta\ndata: {\"text\": \" This\"}\n\nevent: delta\ndata: {\"text\": \" change\"}\n\nevent: delta\ndata: {\"text\": \" is\"}\n\nevent: delta\ndata: {\"text\": \" due\"}\n\nevent: delta\ndata: {\"text\": \" to\"}\n\nevent: delta\ndata: {\"text\": \" a\"}\n\nevent: delta\ndata: {\"text\": \" net\"}\n\nevent: delta\ndata: {\"text\": \" external\"}\n\nevent: delta\ndata: {\"text\": \" force\"}\n\nevent: delta\ndata: {\"text\": \" acting\"}\n\nevent: delta\ndata: {\"text\": \" upon\"}\n\nevent: delta\ndata: {\"text\": \" the\"}\n\nevent: delta\ndata: {\"text\": \" object\"}\n\nevent: delta\ndata: {\"text\": \".\"}\n\nevent: delta\ndata: {\"text\": \" In\"}\n\nevent: delta\ndata: {\"text\": \"ert\"}\n\nevent: delta\ndata: {\"text\": \"ia\"}\n\nevent: delta\ndata: {\"text\": \" is\"}\n\nevent: delta\ndata: {\"text\": \" the\"}\n\nevent: delta\ndata: {\"text\": \" resistance\"}\n\nevent: delta\ndata: {\"text\": \" of\"}\n\nevent: delta\ndata: {\"text\": \" any\"}\n\nevent: delta\ndata: {\"text\": \" physical\"}\n\nevent: delta\ndata: {\"text\": \" object\"}\n\nevent: delta\ndata: {\"text\": \" to\"}\n\nevent: delta\ndata: {\"text\": \" any\"}\n\nevent: delta\ndata: {\"text\": \" change\"}\n\nevent: delta\ndata: {\"text\": \" in\"}\n\nevent: delta\ndata: {\"text\": \" its\"}\n\nevent: delta\ndata: {\"text\": \" velocity\"}\n\nevent: delta\ndata: {\"text\": \".\"}\n\nevent: delta\ndata: {\"text\": \" This\"}\n\nevent: delta\ndata: {\"text\": \" includes\"}\n\nevent: delta\ndata: {\"text\": \" changes\"}\n\nevent: delta\ndata: {\"text\": \" to\"}\n\nevent: delta\ndata: {\"text\": \" the\"}\n\nevent: delta\ndata: {\"text\": \" object\"}\n\nevent: delta\ndata: {\"text\": \"'\"}\n\nevent: delta\ndata: {\"text\": \"s\"}\n\nevent: delta\ndata: {\"text\": \" speed\"}\n\nevent: delta\ndata: {\"text\": \" or\"}\n\nevent: delta\ndata: {\"text\": \" direction\"}\n\nevent: delta\ndata: {\"text\": \" of\"}\n\nevent: delta\ndata: {\"text\": \" movement\"}\n\nevent: delta\ndata: {\"text\": \".\"}\n\nevent: delta\ndata: {\"text\": \" Ess\"}\n\nevent: delta\ndata: {\"text\": \"entially\"}\n\nevent: delta\ndata: {\"text\": \",\"}\n\nevent: delta\ndata: {\"text\": \" without\"}\n\nevent: delta\ndata: {\"text\": \" an\"}\n\nevent: delta\ndata: {\"text\": \" external\"}\n\nevent: delta\ndata: {\"text\": \" force\"}\n\nevent: delta\ndata: {\"text\": \",\"}\n\nevent: delta\ndata: {\"text\": \" there\"}\n\nevent: delta\ndata: {\"text\": \" will\"}\n\nevent: delta\ndata: {\"text\": \" be\"}\n\nevent: delta\ndata: {\"text\": \" no\"}\n\nevent: delta\ndata: {\"text\": \" change\"}\n\nevent: delta\ndata: {\"text\": \" in\"}\n\nevent: delta\ndata: {\"text\": \" motion\"}\n\nevent: delta\ndata: {\"text\": \".\"}\n\nevent: delta\ndata: {\"text\": \" Im\"}\n\nevent: delta\ndata: {\"text\": \"agine\"}\n\nevent: delta\ndata: {\"text\": \" you\"}\n\nevent: delta\ndata: {\"text\": \"'\"}\n\nevent: delta\ndata: {\"text\": \"re\"}\n\nevent: delta\ndata: {\"text\": \" sitting\"}\n\nevent: delta\ndata: {\"text\": \" in\"}\n\nevent: delta\ndata: {\"text\": \" a\"}\n\nevent: delta\ndata: {\"text\": \" car\"}\n\nevent: delta\ndata: {\"text\": \" that\"}\n\nevent: delta\ndata: {\"text\": \" suddenly\"}\n\nevent: delta\ndata: {\"text\": \" stops\"}\n\nevent: delta\ndata: {\"text\": \".\"}\n\nevent: delta\ndata: {\"text\": \" Your\"}\n\nevent: delta\ndata: {\"text\": \" body\"}\n\nevent: delta\ndata: {\"text\": \" wants\"}\n\nevent: delta\ndata: {\"text\": \" to\"}\n\nevent: delta\ndata: {\"text\": \" continue\"}\n\nevent: delta\ndata: {\"text\": \" moving\"}\n\nevent: delta\ndata: {\"text\": \" forward\"}\n\nevent: delta\ndata: {\"text\": \" due\"}\n\nevent: delta\ndata: {\"text\": \" to\"}\n\nevent: delta\ndata: {\"text\": \" in\"}\n\nevent: delta\ndata: {\"text\": \"ert\"}\n\nevent: delta\ndata: {\"text\": \"ia\"}\n\nevent: delta\ndata: {\"text\": \".\"}\n\nevent: delta\ndata: {\"text\": \" This\"}\n\nevent: delta\ndata: {\"text\": \" is\"}\n\nevent: delta\ndata: {\"text\": \" also\"}\n\nevent: delta\ndata: {\"text\": \" why\"}\n\nevent: delta\ndata: {\"text\": \" seat\"}\n\nevent: delta\ndata: {\"text\": \" bel\"}\n\nevent: delta\ndata: {\"text\": \"ts\"}\n\nevent: delta\ndata: {\"text\": \" are\"}\n\nevent: delta\ndata: {\"text\": \" important\"}\n\nevent: delta\ndata: {\"text\": \" in\"}\n\nevent: delta\ndata: {\"text\": \" vehicles\"}\n\nevent: delta\ndata: {\"text\": \";\"}\n\nevent: delta\ndata: {\"text\": \" they\"}\n\nevent: delta\ndata: {\"text\": \" provide\"}\n\nevent: delta\ndata: {\"text\": \" the\"}\n\nevent: delta\ndata: {\"text\": \" external\"}\n\nevent: delta\ndata: {\"text\": \" force\"}\n\nevent: delta\ndata: {\"text\": \" needed\"}\n\nevent: delta\ndata: {\"text\": \" to\"}\n\nevent: delta\ndata: {\"text\": \" stop\"}\n\nevent: delta\ndata: {\"text\": \" you\"}\n\nevent: delta\ndata: {\"text\": \" from\"}\n\nevent: delta\ndata: {\"text\": \" moving\"}\n\nevent: delta\ndata: {\"text\": \" forward\"}\n\nevent: delta\ndata: {\"text\": \".\"}\n\nevent: error\ndata: {\"detail\": \"The tutor could not finish this answer. Check AI readiness and retry.\"}\n\n"
+    }
+  ],
+  "status": "failed"
+}

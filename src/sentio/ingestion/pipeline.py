@@ -8,6 +8,7 @@ from threading import RLock
 from typing import Any, Dict, List, Optional
 
 from sentio.config import DATA_DIR, nlp_cfg
+from sentio.ingestion.ocr import ExtractionError
 from sentio.jobs.control import WorkCancelled, checkpoint, publish
 from sentio.rag.vector_db import QdrantVectorDB
 from sentio.repositories.document_repository import DocumentRepository
@@ -196,10 +197,10 @@ class DocumentIngestionPipeline:
 
                 pages = image_page(filepath)
             else:
-                raise ValueError(f"Unsupported file format: {suffix}")
+                raise ExtractionError(f"Unsupported file format: {suffix}")
 
             if sum(len(p["text"]) for p in pages) > 2_000_000:
-                raise ValueError(
+                raise ExtractionError(
                     "Extracted text exceeds 2 million characters. Split this document into smaller files."
                 )
             methods = {p.get("extraction_method", "text") for p in pages}
@@ -219,7 +220,7 @@ class DocumentIngestionPipeline:
                 for chunk_text in page_chunks:
                     checkpoint()
                     if chunk_index >= 2000:
-                        raise ValueError(
+                        raise ExtractionError(
                             "Document exceeds 2000 passages. Split it into smaller files."
                         )
                     hex_hash = hashlib.md5(
@@ -317,7 +318,15 @@ class DocumentIngestionPipeline:
             raise
         except Exception as e:
             self._discard_staged(doc_id, chunks_to_save)
-            self.last_error = str(e)
+            self.last_error = (
+                str(e)
+                if isinstance(e, ExtractionError)
+                else (
+                    "This text encoding could not be read. Save the file as UTF-8 and retry."
+                    if isinstance(e, UnicodeError)
+                    else "The upload could not be read or saved. Try a readable PDF, Word document or UTF-8 text file; check local diagnostics if this continues."
+                )
+            )
             logger.error(f"Failed to process document {filename}: {e}")
             doc_record["status"] = "failed"
             doc_record["last_indexed"] = time.time()

@@ -95,6 +95,16 @@ class PracticeRepository:
                 connection.rollback()
                 raise
 
+    def review_receipt(self, owner, card_id, request_id):
+        with self.engine.connect() as connection:
+            receipt = connection.execute(
+                text(
+                    "SELECT quality_score,result_json FROM card_reviews WHERE student_id=:owner AND card_id=:card AND request_id=:request"
+                ),
+                {"owner": owner, "card": card_id, "request": request_id},
+            ).first()
+        return {"quality_score": receipt[0], "result": json.loads(receipt[1])} if receipt else None
+
     def quizzes(self, owner, limit, offset):
         with self.engine.connect() as connection:
             params = {"owner": owner, "limit": limit, "offset": offset}

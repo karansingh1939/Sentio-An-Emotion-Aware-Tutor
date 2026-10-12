@@ -151,8 +151,15 @@ class SessionManager:
 
     def resume_session(self, session_id: str):
         session = self.get_or_raise(session_id)
-        session.status = SessionStatus.ACTIVE
-        session.touch()
+        previous = session.status, session.closed_at, session.updated_at
+        try:
+            session.status = SessionStatus.ACTIVE
+            session.closed_at = None
+            session.touch()
+            self.persister.save_owned_session(session)
+        except Exception:
+            session.status, session.closed_at, session.updated_at = previous
+            raise
         logger.info(f"Session resumed: {session_id[:8]}…")
 
     def close_session(self, session_id: str) -> SessionAnalytics:

@@ -100,7 +100,10 @@ def pause_session(session_id: str, user: dict = Depends(get_current_user)):
 @router.post(PREFIX + "/sessions/{session_id}/resume", tags=["Sessions"])
 def resume_session(session_id: str, user: dict = Depends(get_current_user)):
     _verify_session_owner(session_id, user)
-    agent.resume_session(session_id)
+    try:
+        agent.resume_session(session_id)
+    except PermissionError as exc:
+        raise HTTPException(409, str(exc)) from exc
     return {"status": "active", "session_id": session_id}
 
 

@@ -2,7 +2,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from threading import RLock
 
-from sentio.jobs.control import WorkCancelled, WorkControl, execution
+from sentio.jobs.control import WorkCancelled, WorkControl, WorkInputError, execution
 from sentio.repositories.job_repository import JobRepository
 
 logger = logging.getLogger(__name__)
@@ -65,6 +65,11 @@ class JobManager:
             self.repository.update(job_id, "succeeded", "complete", result=result)
         except WorkCancelled:
             self.repository.update(job_id, "cancelled", "cancelled")
+        except WorkInputError as exc:
+            if control.cancelled.is_set():
+                self.repository.update(job_id, "cancelled", "cancelled")
+            else:
+                self.repository.update(job_id, "failed", "failed", error=str(exc)[:1000])
         except Exception:
             if control.cancelled.is_set():
                 self.repository.update(job_id, "cancelled", "cancelled")

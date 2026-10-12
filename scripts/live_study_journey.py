@@ -16,7 +16,9 @@ import psutil
 import requests
 
 
-def run(output):
+def run(output, practice_count=3):
+    if practice_count not in (1, 3, 5):
+        raise ValueError("Use a small CPU practice batch: 1, 3 or 5")
     output = Path(output).resolve()
     if output.exists():
         raise ValueError("Choose a new report path; existing reports are immutable")
@@ -26,6 +28,7 @@ def run(output):
     report = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "model": "phi3:mini",
+        "practice_count": practice_count,
         "steps": [],
         "limitations": [
             "One authored physics journey, not a learning study or a model accuracy estimate.",
@@ -171,6 +174,14 @@ def run(output):
                 json={"message": question, "request_id": uuid.uuid4().hex},
             )
             response.raise_for_status()
+            for event in response.text.split("\n\n"):
+                if event.startswith("event: complete"):
+                    data = json.loads(
+                        next(line[6:] for line in event.splitlines() if line.startswith("data: "))
+                    )
+                    report.setdefault("answer_modes", []).append(
+                        {"question": question, "mode": data.get("answer_mode", "unknown")}
+                    )
             if "event: complete" not in response.text or "event: error" in response.text:
                 report.setdefault("stream_failures", []).append(
                     {"question": question, "events": response.text}
@@ -235,12 +246,17 @@ def run(output):
                             "subject": "physics",
                             "topic": "Newton's first law",
                             "difficulty": "beginner",
-                            "num_questions": 1,
+                            "num_questions": practice_count,
                         },
                     ),
                     required=False,
                 )
                 if quiz:
+                    report["quiz_generation_mode"] = (
+                        "source_recall"
+                        if quiz["title"].startswith("Source recall:")
+                        else "local_model"
+                    )
                     step(
                         "quiz_submission",
                         lambda: call(
@@ -269,7 +285,7 @@ def run(output):
                             "session_id": sid,
                             "deck_id": deck["deck_id"],
                             "topic_id": "Newton's first law",
-                            "num_cards": 1,
+                            "num_cards": practice_count,
                         },
                     ),
                     required=False,
@@ -343,6 +359,7 @@ def run(output):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--practice-count", type=int, choices=(1, 3, 5), default=3)
     args = parser.parse_args()
-    result = run(args.output)
+    result = run(args.output, args.practice_count)
     raise SystemExit(0 if result["status"] == "passed" else 1)

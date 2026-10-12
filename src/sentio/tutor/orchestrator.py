@@ -445,29 +445,47 @@ class SentioOrchestrator:
             confidence=1.0,
         )
 
-        checkpoint("generating tutor response")
-        with output_schema(TutorPayload):
-            raw_text, tokens = self.tutor_agent.nlp._backend.complete(
-                system_prompt=system_prompt,
-                history=state["history"],
-                user_message=user_message,
-                max_tokens=1024,
-            )
-        if current_control() and getattr(current_control(), "defer_turn", False):
+        from sentio.ai.source_practice import source_excerpt
+        from sentio.shared.exceptions import LLMServiceUnavailableError
+
+        try:
+            checkpoint("generating tutor response")
+            with output_schema(TutorPayload):
+                raw_text, tokens = self.tutor_agent.nlp._backend.complete(
+                    system_prompt=system_prompt,
+                    history=state["history"],
+                    user_message=user_message,
+                    max_tokens=1024,
+                )
             TutorPayload.model_validate_json(raw_text)
 
-        t1 = time.perf_counter()
-        latency = (t1 - t0) * 1000
+            t1 = time.perf_counter()
+            latency = (t1 - t0) * 1000
 
-        tutor_resp = self.tutor_agent.nlp.parser.parse(
-            raw=raw_text,
-            strategy=state["strategy"],
-            learning_state=state["learning_state"],
-            tokens=tokens,
-            latency_ms=latency,
-            backend_name=self.tutor_agent.nlp._backend.name,
-        )
-        validate_references(tutor_resp.text, state.get("retrieved_content"))
+            tutor_resp = self.tutor_agent.nlp.parser.parse(
+                raw=raw_text,
+                strategy=state["strategy"],
+                learning_state=state["learning_state"],
+                tokens=tokens,
+                latency_ms=latency,
+                backend_name=self.tutor_agent.nlp._backend.name,
+            )
+            validate_references(tutor_resp.text, state.get("retrieved_content"))
+        except (ValueError, LLMServiceUnavailableError):
+            content = state.get("retrieved_content")
+            if not getattr(content, "is_rag", False):
+                raise
+            checkpoint("showing source passages")
+            t1 = time.perf_counter()
+            latency = (t1 - t0) * 1000
+            tutor_resp = TutorResponse(
+                text=source_excerpt(content),
+                strategy_used=state["strategy"],
+                learning_state=state["learning_state"],
+                backend_used="source_excerpt",
+                latency_ms=latency,
+            )
+            validate_references(tutor_resp.text, content)
 
         timeline = list(state["agent_timeline"])
         timeline.append({"agent": "tutor", "start_time": t0, "end_time": t1, "latency_ms": latency})

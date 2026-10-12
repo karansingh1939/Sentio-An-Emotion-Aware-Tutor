@@ -131,15 +131,37 @@ JSON Template:
         }
 
         checkpoint("generating flashcards")
-        raw_text, _ = llm_call(system_prompt, [], "Generate flashcards now.")
+        from sentio.ai.source_practice import source_recall
+        from sentio.shared.exceptions import LLMServiceUnavailableError
 
-        # 3. Parse and validate
-        flashcard_data = parse_structured_output(
-            raw_text=raw_text,
-            schema_class=batch_schema,
-            llm_call_fn=llm_call,
-            original_prompt_args=original_args,
-        )
+        try:
+            raw_text, _ = llm_call(system_prompt, [], "Generate flashcards now.")
+
+            # 3. Parse and validate
+            flashcard_data = parse_structured_output(
+                raw_text=raw_text,
+                schema_class=batch_schema,
+                llm_call_fn=llm_call,
+                original_prompt_args=original_args,
+            )
+        except (ValueError, LLMServiceUnavailableError):
+            if document_id in (None, "none") or not getattr(retrieved, "source_citations", []):
+                raise
+            checkpoint("making source recall cards")
+            recalls = source_recall(retrieved, num_cards)
+            flashcard_data = batch_schema.model_validate(
+                {
+                    "deck_name": f"Source recall: {topic_id}",
+                    "cards": [
+                        {
+                            "front": item["question_text"],
+                            "back": item["correct_answer"] + "\n\n" + item["explanation"],
+                            "tags": ["source-recall"],
+                        }
+                        for item in recalls
+                    ],
+                }
+            )
 
         flashcard_dict = (
             flashcard_data.model_dump()
