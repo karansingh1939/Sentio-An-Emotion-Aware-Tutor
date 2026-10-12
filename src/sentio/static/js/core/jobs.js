@@ -57,6 +57,27 @@ export async function runPracticeJob(endpoint, body, container, options = {}) {
       if (job.status === 'succeeded') {
         localStorage.removeItem(key);
         localStorage.removeItem(submissionKey);
+        if (current && options.sessionScoped !== false && !job.study_context) {
+          status.textContent =
+            'Practice was saved before source tracking. Open it from saved practice.';
+          stop.disabled = true;
+          return null;
+        }
+        if (current && options.sessionScoped !== false && job.study_context) {
+          const live = await sentioAPI.get(`/sessions/${session}/context`);
+          if (
+            detached ||
+            owner !== store.getState('currentUser')?.id ||
+            session !== store.getState('activeSessionId')
+          )
+            return null;
+          if (JSON.stringify(live) !== JSON.stringify(job.study_context)) {
+            status.textContent =
+              'Practice was saved for earlier study sources. Open it from saved practice.';
+            stop.disabled = true;
+            return null;
+          }
+        }
         return current ? job.result : null;
       }
       if (!current) return null;

@@ -67,6 +67,18 @@ def get_session(session_id: str, user: dict = Depends(get_current_user)):
     return agent.sm.get_current_state(session_id)
 
 
+@router.get(PREFIX + "/sessions/{session_id}/context", tags=["Sessions"])
+def get_study_context(session_id: str, user: dict = Depends(get_current_user)):
+    from sentio.jobs.control import WorkCancelled
+    from sentio.repositories.practice_repository import PracticeRepository
+
+    session = _verify_session_owner(session_id, user)
+    try:
+        return PracticeRepository(agent.sm.persister._engine).snapshot(session)
+    except WorkCancelled as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
 @router.delete(PREFIX + "/sessions/{session_id}", tags=["Sessions"])
 def close_session(session_id: str, user: dict = Depends(get_current_user)):
     """

@@ -10,7 +10,12 @@ const container = {
   querySelector: (selector) => (selector === 'button' ? stop : status),
 };
 let submissions = 0;
-let result = { status: 'succeeded', result: { quiz_id: 'saved' } };
+let liveContext = { source: 'notes-a' };
+let result = {
+  status: 'succeeded',
+  study_context: { source: 'notes-a' },
+  result: { quiz_id: 'saved' },
+};
 const state = {
   currentUser: { id: 'owner' },
   activeSessionId: 'session',
@@ -32,7 +37,7 @@ const imports = {
         submissions++;
         return { job_id: 'job' };
       },
-      get: async () => result,
+      get: async (endpoint) => (endpoint.endsWith('/context') ? liveContext : result),
     },
   },
   './store.js': {
@@ -77,8 +82,19 @@ imports['./api.js'].sentioAPI.post = async (endpoint, body, options) => {
   if (receivedKeys.length === 1) throw new Error('Network response lost');
   return { job_id: 'recovered-submission' };
 };
-result = { status: 'succeeded', result: { quiz_id: 'recovered' } };
+result = {
+  status: 'succeeded',
+  study_context: { source: 'notes-a' },
+  result: { quiz_id: 'recovered' },
+};
 await assert.rejects(run('/quizzes/jobs', {}, container), /response lost/);
 assert.equal((await run('/quizzes/jobs', {}, container)).quiz_id, 'recovered');
 assert.equal(receivedKeys[0], receivedKeys[1], 'Unknown POST outcome must reuse the submission ID');
 assert.equal(saved.size, 0);
+liveContext = { source: 'notes-b' };
+assert.equal(await run('/quizzes/jobs', {}, container), null);
+assert.match(status.textContent, /earlier study sources/);
+assert.equal(saved.size, 0);
+console.log(
+  'Completed practice from earlier sources is retained without painting the current study context.',
+);

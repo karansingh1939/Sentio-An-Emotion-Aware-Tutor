@@ -51,6 +51,7 @@ MIGRATIONS = {
             student_id TEXT PRIMARY KEY, document_ids_json TEXT NOT NULL,
             session_ids_json TEXT NOT NULL, created_at REAL NOT NULL)""",
     ],
+    7: ["ALTER TABLE jobs ADD COLUMN context_json TEXT"],
 }
 
 

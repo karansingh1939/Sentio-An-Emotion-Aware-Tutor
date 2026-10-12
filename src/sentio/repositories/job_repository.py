@@ -53,7 +53,7 @@ class JobRepository:
             )
         return record
 
-    def create(self, owner, kind, lane, request_id=None, fingerprint=None):
+    def create(self, owner, kind, lane, request_id=None, fingerprint=None, study_context=None):
         job_id = str(uuid.uuid4())
         now = time.time()
         with self.engine.begin() as conn:
@@ -80,9 +80,16 @@ class JobRepository:
             )
             conn.execute(
                 text(
-                    "INSERT INTO jobs (job_id,student_id,kind,lane,status,stage,created_at,updated_at) VALUES (:id,:owner,:kind,:lane,'queued','queued',:now,:now)"
+                    "INSERT INTO jobs (job_id,student_id,kind,lane,status,stage,created_at,updated_at,context_json) VALUES (:id,:owner,:kind,:lane,'queued','queued',:now,:now,:context)"
                 ),
-                {"id": job_id, "owner": owner, "kind": kind, "lane": lane, "now": now},
+                {
+                    "id": job_id,
+                    "owner": owner,
+                    "kind": kind,
+                    "lane": lane,
+                    "now": now,
+                    "context": json.dumps(study_context) if study_context is not None else None,
+                },
             )
         return self.get(job_id, owner)
 
@@ -100,6 +107,7 @@ class JobRepository:
             return None
         result = dict(row)
         result["result"] = json.loads(result.pop("result_json") or "null")
+        result["study_context"] = json.loads(result.pop("context_json") or "null")
         return result
 
     def update(self, job_id, status, stage, result=None, error=None):

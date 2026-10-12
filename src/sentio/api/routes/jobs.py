@@ -54,7 +54,12 @@ def study_snapshot(service, session):
 def submit(manager, owner, kind, work, request_id=None, content=None):
     try:
         return manager.submit(
-            owner, kind, work, request_id=request_id, fingerprint=fingerprint(content)
+            owner,
+            kind,
+            work,
+            request_id=request_id,
+            fingerprint=fingerprint(content),
+            study_context=content.get("context") if content else None,
         )
     except JobConflict as exc:
         raise HTTPException(409, str(exc)) from exc

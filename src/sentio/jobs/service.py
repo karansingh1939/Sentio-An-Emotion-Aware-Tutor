@@ -22,7 +22,17 @@ class JobManager:
         self.closed = False
         self.revoked_owners = set()
 
-    def submit(self, owner, kind, work, lane="ai", on_done=None, request_id=None, fingerprint=None):
+    def submit(
+        self,
+        owner,
+        kind,
+        work,
+        lane="ai",
+        on_done=None,
+        request_id=None,
+        fingerprint=None,
+        study_context=None,
+    ):
         with self.lock:
             if self.closed or lane not in self.executors or owner in self.revoked_owners:
                 raise ValueError("Job service is unavailable")
@@ -33,7 +43,9 @@ class JobManager:
                 return previous
             if len(self.controls) >= self.queue_limit:
                 raise ValueError("Local work queue is full. Wait for a job to finish.")
-            record = self.repository.create(owner, kind, lane, request_id, fingerprint)
+            record = self.repository.create(
+                owner, kind, lane, request_id, fingerprint, study_context
+            )
             job_id = record["job_id"]
             control = WorkControl(
                 progress=lambda stage: self.repository.update(job_id, "running", stage)
