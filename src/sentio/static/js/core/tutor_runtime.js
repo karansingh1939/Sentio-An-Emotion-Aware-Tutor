@@ -563,9 +563,11 @@ window.stopGeneration = async () => {
   }
 };
 window.updateGrounding = async (documentId) => {
-  await window.stopGeneration();
+  const owner = window.store?.getState('currentUser')?.id;
   const sid = getActiveSessionId();
-  if (!sid) return;
+  await window.stopGeneration();
+  if (!sid || getActiveSessionId() !== sid || owner !== window.store?.getState('currentUser')?.id)
+    return;
   try {
     const response = await fetch(`${API}/sessions/${sid}/grounding`, {
       method: 'POST',
@@ -574,7 +576,7 @@ window.updateGrounding = async (documentId) => {
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.detail || 'Source update failed.');
-    if (getActiveSessionId() !== sid) return;
+    if (getActiveSessionId() !== sid || owner !== window.store?.getState('currentUser')?.id) return;
     const context = window.store?.getState('activeSession') || {};
     window.store?.setState('activeSession', {
       ...context,
@@ -582,6 +584,7 @@ window.updateGrounding = async (documentId) => {
     });
     toast('Study source updated.');
   } catch (error) {
+    if (getActiveSessionId() !== sid || owner !== window.store?.getState('currentUser')?.id) return;
     document.getElementById('f-grounding').value =
       window.store?.getState('activeSession')?.metadata?.document_id || 'none';
     toast(error.message, true);
@@ -1022,7 +1025,10 @@ async function startWebcam() {
     if (epoch !== cameraEpoch) return;
     stopWebcam();
     addLog('Camera access denied/unavailable — standard tutoring active', 'var(--yellow)');
-    toast('Camera access denied or unavailable. Standard text tutoring remains active.', false);
+    toast(
+      'Camera permission or optional local camera assets are unavailable. Text tutoring remains active.',
+      false,
+    );
     camActive = false;
     const camActInd = document.getElementById('cam-active-indicator');
     if (camActInd) camActInd.style.display = 'none';
@@ -1100,20 +1106,15 @@ async function toggleWebcamDirect() {
 async function initMediaPipe() {
   try {
     if (!window.FilesetResolver || !window.FaceLandmarker) {
-      const vision = await import(
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/+esm'
-      );
+      const vision = await import('/static/vendor/mediapipe/vision_bundle.mjs');
       window.FilesetResolver = vision.FilesetResolver;
       window.FaceLandmarker = vision.FaceLandmarker;
     }
-    filesetResolver = await window.FilesetResolver.forVisionTasks(
-      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/wasm',
-    );
+    filesetResolver = await window.FilesetResolver.forVisionTasks('/static/vendor/mediapipe/wasm');
     try {
       faceLandmarker = await window.FaceLandmarker.createFromOptions(filesetResolver, {
         baseOptions: {
-          modelAssetPath:
-            'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+          modelAssetPath: '/static/vendor/mediapipe/face_landmarker.task',
           delegate: 'GPU',
         },
         runningMode: 'VIDEO',
@@ -1123,8 +1124,7 @@ async function initMediaPipe() {
       console.warn('MediaPipe GPU delegate unavailable, falling back to CPU:', gpuErr);
       faceLandmarker = await window.FaceLandmarker.createFromOptions(filesetResolver, {
         baseOptions: {
-          modelAssetPath:
-            'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+          modelAssetPath: '/static/vendor/mediapipe/face_landmarker.task',
           delegate: 'CPU',
         },
         runningMode: 'VIDEO',

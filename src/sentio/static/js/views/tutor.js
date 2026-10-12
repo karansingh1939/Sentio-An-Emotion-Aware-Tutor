@@ -10,6 +10,8 @@ export class TutorView {
     this.sessionsList = [];
     this.currentCitations = [];
     this.resumeRevision = 0;
+    this.sessionListRevision = 0;
+    this.documentListRevision = 0;
   }
 
   init() {
@@ -26,8 +28,17 @@ export class TutorView {
         }
       } else {
         this.resumeRevision++;
+        this.sessionListRevision++;
+        this.documentListRevision++;
         window.stopGeneration?.();
       }
+    });
+    store.subscribe('currentUser', () => {
+      this.sessionListRevision++;
+      this.documentListRevision++;
+      this.sessionsList = [];
+      this.currentCitations = [];
+      this.renderSessionsList();
     });
   }
 
@@ -84,13 +95,27 @@ export class TutorView {
   }
 
   async loadSessions() {
+    const revision = ++this.sessionListRevision;
+    const owner = store.getState('currentUser')?.id;
+    const current = () =>
+      revision === this.sessionListRevision &&
+      owner === store.getState('currentUser')?.id &&
+      store.getState('activeRoute') === '#/tutor';
+    if (!owner) return;
     try {
-      const studentId = store.getState('currentUser')?.id || 'stu_001';
+      const studentId = owner;
       const res = await sentioAPI.get(`/sessions?student_id=${studentId}`);
+      if (!current()) return;
       this.sessionsList = res.sessions || [];
       this.renderSessionsList();
     } catch (e) {
-      console.warn('Failed to load sessions list:', e);
+      if (!current()) return;
+      const target = this.container.querySelector('#tutor-sessions-container');
+      if (target) {
+        target.innerHTML =
+          '<p role="alert">Sessions could not load.</p><button id="retry-sessions">Retry</button>';
+        target.querySelector('#retry-sessions').onclick = () => this.loadSessions();
+      }
     }
   }
 
@@ -269,12 +294,20 @@ export class TutorView {
   }
 
   async loadGroundingDocuments() {
+    const revision = ++this.documentListRevision;
+    const owner = store.getState('currentUser')?.id;
+    const current = () =>
+      revision === this.documentListRevision &&
+      owner === store.getState('currentUser')?.id &&
+      store.getState('activeRoute') === '#/tutor';
     let docs = [];
     try {
       const res = await sentioAPI.get('/documents');
+      if (!current()) return [];
       docs = res.documents || [];
     } catch (e) {
-      console.warn('Failed to load documents for grounding dropdown:', e);
+      if (current()) toast('Notes could not load. Retry from the Library.', true);
+      return [];
     }
 
     // Repopulate Left Panel select
@@ -295,7 +328,10 @@ export class TutorView {
   }
 
   async createNewSessionDialog() {
+    const owner = store.getState('currentUser')?.id;
     const docs = await this.loadGroundingDocuments();
+    if (owner !== store.getState('currentUser')?.id || store.getState('activeRoute') !== '#/tutor')
+      return;
     const modal = document.createElement('sentio-modal');
     modal.setAttribute('title', 'Start New Session');
     modal.innerHTML = `
@@ -312,7 +348,7 @@ export class TutorView {
         </div>
         <div>
           <label for="new-sess-topic" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;">Topic</label>
-<input type="text" id="new-sess-topic" value="thermodynamics" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;" />
+<input type="text" id="new-sess-topic" placeholder="What would you like to study?" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;" />
         </div>
         <div>
           <label for="new-sess-difficulty" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;">Difficulty</label>
@@ -415,7 +451,7 @@ export class TutorView {
       .map((c, idx) => {
         const filename = c.filename || 'Source Document';
         const page = c.page || 'N/A';
-        const score = c.similarity_score ? Math.round(c.similarity_score * 100) : 0;
+        const score = typeof c.similarity_score === 'number' ? c.similarity_score.toFixed(2) : '—';
         const textSnippet = c.text || 'Preview snippet unavailable.';
 
         return `
@@ -425,7 +461,7 @@ export class TutorView {
               📄 ${escapeHtml(filename)}
             </span>
             <span style="font-size:14px;color:var(--text-dim);background:var(--border);padding:2px 4px;border-radius:4px;">
-              Score: ${score}%
+              Ranking: ${score}
             </span>
           </div>
           <div style="font-size:14px;color:var(--text-dim);">Page: ${escapeHtml(page)}</div>

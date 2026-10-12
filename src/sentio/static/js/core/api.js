@@ -7,6 +7,43 @@ class SentioAPIClient {
   constructor() {
     this.defaultTimeout = 30000; // 30 seconds
     this.pending = 0;
+    this.refreshRequest = null;
+  }
+
+  sameIdentity(owner, refreshToken) {
+    return (
+      store.getState('currentUser')?.id === owner && store.getState('refreshToken') === refreshToken
+    );
+  }
+
+  async refreshAccess(owner, refreshToken, signal) {
+    if (this.refreshRequest?.owner === owner && this.refreshRequest?.token === refreshToken) {
+      return this.refreshRequest.promise;
+    }
+    const operation = { owner, token: refreshToken };
+    operation.promise = (async () => {
+      const response = await fetch(`${API_BASE}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+        signal,
+      });
+      if (!response.ok) {
+        const failure = new Error('Session refresh failed. Retry shortly.');
+        failure.status = response.status;
+        throw failure;
+      }
+      const data = await response.json();
+      if (!this.sameIdentity(owner, refreshToken))
+        throw new Error('The account changed while this request was running.');
+      if (typeof data.access_token !== 'string' || !data.access_token)
+        throw new Error('Session refresh returned an invalid response.');
+      store.setState('authToken', data.access_token);
+    })().finally(() => {
+      if (this.refreshRequest === operation) this.refreshRequest = null;
+    });
+    this.refreshRequest = operation;
+    return operation.promise;
   }
 
   // Common request handler
@@ -31,6 +68,8 @@ class SentioAPIClient {
 
     // Inject Auth token if available
     const token = store.getState('authToken');
+    const owner = store.getState('currentUser')?.id;
+    const refreshToken = store.getState('refreshToken');
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -46,27 +85,23 @@ class SentioAPIClient {
 
     try {
       const response = await fetch(url, fetchOptions);
+      if (!this.sameIdentity(owner, refreshToken))
+        throw new Error('The account changed while this request was running.');
 
       if (!response.ok) {
-        if (token !== store.getState('authToken'))
-          throw new Error('The account changed while this request was running.');
+        if (response.status === 401 && token !== store.getState('authToken') && !options._isRetry)
+          return this.request(endpoint, { ...options, _isRetry: true });
         if (response.status === 401 && !options._isRetry) {
-          const refreshToken = store.getState('refreshToken');
           if (refreshToken) {
             try {
-              const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ refresh_token: refreshToken }),
-              });
-              if (refreshRes.ok) {
-                const refreshData = await refreshRes.json();
-                store.setState('authToken', refreshData.access_token);
-                // Retry request
-                return this.request(endpoint, { ...options, _isRetry: true });
-              }
+              await this.refreshAccess(owner, refreshToken, controller.signal);
+              return this.request(endpoint, { ...options, _isRetry: true });
             } catch (err) {
-              console.warn('Refresh token invalid:', err);
+              if (!this.sameIdentity(owner, refreshToken))
+                throw new Error('The account changed while this request was running.');
+              if (token !== store.getState('authToken'))
+                return this.request(endpoint, { ...options, _isRetry: true });
+              if (err.status !== 401) throw err;
             }
           }
           // Logout user on failure
@@ -87,7 +122,10 @@ class SentioAPIClient {
       // Handle raw responses or JSON
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
-        return await response.json();
+        const data = await response.json();
+        if (!this.sameIdentity(owner, refreshToken))
+          throw new Error('The account changed while this request was running.');
+        return data;
       }
       return response;
     } catch (error) {
