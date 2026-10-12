@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from sentio.api.dependencies import PREFIX, _verify_session_owner, agent, flashcard_service
 from sentio.api.schemas import CreateDeckRequest, GenerateFlashcardsRequest, ReviewCardRequest
 from sentio.auth.middleware import get_current_user
+from sentio.jobs.control import WorkCancelled
 from sentio.repositories.practice_repository import PracticeRepository, ReviewConflict
 from sentio.shared.exceptions import LLMServiceUnavailableError
 
@@ -79,10 +80,13 @@ def generate_flashcards(req: GenerateFlashcardsRequest, user: dict = Depends(get
             topic_id=req.topic_id,
             num_cards=req.num_cards,
             session_id=req.session_id,
+            require_owner=True,
         )
         return cards
     except LLMServiceUnavailableError:
         raise
+    except WorkCancelled as exc:
+        raise HTTPException(409, str(exc)) from exc
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail=str(exc))
     except ValueError as exc:

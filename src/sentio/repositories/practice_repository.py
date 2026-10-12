@@ -42,41 +42,50 @@ class PracticeRepository:
         }
 
     @contextmanager
-    def publication(self, session, snapshot, deck_id=None):
+    def publication(self, session, snapshot, deck_id=None, student_id=None):
         from types import SimpleNamespace
 
+        owner_id = session.student_id if session else student_id
         with self.engine.connect() as connection:
             connection.exec_driver_sql("BEGIN IMMEDIATE")
             try:
                 owner = connection.execute(
                     text("SELECT 1 FROM student_accounts WHERE student_id=:owner"),
-                    {"owner": session.student_id},
+                    {"owner": owner_id},
                 ).scalar()
-                stored = connection.execute(
-                    text(
-                        "SELECT data_json FROM sessions WHERE session_id=:id AND student_id=:owner"
-                    ),
-                    {"id": session.session_id, "owner": session.student_id},
-                ).scalar()
-                if not owner or not stored:
-                    raise WorkCancelled("Study account or session is no longer available.")
-                data = json.loads(stored)
-                current = SimpleNamespace(
-                    student_id=session.student_id,
-                    subject=data["subject"],
-                    topic=data["topic"],
-                    difficulty=data["difficulty"],
-                    metadata=data.get("metadata", {}),
+                stored = (
+                    connection.execute(
+                        text(
+                            "SELECT data_json FROM sessions WHERE session_id=:id AND student_id=:owner"
+                        ),
+                        {"id": session.session_id, "owner": session.student_id},
+                    ).scalar()
+                    if session
+                    else None
                 )
-                if data.get("status") != "active" or self.snapshot(current, connection) != snapshot:
-                    raise WorkCancelled("Study context changed. Retry with the current notes.")
+                if not owner or (session and not stored):
+                    raise WorkCancelled("Study account or session is no longer available.")
+                if session:
+                    data = json.loads(stored)
+                    current = SimpleNamespace(
+                        student_id=session.student_id,
+                        subject=data["subject"],
+                        topic=data["topic"],
+                        difficulty=data["difficulty"],
+                        metadata=data.get("metadata", {}),
+                    )
+                    if (
+                        data.get("status") != "active"
+                        or self.snapshot(current, connection) != snapshot
+                    ):
+                        raise WorkCancelled("Study context changed. Retry with the current notes.")
                 if (
                     deck_id
                     and not connection.execute(
                         text(
                             "SELECT 1 FROM flashcard_decks WHERE deck_id=:deck AND student_id=:owner"
                         ),
-                        {"deck": deck_id, "owner": session.student_id},
+                        {"deck": deck_id, "owner": owner_id},
                     ).scalar()
                 ):
                     raise WorkCancelled("Selected card deck is no longer available.")

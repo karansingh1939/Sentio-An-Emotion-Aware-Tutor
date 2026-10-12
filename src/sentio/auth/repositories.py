@@ -71,7 +71,7 @@ class AuthRepository:
             return None
         return UserAccount(*row)
 
-    def delete_account(self, student_id: str):
+    def delete_account(self, student_id: str, connection=None):
         """Delete the complete owned SQL inventory atomically."""
         if not self.persister._use_db:
             return
@@ -105,7 +105,13 @@ class AuthRepository:
             "student_accounts",
             "students",
         ]
-        with self.persister._engine.begin() as connection:
+        from contextlib import nullcontext
+
+        with (
+            nullcontext(connection)
+            if connection is not None
+            else self.persister._engine.begin() as connection
+        ):
             for table, condition in dependent_tables.items():
                 connection.execute(text(f"DELETE FROM {table} WHERE {condition}"), params)
             for table in owned_tables:

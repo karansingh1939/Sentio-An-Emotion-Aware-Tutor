@@ -275,6 +275,7 @@ def test_vector_scope_and_keyword_scope_preserve_student(study, scope):
     s = study
     selected = "all" if scope == "all" else [s.doc_a]
     s.sm.get_or_raise(s.session_id).metadata["document_id"] = selected
+    s.sm.persister.save_session(s.sm.get_or_raise(s.session_id))
     s.retriever._model = SimpleNamespace(encode=lambda *args, **kwargs: np.ones((1, 384)))
     s.vdb.is_available.return_value = True
     s.vdb.search.return_value = []
@@ -291,6 +292,7 @@ def test_vector_scope_and_keyword_scope_preserve_student(study, scope):
 def test_no_document_scope_keeps_general_quizzes_available(study):
     s = study
     s.sm.get_or_raise(s.session_id).metadata["document_id"] = "none"
+    s.sm.persister.save_session(s.sm.get_or_raise(s.session_id))
     assert s.generate().status_code == 200
     prompt = s.backend.complete.call_args.kwargs["system_prompt"]
     assert FACT not in prompt and OTHER not in prompt

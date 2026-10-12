@@ -46,6 +46,11 @@ MIGRATIONS = {
             fingerprint TEXT NOT NULL, job_id TEXT NOT NULL, created_at REAL NOT NULL,
             PRIMARY KEY(student_id,request_id))""",
     ],
+    6: [
+        """CREATE TABLE account_cleanup (
+            student_id TEXT PRIMARY KEY, document_ids_json TEXT NOT NULL,
+            session_ids_json TEXT NOT NULL, created_at REAL NOT NULL)""",
+    ],
 }
 
 

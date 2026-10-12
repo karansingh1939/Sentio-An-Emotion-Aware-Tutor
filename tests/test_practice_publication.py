@@ -11,9 +11,10 @@ from tests.test_study_planning import account
 
 
 @pytest.mark.parametrize("kind", ["quizzes", "flashcards"])
-def test_context_change_during_generation_does_not_save_practice(monkeypatch, kind):
+@pytest.mark.parametrize("submission", ["jobs", "generate"])
+def test_context_change_during_generation_does_not_save_practice(monkeypatch, kind, submission):
     with TestClient(app) as client:
-        headers, owner = account(client, f"stale-{kind}@example.com")
+        headers, owner = account(client, f"stale-{kind}-{submission}@example.com")
         session_id = client.post(
             "/api/v1/sessions",
             headers=headers,
@@ -48,15 +49,18 @@ def test_context_change_during_generation_does_not_save_practice(monkeypatch, ki
             return result
 
         monkeypatch.setattr(agent.nlp._backend, "complete", switch_context)
-        response = client.post(f"/api/v1/{kind}/jobs", headers=headers, json=payload)
-        assert response.status_code == 202, response.text
-        path = "/api/v1/jobs/" + response.json()["job_id"]
-        for _ in range(100):
-            state = client.get(path, headers=headers).json()
-            if state["status"] in ("succeeded", "failed", "cancelled"):
-                break
-            time.sleep(0.02)
-        assert state["status"] == "cancelled", state
+        response = client.post(f"/api/v1/{kind}/{submission}", headers=headers, json=payload)
+        if submission == "jobs":
+            assert response.status_code == 202, response.text
+            path = "/api/v1/jobs/" + response.json()["job_id"]
+            for _ in range(100):
+                state = client.get(path, headers=headers).json()
+                if state["status"] in ("succeeded", "failed", "cancelled"):
+                    break
+                time.sleep(0.02)
+            assert state["status"] == "cancelled", state
+        else:
+            assert response.status_code == 409, response.text
         table = "quizzes" if kind == "quizzes" else "flashcards"
         with agent.sm.persister._engine.connect() as connection:
             assert (

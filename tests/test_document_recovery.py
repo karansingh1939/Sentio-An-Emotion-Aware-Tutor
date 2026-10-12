@@ -29,6 +29,44 @@ def staged(path, content):
     return pending
 
 
+def test_terminal_journals_are_bounded_without_losing_pending_recovery(material):
+    import time
+
+    pipeline, journal, _, _ = material
+    now = time.time()
+    with pipeline.sm.persister._engine.begin() as connection:
+        rows = [
+            {"id": f"done-{index}", "status": "completed", "created": now + index / 1000}
+            for index in range(510)
+        ]
+        rows.extend(
+            [
+                {"id": "old-completed", "status": "completed", "created": now - 8 * 86400},
+                {"id": "old-pending", "status": "pending", "created": now - 8 * 86400},
+            ]
+        )
+        connection.execute(
+            text("""INSERT INTO recovery_operations
+            (operation_id,student_id,kind,payload_json,status,created_at)
+            VALUES (:id,'owner','replace','{}',:status,:created)"""),
+            rows,
+        )
+    journal.prune()
+    with pipeline.sm.persister._engine.connect() as connection:
+        assert (
+            connection.execute(
+                text("SELECT COUNT(*) FROM recovery_operations WHERE status='completed'")
+            ).scalar()
+            == 500
+        )
+        assert (
+            connection.execute(
+                text("SELECT status FROM recovery_operations WHERE operation_id='old-pending'")
+            ).scalar()
+            == "pending"
+        )
+
+
 def test_failed_sql_publication_restores_original_file_and_chunks(material, monkeypatch):
     pipeline, journal, path, document = material
     previous_chunks = pipeline.sm.get_document_chunks(document["id"])

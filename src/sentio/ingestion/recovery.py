@@ -69,6 +69,25 @@ class DocumentRecovery:
                 ),
                 {"id": operation, "status": status, "error": error},
             )
+        if status in ("completed", "failed"):
+            self.prune()
+
+    def prune(self):
+        with self.engine.begin() as connection:
+            connection.execute(
+                text(
+                    "DELETE FROM recovery_operations WHERE status IN ('completed','failed') AND created_at<:cutoff"
+                ),
+                {"cutoff": time.time() - 7 * 86400},
+            )
+            connection.execute(
+                text("""DELETE FROM recovery_operations WHERE operation_id IN (
+                SELECT operation_id FROM (
+                    SELECT operation_id, ROW_NUMBER() OVER (
+                        PARTITION BY student_id ORDER BY created_at DESC,operation_id DESC) AS position
+                    FROM recovery_operations WHERE status IN ('completed','failed'))
+                WHERE position>500)""")
+            )
 
     def replace(self, pending, destination, document, chunks, old_chunks):
         owner = document["student_id"]
@@ -83,6 +102,13 @@ class DocumentRecovery:
             "old_chunk_ids": [c["chunk_id"] for c in old_chunks if c["chunk_id"] not in new_ids],
         }
         with self.lock:
+            if self.require_owner:
+                with self.engine.connect() as connection:
+                    if not connection.execute(
+                        text("SELECT 1 FROM student_accounts WHERE student_id=:owner"),
+                        {"owner": owner},
+                    ).scalar():
+                        raise PermissionError("Learner account is no longer available.")
             operation, backup = self._start(owner, "replace", payload)
             try:
                 if destination.exists():
@@ -162,6 +188,7 @@ class DocumentRecovery:
             return False
 
     def recover(self, owner=None):
+        self.prune()
         recovered, pending = 0, 0
         with self.lock:
             with self.engine.connect() as connection:

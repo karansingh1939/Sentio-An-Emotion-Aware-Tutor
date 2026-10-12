@@ -74,3 +74,49 @@ def test_telemetry_deletion_clears_cached_and_exported_emotions(study):
     assert not log.exists()
     assert session.emotion_timeline.state_distribution() == {}
     assert s.sm.persister.load_session_data(s.session_id)["emotion_summary"]["distribution"] == {}
+
+
+def test_failed_account_transaction_preserves_document_files_and_account(study, monkeypatch):
+    s = study
+    from unittest.mock import Mock
+
+    before = {
+        path: path.read_bytes() for path in (s.tmp_path / "data/documents" / s.a).rglob("*.txt")
+    }
+    monkeypatch.setattr(
+        s.sm.persister.auth_repo, "delete_account", Mock(side_effect=RuntimeError("disk error"))
+    )
+    response = s.client.delete(s.prefix + f"/student/{s.a}/data", headers=s.headers)
+    assert response.status_code == 500
+    assert s.sm.persister.auth_repo.get_account_by_student_id(s.a) is not None
+    assert all(path.exists() and path.read_bytes() == content for path, content in before.items())
+    assert s.sm.list_documents(student_id=s.a)
+
+
+def test_committed_account_cleanup_recovers_after_filesystem_failure(study):
+    from unittest.mock import patch
+
+    from sentio.maintenance.account_cleanup import AccountCleanup
+
+    s = study
+    with patch(
+        "sentio.maintenance.account_cleanup.shutil.rmtree", side_effect=PermissionError("locked")
+    ):
+        response = s.client.delete(s.prefix + f"/student/{s.a}/data", headers=s.headers)
+    assert response.status_code == 200, response.text
+    assert response.json()["cleanup_pending"] is True
+    assert s.sm.persister.auth_repo.get_account_by_student_id(s.a) is None
+    assert s.session_id not in s.sm._sessions
+    assert (s.tmp_path / "data/documents" / s.a).exists()
+    service = AccountCleanup(
+        s.sm.persister,
+        s.kb.vdb,
+        s.tmp_path / "data/documents",
+        session_cfg.SESSION_LOG_PATH,
+        session_cfg.EMOTION_LOG_PATH,
+    )
+    service.recover()
+    assert not (s.tmp_path / "data/documents" / s.a).exists()
+    assert s.sm.persister.auth_repo.get_account_by_student_id(s.b) is not None
+    with s.sm.persister._engine.connect() as connection:
+        assert connection.execute(text("SELECT COUNT(*) FROM account_cleanup")).scalar() == 0

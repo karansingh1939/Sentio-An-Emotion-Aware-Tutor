@@ -85,6 +85,7 @@ class SessionPersister:
         with self._engine.connect() as conn:
             conn.execute(text("PRAGMA journal_mode=WAL;"))
             conn.execute(text("PRAGMA synchronous=NORMAL;"))
+            conn.exec_driver_sql("BEGIN IMMEDIATE")
             conn.execute(
                 text("""
                 CREATE TABLE IF NOT EXISTS students (
@@ -279,29 +280,18 @@ class SessionPersister:
                     text("ALTER TABLE documents ADD COLUMN extraction_method TEXT DEFAULT 'text'")
                 )
 
-            # Safe migration to add 'student_id' column to documents if not already present
-            try:
-                cols = [
-                    row[1] for row in conn.execute(text("PRAGMA table_info(documents)")).fetchall()
-                ]
-                if "student_id" not in cols:
-                    conn.execute(text("ALTER TABLE documents ADD COLUMN student_id TEXT"))
-                    conn.execute(
-                        text("UPDATE documents SET student_id = 'stu_001' WHERE student_id IS NULL")
-                    )
+            if "student_id" not in document_columns:
+                conn.execute(text("ALTER TABLE documents ADD COLUMN student_id TEXT"))
                 conn.execute(
-                    text(
-                        "CREATE INDEX IF NOT EXISTS idx_documents_student_id ON documents(student_id)"
-                    )
+                    text("UPDATE documents SET student_id = 'stu_001' WHERE student_id IS NULL")
                 )
-            except Exception as e:
-                logger.error(f"Failed to migrate documents student_id column: {e}")
+            conn.execute(
+                text("CREATE INDEX IF NOT EXISTS idx_documents_student_id ON documents(student_id)")
+            )
 
-            # Safe migration to add 'summary' column to sessions if not already present
-            try:
+            session_columns = {row[1] for row in conn.execute(text("PRAGMA table_info(sessions)"))}
+            if "summary" not in session_columns:
                 conn.execute(text("ALTER TABLE sessions ADD COLUMN summary TEXT"))
-            except Exception:
-                pass
 
             # Phase D: Quiz, Flashcards & Whiteboards Schemas
             conn.execute(
@@ -365,19 +355,15 @@ class SessionPersister:
             """)
             )
 
-            # Run safe migrations on flashcards
-            try:
+            card_columns = {row[1] for row in conn.execute(text("PRAGMA table_info(flashcards)"))}
+            if "deck_id" not in card_columns:
                 conn.execute(
                     text(
                         "ALTER TABLE flashcards ADD COLUMN deck_id TEXT REFERENCES flashcard_decks(deck_id)"
                     )
                 )
-            except Exception:
-                pass
-            try:
+            if "tags" not in card_columns:
                 conn.execute(text("ALTER TABLE flashcards ADD COLUMN tags TEXT"))
-            except Exception:
-                pass
 
             # Identity & Privacy Platform tables
             conn.execute(

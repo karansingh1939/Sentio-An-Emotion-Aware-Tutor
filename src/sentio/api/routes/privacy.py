@@ -123,32 +123,35 @@ def delete_student_data(student_id: str, request: Request, user: dict = Depends(
     if jobs:
         jobs.cancel_owner(student_id)
     try:
-        import shutil
+        from sentio.maintenance.account_cleanup import AccountCleanup
 
-        root = (BASE_DIR / "data/documents").resolve()
-        owned_dir = (root / student_id).resolve()
-        if not owned_dir.is_relative_to(root) or owned_dir == root:
-            raise ValueError("Invalid student data directory.")
-        for document in agent.sm.list_documents(student_id=student_id):
-            agent.kb.vdb.delete_document_points(document["id"])
-        if owned_dir.exists():
-            shutil.rmtree(owned_dir)
-        session_ids = [
-            row["session_id"]
-            for row in agent.sm.persister.list_sessions(student_id=student_id, limit=-1)
-        ]
-        agent.sm.persister.auth_repo.delete_account(student_id)
-        for sid in session_ids:
+        service = AccountCleanup(
+            agent.sm.persister,
+            agent.kb.vdb,
+            BASE_DIR / "data/documents",
+            session_cfg.SESSION_LOG_PATH,
+            session_cfg.EMOTION_LOG_PATH,
+        )
+        documents = getattr(request.app.state, "documents", None)
+        from contextlib import nullcontext
+
+        with documents.lock if documents is not None else nullcontext():
+            result = service.delete(student_id)
+        for sid in result["session_ids"]:
             agent.sm._sessions.pop(sid, None)
             agent.sm._diagnostics.pop(sid, None)
             agent.detector.clear_session(sid)
             agent.kb.reset_session(sid)
             if hasattr(agent.nlp, "clear_history"):
                 agent.nlp.clear_history(sid)
-            (agent.sm.persister._json_dir / f"{sid}.json").unlink(missing_ok=True)
-            (session_cfg.EMOTION_LOG_PATH / f"{sid}_emotions.json").unlink(missing_ok=True)
-        return {"deleted": True, "student_id": student_id}
+        return {
+            "deleted": True,
+            "student_id": student_id,
+            "cleanup_pending": result["cleanup_pending"],
+        }
     except Exception as e:
+        if jobs and agent.sm.persister.auth_repo.get_account_by_student_id(student_id) is not None:
+            jobs.resume_owner(student_id)
         logger.exception("Data deletion failed")
         raise HTTPException(status_code=500, detail=str(e))
 

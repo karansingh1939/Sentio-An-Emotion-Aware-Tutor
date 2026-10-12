@@ -66,6 +66,16 @@ async def lifespan(app):
         agent.sm.persister, agent.kb.vdb, documents.BASE_DIR / "data/documents"
     )
     app.state.documents.recover()
+    from sentio.config import session_cfg
+    from sentio.maintenance.account_cleanup import AccountCleanup
+
+    AccountCleanup(
+        agent.sm.persister,
+        agent.kb.vdb,
+        documents.BASE_DIR / "data/documents",
+        session_cfg.SESSION_LOG_PATH,
+        session_cfg.EMOTION_LOG_PATH,
+    ).recover()
     report = system_health_check()
     print_health_report(report)
     logger.info("API ready on %s:%d", api_cfg.HOST, api_cfg.PORT)

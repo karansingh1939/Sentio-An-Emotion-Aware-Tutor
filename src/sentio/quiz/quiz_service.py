@@ -44,6 +44,7 @@ class QuizService:
         num_questions: int = 3,
         study_session=None,
         source_snapshot=None,
+        require_owner=False,
     ) -> Dict[str, Any]:
         """
         Generate a quiz matching the QuizPayloadSchema using RAG context and student memory.
@@ -52,6 +53,8 @@ class QuizService:
         session = study_session or self.agent.sm.get_or_raise(session_id)
         if session.student_id != student_id:
             raise PermissionError("Session does not belong to this student.")
+        if require_owner:
+            session = deepcopy(session)
         document_id = session.metadata.get("document_id")
         grounded = document_id not in (None, "none")
         if grounded and document_id != "all":
@@ -59,6 +62,8 @@ class QuizService:
             owned = {d["id"] for d in self.agent.sm.list_documents(student_id=student_id)}
             if any(d not in owned for d in selected):
                 raise PermissionError("Access denied or document not found.")
+        if require_owner:
+            source_snapshot = PracticeRepository(self.agent.sm.persister._engine).snapshot(session)
 
         checkpoint("retrieving sources")
         # 1. Retrieve RAG context
@@ -167,7 +172,7 @@ JSON Template:
             )
 
         def save_current():
-            if source_snapshot is None:
+            if source_snapshot is None and not require_owner:
                 return save()
             repository = PracticeRepository(self.agent.sm.persister._engine)
             with repository.publication(session, source_snapshot) as connection:

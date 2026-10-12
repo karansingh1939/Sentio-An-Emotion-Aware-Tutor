@@ -101,3 +101,7 @@ class JobManager:
             for job_id in list(self.controls):
                 if self.get(job_id, owner):
                     self.cancel(job_id, owner)
+
+    def resume_owner(self, owner):
+        with self.lock:
+            self.revoked_owners.discard(owner)

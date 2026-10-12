@@ -7,6 +7,7 @@ Provides deck creation, card generation, due review scheduling, and SM-2 calcula
 import logging
 import time
 import uuid
+from copy import deepcopy
 from typing import Any, Dict, List, Optional
 
 from sentio.ai.streaming import output_schema
@@ -41,6 +42,7 @@ class FlashcardService:
         session_id: Optional[str] = None,
         study_session=None,
         source_snapshot=None,
+        require_owner=False,
     ) -> Dict[str, Any]:
         """
         Generate flashcards from retrieved RAG context/curriculum.
@@ -63,6 +65,9 @@ class FlashcardService:
         )
         if session and session.student_id != student_id:
             raise PermissionError("Session does not belong to this student.")
+        if require_owner and session:
+            session = deepcopy(session)
+            source_snapshot = PracticeRepository(self.agent.sm.persister._engine).snapshot(session)
         document_id = session.metadata.get("document_id") if session else None
         checkpoint("retrieving sources")
         # 1. Retrieve curriculum/RAG content
@@ -150,10 +155,12 @@ JSON Template:
             )
 
         def save_current():
-            if source_snapshot is None:
+            if source_snapshot is None and not require_owner:
                 return save()
             repository = PracticeRepository(self.agent.sm.persister._engine)
-            with repository.publication(session, source_snapshot, deck_id) as connection:
+            with repository.publication(
+                session, source_snapshot, deck_id, student_id=student_id
+            ) as connection:
                 return save(connection)
 
         publish(save_current)

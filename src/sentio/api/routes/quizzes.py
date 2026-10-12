@@ -13,6 +13,7 @@ from sentio.api.dependencies import (
 )
 from sentio.api.schemas import QuizGenerateRequest, QuizRequest, QuizSubmitRequest
 from sentio.auth.middleware import get_current_user
+from sentio.jobs.control import WorkCancelled
 from sentio.shared.exceptions import LLMServiceUnavailableError
 
 logger = logging.getLogger(__name__)
@@ -78,10 +79,13 @@ def generate_quiz(req: QuizGenerateRequest, user: dict = Depends(get_current_use
             topic=req.topic,
             difficulty=req.difficulty,
             num_questions=req.num_questions,
+            require_owner=True,
         )
         return quiz
     except LLMServiceUnavailableError:
         raise
+    except WorkCancelled as exc:
+        raise HTTPException(409, str(exc)) from exc
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail=str(exc))
     except ValueError as exc:

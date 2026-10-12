@@ -233,3 +233,26 @@ reflects token replenishment and is tested by retrying after the indicated wait.
 Verification: 209 tests passed, one optional OCR skip, 31 subtests passed.
 Next: recoverable account/file cleanup on failed deletion, bounded recovery
 records, remaining tool/context guards and live-model release measurements.
+
+## Account recovery and legacy storage checkpoint
+
+Account SQL deletion and a cleanup inventory now commit together before any file
+removal. Failed transactions preserve account/files and reopen the owner's job
+queue. Interrupted filesystem/vector cleanup reports cleanup_pending and retries
+at startup; records disappear only after cleanup succeeds. Paths and identities
+are checked before deletion, active accounts cannot be cleaned, and other
+learners' accounts remain intact. Recovery journals retain pending work while
+terminal entries are bounded to seven days and 500 per owner.
+
+Legacy synchronous quiz/card APIs now enforce the same final owner/source/session
+publication transaction, preventing late generation from recreating deleted
+account artifacts. Older in-process source fixtures now persist context just as
+the real source endpoint does. Legacy schema bootstrap uses explicit transactional
+DDL and schema inspection; actual ALTER failures propagate instead of being
+silenced. Injected interruption tests prove fresh tables and upgrade columns roll
+back, preserving previous rows, and upgrades remain idempotent.
+
+Verification: 216 passed, one optional OCR skip, 31 subtests passed. Next: remaining
+Windows library/context/tool checks and the installed-model CPU comparison, then
+release documentation and validation. Label review remains pending; the user's
+review page is ready with examples and saved progress.
