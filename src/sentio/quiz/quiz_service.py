@@ -13,10 +13,10 @@ import uuid
 from copy import deepcopy
 from typing import Any, Dict, Optional, Tuple
 
+from sentio.ai.practice_schema import practice_schema
 from sentio.ai.prompts import grading_prompt
 from sentio.ai.streaming import output_schema
 from sentio.ai.structured_parser import (
-    QuizPayloadSchema,
     QuizScoringSchema,
     ShortAnswerGrade,
     parse_structured_output,
@@ -123,8 +123,10 @@ JSON Template:
 }}"""
 
         # 4. Helper function for LLM call with retry
+        batch_schema = practice_schema("quiz", num_questions)
+
         def llm_call(sys_p, hist, user_p):
-            with output_schema(QuizPayloadSchema):
+            with output_schema(batch_schema):
                 return self.agent.nlp._backend.complete(
                     system_prompt=sys_p,
                     history=hist,
@@ -146,7 +148,7 @@ JSON Template:
         # 5. Parse and validate
         quiz_data = parse_structured_output(
             raw_text=raw_text,
-            schema_class=QuizPayloadSchema,
+            schema_class=batch_schema,
             llm_call_fn=llm_call,
             original_prompt_args=original_args,
         )

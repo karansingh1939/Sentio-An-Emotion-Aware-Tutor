@@ -286,6 +286,7 @@ class OllamaBackend(LLMBackend):
                     raise TimeoutError("Local AI is busy. Retry after current work finishes.")
             acquired = True
             checkpoint("generating answer")
+            deadline = time.monotonic() + 180
             response = self._session.post(
                 f"{self.cfg.OLLAMA_BASE_URL}/api/chat",
                 json=payload,
@@ -303,6 +304,10 @@ class OllamaBackend(LLMBackend):
             complete = False
             for line in response.iter_lines():
                 checkpoint()
+                if time.monotonic() > deadline:
+                    raise TimeoutError(
+                        "Local generation exceeded its time budget; retry a smaller request"
+                    )
                 if not line:
                     continue
                 data = json.loads(line)
@@ -317,6 +322,8 @@ class OllamaBackend(LLMBackend):
                         control.emit("delta", {"text": text[len(emitted) :]})
                         emitted = text
                 if data.get("done"):
+                    if data.get("done_reason") == "length":
+                        raise ValueError("Local model reached its output limit before finishing")
                     tokens = data.get("eval_count", len(raw.split()))
                     complete = True
                     break

@@ -1,6 +1,7 @@
 """Deterministic provider responses and real authentication for integration tests."""
 
 import json
+import re
 import uuid
 
 
@@ -23,6 +24,8 @@ def login_student(client, *, admin=False):
 
 def complete(system_prompt, history, user_message, **kwargs):
     prompt = system_prompt.lower()
+    requested = re.search(r"exactly (\d+) (?:questions|flashcards)", prompt)
+    count = int(requested[1]) if requested else 3
     if "generate a quiz" in prompt:
         questions = [
             dict(
@@ -50,12 +53,14 @@ def complete(system_prompt, history, user_message, **kwargs):
                 difficulty="intermediate",
                 topic="thermodynamics",
             )
+        questions = [questions[i % len(questions)] for i in range(count)]
         return json.dumps({"title": "Thermodynamics", "questions": questions}), 100
     if "flashcards about" in prompt:
         cards = [
             dict(front=term, back="A thermodynamics concept.", tags=["thermodynamics"])
             for term in ["Entropy", "Energy", "Temperature"]
         ]
+        cards = [cards[i % len(cards)] for i in range(count)]
         return json.dumps({"deck_name": "Thermodynamics", "cards": cards}), 50
     if "grade" in prompt:
         return json.dumps({"is_correct": False, "score": 0.0}), 10

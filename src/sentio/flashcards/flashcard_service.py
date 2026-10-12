@@ -10,8 +10,9 @@ import uuid
 from copy import deepcopy
 from typing import Any, Dict, List, Optional
 
+from sentio.ai.practice_schema import practice_schema
 from sentio.ai.streaming import output_schema
-from sentio.ai.structured_parser import FlashcardPayloadSchema, parse_structured_output
+from sentio.ai.structured_parser import parse_structured_output
 from sentio.jobs.control import checkpoint, publish
 from sentio.repositories.practice_repository import PracticeRepository
 
@@ -111,8 +112,10 @@ JSON Template:
   ]
 }}"""
 
+        batch_schema = practice_schema("flashcards", num_cards)
+
         def llm_call(sys_p, hist, user_p):
-            with output_schema(FlashcardPayloadSchema):
+            with output_schema(batch_schema):
                 return self.agent.nlp._backend.complete(
                     system_prompt=sys_p,
                     history=hist,
@@ -133,7 +136,7 @@ JSON Template:
         # 3. Parse and validate
         flashcard_data = parse_structured_output(
             raw_text=raw_text,
-            schema_class=FlashcardPayloadSchema,
+            schema_class=batch_schema,
             llm_call_fn=llm_call,
             original_prompt_args=original_args,
         )

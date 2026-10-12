@@ -62,12 +62,39 @@ def test_disconnect_and_invalid_schema_never_succeed():
     for lines in (
         [json.dumps({"message": {"content": '{"text":"unfinished'}}).encode()],
         [json.dumps({"message": {"content": '{"text":123}'}, "done": True}).encode()],
+        [
+            json.dumps(
+                {
+                    "message": {"content": '{"text":"valid prefix"}'},
+                    "done": True,
+                    "done_reason": "length",
+                }
+            ).encode()
+        ],
     ):
         response = Response(lines)
         backend, _ = backend_with(response)
         with output_schema(TutorPayload), pytest.raises(LLMServiceUnavailableError):
             backend.complete("prompt", [], "question")
         assert response.closed
+
+
+def test_stream_of_small_chunks_cannot_extend_generation_deadline(monkeypatch):
+    from sentio.ai import providers
+
+    now = [0.0]
+    monkeypatch.setattr(providers.time, "monotonic", lambda: now[0])
+
+    class ExpiredResponse(Response):
+        def iter_lines(self):
+            now[0] = 181.0
+            yield b'{"message":{"content":"{}"},"done":true}'
+
+    response = ExpiredResponse([])
+    backend, _ = backend_with(response)
+    with pytest.raises(LLMServiceUnavailableError, match="time budget"):
+        backend.complete("prompt", [], "question")
+    assert response.closed
 
 
 def test_stop_closes_upstream_response_and_releases_inference_slot():
