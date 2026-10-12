@@ -16,7 +16,7 @@ import psutil
 import requests
 
 
-def run(output, practice_count=3):
+def run(output, practice_count=3, grounding_dataset=None):
     if practice_count not in (1, 3, 5):
         raise ValueError("Use a small CPU practice batch: 1, 3 or 5")
     output = Path(output).resolve()
@@ -204,6 +204,34 @@ def run(output, practice_count=3):
                 login = call("POST", "/auth/login", json=credentials)
                 owner = login["student_id"]
                 client.headers["Authorization"] = "Bearer " + login["access_token"]
+                if grounding_dataset is not None:
+                    from sentio.evaluation.study_quality import evaluate_cases
+
+                    tags = requests.get("http://127.0.0.1:11434/api/tags", timeout=5)
+                    tags.raise_for_status()
+                    report["model_digest"] = next(
+                        (
+                            model["digest"]
+                            for model in tags.json()["models"]
+                            if model["name"] == "phi3:mini"
+                        ),
+                        None,
+                    )
+                    report["hardware"] = {
+                        "cpu": os.environ.get("PROCESSOR_IDENTIFIER", "unknown"),
+                        "logical_cpus": psutil.cpu_count(),
+                        "ram_bytes": psutil.virtual_memory().total,
+                    }
+                    report["grounding_evaluation"] = evaluate_cases(
+                        grounding_dataset, call, client, base, owner
+                    )
+                    report["limitations"] = [
+                        "Synthetic questions with lexical diagnostics; all semantic support reviews remain pending.",
+                        "Fresh sessions with actual selected-source retrieval and installed local generation; no student learning measurement.",
+                        "Qdrant uses memory mode and cached embeddings; no model downloads.",
+                    ]
+                    report["status"] = "observed"
+                    return report
                 note = b"Newton's first law: an object remains at rest or moves at constant velocity unless acted on by a nonzero net external force. Inertia is resistance to a change in velocity. Mass measures inertia. Net force causes acceleration. A balanced net force of zero does not change velocity."
                 uploaded = step(
                     "upload",
@@ -360,6 +388,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--practice-count", type=int, choices=(1, 3, 5), default=3)
+    parser.add_argument(
+        "--grounding-dataset",
+        type=Path,
+        help="Observe real tutor turns on a synthetic grounding dataset",
+    )
     args = parser.parse_args()
-    result = run(args.output, args.practice_count)
-    raise SystemExit(0 if result["status"] == "passed" else 1)
+    result = run(args.output, args.practice_count, args.grounding_dataset)
+    raise SystemExit(0 if result["status"] in {"passed", "observed"} else 1)
