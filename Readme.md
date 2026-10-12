@@ -1,221 +1,130 @@
 # Sentio
 
-A local study workspace for notes, cited tutoring, quizzes and scheduled review. The Python server also serves the web interface;
-there is no separate npm development server.
+**Turn your notes into a local study workspace: cited explanations, practice, and scheduled review.**
 
-## Run on this Windows checkout
+[![CI](https://github.com/karansingh1939/Sentio-An-Emotion-Aware-Tutor/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/karansingh1939/Sentio-An-Emotion-Aware-Tutor/actions/workflows/ci.yml)
+[![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](pyproject.toml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Open a PowerShell terminal and run:
+[Quick start](#quick-start) | [Architecture](docs/ARCHITECTURE.md) | [Evaluation](#measured-ai-results) | [Contributing](CONTRIBUTING.md) | [Security](SECURITY.md)
 
-```powershell
-cd "C:\ai project"
-python scripts/dev_start.py --port 8001
-```
+Sentio brings a learner's documents, tutoring, quizzes, flashcards, and review history into one application. FastAPI serves both the API and browser interface; Ollama runs text generation locally. Saved materials remain accessible when generation is unavailable.
 
-Wait for `Application startup complete`, then open <http://127.0.0.1:8001>.
-Leave the terminal open; press Ctrl+C to stop the server. The launcher uses
-the project's `.venv` automatically, so activation is unnecessary.
-Port 8001 avoids the other service currently occupying port 8000.
-Use `--port 8000` if that port is free. Add `--reload` for development.
+**Status:** `2.0.0rc1`, a local application under active development. The supported workflow is **Library -> Study -> Practice -> Review**. Emotion recognition and a learned evidence classifier are experimental; neither has a validated accuracy claim. This repository is private; access is required to view its code and CI results.
 
-## First-time setup or missing dependencies
+## What it does
 
-Install Python 3.12, uv, and Ollama, then run from the project root:
+| Capability        | Implementation                                                                                                    |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Document library  | Owner-scoped PDF, DOCX, and TXT uploads; optional English OCR for scanned PDFs and PNG/JPEG images                |
+| Document tutoring | Selected-source keyword/vector retrieval, streaming responses, citations, cancellation, and saved-turn recovery   |
+| Practice          | Validated quiz/card generation, durable background jobs, and explicit source-based recovery when generation fails |
+| Scheduled review  | Persisted flashcards, review receipts, study plans, session history, and progress views                           |
+| Local accounts    | JWT authentication, hashed single-use recovery keys, account cleanup, and ownership checks                        |
+| Recovery          | SQLite migrations, interrupted-document recovery, restart persistence, and verified local backup tooling          |
 
-```powershell
+## Quick start
+
+Install **Python 3.12**, **uv**, and **Ollama**. Node.js 22 is used for frontend checks, not for serving the application.
+
+```sh
+git clone https://github.com/karansingh1939/Sentio-An-Emotion-Aware-Tutor.git
+cd Sentio-An-Emotion-Aware-Tutor
 uv sync --locked
 ```
 
-If `.env` does not exist, copy `.env.example` to `.env`. For local AI tutoring,
-set `LLM_BACKEND=ollama` and `OLLAMA_MODEL=phi3:mini` in `.env`.
-Start the Ollama app (or `ollama serve` in another terminal if it is not
-already running), then install the configured model if missing:
+Copy `.env.example` to `.env` (`Copy-Item .env.example .env` in PowerShell, or `cp .env.example .env` on Linux/macOS). The example selects `ollama` and `phi3:mini`.
 
-```powershell
+Start Ollama, then run:
+
+```sh
 ollama pull phi3:mini
 uv run sentio --port 8001
 ```
 
-Ollama and `phi3:mini` are already available on this machine. Initial server
-startup can take about a minute while the machine-learning libraries load.
+Open **http://127.0.0.1:8001**, register a local account, and upload readable notes in Library. Initial startup may take time while model libraries load or embedding assets are provisioned. Keyword search remains available when embeddings are unavailable.
 
-## Local recovery and readiness
-
-`GET /api/v1/ready` reports storage, the exact configured Ollama model, retrieval,
-OCR and optional camera separately. Normal startup does not import TensorFlow or
-load camera weights. Saved materials remain usable when AI is unavailable.
-
-Stop Sentio before a full snapshot. Backups contain private files and secrets;
-keep them local. Restore only into an empty directory, then set `SENTIO_HOME` to
-that directory to run the restored installation.
-
-```powershell
-uv run python scripts/backup_local.py create "C:\ai project" "C:\ai project\backups\my-snapshot"
-uv run python scripts/backup_local.py verify "C:\ai project\backups\my-snapshot"
-uv run python scripts/backup_local.py restore "C:\ai project\backups\my-snapshot" "C:\ai project\backups\restored-home"
-```
-
-The active overhaul and measured checkpoints are recorded in [tasks/plan.md](tasks/plan.md)
-and [tasks/continuation.md](tasks/continuation.md).
-
-The study workspace groups tools into Today, Library, Study, Review and Progress.
-Use the sidebar to switch light/dark themes; the preference survives reload.
-Core pages use bundled assets and system fonts. Experimental camera and voice controls
-are excluded from the supported study interface. TensorFlow is an optional camera
-dependency, outside normal installation. See [the learner guide](docs/STUDY_GUIDE.md)
-and [remaining release work](docs/RELEASE_HANDOFF.md).
-
-## Checks
-
-```powershell
-uv run python scripts/check_environment.py
-uv run playwright install chromium
-uv run python scripts/run_tests.py -q
-npm ci
-npm test
-uv run ruff check src scripts tests
-uv run ruff format --check src scripts tests
-npm run format:check
-uv build
-```
-
-Tests use temporary databases and deterministic provider fixtures. The browser
-suite runs real Chromium against the API and checks registration, uploads,
-document grounding, source switching, session restoration, History, and Analytics.
-It does not require paid API credentials or modify learner documents.
-
-If plain `python -m sentio` reports `No module named sentio`, use the launcher
-above, `uv run sentio`, or `.\.venv\Scripts\python.exe -m sentio`.
-
-## Docker
-
-Install Docker with Compose first. Set a random secret, start Ollama, and pull
-the model before starting the tutor:
-
-```powershell
-$env:API_SECRET = python -c "import secrets; print(secrets.token_hex(32))"
-docker compose up -d ollama
-docker compose exec ollama ollama pull phi3:mini
-docker compose up --build -d sentio-api
-```
-
-Open <http://127.0.0.1:8000>. Keep the same secret across restarts if existing
-logins should remain valid. Data and emotion model weights use the host `data/`
-and `models/` directories. Docker and CI use `uv.lock`, with no separate
-requirements file. The Docker build has not been run on this Windows machine
-because Docker is not installed.
-
-## Current capabilities and limits
-
-PDF, DOCX, and TXT uploads are available to their authenticated owner. Files
-are limited to 20 MiB. Text remains searchable by keywords when embeddings are
-unavailable. Optional English OCR supports scanned or mixed PDFs and PNG/JPEG
-images, with page citations and text/OCR/mixed extraction provenance. OCR processes
-at most 20 scanned pages per document and rejects encrypted or unreadable files.
-Native PDF text is preserved. The OCR engine must be installed locally.
-
-The AI provider must be running for generation and semantic answer grading.
-Objective quiz answers still produce deterministic grades when the summary
-provider is unavailable. Identical quiz submissions return their saved result;
-changed answers are a new attempt. History shows the latest 50 sessions.
-
-Camera features are optional and require browser permission. Model weights
-loading successfully does not establish emotion recognition accuracy. A real
-webcam and a representative labelled dataset are needed to validate that feature.
-
-See [the repair and improvement report](docs/FIX_REPORT_2026-10-11.md) for
-validation evidence and the next priorities.
+- API documentation: http://127.0.0.1:8001/docs
+- Capability diagnostics: http://127.0.0.1:8001/api/v1/ready
+- Detailed setup, Docker, OCR, backups, and troubleshooting: [Setup guide](docs/SETUP.md)
+- Step-by-step study workflow: [Learner guide](docs/STUDY_GUIDE.md)
 
 ## Architecture
 
-Browser SPA ? authenticated FastAPI routes ? tutor/study services ? SQLite and
-Qdrant. Ollama supplies local text generation; the optional camera pathway uses
-the emotion detector. Document extraction feeds both keyword and vector retrieval.
+```mermaid
+flowchart LR
+    Browser[Browser study workspace] --> API[Authenticated FastAPI API]
+    API --> Services[Study, practice and job services]
+    Services --> SQLite[(SQLite: authoritative state)]
+    Services --> Retrieval[Owned document retrieval]
+    Retrieval --> Qdrant[(Qdrant: derived vector index)]
+    Retrieval --> Ollama[Local Ollama generation]
+    Ollama --> Validation[Output and citation validation]
+    Validation --> Services
+```
 
-The `src/sentio` package contains API, AI, retrieval, ingestion, study services,
-and static web assets. `tests/` contains unit, integration, and browser checks.
-`scripts/` contains development, evaluation, and benchmark entry points.
+One API process owns persistent storage. Durable request receipts and final transactions protect saved practice and reviews from duplicate submissions and stale context. Qdrant is a derived index; SQLite records active document revisions and saved learning state. [Architecture and request sequences](docs/ARCHITECTURE.md) explain these boundaries and tradeoffs.
 
-## Provenance and portfolio development
+```text
+src/sentio/        API, retrieval, ingestion, study services, and bundled web UI
+tests/             Unit, integration, browser, and JavaScript regression checks
+scripts/           Development, evaluation, backup, and benchmark commands
+datasets/          Versioned synthetic evidence corpus and manifests
+reports/           Recorded measurements, failures, and experiment decisions
+docs/              Setup, architecture, learner guides, and experiment methodology
+```
 
-This project builds on [AayushiNagar2411/Sentio-An-Emotion-Aware-Tutor](https://github.com/AayushiNagar2411/Sentio-An-Emotion-Aware-Tutor).
-The MIT license and original-project credit are retained. The full original Git
-history is preserved locally on `preserved-original-history-2026-10-11`. The
-private GitHub repository uses a separately published clean history because the
-older history references unavailable model/training-data LFS objects. The clean
-baseline is a snapshot, not a claim that the upstream code was newly authored. Karan Singh's
-current development adds the package/lockfile migration, reliable authenticated
-study flows, privacy cleanup, regression coverage, and working History/Analytics.
-AI-assisted implementation is checked with tests and local runtime verification.
+## Measured AI results
 
-Completed milestones include reproducible retrieval/grading evaluations, local
-CPU latency experiments, and optional OCR. Reports record the actual hardware,
-dataset, model, failures and limits. The speed experiments did not justify changing
-production generation settings, and successful model loading is not an accuracy
-claim. Commits use their real dates. See [development record](docs/DEVELOPMENT_LOG.md).
+The project retains failed experiments and separates deterministic software tests from model-quality measurements.
 
-## Reproducible AI evaluations
+| Experiment                          | Recorded result                                                                    | What it establishes                                                                                 |
+| ----------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Retrieval on 12 synthetic documents | Keyword and hybrid each found the relevant passage in 17/18 positive cases         | Hybrid showed no gain on this small corpus; retrieved candidates do not establish supported answers |
+| Repeated semantic grading           | Baseline and candidate each passed 20/25 semantic rubrics per repeat               | The candidate traded false positives for false negatives; no prompt change was adopted              |
+| Local generation comparison         | 72 requests across two models and two prompt policies                              | Both models answered an unsupported question; faster output did not establish better grounding      |
+| Evidence classifier pipeline        | Frozen 30-document, 120-question corpus; review, calibration, and ablation tooling | Labels remain unreviewed and classifier training results are pending                                |
 
-The versioned, author-written corpus contains 22 retrieval cases (including
-paraphrases, irrelevant questions and adversarial instructions) and 14 grading
-rubrics. Evaluations create a temporary database, register and authenticate a
-learner, index only the selected fixture documents, and clean up afterward.
-They do not scan learner uploads or score simulated answers.
+See [retrieval evaluation](reports/AI_EVALUATION_2026-10-11.md), [grading follow-up](reports/GRADING_FOLLOWUP_2026-10-11.md), [generation experiment](docs/LOCAL_GENERATION_EXPERIMENT.md), and [evidence experiment](docs/EVIDENCE_EXPERIMENT.md) for datasets, hardware, commands, raw outputs, and limitations.
 
-```powershell
+```sh
 uv run python scripts/evaluate_retrieval.py --grade --output reports/evaluation.json
-uv run python scripts/benchmark_ollama_cpu.py --repetitions 3 --cases 3 --output reports/latency.json
+uv run python scripts/evaluate_grading.py --repeats 3 --output reports/grading-comparison.json
 ```
 
-The embedding model must already be cached for the retrieval benchmark; the
-semantic grading and CPU latency experiments require local Ollama. See
-[measured evaluation results](reports/AI_EVALUATION_2026-10-11.md) and
-[CPU experiment results](reports/CPU_LATENCY_2026-10-11.md). These are small
-synthetic experiments, not guarantees of answer quality or emotion accuracy.
+These commands require the documented locally available models. Synthetic, author-labelled experiments do not establish real-world accuracy or improved student learning.
 
-## Optional local OCR
+## Development and checks
 
-```powershell
-uv sync --extra ocr
+```sh
+uv sync --locked
+uv run playwright install chromium
+npm ci
+uv run ruff check src scripts tests
+uv run ruff format --check src scripts tests
+npm run format:check
+npm test
+uv run python scripts/run_tests.py -q
+uv build
 ```
 
-Install Tesseract with English (`eng`) language data using your OS package
-manager. On Windows, the standard `C:\Program Files\Tesseract-OCR` location is
-detected; alternatively set `TESSERACT_CMD` to the executable's absolute path.
-On Ubuntu: `sudo apt-get install tesseract-ocr tesseract-ocr-eng`.
-Use `uv run --extra ocr sentio --port 8001` to retain the optional dependency.
-The Document Library shows whether OCR is available and how each document was
-extracted. Image OCR is capped at 16 million pixels; PDF rendering is capped at
-that size and starts at 150 DPI. Rotated images are tried in four orientations.
-The native text heuristic treats pages with fewer than 10 non-whitespace
-characters as OCR candidates; complex layouts may require a cleaner scan.
+Tests isolate databases and use deterministic provider fixtures. Chromium checks exercise real browser/API interactions. GitHub Actions runs Python and JavaScript checks, browser tests, package builds, and live synthetic OCR evaluation; a separate job checks the Docker build. See [contribution guidance](CONTRIBUTING.md) before changing behavior.
 
-Run all OCR regressions with `uv run --extra ocr python scripts/run_tests.py -q`.
-CI installs Tesseract and the OCR extra, including a live generated-image test.
-The local Tesseract installation was canceled, so its live test is currently
-skipped on this machine; fixture tests validate PDFium rendering, orientation
-selection, limits, provenance and actionable errors.
-Docker OCR is optional: `docker build --build-arg ENABLE_OCR=1 -t sentio-ocr .`.
-Docker has not been verified on this machine. See the
-[dependency decision](docs/OCR_DEPENDENCY_DECISION.md) for resource and license details.
+## Scope and current limitations
 
-## Publishing history
+- Intended for a local installation with one server process. Public hosting requires a separate security and storage review.
+- Citations validate source references; they do not prove that an answer is semantically supported. Grading can accept wrong answers or reject valid paraphrases.
+- Source-excerpt and source-recall fallbacks keep the workflow usable, but are distinct from generated teaching explanations and semantic quizzes.
+- OCR requires Tesseract and the optional extra. Uploads are capped at 20 MiB; OCR processes at most 20 scanned pages per document.
+- Camera/voice controls are excluded from the supported study interface. Emotion accuracy, independently reviewed evidence labels, and student learning outcomes remain unverified.
+- Docker execution is pending verification; follow the workflow result rather than treating configuration files as deployment evidence.
 
-On 2026-10-11, the owner authorized publishing a separate clean history after
-GitHub rejected the preserved history's 24 unavailable LFS objects (about 1.6 GB).
-The baseline and completed milestones were published with real timestamps and
-retained attribution. Model weights, training data, learner uploads, databases,
-logs and generated scratch documents are excluded. Versioned synthetic evaluation
-fixtures and explicitly reviewed measurement reports are included as evidence.
-The source checkout retains the original history and its previous/upstream remotes.
+The [release handoff](docs/RELEASE_HANDOFF.md) records remaining acceptance gates. The [portfolio report](docs/PORTFOLIO_REPORT_DRAFT.md) distinguishes completed work from proposed research.
 
-## Follow-up evaluations
+## Development and attribution
 
-The current overhaul adds durable practice jobs, cancellable tutor streaming and
-saved-turn recovery. See [study runtime and interfaces](docs/STUDY_RUNTIME.md) and
-the [continuation ledger](tasks/continuation.md) for verified work and remaining gates.
+Maintained by **[Karan Singh](https://github.com/karansingh1939)**. Current development includes the packaged/locked runtime, study UI, authenticated document flows, durable jobs, cancellable streaming, transactional review persistence, recovery, and reproducible evaluation tooling. The [development record](docs/DEVELOPMENT_LOG.md) documents milestones and evidence.
 
-Repeated grading comparisons and labelled synthetic OCR measurements are
-documented in [docs/FOLLOWUP_EVALUATIONS.md](docs/FOLLOWUP_EVALUATIONS.md).
-These experiments keep exact-answer checks separate from semantic inference and
-record real OCR errors without claiming accuracy on real learner documents.
+Sentio builds on [AayushiNagar2411/Sentio-An-Emotion-Aware-Tutor](https://github.com/AayushiNagar2411/Sentio-An-Emotion-Aware-Tutor). Original attribution and the MIT license are retained. The published baseline is a snapshot of that foundation; it is not a claim of new authorship of inherited code. Original history is preserved locally because historical LFS model/data objects were unavailable for publication. AI assistance was used for implementation and corpus drafting; the reports distinguish upstream models from repository contributions.
+
+Licensed under [MIT](LICENSE). Learner uploads, credentials, local databases, model weights, and training data are excluded from the repository.
