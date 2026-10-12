@@ -12,6 +12,7 @@ let sessionStart = null;
 let exchangeCount = 0;
 let generationInProgress = false;
 let generationRequest = null;
+let sessionStartingFor = null;
 
 function getActiveSessionId() {
   if (window.store) return window.store.getState('activeSessionId');
@@ -97,39 +98,39 @@ if (document.readyState === 'loading') {
 window.initBars = initBars;
 
 // ── SESSION MANAGEMENT ───────────────────────
-async function startSession() {
-  const studentId = document.getElementById('f-student').value.trim() || 'stu_001';
-  const subject = document.getElementById('f-subject').value;
-  const topic = document.getElementById('f-topic').value.trim();
+async function startSession(options = {}) {
+  const studentId = window.store?.getState('currentUser')?.id;
+  const route = window.store?.getState('activeRoute');
+  const previousSession = getActiveSessionId();
+  if (!studentId || sessionStartingFor === studentId) return null;
+  const current = () =>
+    window.store?.getState('currentUser')?.id === studentId &&
+    window.store?.getState('activeRoute') === route &&
+    getActiveSessionId() === previousSession;
+  const subject = options.subject || document.getElementById('f-subject').value;
+  const topic = (options.topic ?? document.getElementById('f-topic').value).trim();
   if (!topic) {
     toast('Choose a topic to study.', true);
     return;
   }
-  const difficulty = document.getElementById('f-difficulty').value;
-  const grounding = document.getElementById('f-grounding')
-    ? document.getElementById('f-grounding').value
-    : 'none';
+  const difficulty = options.difficulty || document.getElementById('f-difficulty').value;
+  const grounding =
+    options.documentId ??
+    (document.getElementById('f-grounding')
+      ? document.getElementById('f-grounding').value
+      : 'none');
 
+  sessionStartingFor = studentId;
   document.getElementById('start-btn').disabled = true;
   try {
-    const res = await fetch(`${API}/sessions`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({
-        student_id: studentId,
-        subject,
-        topic,
-        difficulty,
-        metadata: { document_id: grounding },
-      }),
+    const data = await window.sentioAPI.post('/sessions', {
+      student_id: studentId,
+      subject,
+      topic,
+      difficulty,
+      metadata: { document_id: grounding },
     });
-    if (!res.ok) {
-      const err = await res.json();
-      toast('Error: ' + (err.detail || 'Failed to create session'), true);
-      document.getElementById('start-btn').disabled = false;
-      return;
-    }
-    const data = await res.json();
+    if (!current()) return null;
     window.setLegacySessionId(data.session_id);
     if (window.store)
       window.store.setState('activeSession', { ...data, metadata: { document_id: grounding } });
@@ -213,8 +214,12 @@ async function startSession() {
     }
 
     toast('Session started! Ask your first question.');
+    return data;
   } catch (e) {
-    toast('Cannot connect to API. Is the server running on port 8000?', true);
+    if (current()) toast('Could not start studying: ' + e.message, true);
+    return null;
+  } finally {
+    if (sessionStartingFor === studentId) sessionStartingFor = null;
     const startBtn = document.getElementById('start-btn');
     if (startBtn) startBtn.disabled = false;
   }
@@ -223,19 +228,22 @@ async function startSession() {
 async function endSession() {
   const currentSessionId = getActiveSessionId();
   if (!currentSessionId) return;
+  const owner = window.store?.getState('currentUser')?.id;
   try {
-    const res = await fetch(`${API}/sessions/${currentSessionId}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    });
-    const data = await res.json();
-    addLog(
-      'Session ended. Engagement: ' + Math.round((data.engagement_score || 0) * 100) + '%',
-      'var(--green)',
-    );
-    toast('Session closed. Great work! 🎉');
-  } catch (e) {}
-  cleanupSession();
+    await window.sentioAPI.delete(`/sessions/${currentSessionId}`);
+    if (
+      owner !== window.store?.getState('currentUser')?.id ||
+      currentSessionId !== getActiveSessionId()
+    )
+      return false;
+    cleanupSession();
+    toast('Study session saved. Your notes and practice remain available.');
+    return true;
+  } catch (error) {
+    if (owner === window.store?.getState('currentUser')?.id)
+      toast('Could not finish the session: ' + error.message + '. Try again.', true);
+    return false;
+  }
 }
 
 function cleanupSession() {

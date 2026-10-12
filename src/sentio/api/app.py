@@ -40,7 +40,7 @@ from sentio.api.routes import (
 from sentio.config import api_cfg
 from sentio.shared.exceptions import LLMServiceUnavailableError
 from sentio.shared.utils import RateLimiter as RateLimiter
-from sentio.shared.utils import print_health_report, setup_logging, system_health_check
+from sentio.shared.utils import setup_logging
 
 setup_logging(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def application_lifespan(app):
     """Load all subsystems on startup; graceful shutdown on exit."""
-    logger.info("Starting Emotion-Aware AI Tutor API...")
+    logger.info("Starting Sentio study workspace...")
     from sentio.config import validate_security_config
 
     validate_security_config()
@@ -76,9 +76,7 @@ async def application_lifespan(app):
         session_cfg.SESSION_LOG_PATH,
         session_cfg.EMOTION_LOG_PATH,
     ).recover()
-    report = system_health_check()
-    print_health_report(report)
-    logger.info("API ready on %s:%d", api_cfg.HOST, api_cfg.PORT)
+    logger.info("Study workspace ready. Capability diagnostics: %s/ready", api_cfg.API_PREFIX)
     try:
         yield
     finally:

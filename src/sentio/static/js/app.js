@@ -1,5 +1,6 @@
 // Main Application Entry Point for Sentio (ES Module)
 import { store } from './core/store.js';
+import { sentioAPI } from './core/api.js';
 import { router } from './core/router.js';
 import { toast } from './components/ui.js';
 import { DashboardView } from './views/dashboard.js';
@@ -32,6 +33,7 @@ function initApp() {
   initWorkspace();
   console.log('Initializing Sentio Web HUD App Shell...');
   window.store = store;
+  window.sentioAPI = sentioAPI;
   window.tutorView = viewControllers['tutor'];
 
   // Initialize auth overlay check

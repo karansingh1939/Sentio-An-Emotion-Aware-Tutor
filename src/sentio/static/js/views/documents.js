@@ -13,9 +13,15 @@ export class DocumentsView {
     this.ocrReady = false;
     this.revision = 0;
     this.uploadInProgress = false;
+    this.justUploadedId = null;
   }
 
   async init() {
+    store.subscribe('currentUser', () => {
+      this.justUploadedId = null;
+      this.documents = [];
+      this.revision++;
+    });
     // Listen to route changes to load documents when opened
     store.subscribe('activeRoute', (route) => {
       if (route === '#/documents') {
@@ -73,17 +79,18 @@ export class DocumentsView {
       <div class="view-header" style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
         <div>
           <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">Document Library</h2>
-          <p style="color:var(--text-dim);font-size:14px;">Upload textbooks, lecture slides, and notes for context-grounded AI tutoring.</p>
+          <p style="color:var(--text-dim);font-size:14px;">Upload your notes, then choose Study to ask questions about them.</p>
         </div>
         <button ${store.getState('currentUser')?.role === 'admin' ? '' : 'hidden'} id="sync-library-btn" style="background:none;color:var(--accent);border:1px solid var(--accent);padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;transition:background 0.2s;">
           🔄 Sync Disk Folder
         </button>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;width:100%;">
+      ${this.justUploadedId ? `<div class="notice library-ready" role="status">Your notes are ready. <button class="workspace-action primary study-doc-btn" data-id="${escapeHtml(this.justUploadedId)}">Study these notes</button></div>` : ''}
+      <div class="library-layout" style="display:grid;grid-template-columns:1fr 340px;gap:20px;width:100%;">
         <!-- Left: Search and List -->
         <div style="display:flex;flex-direction:column;gap:16px;">
-          <sentio-card title="Registered Study Materials">
+          <sentio-card title="Your notes">
             <div style="display:flex;gap:10px;margin-bottom:16px;">
               <input type="text" id="doc-search-input" value="${escapeHtml(this.filterQuery)}" placeholder="Search files by name or category..." style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;" />
             </div>
@@ -91,17 +98,16 @@ export class DocumentsView {
             ${
               filteredDocs.length === 0
                 ? `
-              <sentio-empty-state message="No documents match your query or library is empty." icon="📂"></sentio-empty-state>
+              <sentio-empty-state message="Your library is empty. Add a PDF, Word document or text file to begin." icon="📂"></sentio-empty-state>
             `
                 : `
               <div style="overflow-x:auto;">
                 <p id="doc-search-status" role="status"></p>
-                <table style="width:100%;border-collapse:collapse;font-size:14px;text-align:left;">
+                <table class="library-table" style="width:100%;border-collapse:collapse;font-size:14px;text-align:left;">
                   <thead>
                     <tr style="border-bottom:1px solid var(--border);color:var(--text-dim);">
                       <th style="padding:10px;">Filename</th>
                       <th style="padding:10px;">Category</th>
-                      <th style="padding:10px;">Extraction</th><th style="padding:10px;">Chunks</th>
                       <th style="padding:10px;">Status</th>
                       <th style="padding:10px;text-align:right;">Actions</th>
                     </tr>
@@ -123,13 +129,13 @@ export class DocumentsView {
                             ${escapeHtml(d.filename)}
                           </td>
                           <td style="padding:10px;text-transform:capitalize;color:var(--text-dim);">${escapeHtml(d.category)}</td>
-                          <td style="padding:10px;">${escapeHtml(d.extraction_method || 'text')}</td><td style="padding:10px;font-family:var(--mono);">${d.chunk_count || 0}</td>
                           <td style="padding:10px;">
                             <span style="color:${statusColor};font-weight:bold;font-size:14px;">
-                              ${statusIcon} ${escapeHtml(d.status ? d.status.toUpperCase() : 'PENDING')}
+                              ${statusIcon} ${escapeHtml(d.status === 'indexed' ? 'Ready to study' : d.status === 'failed' ? 'Needs retry' : 'Processing')}
                             </span>
                           </td>
                           <td style="padding:10px;text-align:right;">
+                            <button class="workspace-action primary study-doc-btn" data-id="${escapeHtml(d.id)}" ${d.status === 'indexed' ? '' : 'disabled'}>Study</button>
                             <button class="preview-doc-btn" data-id="${escapeHtml(d.id)}">Preview</button>
                             <button class="delete-doc-btn" data-id="${escapeHtml(d.id)}" style="background:none;border:none;color:var(--red);cursor:pointer;font-family:var(--mono);font-size:14px;">Delete</button>
                           </td>
@@ -147,16 +153,16 @@ export class DocumentsView {
 
         <!-- Right: Upload Panel -->
         <div style="display:flex;flex-direction:column;gap:20px;">
-          <sentio-card title="📤 Add Study Material">
+          <sentio-card title="1. Add your notes">
             <div id="drop-zone" role="button" tabindex="0" aria-label="Choose a study material file" style="border:2px dashed var(--border);border-radius:var(--radius-lg);padding:24px 16px;text-align:center;background:var(--bg3);cursor:pointer;transition:border-color 0.2s, background 0.2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
               <span style="font-size:32px;">📄</span>
               <span style="font-size:14px;font-weight:bold;color:var(--text);">Drag & Drop your file here</span>
-              <span style="font-size:14px;color:var(--text-dim);">or click to browse filesystem</span>
+              <span style="font-size:14px;color:var(--text-dim);">or choose a file</span>
               <input type="file" id="file-uploader" style="display:none;" accept="${this.ocrReady ? '.pdf,.docx,.txt,.png,.jpg,.jpeg' : '.pdf,.docx,.txt'}" />
             </div>
 
             <p style="font-size:14px;color:var(--text-dim);">20 MiB maximum. ${this.ocrReady ? 'English OCR enabled; up to 20 scanned pages.' : 'Scans and images require the optional OCR tools.'}</p><div style="margin-top:16px;">
-              <label for="upload-category" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Subject Category</label>
+              <label for="upload-category" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Organize as</label>
 <select id="upload-category" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;">
                 <option value="uploaded">General Uploads</option>
                 <option value="textbooks">Textbooks</option>
@@ -175,6 +181,13 @@ export class DocumentsView {
   }
 
   bindEvents() {
+    this.container.querySelectorAll('.study-doc-btn').forEach((button) => {
+      button.onclick = () =>
+        window.tutorView?.createNewSessionDialog({
+          documentId: button.dataset.id,
+          document: this.documents.find((item) => item.id === button.dataset.id),
+        });
+    });
     // 1. Search filter binding
     const search = this.container.querySelector('#doc-search-input');
     if (search) {
@@ -399,6 +412,7 @@ export class DocumentsView {
               ? 'Keyword search is available; semantic indexing was unavailable.'
               : 'Ready for study.'),
         );
+        this.justUploadedId = result.document_id;
         this.loadDocuments();
         refreshed = true;
       }

@@ -5,16 +5,22 @@ import vm from 'node:vm';
 import { escapeHtml } from '../src/sentio/static/js/core/html.js';
 
 const fields = Object.fromEntries(
-  ['subject', 'topic', 'difficulty'].map((name) => [`#quiz-${name}`, {}]),
+  ['subject', 'topic', 'difficulty'].map((name) => [`#quiz-${name}`, { parentElement: {} }]),
 );
 fields['#generate-quiz-btn'] = {};
+fields['#quiz-context'] = {};
 const radio = {};
 const container = {
   innerHTML: '',
   querySelector: (selector) => fields[selector] || null,
   querySelectorAll: () => [radio],
 };
-const session = { subject: 'physics', topic: "Newton's First Law", difficulty: 'beginner' };
+const session = {
+  subject: 'physics',
+  topic: "Newton's First Law",
+  difficulty: 'beginner',
+  status: 'active',
+};
 let submission;
 const context = vm.createContext({ document: { getElementById: () => container } });
 const api = {
@@ -58,8 +64,10 @@ await module.link(
 await module.evaluate();
 const view = new module.namespace.QuizzesView('quiz-container');
 await view.renderSetupForm();
-for (const [key, value] of Object.entries(session))
-  assert.equal(fields[`#quiz-${key}`].value, value);
+for (const key of ['subject', 'topic', 'difficulty']) {
+  assert.equal(fields[`#quiz-${key}`].value, session[key]);
+  assert.equal(fields[`#quiz-${key}`].parentElement.hidden, true);
+}
 assert.equal(fields['#generate-quiz-btn'].disabled, false);
 fields['#quiz-num-questions'] = { value: '3' };
 view.render = () => {};

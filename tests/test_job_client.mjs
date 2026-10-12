@@ -66,6 +66,14 @@ await module.link(
 );
 await module.evaluate();
 const run = module.namespace.runPracticeJob;
+assert.match(
+  module.namespace.progressText('preparing semantic index', '/documents/jobs'),
+  /notes searchable/,
+);
+assert.match(
+  module.namespace.progressText('extracting document text', '/documents/jobs'),
+  /Reading the text/,
+);
 assert.equal((await run('/quizzes/jobs', {}, container)).quiz_id, 'saved');
 assert.equal(saved.size, 0);
 saved.set('sentio_job:owner:session:/quizzes/jobs', 'existing');

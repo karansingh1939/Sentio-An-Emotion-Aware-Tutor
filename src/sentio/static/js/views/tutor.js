@@ -191,8 +191,14 @@ export class TutorView {
 
       // Update global states inside legacy context
       // Load session details to verify status
-      const res = await sentioAPI.get(`/sessions/${sessionId}`);
+      let res = await sentioAPI.get(`/sessions/${sessionId}`);
       if (!current()) return;
+      if (res.status !== 'active') {
+        await sentioAPI.post(`/sessions/${sessionId}/resume`, {});
+        if (!current()) return;
+        res = await sentioAPI.get(`/sessions/${sessionId}`);
+        if (!current()) return;
+      }
       store.setState('activeSession', res);
       window.setLegacySessionId(sessionId);
 
@@ -313,10 +319,10 @@ export class TutorView {
     // Repopulate Left Panel select
     const leftSelect = document.getElementById('f-grounding');
     if (leftSelect) {
-      const currentVal = leftSelect.value;
+      const currentVal = store.getState('activeSession')?.metadata?.document_id || leftSelect.value;
       leftSelect.innerHTML = `
-        <option value="none">General Tutor (No grounding)</option>
-        <option value="all">All My Documents</option>
+        <option value="none">General questions (without notes)</option>
+        <option value="all">Search all my notes</option>
         ${docs.map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.filename)}</option>`).join('')}
       `;
       if ([...leftSelect.options].some((o) => o.value === currentVal)) {
@@ -327,15 +333,23 @@ export class TutorView {
     return docs;
   }
 
-  async createNewSessionDialog() {
+  async createNewSessionDialog(options = {}) {
     const owner = store.getState('currentUser')?.id;
-    const docs = await this.loadGroundingDocuments();
-    if (owner !== store.getState('currentUser')?.id || store.getState('activeRoute') !== '#/tutor')
+    const route = store.getState('activeRoute');
+    let docs;
+    try {
+      docs = (await sentioAPI.get('/documents')).documents || [];
+    } catch (error) {
+      toast('Notes could not load: ' + error.message, true);
+      return;
+    }
+    if (owner !== store.getState('currentUser')?.id || store.getState('activeRoute') !== route)
       return;
     const modal = document.createElement('sentio-modal');
-    modal.setAttribute('title', 'Start New Session');
+    modal.setAttribute('title', options.documentId ? 'Study these notes' : 'Start studying');
     modal.innerHTML = `
       <div style="display:flex;flex-direction:column;gap:12px;">
+        <p>${options.documentId ? `Using ${escapeHtml(options.document?.filename || 'your selected notes')}.` : 'Choose what you want to understand.'}</p>
         <div>
           <label for="new-sess-subject" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;">Subject</label>
 <select id="new-sess-subject" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;">
@@ -344,6 +358,8 @@ export class TutorView {
             <option value="computer_science">Computer Science</option>
             <option value="chemistry">Chemistry</option>
             <option value="biology">Biology</option>
+            <option value="history">History</option>
+            <option value="literature">Literature</option>
           </select>
         </div>
         <div>
@@ -353,49 +369,76 @@ export class TutorView {
         <div>
           <label for="new-sess-difficulty" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;">Difficulty</label>
 <select id="new-sess-difficulty" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;">
-            <option value="beginner">Beginner</option>
-            <option value="intermediate" selected>Intermediate</option>
+            <option value="beginner" selected>Beginner</option>
+            <option value="intermediate">Intermediate</option>
             <option value="advanced">Advanced</option>
           </select>
         </div>
         <div>
           <label for="new-sess-grounding" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;">Grounding Source</label>
 <select id="new-sess-grounding" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;">
-            <option value="none">General Tutor (No grounding)</option>
-            <option value="all">All My Documents</option>
+            <option value="none">General questions (without notes)</option>
+            <option value="all">Search all my notes</option>
             ${docs.map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.filename)}</option>`).join('')}
           </select>
         </div>
-        <button id="new-sess-submit-btn" style="margin-top:10px;background:var(--accent);color:var(--bg);border:none;padding:10px;border-radius:var(--radius);font-family:var(--mono);font-weight:bold;cursor:pointer;">Start Learning</button>
+        <p id="new-sess-error" role="alert"></p>
+        <button id="new-sess-submit-btn" style="margin-top:10px;background:var(--accent);color:var(--bg);border:none;padding:10px;border-radius:var(--radius);font-family:var(--mono);font-weight:bold;cursor:pointer;">Start studying</button>
       </div>
     `;
 
     document.body.appendChild(modal);
+    if (options.documentId) {
+      const source = modal.querySelector('#new-sess-grounding');
+      source.value = options.documentId;
+      source.disabled = true;
+      source.parentElement.hidden = true;
+      modal.querySelector('#new-sess-difficulty').parentElement.hidden = true;
+      modal.querySelector('#new-sess-topic').value = (options.document?.filename || '')
+        .replace(/\.[^.]+$/, '')
+        .replace(/[_-]+/g, ' ');
+      if (options.document?.subject)
+        modal.querySelector('#new-sess-subject').value = options.document.subject;
+    }
 
     modal.querySelector('#new-sess-submit-btn').onclick = async () => {
       const subject = modal.querySelector('#new-sess-subject').value;
       const topic = modal.querySelector('#new-sess-topic').value.trim();
       const difficulty = modal.querySelector('#new-sess-difficulty').value;
       const grounding = modal.querySelector('#new-sess-grounding').value;
-      const studentId = store.getState('currentUser')?.id || 'stu_001';
+      if (owner !== store.getState('currentUser')?.id || route !== store.getState('activeRoute'))
+        return;
 
       if (!topic) {
         toast('Topic cannot be empty', true);
         return;
       }
 
-      modal.close();
+      const button = modal.querySelector('#new-sess-submit-btn');
+      if (button.disabled) return;
+      button.disabled = true;
       store.setState('loading', true);
       try {
-        document.getElementById('f-subject').value = subject;
-        document.getElementById('f-topic').value = topic;
-        document.getElementById('f-difficulty').value = difficulty;
-        document.getElementById('f-grounding').value = grounding;
-        await window.startSession();
+        const result = await window.startSession({
+          subject,
+          topic,
+          difficulty,
+          documentId: grounding,
+        });
+        if (owner !== store.getState('currentUser')?.id || route !== store.getState('activeRoute'))
+          return;
+        if (!result) {
+          modal.querySelector('#new-sess-error').textContent =
+            'Could not start studying. Check the message and try again.';
+          return;
+        }
+        modal.close();
+        window.location.hash = '#/tutor';
       } catch (err) {
         toast('Failed to create session: ' + err.message, true);
       } finally {
-        store.setState('loading', false);
+        button.disabled = false;
+        if (owner === store.getState('currentUser')?.id) store.setState('loading', false);
       }
     };
   }
@@ -409,8 +452,9 @@ export class TutorView {
     if (typeof window.startSession === 'function') {
       const originalStartSession = window.startSession;
       window.startSession = async (...args) => {
-        await originalStartSession(...args);
+        const result = await originalStartSession(...args);
         this.loadSessions();
+        return result;
       };
     }
 
@@ -418,9 +462,9 @@ export class TutorView {
     if (typeof window.endSession === 'function') {
       const originalEndSession = window.endSession;
       window.endSession = async (...args) => {
-        await originalEndSession(...args);
-        store.setState('activeSessionId', null);
+        const result = await originalEndSession(...args);
         this.loadSessions();
+        return result;
       };
     }
 
@@ -451,7 +495,6 @@ export class TutorView {
       .map((c, idx) => {
         const filename = c.filename || 'Source Document';
         const page = c.page || 'N/A';
-        const score = typeof c.similarity_score === 'number' ? c.similarity_score.toFixed(2) : '—';
         const textSnippet = c.text || 'Preview snippet unavailable.';
 
         return `
@@ -461,7 +504,7 @@ export class TutorView {
               📄 ${escapeHtml(filename)}
             </span>
             <span style="font-size:14px;color:var(--text-dim);background:var(--border);padding:2px 4px;border-radius:4px;">
-              Ranking: ${score}
+              Page ${escapeHtml(page)}
             </span>
           </div>
           <div style="font-size:14px;color:var(--text-dim);">Page: ${escapeHtml(page)}</div>

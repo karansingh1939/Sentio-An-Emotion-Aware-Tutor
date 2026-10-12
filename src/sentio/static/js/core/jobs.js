@@ -6,6 +6,25 @@ export function pendingJobKey(endpoint, sessionScoped = true) {
   return `sentio_job:${store.getState('currentUser')?.id}:${sessionScoped ? store.getState('activeSessionId') : 'library'}:${endpoint}`;
 }
 
+export function progressText(stage, endpoint) {
+  const upload = endpoint === '/documents/jobs';
+  const labels = {
+    queued: 'Waiting for the current task to finish. You can return to this page later.',
+    starting: upload ? 'Reading your file…' : 'Getting your study notes ready…',
+    'waiting for ingestion': 'Waiting for the current upload to finish…',
+    'extracting document text': 'Reading the text in your document…',
+    'preparing semantic index': 'Making your notes searchable. The first upload can take longer…',
+    'staging document vectors': 'Adding your notes to search…',
+    'saving document': 'Saving your notes safely…',
+    'retrieving sources': 'Finding relevant passages in your notes…',
+    'generating quiz': 'Writing questions from your notes. Local AI may take a few minutes…',
+    'generating flashcards': 'Writing cards from your notes. Local AI may take a few minutes…',
+    'generating answer': 'Writing an explanation…',
+    'waiting for local AI': 'Waiting for the local tutor to finish its current task…',
+  };
+  return labels[stage] || 'Working on your study material…';
+}
+
 export async function runPracticeJob(endpoint, body, container, options = {}) {
   const owner = store.getState('currentUser')?.id;
   const session = store.getState('activeSessionId');
@@ -17,8 +36,7 @@ export async function runPracticeJob(endpoint, body, container, options = {}) {
   const unsubscribe = store.subscribe('activeRoute', (next) => {
     detached ||= next !== route;
   });
-  container.innerHTML =
-    '<div class="study-job"><sentio-loader></sentio-loader><p role="status" aria-live="polite">Preparing practice…</p><button type="button">Stop</button></div>';
+  container.innerHTML = `<div class="study-job"><sentio-loader></sentio-loader><p role="status" aria-live="polite">${endpoint === '/documents/jobs' ? 'Uploading your file…' : 'Starting practice…'}</p><p class="job-help">You can leave this page and return to see progress.</p><button type="button" disabled>Cancel</button></div>`;
   const status = container.querySelector('[role="status"]');
   const stop = container.querySelector('button');
   try {
@@ -44,6 +62,7 @@ export async function runPracticeJob(endpoint, body, container, options = {}) {
         stop.disabled = false;
       }
     };
+    stop.disabled = false;
     while (
       !detached &&
       store.getState('currentUser')?.id === owner &&
@@ -86,7 +105,7 @@ export async function runPracticeJob(endpoint, body, container, options = {}) {
         localStorage.removeItem(submissionKey);
         throw new Error(job.error || 'Practice stopped before saving. You can try again.');
       }
-      status.textContent = job.stage;
+      status.textContent = progressText(job.stage, endpoint);
       await new Promise((resolve) => setTimeout(resolve, 650));
     }
     // Background work survives navigation; reopening this tool reconnects.

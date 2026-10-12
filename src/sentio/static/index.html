@@ -131,8 +131,8 @@
                 <div class="session-card-title">
                   <span class="session-icon">🎓</span>
                   <div>
-                    <h3>Start Tutoring Session</h3>
-                    <p>Choose your subject and topic to begin interactive, adaptive learning.</p>
+                    <h3>What would you like to understand?</h3>
+                    <p>Choose a topic here, or open Library and select Study beside your notes.</p>
                   </div>
                 </div>
               </div>
@@ -156,8 +156,8 @@
                   <input
                     id="f-topic"
                     type="text"
-                    value="Newton's Laws"
-                    placeholder="e.g. Newton's Laws, Derivatives"
+                    value=""
+                    placeholder="Enter the concept you are studying"
                   />
                 </div>
                 <div class="field">
@@ -172,16 +172,16 @@
 
               <div class="session-action-row">
                 <button class="btn btn-primary" id="start-btn" onclick="startSession()">
-                  ▶ Start Session
+                  Start studying
                 </button>
               </div>
             </div>
 
             <div class="field">
-              <label for="f-grounding">Grounding Source</label>
+              <label for="f-grounding">Notes to use</label>
               <select id="f-grounding">
-                <option value="none">General Tutor (No grounding)</option>
-                <option value="all">All My Documents</option>
+                <option value="none">General questions (without notes)</option>
+                <option value="all">Search all my notes</option>
               </select>
             </div>
 
@@ -197,6 +197,8 @@
                 </div>
               </div>
               <div class="active-bar-actions">
+                <a class="workspace-action" href="#/quizzes">Try a quiz</a>
+                <a class="workspace-action" href="#/flashcards">Make flashcards</a>
                 <!-- Optional Camera Toggle Button -->
                 <button
                   id="cam-quick-toggle-btn"
@@ -214,7 +216,7 @@
                   onclick="toggleHudDrawer()"
                   title="View learning state, telemetry, and citations"
                 >
-                  📊 HUD & Context
+                  Notes &amp; sessions
                 </button>
                 <!-- End Session Button -->
                 <button
@@ -232,18 +234,15 @@
             <div id="chat-messages">
               <div id="welcome">
                 <div class="welcome-icon">🎓</div>
-                <div class="welcome-title">Adaptive AI Tutor</div>
+                <div class="welcome-title">Understand your notes</div>
                 <div class="welcome-sub">
-                  Interactive learning copilot. Configure your topic above and click
-                  <strong>Start Session</strong> to begin chatting.
+                  Start studying, then ask about one concept at a time. The tutor can use your
+                  selected notes and show where its explanation came from.
                 </div>
                 <div class="welcome-steps">
-                  <div class="step-chip"><span>1</span> Choose Subject & Topic</div>
-                  <div class="step-chip"><span>2</span> Click Start Session</div>
-                  <div class="step-chip"><span>3</span> Ask questions freely</div>
-                  <div class="step-chip">
-                    <span>4</span> Optional: Turn on camera for emotion adaptation
-                  </div>
+                  <div class="step-chip"><span>1</span> Choose your notes</div>
+                  <div class="step-chip"><span>2</span> Ask about a concept</div>
+                  <div class="step-chip"><span>3</span> Check understanding with practice</div>
                 </div>
               </div>
               <div id="typing-indicator" role="status" aria-live="polite">
@@ -310,7 +309,7 @@
           <div id="tutor-hud-drawer" class="hud-drawer">
             <div class="drawer-header">
               <div class="drawer-title">
-                <span>📊 Real-Time HUD & Context</span>
+                <span>Notes and study sessions</span>
               </div>
               <button class="drawer-close-btn" onclick="toggleHudDrawer()" title="Close HUD panel">
                 &times;
@@ -320,17 +319,11 @@
             <div class="drawer-tabs">
               <button
                 class="drawer-tab active"
-                data-tab="tab-state"
-                onclick="switchDrawerTab('tab-state')"
-              >
-                Telemetry & State
-              </button>
-              <button
-                class="drawer-tab"
                 data-tab="tab-citations"
+                aria-label="Sources used in your answer"
                 onclick="switchDrawerTab('tab-citations')"
               >
-                Citations
+                Sources
               </button>
               <button
                 class="drawer-tab"
@@ -342,7 +335,7 @@
             </div>
 
             <!-- Tab 1: Telemetry & Learning State -->
-            <div id="tab-state" class="drawer-tab-content active">
+            <div id="tab-state" class="drawer-tab-content">
               <!-- Camera / Video Feed Box -->
               <div class="drawer-section">
                 <div
@@ -545,9 +538,9 @@
             </div>
 
             <!-- Tab 2: Citations -->
-            <div id="tab-citations" class="drawer-tab-content">
+            <div id="tab-citations" class="drawer-tab-content active">
               <div class="drawer-section">
-                <div class="panel-label">Document Grounding Citations</div>
+                <div class="panel-label">Passages used in your answer</div>
                 <div
                   id="tutor-citations-container"
                   style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px"

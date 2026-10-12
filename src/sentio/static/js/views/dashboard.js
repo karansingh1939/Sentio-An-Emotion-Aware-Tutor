@@ -33,6 +33,7 @@ export class DashboardView {
       ),
       sentioAPI.get('/study/preferences'),
       sentioAPI.get(`/students/${id}/goals`),
+      sentioAPI.get('/documents'),
     ]);
     if (revision !== this.revision || store.getState('currentUser')?.id !== user.id) return;
     const values = results.map((result) => (result.status === 'fulfilled' ? result.value : null));
@@ -44,6 +45,7 @@ export class DashboardView {
       'Daily plan',
       'Preferences',
       'Goals',
+      'Library',
     ];
     const failed = results.flatMap((result, index) =>
       result.status === 'rejected' ? [labels[index]] : [],
@@ -51,6 +53,7 @@ export class DashboardView {
     this.plan = values[4];
     this.preferences = values[5];
     this.goals = values[6]?.goals;
+    this.noteCount = values[7]?.documents?.filter((item) => item.status === 'indexed').length;
     this.render(values[0], values[1], values[2]?.sessions, values[3], failed);
   }
 
@@ -68,10 +71,14 @@ export class DashboardView {
     this.container.innerHTML = `
       <div class="today-heading view-header">
         <div><h2>Today</h2><p>A little understanding, built one session at a time.</p></div>
-        <a class="workspace-action primary" href="#/tutor">${activeId ? 'Continue studying' : 'Start studying'}</a>
+        <a class="workspace-action primary" href="${activeId ? '#/tutor' : '#/documents'}">${activeId ? 'Continue studying' : this.noteCount ? 'Choose notes to study' : 'Add your first notes'}</a>
       </div>
       ${failed.length ? `<div id="dashboard-errors" class="notice error" role="alert">${escapeHtml(failed.join(', '))} unavailable. Your saved work is unchanged. <button id="retry-dash-btn" class="workspace-action">Retry</button></div>` : ''}
       ${ready && !ready.ai.ready ? `<div class="notice" role="status"><strong>Your local tutor needs attention.</strong><br>${escapeHtml(ready.ai.action)} You can still browse notes and saved practice.</div>` : ''}
+      <section class="study-guide" aria-labelledby="study-guide-title">
+        <h3 id="study-guide-title">Your study path</h3>
+        <ol><li><a href="#/documents">Add notes</a><span>Upload a PDF, Word document or text file. Wait for “Ready to study”.</span></li><li><a href="#/documents">Study a concept</a><span>Choose Study beside your notes, then ask a question. Check the cited passage.</span></li><li><a href="${activeId ? '#/quizzes' : '#/documents'}">Practice and review</a><span>After starting study, make a quiz or cards. Saved practice stays available.</span></li></ol>
+      </section>
       <div class="today-columns">
         <section>
           <sentio-card title="Daily revision">

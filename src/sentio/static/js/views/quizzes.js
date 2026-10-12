@@ -50,12 +50,14 @@ export class QuizzesView {
     const owner = store.getState('currentUser')?.id;
     this.container.innerHTML = `
       <div class="view-header" style="margin-bottom:20px;">
-        <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">Interactive Quizzes</h2>
-        <p style="color:var(--text-dim);font-size:14px;">Generate adaptive assessments using RAG and student memory context.</p>
+        <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">Check your understanding</h2>
+        <p style="color:var(--text-dim);font-size:14px;">Answer questions, read the explanations, then revisit anything you missed.</p>
       </div>
 
       <div style="max-width:550px;width:100%;margin:0 auto;">
-        <sentio-card title="Configure Quiz Generation">
+        <sentio-card title="Make a quiz">
+          <p id="quiz-context" role="status">${store.getState('activeSessionId') ? 'Loading your study topic…' : 'First choose Study beside a document in your Library. Saved quizzes below can be used at any time.'}</p>
+          ${store.getState('activeSessionId') ? '<a href="#/tutor">Change what you are studying</a>' : '<a class="workspace-action" href="#/documents">Choose notes</a>'}
           <div style="display:flex;flex-direction:column;gap:14px;margin-top:10px;">
             <div>
               <label for="quiz-subject" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Subject</label>
@@ -85,15 +87,15 @@ export class QuizzesView {
               <div>
                 <label for="quiz-num-questions" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Number of Questions</label>
 <select id="quiz-num-questions" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;">
+                  <option value="1">1 Question</option>
                   <option value="3" selected>3 Questions</option>
                   <option value="5">5 Questions</option>
-                  <option value="10">10 Questions</option>
                 </select>
               </div>
             </div>
 
             <button id="generate-quiz-btn" style="margin-top:10px;background:var(--accent);color:var(--bg);border:none;padding:12px;border-radius:var(--radius);font-family:var(--mono);font-weight:bold;cursor:pointer;font-size:14px;transition:opacity 0.2s;">
-              ⚡ Generate Dynamic Quiz
+              Make a quiz
             </button>
           </div>
         </sentio-card>
@@ -105,6 +107,10 @@ export class QuizzesView {
     this.loadSavedPractice(revision, owner);
     this.container.querySelector('#generate-quiz-btn').onclick = () => this.generateQuiz();
     const sessionId = store.getState('activeSessionId');
+    this.container.querySelector('#generate-quiz-btn').disabled = !sessionId;
+    for (const field of ['subject', 'topic', 'difficulty']) {
+      this.container.querySelector(`#quiz-${field}`).parentElement.hidden = true;
+    }
     if (sessionId) {
       const button = this.container.querySelector('#generate-quiz-btn');
       button.disabled = true;
@@ -116,7 +122,12 @@ export class QuizzesView {
           if (input) input.value = session[field];
           if (input) input.disabled = true;
         }
-        button.disabled = false;
+        this.container.querySelector('#quiz-context').textContent =
+          `Practising ${session.topic}. Uses the same notes as your study session.`;
+        button.disabled = session.status !== 'active';
+        if (session.status !== 'active')
+          this.container.querySelector('#quiz-context').textContent =
+            'This study session has ended. Choose notes to start a new one, or use saved quizzes below.';
       } catch (e) {
         toast('Failed to load quiz session: ' + e.message, true);
       }

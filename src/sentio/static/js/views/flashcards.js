@@ -145,7 +145,8 @@ export class FlashcardsView {
         <!-- Right: AI Flashcard Generator Form -->
         <div>
           <sentio-card title="⚡ Create practice cards">
-            <p style="font-size:14px;color:var(--text-dim);line-height:1.4;margin-bottom:12px;">Auto-generate Space Repetition cards from RAG summaries of curriculum concepts.</p>
+            <p style="font-size:14px;color:var(--text-dim);line-height:1.4;margin-bottom:12px;">${store.getState('activeSession')?.status === 'active' ? 'Turn your current study topic into question-and-answer cards. Review them again when they are due.' : 'First choose Study beside your notes in Library. Your saved cards remain available.'}</p>
+            ${store.getState('activeSession')?.status === 'active' ? '<a href="#/tutor">Change what you are studying</a>' : '<a class="workspace-action" href="#/documents">Choose notes</a>'}
             
             <div style="display:flex;flex-direction:column;gap:12px;">
               <div>
@@ -164,14 +165,14 @@ export class FlashcardsView {
               <div>
                 <label for="gen-cards-num" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Number of Cards</label>
 <select id="gen-cards-num" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;">
-                  <option value="5" selected>5 Cards</option>
-                  <option value="8">8 Cards</option>
-                  <option value="12">12 Cards</option>
+                  <option value="1">1 Card</option>
+                <option value="3" selected>3 Cards</option>
+                <option value="5">5 Cards</option>
                 </select>
               </div>
 
-              <button id="generate-flashcards-btn" style="background:var(--accent);color:var(--bg);border:none;padding:10px;border-radius:var(--radius);font-family:var(--mono);font-size:14px;font-weight:bold;cursor:pointer;transition:opacity 0.2s;">
-                ⚡ Generate Cards
+              <button id="generate-flashcards-btn" ${store.getState('activeSession')?.status === 'active' ? '' : 'disabled'} style="background:var(--accent);color:var(--bg);border:none;padding:10px;border-radius:var(--radius);font-family:var(--mono);font-size:14px;font-weight:bold;cursor:pointer;transition:opacity 0.2s;">
+                Make cards
               </button>
             </div>
           </sentio-card>
@@ -243,12 +244,15 @@ export class FlashcardsView {
   }
 
   async generateFlashcards() {
-    const deckId = this.container.querySelector('#gen-deck-select').value;
+    let deckId = this.container.querySelector('#gen-deck-select').value;
+    const owner = store.getState('currentUser')?.id;
+    const sessionId = store.getState('activeSessionId');
+    const revision = this.revision;
     const topic = this.container.querySelector('#gen-topic-input').value.trim();
     const numCards = parseInt(this.container.querySelector('#gen-cards-num').value, 10);
 
-    if (!deckId) {
-      toast('Please select or create a deck first', true);
+    if (!sessionId || store.getState('activeSession')?.status !== 'active') {
+      toast('Choose Study beside your notes before making new cards.', true);
       return;
     }
 
@@ -265,6 +269,19 @@ export class FlashcardsView {
     `;
 
     try {
+      if (!deckId) {
+        const created = await sentioAPI.post('/flashcards/decks', {
+          student_id: owner,
+          deck_name: topic,
+        });
+        if (
+          owner !== store.getState('currentUser')?.id ||
+          sessionId !== store.getState('activeSessionId') ||
+          revision !== this.revision
+        )
+          return;
+        deckId = created.deck_id;
+      }
       const result = await runPracticeJob(
         '/flashcards/jobs',
         {
@@ -272,13 +289,13 @@ export class FlashcardsView {
           deck_id: deckId,
           topic_id: topic,
           num_cards: numCards,
-          session_id: store.getState('activeSessionId') || null,
+          session_id: sessionId,
         },
         this.container,
       );
       if (!result) return;
 
-      toast('Flashcards generated and synced successfully!');
+      toast('Your cards are ready to review.');
       this.resetState();
       this.loadDecks();
     } catch (e) {
@@ -339,8 +356,8 @@ export class FlashcardsView {
     this.container.innerHTML = `
       <div class="view-header" style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
         <div>
-          <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">Active Review Session</h2>
-          <p style="color:var(--text-dim);font-size:14px;">Click on the card to flip it, then rank your response quality.</p>
+          <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">Review your cards</h2>
+          <p style="color:var(--text-dim);font-size:14px;">Recall your answer, reveal the card, then choose how easily you remembered it.</p>
         </div>
         <span style="font-family:var(--mono);font-size:14px;background:var(--border);padding:4px 8px;border-radius:4px;color:var(--accent);font-weight:bold;">
           Card ${this.currentCardIdx + 1} of ${total}
@@ -350,19 +367,19 @@ export class FlashcardsView {
       <div style="max-width:550px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:20px;">
         <button class="workspace-action" type="button" id="edit-current-card">Edit this card</button>
         <!-- Flip Card Arena -->
-        <div id="flashcard-flip-trigger" role="button" tabindex="0" aria-label="Flip flashcard" style="perspective:1000px;cursor:pointer;width:100%;">
+        <div id="flashcard-flip-trigger" role="button" tabindex="0" aria-label="Show or hide the answer" aria-expanded="${this.isFlipped}" style="perspective:1000px;cursor:pointer;width:100%;">
           <div class="flashcard-inner ${this.isFlipped ? 'flipped' : ''}">
             <!-- Front -->
-            <div class="flashcard-front" style="border:1px solid var(--border);background:var(--bg2);box-shadow:0 6px 20px rgba(0,0,0,0.2);">
+            <div class="flashcard-front" ${this.isFlipped ? 'hidden' : ''} style="border:1px solid var(--border);background:var(--bg2);box-shadow:0 6px 20px rgba(0,0,0,0.2);">
               <span style="font-size:14px;color:var(--accent);font-family:var(--mono);margin-bottom:12px;font-weight:bold;">QUESTION / TERM</span>
               <p style="font-size:14px;color:var(--text);text-align:center;line-height:1.5;font-weight:500;">
                 ${escapeHtml(card.front_text)}
               </p>
-              <span style="font-size:14px;color:var(--text-dim);margin-top:20px;">[ Click Card to Flip ]</span>
+              <span style="font-size:14px;color:var(--text-dim);margin-top:20px;">Tap or press Enter to show the answer</span>
             </div>
             
             <!-- Back -->
-            <div class="flashcard-back" style="border:1px solid var(--accent);box-shadow:0 6px 25px rgba(0,200,255,0.15);">
+            <div class="flashcard-back" ${this.isFlipped ? '' : 'hidden'} style="border:1px solid var(--accent);box-shadow:0 6px 25px rgba(0,200,255,0.15);">
               <span style="font-size:14px;color:var(--green);font-family:var(--mono);margin-bottom:12px;font-weight:bold;">EXPLANATION / ANSWER</span>
               <p style="font-size:13px;color:var(--text);text-align:center;line-height:1.5;">
                 ${escapeHtml(card.back_text)}
@@ -389,23 +406,17 @@ export class FlashcardsView {
         <div id="rating-controls-panel" style="display:${this.isFlipped ? 'flex' : 'none'};flex-direction:column;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;animation:fadeIn 0.3s;">
           <label style="display:block;font-size:14px;color:var(--text-dim);text-align:center;font-weight:bold;">How well did you recall this concept?</label>
           
-          <div style="display:grid;grid-template-columns:repeat(6, 1fr);gap:8px;">
-            <button class="rate-btn" data-score="0" style="background:#e63946;color:#fff;border:none;padding:8px 0;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;" title="Forgot completely">0</button>
-            <button class="rate-btn" data-score="1" style="background:#f77f00;color:#fff;border:none;padding:8px 0;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;" title="Incorrect, but recognized">1</button>
-            <button class="rate-btn" data-score="2" style="background:#fcbf49;color:#000;border:none;padding:8px 0;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;" title="Incorrect, but easily recalled when shown">2</button>
-            <button class="rate-btn" data-score="3" style="background:#eae2b7;color:#000;border:none;padding:8px 0;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;" title="Correct, but required effort">3</button>
-            <button class="rate-btn" data-score="4" style="background:#8ac926;color:#000;border:none;padding:8px 0;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;" title="Correct after a brief hesitation">4</button>
-            <button class="rate-btn" data-score="5" style="background:#4ecdc4;color:#000;border:none;padding:8px 0;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;" title="Perfect immediate recall">5</button>
+          <div class="review-ratings">
+            <button class="workspace-action rate-btn" data-score="1" title="I could not recall the answer">Again</button>
+            <button class="workspace-action rate-btn" data-score="3" title="I recalled it with difficulty">Hard</button>
+            <button class="workspace-action primary rate-btn" data-score="4" title="I recalled the answer">Good</button>
+            <button class="workspace-action rate-btn" data-score="5" title="I recalled it immediately">Easy</button>
           </div>
-
-          <div style="display:flex;justify-content:space-between;font-size:14px;color:var(--text-dim);margin-top:4px;padding:0 4px;">
-            <span>Blackout</span>
-            <span>Perfect</span>
-          </div>
+          <p class="muted">Again repeats the card sooner. Your rating schedules review; it is not a test score.</p>
         </div>
 
         <button id="tutor-abort-review" style="background:none;border:1px solid var(--border);color:var(--red);padding:6px;border-radius:var(--radius);font-family:var(--mono);font-size:14px;cursor:pointer;margin-top:10px;">
-          Abort Session
+          Back to my cards
         </button>
       </div>
     `;
@@ -426,6 +437,10 @@ export class FlashcardsView {
       };
       trigger.onclick = () => {
         this.isFlipped = !this.isFlipped;
+
+        trigger.setAttribute('aria-expanded', String(this.isFlipped));
+        this.container.querySelector('.flashcard-front').hidden = this.isFlipped;
+        this.container.querySelector('.flashcard-back').hidden = !this.isFlipped;
 
         // Toggle panels
         const panel = this.container.querySelector('#rating-controls-panel');
@@ -453,21 +468,45 @@ export class FlashcardsView {
         const card = this.dueCards[this.currentCardIdx];
         const key = `sentio_review:${owner}:${card.card_id}`;
         let requestId = localStorage.getItem(key);
-        if (!requestId) {
-          requestId = crypto.randomUUID();
-          localStorage.setItem(key, requestId);
-        }
         this.container.querySelectorAll('.rate-btn').forEach((button) => {
           button.disabled = true;
         });
 
         store.setState('loading', true);
         try {
-          await sentioAPI.post(`/flashcards/${card.card_id}/review`, {
-            quality_score: score,
-            request_id: requestId,
-          });
-          localStorage.removeItem(key);
+          let confirmed = false;
+          if (requestId) {
+            try {
+              const receipt = await sentioAPI.get(
+                `/flashcards/${card.card_id}/reviews/${requestId}`,
+              );
+              localStorage.removeItem(key);
+              localStorage.removeItem(key + ':score');
+              confirmed = receipt.result.next_review_at > Date.now() / 1000;
+              requestId = null;
+            } catch (error) {
+              if (error.status !== 404) throw error;
+            }
+          }
+          if (revision !== this.revision || owner !== store.getState('currentUser')?.id) return;
+          if (!confirmed) {
+            const previousScore = localStorage.getItem(key + ':score');
+            if (requestId && previousScore !== null && Number(previousScore) !== score)
+              throw new Error(
+                'The previous rating still needs confirmation. Retry the same rating.',
+              );
+            if (!requestId) {
+              requestId = crypto.randomUUID();
+              localStorage.setItem(key, requestId);
+            }
+            localStorage.setItem(key + ':score', String(score));
+            await sentioAPI.post(`/flashcards/${card.card_id}/review`, {
+              quality_score: score,
+              request_id: requestId,
+            });
+            localStorage.removeItem(key);
+            localStorage.removeItem(key + ':score');
+          }
           if (
             revision !== this.revision ||
             owner !== store.getState('currentUser')?.id ||
@@ -493,10 +532,8 @@ export class FlashcardsView {
     const abort = this.container.querySelector('#tutor-abort-review');
     if (abort) {
       abort.onclick = () => {
-        if (confirm('Stop reviewing this deck? Your submitted ratings will be saved.')) {
-          this.resetState();
-          this.loadDecks();
-        }
+        this.resetState();
+        this.loadDecks();
       };
     }
   }
