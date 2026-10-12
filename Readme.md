@@ -117,7 +117,7 @@ Tests isolate databases and use deterministic provider fixtures. Chromium checks
 - Source-excerpt and source-recall fallbacks keep the workflow usable, but are distinct from generated teaching explanations and semantic quizzes.
 - OCR requires Tesseract and the optional extra. Uploads are capped at 20 MiB; OCR processes at most 20 scanned pages per document.
 - Camera/voice controls are excluded from the supported study interface. Emotion accuracy, independently reviewed evidence labels, and student learning outcomes remain unverified.
-- Docker execution is pending verification; follow the workflow result rather than treating configuration files as deployment evidence.
+- CI verifies Compose configuration, the Docker image build, and the installed CLI. A full Compose tutoring journey with live model generation remains unverified.
 
 The [release handoff](docs/RELEASE_HANDOFF.md) records remaining acceptance gates. The [portfolio report](docs/PORTFOLIO_REPORT_DRAFT.md) distinguishes completed work from proposed research.
 

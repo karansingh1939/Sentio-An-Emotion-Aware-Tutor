@@ -1,5 +1,32 @@
 # Development record
 
+## 2026-10-12 - Publication on karansingh1939 and repository presentation
+
+Published the current study-overhaul history to the verified owner's existing
+private repository, `karansingh1939/Sentio-An-Emotion-Aware-Tutor`. Preserved the
+other account's remote as `other-account-origin`; retained original attribution,
+license, and the locally preserved legacy history. Only the current development
+history was pushed, with no force push or historical LFS artifacts.
+
+Reworked the README around supported capabilities, portable setup, architecture,
+measured evaluations, and contribution boundaries. Added setup, contribution,
+and security guidance, issue forms, and a PR template. Updated repository
+description/topics. Extended CI with package builds, Compose validation, Docker
+image build/CLI verification, concurrency cancellation, and timeouts. Excluded
+scratch reports and backups from the Docker build context.
+
+Local verification passed 240 tests and 31 subtests, with one optional Tesseract
+test skipped, plus JavaScript, lint, formatting, and package builds. The first
+hosted run passed the Docker job but exposed evidence-review file-input overflow
+on Linux. Reproduced overflow locally at 320 pixels, constrained flex children
+and the file control, and expanded the existing browser regression to 320/390
+pixels. Both widths and the evidence dataset checks pass after the fix. The
+follow-up hosted run is the authority for final Linux verification. Docker build
+and CLI checks do not establish a full live Compose tutoring journey.
+
+Historical publication entries below refer to the separate `karansingh-1939`
+account; the requested current destination is `karansingh1939`.
+
 ## 2026-10-11 ? Working baseline
 
 Problem: a partial package migration left build/test setup inconsistent and study

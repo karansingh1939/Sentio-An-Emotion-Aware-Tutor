@@ -9,7 +9,8 @@ from sentio.evaluation.evidence_review import export_review
 
 
 @pytest.mark.browser
-def test_review_page_is_readable_recovers_and_does_not_label_skips(tmp_path):
+@pytest.mark.parametrize("width", [320, 390])
+def test_review_page_is_readable_recovers_and_does_not_label_skips(tmp_path, width):
     corpus = build_corpus()
     pack = collect_features(corpus)
     output = tmp_path / "review.html"
@@ -17,7 +18,7 @@ def test_review_page_is_readable_recovers_and_does_not_label_skips(tmp_path):
     assert "proposed_label" not in output.read_text(encoding="utf-8")
     with sync_playwright() as runtime:
         browser = runtime.chromium.launch()
-        page = browser.new_page(viewport={"width": 390, "height": 844})
+        page = browser.new_page(viewport={"width": width, "height": 844})
         errors = []
         page.on("pageerror", lambda error: errors.append(str(error)))
         page.goto(output.as_uri())
