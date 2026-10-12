@@ -25,7 +25,7 @@ Run one server process per persistent home. The storage lease prevents two proce
 
 ## Docker Compose
 
-Install Docker with Compose. Container execution was not verified locally during the recorded development checkpoints. The repository's Docker CI job checks builds; it does not establish live model quality or a full Compose journey.
+Install Docker with Compose. Docker is unavailable on the development Windows machine; the Docker CI job builds the image and runs a disposable Compose smoke test for authentication, saved work, restart, and provider outage. It deliberately installs no generation model and does not establish live model quality.
 
 In PowerShell, set a random secret for this terminal:
 
@@ -50,7 +50,7 @@ docker compose up --build -d sentio-api
 
 Open http://127.0.0.1:8000. Host `data/` and `models/` directories retain application data; a named volume retains Ollama models. Set `OLLAMA_MODEL` if selecting another model, and pull that exact model before starting the API. Keep the same signing secret across restarts.
 
-Stop using `docker compose down`. Deleting model volumes or host data removes saved content. Compose binds port 8000 on the host; keep the installation on a trusted local network. Consult [security guidance](../SECURITY.md) before exposing it publicly.
+Stop using `docker compose down`. Deleting model volumes or host data removes saved content. Compose binds port 8000 to the host's loopback address. Storage health is separate from model readiness, so saved browsing remains usable without AI. Consult [security guidance](../SECURITY.md) before changing the bind address or exposing it publicly.
 
 ## Optional English OCR
 

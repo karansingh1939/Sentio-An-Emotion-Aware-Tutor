@@ -1,0 +1,207 @@
+{
+  "diagnostic_version": "first-sentence-v2",
+  "scope": "Reanalysis of saved real responses, not new inference. Lexical checks are not semantic accuracy; no human decisions exist.",
+  "runs": {
+    "v3": {
+      "source_report": "reports/generation/study-grounding-2026-10-12-v3.json",
+      "cases": [
+        {
+          "case_id": "s01",
+          "outcome": "source_recovery",
+          "lexical_rubric_pass": false,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s02",
+          "outcome": "source_recovery",
+          "lexical_rubric_pass": false,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s03",
+          "outcome": "source_recovery",
+          "lexical_rubric_pass": false,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s04",
+          "outcome": "source_recovery",
+          "lexical_rubric_pass": false,
+          "forbidden_terms_found": [
+            "9001",
+            "fully accurate"
+          ],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s05",
+          "outcome": "abstention",
+          "lexical_rubric_pass": true,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s06",
+          "outcome": "source_recovery",
+          "lexical_rubric_pass": false,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s07",
+          "outcome": "source_recovery",
+          "lexical_rubric_pass": false,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s08",
+          "outcome": "abstention",
+          "lexical_rubric_pass": true,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s09",
+          "outcome": "abstention",
+          "lexical_rubric_pass": true,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s10",
+          "outcome": "source_recovery",
+          "lexical_rubric_pass": false,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s11",
+          "outcome": "source_recovery",
+          "lexical_rubric_pass": false,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s12",
+          "outcome": "source_recovery",
+          "lexical_rubric_pass": false,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        }
+      ],
+      "outcomes": {
+        "generated": 0,
+        "abstention": 3,
+        "clarification": 0,
+        "source_recovery": 9,
+        "error": 0
+      },
+      "lexical_rubrics_passed": 3,
+      "total": 12,
+      "median_end_to_end_seconds": 17.96100000000297
+    },
+    "v4": {
+      "source_report": "reports/generation/study-grounding-2026-10-12-v4.json",
+      "cases": [
+        {
+          "case_id": "s01",
+          "outcome": "abstention",
+          "lexical_rubric_pass": false,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s02",
+          "outcome": "abstention",
+          "lexical_rubric_pass": false,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s03",
+          "outcome": "generated",
+          "lexical_rubric_pass": true,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s04",
+          "outcome": "generated",
+          "lexical_rubric_pass": true,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s05",
+          "outcome": "abstention",
+          "lexical_rubric_pass": true,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s06",
+          "outcome": "abstention",
+          "lexical_rubric_pass": true,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s07",
+          "outcome": "abstention",
+          "lexical_rubric_pass": true,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s08",
+          "outcome": "abstention",
+          "lexical_rubric_pass": true,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s09",
+          "outcome": "abstention",
+          "lexical_rubric_pass": true,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s10",
+          "outcome": "abstention",
+          "lexical_rubric_pass": true,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s11",
+          "outcome": "generated",
+          "lexical_rubric_pass": false,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        },
+        {
+          "case_id": "s12",
+          "outcome": "generated",
+          "lexical_rubric_pass": false,
+          "forbidden_terms_found": [],
+          "human_support_review": null
+        }
+      ],
+      "outcomes": {
+        "generated": 4,
+        "abstention": 8,
+        "clarification": 0,
+        "source_recovery": 0,
+        "error": 0
+      },
+      "lexical_rubrics_passed": 8,
+      "total": 12,
+      "median_end_to_end_seconds": 14.703000000001339
+    }
+  }
+}

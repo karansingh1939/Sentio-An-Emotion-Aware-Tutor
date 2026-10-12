@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-10-12T14:13:38.965508+00:00",
+  "model": "phi3:mini",
+  "practice_count": 3,
+  "steps": [
+    {
+      "name": "startup",
+      "status": "passed",
+      "seconds": 2.438000000009197
+    }
+  ],
+  "limitations": [
+    "One authored physics journey, not a learning study or a model accuracy estimate.",
+    "Quiz submission copies the generated reference answer to test persistence only.",
+    "Qdrant uses memory mode; restart must recover evidence from persisted chunks."
+  ],
+  "status": "failed",
+  "failure": "HTTPError"
+}

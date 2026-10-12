@@ -10,6 +10,8 @@
 
 Sentio brings a learner's documents, tutoring, quizzes, flashcards, and review history into one application. FastAPI serves both the API and browser interface; Ollama runs text generation locally. Saved materials remain accessible when generation is unavailable.
 
+**Engineering contribution:** durable jobs, cancellable streaming, transactional reviews, owner-scoped document recovery, and reproducible evaluation tooling. The [contribution map](docs/CONTRIBUTIONS.md) links each area to an incremental commit and its tests.
+
 **Status:** `2.0.0rc1`, a local application under active development. The supported workflow is **Library -> Study -> Practice -> Review**. Emotion recognition and a learned evidence classifier are experimental; neither has a validated accuracy claim. This repository is private; access is required to view its code and CI results.
 
 ## What it does
@@ -48,6 +50,7 @@ Open **http://127.0.0.1:8001**, register a local account, and upload readable no
 - Capability diagnostics: http://127.0.0.1:8001/api/v1/ready
 - Detailed setup, Docker, OCR, backups, and troubleshooting: [Setup guide](docs/SETUP.md)
 - Step-by-step study workflow: [Learner guide](docs/STUDY_GUIDE.md)
+- Review the actual AI replies yourself: [Author review and pilot guide](docs/AUTHOR_REVIEW.md)
 
 ## Architecture
 
@@ -87,6 +90,8 @@ The project retains failed experiments and separates deterministic software test
 
 See [retrieval evaluation](reports/AI_EVALUATION_2026-10-11.md), [grading follow-up](reports/GRADING_FOLLOWUP_2026-10-11.md), [generation experiment](docs/LOCAL_GENERATION_EXPERIMENT.md), and [evidence experiment](docs/EVIDENCE_EXPERIMENT.md) for datasets, hardware, commands, raw outputs, and limitations.
 
+The [12-case real HTTP grounding stress test](docs/STUDY_QUALITY_2026-10-12.md) retains refusals and ambiguous-answer failures, reports recovery separately, and provides actual replies for author review. Standalone numeric short answers use exact comparisons; broader semantic grades remain fallible.
+
 ```sh
 uv run python scripts/evaluate_retrieval.py --grade --output reports/evaluation.json
 uv run python scripts/evaluate_grading.py --repeats 3 --output reports/grading-comparison.json
@@ -117,9 +122,10 @@ Tests isolate databases and use deterministic provider fixtures. Chromium checks
 - Source-excerpt and source-recall fallbacks keep the workflow usable, but are distinct from generated teaching explanations and semantic quizzes.
 - OCR requires Tesseract and the optional extra. Uploads are capped at 20 MiB; OCR processes at most 20 scanned pages per document.
 - Camera/voice controls are excluded from the supported study interface. Emotion accuracy, independently reviewed evidence labels, and student learning outcomes remain unverified.
-- CI verifies Compose configuration, the Docker image build, and the installed CLI. A full Compose tutoring journey with live model generation remains unverified.
+- CI checks Compose startup, storage, authentication, restart persistence, and saved browsing during a provider outage. Full Compose tutoring with an installed model and semantic answer quality remains a separate validation.
 
 The [release handoff](docs/RELEASE_HANDOFF.md) records remaining acceptance gates. The [portfolio report](docs/PORTFOLIO_REPORT_DRAFT.md) distinguishes completed work from proposed research.
+The [hiring-readiness ledger](docs/HIRING_READINESS.md) tracks completed repairs and remaining human/model validation.
 
 ## Development and attribution
 

@@ -1,5 +1,13 @@
 # Release handoff: usability checkpoint
 
+Update, 12 October 2026: repository presentation, contribution mapping, runtime
+prompt boundaries, deterministic numeric grading, and a recorded 12-case HTTP
+grounding stress test are implemented. Compose image/startup/authentication/
+restart/outage checks are now in CI; its latest result is the verification
+authority. Author review has been prepared but not completed. See
+[hiring readiness](HIRING_READINESS.md) and [study quality](STUDY_QUALITY_2026-10-12.md).
+The historical checkpoint below retains its original scope and open gates.
+
 This checkpoint improves the supported local workflow. It is not a declaration
 that all thirteen milestones or the AI teaching acceptance gate have passed.
 

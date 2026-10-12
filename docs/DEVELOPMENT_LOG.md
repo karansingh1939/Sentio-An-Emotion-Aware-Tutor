@@ -1,5 +1,30 @@
 # Development record
 
+## 2026-10-12 - Hiring-readiness repairs and real study stress tests
+
+Added a commit/test contribution map and aligned the package, normal tutor
+messages, and experimental camera wording with the supported study workspace.
+Runtime tutoring now sends owned source passages and learner memory as JSON user
+data, with exact citation references and source rules taking precedence over
+examples. Legacy benchmark prompt construction remains unchanged.
+
+Standalone numeric short answers compare exact fractions/decimals/percentages;
+evaluation distinguishes these deterministic checks from model inference. Known
+semantic errors remain documented, and the practice UI exposes that limitation.
+
+Ran two real 12-case HTTP observations on longer synthetic fictional notes;
+retained protocol failures and both model runs. The final run has no source
+fallbacks but still refuses some answerable questions and mishandles ambiguity.
+The updated lexical diagnostic passes 8/12, which is not semantic accuracy or
+independent review. Prepared a private offline packet for the owner's actual
+review; no human labels, model training, user adoption, or learning gains exist.
+
+Compose adds independent health checks and loopback binding. Its isolated smoke
+test uses disposable runtime mounts and no model downloads, checks saved work
+and token continuity across restart, then stops Ollama to test saved browsing.
+Hosted CI is required for actual container verification because Docker is
+unavailable locally. See the hiring-readiness ledger for remaining evidence.
+
 ## 2026-10-12 - Publication on karansingh1939 and repository presentation
 
 Published the current study-overhaul history to the verified owner's existing
