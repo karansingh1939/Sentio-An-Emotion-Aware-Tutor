@@ -16,6 +16,13 @@ retaining base version 2.14.0 and the Windows/macOS PyPI variants. Relocking rem
 records image size and available disk before the Compose check. The official uv
 source configuration is linked in SETUP.md; hosted Linux tests cover this variant.
 
+The CPU image built at 1,815,328,309 bytes with 11 GiB free before starting
+Compose. Startup then exposed a real configuration bug: production mode inherited
+wildcard CORS and correctly refused to start. Reproduced this with the actual
+production validator, configured the two local browser origins in Compose, and
+retained the security guard. The new Compose configuration regression fails
+before that fix and passes afterward. API logs are captured before test cleanup.
+
 Added a commit/test contribution map and aligned the package, normal tutor
 messages, and experimental camera wording with the supported study workspace.
 Runtime tutoring now sends owned source passages and learner memory as JSON user

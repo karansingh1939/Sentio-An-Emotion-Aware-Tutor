@@ -9,6 +9,7 @@ services:
     environment:
       ENV: production
       ENFORCE_AUTH: 'true'
+      CORS_ORIGINS: http://127.0.0.1:8000,http://localhost:8000
       API_SECRET: ${API_SECRET:?Set API_SECRET to a random secret before starting Compose}
       DATABASE_URL: sqlite:////app/data/tutor_sessions.db
       LLM_BACKEND: ollama

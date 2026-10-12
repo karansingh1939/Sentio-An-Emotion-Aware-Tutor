@@ -4,6 +4,21 @@ import json
 from pathlib import Path
 from unittest.mock import Mock
 
+import yaml
+
+
+def test_compose_production_defaults_pass_security_validation(monkeypatch):
+    from sentio.config import APIConfig, validate_security_config
+
+    root = Path(__file__).resolve().parents[1]
+    environment = yaml.safe_load((root / "docker-compose.yml").read_text())["services"][
+        "sentio-api"
+    ]["environment"]
+    monkeypatch.setenv("ENV", environment["ENV"])
+    monkeypatch.setenv("API_SECRET", "compose-regression-only-secret-2026")
+    monkeypatch.setenv("CORS_ORIGINS", environment.get("CORS_ORIGINS", "*"))
+    validate_security_config(APIConfig())
+
 
 def test_compose_smoke_is_disposable_and_reuses_auth_after_restart(tmp_path, monkeypatch):
     path = Path(__file__).resolve().parents[1] / "scripts/smoke_compose.py"
