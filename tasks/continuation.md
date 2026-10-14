@@ -387,3 +387,19 @@ practice provenance/quiz editing. Keep backend camera APIs excluded from support
 use until consent and image limits are hardened. Subsequent gates: reviewed labels,
 MLflow tracing, held-out grounding, repeated live acceptance and student learning
 validation. No real evidence labels are reviewed; no classifier gains are claimed.
+
+## Completion pass - 14 October 2026
+
+Fixed the session-creation modal race: a delayed POST response after closing the
+dialog cannot activate a session, and the unused created session is closed while
+the same owner remains signed in. The real Chromium regression failed before
+the fix and passes afterwards, including the persisted inactive session assertion.
+Full local suite: 258 passed, one optional Tesseract skip, 31 subtests passed.
+JavaScript checks, Prettier, Ruff and locked dependency checks passed.
+
+Prepared all 1,584 cached CPU evidence features and both local review pages:
+reports/evidence/review-study-2026-10-14.html and
+reports/evidence/review-evidence-2026-10-14.html. No human labels were invented.
+docs/HUMAN_HANDOFF.md records the remaining author review, complete classifier
+labels, actual students and independent review. Training/analysis can resume
+when actual receipts arrive; wider roadmap gates remain unchanged.

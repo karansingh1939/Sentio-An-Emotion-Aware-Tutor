@@ -1,7 +1,9 @@
 # Verified implementation ledger
 
-Check a milestone only when acceptance evidence exists. All work remains local
-on feature/sentio-study-overhaul. No remote publication is authorized.
+Check a milestone only when acceptance evidence exists. This ledger tracks the
+wider study-overhaul roadmap. The owner authorized publication to the private
+karansingh1939 repository. See docs/HIRING_READINESS.md for the completed
+portfolio scope and docs/HUMAN_HANDOFF.md for remaining human evidence.
 
 - [x] 1. Contract and backup — current spec/rules; 1514-file snapshot and isolated restore verified.
 - [x] 2. Startup — subsystem readiness; browsing without AI/camera; API imports without TensorFlow.
@@ -26,5 +28,6 @@ Guided note-to-practice and password recovery paths work in Chromium. Actual
 three-item local generation needed explicit source-excerpt/recall fallbacks;
 earlier failures remain. Teaching and full release gates stay unchecked.
 See docs/STUDY_GUIDE.md and docs/RELEASE_HANDOFF.md for user instructions and
-remaining work. Next slice: discard closed session-creation modal requests,
-then owned goal binding. Zero actual evidence labels are reviewed.
+remaining work. Closed session-creation dialogs now discard delayed responses
+and close the unused session; the Chromium regression passes. Owned goal binding
+remains in the wider roadmap. No completed human evidence receipts are supplied.

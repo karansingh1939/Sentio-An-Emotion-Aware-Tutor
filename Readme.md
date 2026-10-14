@@ -126,6 +126,7 @@ Tests isolate databases and use deterministic provider fixtures. Chromium checks
 
 The [release handoff](docs/RELEASE_HANDOFF.md) records remaining acceptance gates. The [portfolio report](docs/PORTFOLIO_REPORT_DRAFT.md) distinguishes completed work from proposed research.
 The [hiring-readiness ledger](docs/HIRING_READINESS.md) tracks completed repairs and remaining human/model validation.
+The [human-only handoff](docs/HUMAN_HANDOFF.md) links the prepared review work and explains the feedback needed next.
 
 ## Development and attribution
 

@@ -1,5 +1,19 @@
 # Hiring-readiness remediation
 
+## Completion pass - 14 October 2026
+
+The supported local-app hiring-readiness scope has implementation and automated
+verification. This is not completion of every feature in the wider study-overhaul
+roadmap or a validated AI teaching release. The 12 October hosted run passed both
+Linux tests and actual Compose startup, authenticated storage, restart and outage
+checks. The completion pass also fixes closed session dialogs activating late
+responses and closes the unused session; a real Chromium regression covers this.
+
+Prepared cached CPU features for all 1,584 evidence pairs and two local review
+pages. No completed human receipts have been supplied. Training, calibration and
+adoption remain gated on actual labels and measured quality. Remaining human
+actions are in [the handoff](HUMAN_HANDOFF.md).
+
 The repository addresses the engineering and presentation gaps identified during portfolio review. This ledger distinguishes completed changes from evidence that requires actual reviewers or students.
 
 | Finding                                     | Work completed                                                                                                                                     | Remaining evidence                                                                                                                              |

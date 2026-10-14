@@ -215,3 +215,19 @@ real-world accuracy claims. No learner data or model weights were published.
 Next: obtain independently reviewed realistic OCR/grading labels and compare a
 stronger suitable local grader before changing grading behavior. Docker execution
 and emotion accuracy remain unverified. Keep repository visibility private.
+
+## 2026-10-14 - Hiring-readiness completion pass
+
+Compose startup/authentication/restart/provider-outage verification is now green
+in hosted CI (run 38266463167); full model inference inside Compose remains a
+separate validation. Fixed a reproducible UI race where closing the session
+dialog before its POST response still activated the created session. The real
+Chromium regression failed before the fix and passed afterwards, also verifying
+that the unused session is persisted as inactive.
+
+Full local regression: 258 passed, one optional Tesseract skip, 31 subtests passed.
+JavaScript tests, formatting, Ruff and the dependency lock check passed.
+Prepared 1,584 cached CPU evidence features and separate 12-answer and evidence
+review pages. No human labels or independent reviewer results have been supplied;
+training and adoption remain gated. The current human-only handoff separates
+these actual human tasks from the wider product roadmap.
