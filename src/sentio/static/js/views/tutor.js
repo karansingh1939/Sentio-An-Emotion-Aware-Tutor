@@ -424,8 +424,13 @@ export class TutorView {
           topic,
           difficulty,
           documentId: grounding,
+          isCurrent: () => modal.isConnected,
         });
-        if (owner !== store.getState('currentUser')?.id || route !== store.getState('activeRoute'))
+        if (
+          !modal.isConnected ||
+          owner !== store.getState('currentUser')?.id ||
+          route !== store.getState('activeRoute')
+        )
           return;
         if (!result) {
           modal.querySelector('#new-sess-error').textContent =

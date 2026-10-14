@@ -1,5 +1,6 @@
 """First-time learners can complete the primary path using visible controls."""
 
+import asyncio
 import json
 import uuid
 from pathlib import Path
@@ -87,6 +88,34 @@ async def test_first_time_notes_to_study_to_practice_without_hidden_setup(monkey
             await page.fill("#new-sess-topic", "Inertia")
             assert await page.locator("#new-sess-grounding").is_disabled()
             selected = await page.locator("#new-sess-grounding").input_value()
+            created = asyncio.Event()
+            release = asyncio.Event()
+            delivered = asyncio.Event()
+            cancelled = {}
+
+            async def delay_session_response(route):
+                response = await route.fetch()
+                cancelled.update(await response.json())
+                created.set()
+                await release.wait()
+                await route.fulfill(response=response)
+                delivered.set()
+
+            await page.route("**/api/v1/sessions", delay_session_response)
+            await page.click("#new-sess-submit-btn")
+            await asyncio.wait_for(created.wait(), timeout=10)
+            await page.click("#modal-close-btn")
+            release.set()
+            await asyncio.wait_for(delivered.wait(), timeout=10)
+            await page.wait_for_function("!window.store.getState('loading')")
+            assert await page.evaluate("window.store.getState('activeSessionId')") is None
+            from sentio.api.app import agent
+
+            assert not agent.sm.get_or_raise(cancelled["session_id"]).is_active
+            await page.unroute("**/api/v1/sessions", delay_session_response)
+            await page.click(".study-doc-btn")
+            await page.wait_for_selector("#new-sess-submit-btn")
+            await page.fill("#new-sess-topic", "Inertia")
             await page.click("#new-sess-submit-btn")
             await page.wait_for_selector("sentio-modal", state="detached")
             await page.wait_for_selector("#view-tutor", state="visible")

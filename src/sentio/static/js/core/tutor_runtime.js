@@ -106,7 +106,9 @@ async function startSession(options = {}) {
   const current = () =>
     window.store?.getState('currentUser')?.id === studentId &&
     window.store?.getState('activeRoute') === route &&
-    getActiveSessionId() === previousSession;
+    getActiveSessionId() === previousSession &&
+    (!options.isCurrent || options.isCurrent());
+  if (!current()) return null;
   const subject = options.subject || document.getElementById('f-subject').value;
   const topic = (options.topic ?? document.getElementById('f-topic').value).trim();
   if (!topic) {
@@ -130,7 +132,24 @@ async function startSession(options = {}) {
       difficulty,
       metadata: { document_id: grounding },
     });
-    if (!current()) return null;
+    if (!current()) {
+      if (
+        options.isCurrent &&
+        !options.isCurrent() &&
+        window.store?.getState('currentUser')?.id === studentId
+      ) {
+        try {
+          await window.sentioAPI.delete(`/sessions/${data.session_id}`);
+        } catch {
+          if (window.store?.getState('currentUser')?.id === studentId)
+            toast(
+              'The cancelled session could not close. Close it from your saved sessions.',
+              true,
+            );
+        }
+      }
+      return null;
+    }
     window.setLegacySessionId(data.session_id);
     if (window.store)
       window.store.setState('activeSession', { ...data, metadata: { document_id: grounding } });
