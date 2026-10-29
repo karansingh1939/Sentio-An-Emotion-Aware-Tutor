@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
-import { escapeHtml } from '../../src/sentio/static/js/core/html.js';
+import { describeProvenance, escapeHtml } from '../../src/sentio/static/js/core/html.js';
 
 const fields = Object.fromEntries(
   ['subject', 'topic', 'difficulty'].map((name) => [`#quiz-${name}`, { parentElement: {} }]),
@@ -40,7 +40,7 @@ const imports = {
       return { questions: [] };
     },
   },
-  '../core/html.js': { escapeHtml },
+  '../core/html.js': { describeProvenance, escapeHtml },
   '../core/api.js': { sentioAPI: api },
   '../core/store.js': {
     store: { getState: (key) => (key === 'activeSessionId' ? 'session-a' : null) },

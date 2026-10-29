@@ -16,7 +16,7 @@ import psutil
 import requests
 
 
-def run(output, practice_count=3, grounding_dataset=None):
+def run(output, practice_count=3, grounding_dataset=None, model="phi3:mini"):
     if practice_count not in (1, 3, 5):
         raise ValueError("Use a small CPU practice batch: 1, 3 or 5")
     output = Path(output).resolve()
@@ -27,7 +27,7 @@ def run(output, practice_count=3, grounding_dataset=None):
     scratch.mkdir(exist_ok=True)
     report = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "model": "phi3:mini",
+        "model": model,
         "practice_count": practice_count,
         "steps": [],
         "limitations": [
@@ -59,7 +59,7 @@ def run(output, practice_count=3, grounding_dataset=None):
                 "ENVIRONMENT": "development",
                 "API_SECRET": "",
                 "LLM_BACKEND": "ollama",
-                "OLLAMA_MODEL": "phi3:mini",
+                "OLLAMA_MODEL": model,
                 "QDRANT_MODE": "memory",
                 "PYTHONPATH": str(root / "src"),
                 "HF_HUB_OFFLINE": "1",
@@ -213,7 +213,7 @@ def run(output, practice_count=3, grounding_dataset=None):
                         (
                             model["digest"]
                             for model in tags.json()["models"]
-                            if model["name"] == "phi3:mini"
+                            if model["name"] == report["model"]
                         ),
                         None,
                     )
@@ -393,6 +393,9 @@ if __name__ == "__main__":
         type=Path,
         help="Observe real tutor turns on a synthetic grounding dataset",
     )
+    parser.add_argument(
+        "--model", default="phi3:mini", help="Installed Ollama model to evaluate (no downloads)"
+    )
     args = parser.parse_args()
-    result = run(args.output, args.practice_count, args.grounding_dataset)
+    result = run(args.output, args.practice_count, args.grounding_dataset, args.model)
     raise SystemExit(0 if result["status"] in {"passed", "observed"} else 1)

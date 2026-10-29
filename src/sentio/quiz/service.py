@@ -161,9 +161,10 @@ JSON Template:
 
         # Call LLM
         checkpoint("generating quiz")
-        from sentio.ai.source_practice import source_recall
+        from sentio.ai.source_practice import practice_provenance, source_recall
         from sentio.shared.exceptions import LLMServiceUnavailableError
 
+        mode = "generated"
         try:
             raw_text, tokens = llm_call(system_prompt, [], "Generate the quiz now.")
 
@@ -178,6 +179,7 @@ JSON Template:
             if not grounded or not getattr(retrieved, "source_citations", []):
                 raise
             checkpoint("making source recall practice")
+            mode = "source_recall"
             quiz_data = batch_schema.model_validate(
                 {
                     "title": f"Source recall: {topic}",
@@ -194,6 +196,9 @@ JSON Template:
 
         # 6. Generate quiz_id and save to database
         quiz_id = str(uuid.uuid4())
+        provenance = practice_provenance(mode, retrieved, self.agent.nlp._backend, source_snapshot)
+        for index, question in enumerate(quiz_dict["questions"]):
+            question["question_id"] = f"{quiz_id}_q{index}"
 
         def save(connection=None):
             self.agent.sm.save_quiz(
@@ -203,6 +208,7 @@ JSON Template:
                 title=quiz_dict["title"],
                 questions=quiz_dict["questions"],
                 connection=connection,
+                provenance=provenance,
             )
 
         def save_current():
@@ -216,6 +222,8 @@ JSON Template:
 
         quiz_dict["quiz_id"] = quiz_id
         quiz_dict["session_id"] = session_id
+        quiz_dict["revision"] = 0
+        quiz_dict["provenance"] = provenance
         return quiz_dict
 
     def score_quiz(
@@ -232,9 +240,13 @@ JSON Template:
         if self.agent.sm.get_or_raise(session_id).student_id != student_id:
             raise PermissionError("Quiz and session must belong to the same student.")
         questions = quiz["questions"]
-        answers_key = hashlib.sha256(
-            json.dumps(student_answers, sort_keys=True).encode()
-        ).hexdigest()
+        # Revision 0 keeps the original key so earlier submissions still replay.
+        graded = (
+            student_answers
+            if not quiz.get("revision")
+            else {"revision": quiz["revision"], "answers": student_answers}
+        )
+        answers_key = hashlib.sha256(json.dumps(graded, sort_keys=True).encode()).hexdigest()
         repository = QuizRepository(self.agent.sm.persister)
         with repository.submission(quiz_id) as (_, results):
             if answers_key in results:

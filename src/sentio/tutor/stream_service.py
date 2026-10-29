@@ -4,6 +4,7 @@ import hashlib
 import json
 import logging
 import time
+from contextlib import nullcontext
 from copy import deepcopy
 from queue import Empty, Full, Queue
 from threading import RLock
@@ -11,19 +12,17 @@ from threading import RLock
 from sqlalchemy import text
 
 from sentio.jobs.control import WorkCancelled
+from sentio.repositories.planning import active_goal
 
 logger = logging.getLogger(__name__)
 
 
 def study_fingerprint(session):
-    return json.dumps(
-        [
-            session.subject,
-            session.topic,
-            session.metadata.get("document_id"),
-        ],
-        sort_keys=True,
-    )
+    context = [session.subject, session.topic, session.metadata.get("document_id")]
+    if session.metadata.get("goal_id"):
+        # Appended only when bound, so earlier request fingerprints still replay.
+        context.append(session.metadata["goal_id"])
+    return json.dumps(context, sort_keys=True)
 
 
 class StreamService:
@@ -260,4 +259,6 @@ class StreamService:
             versions = sorted(
                 (d["id"], d["checksum"]) for d in documents if selected == "all" or d["id"] in ids
             )
-        return json.dumps([study_fingerprint(session), versions], sort_keys=True)
+        with nullcontext(connection) if connection is not None else self.engine.connect() as conn:
+            goal = active_goal(conn, session.student_id, session.metadata.get("goal_id"))
+        return json.dumps([study_fingerprint(session), versions, goal], sort_keys=True)

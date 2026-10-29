@@ -6,9 +6,10 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from sentio.api.dependencies import PREFIX, _verify_session_owner, agent
-from sentio.api.schemas import CreateSessionRequest, GroundingRequest
+from sentio.api.schemas import CreateSessionRequest, GroundingRequest, SessionGoalRequest
 from sentio.auth.middleware import get_current_user
 from sentio.config import tutor_cfg
+from sentio.repositories.planning import active_goal
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -41,6 +42,7 @@ def create_session(req: CreateSessionRequest, user: dict = Depends(get_current_u
         owned = {doc["id"] for doc in agent.sm.list_documents(student_id=req.student_id)}
         if any(not isinstance(doc_id, str) or doc_id not in owned for doc_id in selected):
             raise HTTPException(status_code=403, detail="Access denied or document not found.")
+    _owned_goal(req.student_id, (req.metadata or {}).get("goal_id"))
 
     session = agent.start_session(
         student_id=req.student_id,
@@ -132,6 +134,41 @@ def set_session_grounding(
     agent.nlp.clear_history(session_id)
     agent.kb.reset_session(session_id)
     return {"success": True, "document_id": req.document_id}
+
+
+def _owned_goal(owner, goal_id):
+    if goal_id is None:
+        return None
+    with agent.sm.persister._engine.connect() as connection:
+        goal = active_goal(connection, owner, goal_id)
+    if goal is None:
+        raise HTTPException(404, "Goal not found or no longer active.")
+    return goal
+
+
+@router.post(PREFIX + "/sessions/{session_id}/goal", tags=["Sessions"])
+def set_session_goal(
+    session_id: str,
+    req: SessionGoalRequest,
+    request: Request,
+    user: dict = Depends(get_current_user),
+):
+    """Bind one of the owner's active goals to this session, or clear it with null."""
+    session = _verify_session_owner(session_id, user)
+    goal = _owned_goal(user["student_id"], req.goal_id)
+    streams = getattr(request.app.state, "streams", None)
+    if streams:
+        streams.cancel_session(user["student_id"], session_id)
+    previous = session.metadata.get("goal_id")
+    session.metadata["goal_id"] = req.goal_id
+    if agent.sm.persister._use_db:
+        try:
+            agent.sm.persister.save_session(session)
+        except Exception as e:
+            session.metadata["goal_id"] = previous
+            logger.warning(f"Failed to persist updated session goal: {e}")
+            raise HTTPException(503, "Goal change could not be saved. Retry.") from e
+    return {"success": True, "goal": goal}
 
 
 @router.get(PREFIX + "/sessions", tags=["Sessions"])
