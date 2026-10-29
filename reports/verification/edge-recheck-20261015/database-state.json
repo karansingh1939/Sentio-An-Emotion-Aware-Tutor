@@ -1,0 +1,68 @@
+{
+  "checked_at": "2026-10-15T15:34:28.420781+05:30",
+  "images": [
+    {
+      "case": "test_sync_keeps_images_when_oc0",
+      "filename": "scan.png",
+      "status": "indexed",
+      "saved_chunk_count": 1,
+      "saved_text": "Force changes motion."
+    },
+    {
+      "case": "test_sync_keeps_images_when_oc1",
+      "filename": "scan.jpg",
+      "status": "indexed",
+      "saved_chunk_count": 1,
+      "saved_text": "Force changes motion."
+    },
+    {
+      "case": "test_sync_keeps_images_when_oc2",
+      "filename": "scan.jpeg",
+      "status": "indexed",
+      "saved_chunk_count": 1,
+      "saved_text": "Force changes motion."
+    },
+    {
+      "case": "test_sync_keeps_images_when_oc3",
+      "filename": "scan.PNG",
+      "status": "indexed",
+      "saved_chunk_count": 1,
+      "saved_text": "Force changes motion."
+    }
+  ],
+  "journals": [
+    {
+      "case": "test_terminal_journals_are_bou0",
+      "retained_by_status": {
+        "completed": 500,
+        "pending": 1
+      },
+      "expired_success_rows": 0
+    },
+    {
+      "case": "test_terminal_journals_are_bou1",
+      "retained_by_status": {
+        "done": 500,
+        "pending": 1
+      },
+      "expired_success_rows": 0
+    }
+  ],
+  "streams": [
+    {
+      "request_id": "full-buffer-cancelled",
+      "persisted_request_status": "failed",
+      "saved_exchanges": 0
+    },
+    {
+      "request_id": "full-buffer-complete",
+      "persisted_request_status": "complete",
+      "saved_exchanges": 1
+    },
+    {
+      "request_id": "full-buffer-error",
+      "persisted_request_status": "failed",
+      "saved_exchanges": 0
+    }
+  ]
+}

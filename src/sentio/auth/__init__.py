@@ -1,5 +1,4 @@
 from sentio.auth.audit import AuditLogger
-from sentio.auth.auth_service import AuthService
 from sentio.auth.exceptions import (
     AuthException,
     CredentialsError,
@@ -13,6 +12,7 @@ from sentio.auth.models import AuditLog, ConsentHistory, RefreshToken, UserAccou
 from sentio.auth.password_hasher import PBKDF2PasswordHasher
 from sentio.auth.permissions import verify_permission
 from sentio.auth.repositories import AuthRepository
+from sentio.auth.service import AuthService
 from sentio.auth.token_manager import TokenManager
 from sentio.auth.validators import PasswordValidator
 

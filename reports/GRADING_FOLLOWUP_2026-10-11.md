@@ -49,7 +49,7 @@ rubrics are better next experiments than claiming a successful prompt fix.
 Reproduce the repeated comparison:
 
 ```powershell
-uv run python scripts/evaluate_grading.py --repeats 3 --output reports/grading-comparison.json
+uv run python scripts/eval/evaluate_grading.py --repeats 3 --output reports/grading-comparison.json
 ```
 
 Measurements use local Ollama only. No learner data, paid services, model

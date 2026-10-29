@@ -445,7 +445,7 @@ class KnowledgeBase:
         # Connect to SQLite Document registry and Qdrant client
         from sentio.rag.reranker import HybridRanker
         from sentio.rag.vector_db import QdrantVectorDB
-        from sentio.repositories.document_repository import DocumentRepository
+        from sentio.repositories.documents import DocumentRepository
 
         self.vdb = vdb or QdrantVectorDB()
         self.doc_repo = doc_repo or DocumentRepository()

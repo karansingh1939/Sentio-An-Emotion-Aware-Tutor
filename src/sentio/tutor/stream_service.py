@@ -5,7 +5,7 @@ import json
 import logging
 import time
 from copy import deepcopy
-from queue import Full, Queue
+from queue import Empty, Full, Queue
 from threading import RLock
 
 from sqlalchemy import text
@@ -84,10 +84,18 @@ class StreamService:
             self.active[session_id] = {"owner": owner, "request": request_id, "job_id": None}
 
             def emit(kind, data):
-                try:
-                    events.put_nowait((kind, data))
-                except Full as exc:
-                    raise WorkCancelled("Client could not keep up with the answer") from exc
+                while True:
+                    try:
+                        events.put_nowait((kind, data))
+                        return
+                    except Full as exc:
+                        if kind not in ("complete", "cancelled", "error"):
+                            raise WorkCancelled("Client could not keep up with the answer") from exc
+                        # A terminal result must survive even when draft events fill the buffer.
+                        try:
+                            events.get_nowait()
+                        except Empty:
+                            pass  # The consumer already made room.
 
             def work(control):
                 control.emit = emit

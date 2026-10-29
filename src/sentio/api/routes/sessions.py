@@ -70,7 +70,7 @@ def get_session(session_id: str, user: dict = Depends(get_current_user)):
 @router.get(PREFIX + "/sessions/{session_id}/context", tags=["Sessions"])
 def get_study_context(session_id: str, user: dict = Depends(get_current_user)):
     from sentio.jobs.control import WorkCancelled
-    from sentio.repositories.practice_repository import PracticeRepository
+    from sentio.repositories.practice import PracticeRepository
 
     session = _verify_session_owner(session_id, user)
     try:
