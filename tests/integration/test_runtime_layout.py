@@ -55,7 +55,6 @@ def test_health_check_does_not_import_optional_ml_libraries(monkeypatch):
 
     original_import = builtins.__import__
     optional = {
-        "openai",
         "sentence_transformers",
         "sklearn",
         "pandas",

@@ -58,7 +58,6 @@ def run(output, practice_count=3, grounding_dataset=None, model="phi3:mini"):
                 "ENV": "development",
                 "ENVIRONMENT": "development",
                 "API_SECRET": "",
-                "LLM_BACKEND": "ollama",
                 "OLLAMA_MODEL": model,
                 "QDRANT_MODE": "memory",
                 "PYTHONPATH": str(root / "src"),

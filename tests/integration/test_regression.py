@@ -4,7 +4,6 @@ import unittest
 from fastapi.testclient import TestClient
 
 # Import local codebase modules
-import sentio.config as config
 from sentio.ai.nlp_engine import NLPEngine, PromptBuilder, ResponseParser
 from sentio.api.app import app
 from sentio.rag.knowledge_base import KnowledgeBase
@@ -18,11 +17,6 @@ class TestSentioRegression(unittest.TestCase):
     the Sentio Emotion-Aware Tutor application.
     """
 
-    @classmethod
-    def setUpClass(cls):
-        # Enforce local Ollama or mock backend configs for testing
-        config.nlp_cfg.LLM_BACKEND = "ollama"
-
     def setUp(self):
         # Create fresh manager instances for each test
         self.sm = SessionManager()
@@ -32,7 +26,7 @@ class TestSentioRegression(unittest.TestCase):
         self.kb.load()
 
         self.nlp = NLPEngine()
-        # Initialize but don't fully load HuggingFace/Ollama connections to keep tests fast
+        # Initialize but don't fully load the Ollama connection to keep tests fast
         self.nlp.prompt_builder = PromptBuilder()
         self.nlp.parser = ResponseParser()
 

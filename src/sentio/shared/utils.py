@@ -92,7 +92,6 @@ def setup_logging(
 
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
-    logging.getLogger("openai").setLevel(logging.WARNING)
 
     return root
 
@@ -485,7 +484,6 @@ def system_health_check():
 
     # Optional packages
     optional = {
-        "openai": "openai",
         "sentence_transformers": "sentence-transformers",
         "sqlalchemy": "sqlalchemy",
         "sklearn": "scikit-learn",

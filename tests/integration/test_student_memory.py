@@ -6,7 +6,6 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 # Import local codebase modules
-import sentio.config as config
 from sentio.api.app import app
 from sentio.session.manager import Session, SessionManager
 from sentio.tutor.orchestrator import SentioOrchestrator
@@ -18,11 +17,6 @@ class TestSentioPhaseB(unittest.TestCase):
     Test suite verifying the Phase B upgrades: Student Memory (B1),
     LangGraph Orchestrator (B2), and Observability Diagnostics (B3).
     """
-
-    @classmethod
-    def setUpClass(cls):
-        # Enforce file-based SQL and Ollama backend configurations for testing
-        config.nlp_cfg.LLM_BACKEND = "ollama"
 
     def setUp(self):
         # Clean up global agent and ensure it's not loaded
