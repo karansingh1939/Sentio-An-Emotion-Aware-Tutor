@@ -29,19 +29,20 @@ def staged(path, content):
     return pending
 
 
-def test_terminal_journals_are_bounded_without_losing_pending_recovery(material):
+@pytest.mark.parametrize("success_status", ["completed", "done"])
+def test_terminal_journals_are_bounded_without_losing_pending_recovery(material, success_status):
     import time
 
     pipeline, journal, _, _ = material
     now = time.time()
     with pipeline.sm.persister._engine.begin() as connection:
         rows = [
-            {"id": f"done-{index}", "status": "completed", "created": now + index / 1000}
+            {"id": f"done-{index}", "status": success_status, "created": now + index / 1000}
             for index in range(510)
         ]
         rows.extend(
             [
-                {"id": "old-completed", "status": "completed", "created": now - 8 * 86400},
+                {"id": "old-completed", "status": success_status, "created": now - 8 * 86400},
                 {"id": "old-pending", "status": "pending", "created": now - 8 * 86400},
             ]
         )
@@ -55,7 +56,8 @@ def test_terminal_journals_are_bounded_without_losing_pending_recovery(material)
     with pipeline.sm.persister._engine.connect() as connection:
         assert (
             connection.execute(
-                text("SELECT COUNT(*) FROM recovery_operations WHERE status='completed'")
+                text("SELECT COUNT(*) FROM recovery_operations WHERE status=:status"),
+                {"status": success_status},
             ).scalar()
             == 500
         )
@@ -65,6 +67,31 @@ def test_terminal_journals_are_bounded_without_losing_pending_recovery(material)
             ).scalar()
             == "pending"
         )
+        assert (
+            connection.execute(
+                text("SELECT COUNT(*) FROM recovery_operations WHERE operation_id='old-completed'")
+            ).scalar()
+            == 0
+        )
+
+
+def test_successful_document_cleanup_triggers_journal_retention(material, monkeypatch):
+    _, journal, path, document = material
+    operation, _ = journal._start(
+        "owner",
+        "delete",
+        {"document_id": document["id"], "destination": str(path), "old_chunk_ids": []},
+    )
+    from unittest.mock import Mock
+
+    prune = Mock(wraps=journal.prune)
+    monkeypatch.setattr(journal, "prune", prune)
+    assert journal._cleanup(
+        operation,
+        {"backup": str(path.parent / "missing.bak"), "old_chunk_ids": []},
+        "owner",
+    )
+    prune.assert_called_once()
 
 
 def test_failed_sql_publication_restores_original_file_and_chunks(material, monkeypatch):

@@ -93,6 +93,38 @@ def test_sync_scans_owned_directories_and_prunes_exact_identity(pipeline, tmp_pa
     assert len(pipeline.sm.list_documents(student_id="bob")) == 1
 
 
+@pytest.mark.parametrize("suffix", [".png", ".jpg", ".jpeg", ".PNG"])
+def test_sync_keeps_images_when_ocr_is_unavailable(pipeline, tmp_path, monkeypatch, suffix):
+    from sentio.ingestion.ocr import ExtractionError
+
+    pipeline.docs_root = tmp_path / "documents"
+    path = pipeline.docs_root / "owner" / "notes" / ("scan" + suffix)
+    path.parent.mkdir(parents=True)
+    path.write_bytes(b"original image fixture")
+    monkeypatch.setattr(
+        "sentio.ingestion.ocr.image_page",
+        lambda _: [{"page_number": 1, "text": "Force changes motion.", "extraction_method": "ocr"}],
+    )
+    assert pipeline.process_file(path, "notes", "physics", "owner")
+    document = pipeline.sm.list_documents(student_id="owner")[0]
+    chunks = pipeline.sm.get_document_chunks(document["id"])
+
+    def unavailable(_):
+        raise ExtractionError("OCR unavailable")
+
+    monkeypatch.setattr("sentio.ingestion.ocr.image_page", unavailable)
+    report = pipeline.scan_and_sync()
+    assert report["deleted_count"] == 0
+    assert report["skipped_count"] == 1
+    path.write_bytes(b"changed image fixture")
+    report = pipeline.scan_and_sync()
+    assert report["failed_count"] == 1
+    assert report["deleted_count"] == 0
+    assert pipeline.sm.list_documents(student_id="owner") == [document]
+    assert pipeline.sm.get_document_chunks(document["id"]) == chunks
+    pipeline.vdb.delete_document_points.assert_not_called()
+
+
 def test_ocr_provenance_and_page_numbers_survive_persistence(pipeline, tmp_path, monkeypatch):
     path = tmp_path / "scan.pdf"
     path.write_bytes(b"fixture; extraction is injected")

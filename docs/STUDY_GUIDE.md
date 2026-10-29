@@ -11,6 +11,8 @@ Open http://127.0.0.1:8001 and leave the terminal open. Stop with Ctrl+C.
 4. Ask a question about the selected notes. Sources show the passages used.
    Stop cancels generation. If generation fails validation, Sentio may show quoted
    passages explicitly labelled as a fallback, rather than claim a verified explanation.
+   Selected-note chat always checks those sources, including requests to review or
+   summarize them. Use Today for your revision plan and saved-practice progress.
 5. Choose **Try a quiz** or **Make flashcards**. These use the current study notes
    without asking you to configure another session. Start with three items.
    Source-recall quizzes are labelled and test recalled wording, not deep understanding.
