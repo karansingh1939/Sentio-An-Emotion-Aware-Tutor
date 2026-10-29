@@ -14,6 +14,10 @@ The following incremental commits make the current engineering contribution revi
 | Frozen evidence corpus and experiment/review tooling | [df414a85](https://github.com/karansingh1939/Sentio-An-Emotion-Aware-Tutor/commit/df414a85) | `tests/unit/test_evidence_dataset.py`, `tests/unit/test_evidence_model.py` |
 | Standard JWTs and single-use local recovery          | [2e8bad47](https://github.com/karansingh1939/Sentio-An-Emotion-Aware-Tutor/commit/2e8bad47) | `tests/integration/test_password_recovery.py`                                |
 | Reproducible package and Docker build checks         | [b2763afc](https://github.com/karansingh1939/Sentio-An-Emotion-Aware-Tutor/commit/b2763afc) | `.github/workflows/ci.yml`                                       |
+| Session goals, quiz editing, practice provenance, four-model comparison | [ceaafab7](https://github.com/karansingh1939/Sentio-An-Emotion-Aware-Tutor/commit/ceaafab7) | `tests/integration/test_session_goals.py`, `tests/integration/test_quiz_editing_provenance.py` |
+| Structured-output repair before fallback | [14160fce](https://github.com/karansingh1939/Sentio-An-Emotion-Aware-Tutor/commit/14160fce) | `tests/integration/test_practice_repair.py` |
+| Evidence-routed LangGraph workflow | [bd1799cb](https://github.com/karansingh1939/Sentio-An-Emotion-Aware-Tutor/commit/bd1799cb) | `tests/unit/test_study_prompt_boundaries.py` |
+| Consented, optional emotion feature | [397fbf1f](https://github.com/karansingh1939/Sentio-An-Emotion-Aware-Tutor/commit/397fbf1f) | `tests/integration/test_emotion_access.py` |
 
 FastAPI, SQLite, Qdrant, Sentence Transformers, Ollama, pretrained generation/embedding models, scikit-learn, and Playwright are upstream components. No full LLM training or validated emotion model is claimed. The proposed evidence classifier is an offline experiment awaiting reviewed labels.
 

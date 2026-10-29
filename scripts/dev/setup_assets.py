@@ -64,7 +64,9 @@ def verify_or_download_model():
         sys.stdout.write("\n")
         logger.error("Download failed or release asset is not yet published: %s", e)
         logger.info("Remediation Options:")
-        logger.info("  Option 1: Train the model locally by running: python scripts/emotion/train.py")
+        logger.info(
+            "  Option 1: Train the model locally by running: python scripts/emotion/train.py"
+        )
         logger.info(
             "  Option 2: Manually place a pre-trained emotion_model.h5 in the models/ directory."
         )

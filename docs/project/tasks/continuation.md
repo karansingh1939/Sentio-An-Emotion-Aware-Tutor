@@ -485,3 +485,16 @@ the parser's repair/regeneration, and the model omitted true/false options. Adde
 InvalidModelOutput, routed practice mismatches through repair/regeneration, and
 filled fixed true/false options. Two live journeys then generated quizzes with the
 model. The owner's .env now selects qwen2.5:7b (previous copy in backups/).
+
+## Résumé simplification - 29 October 2026
+
+Branch: refactor/resume-simplification (owner-approved plan). Removed the hidden
+whiteboard, the OpenAI/Hugging Face backends and the JSON-file storage fallback
+(legacy whiteboard rows are still deleted with an account). The LangGraph workflow is
+now memory_lookup -> retrieve -> (refuse | generate). Emotion detection moved into
+sentio/emotion as an opt-in side feature (ENABLE_EMOTION, server-checked consent,
+bounded frames) with its browser code in static/js/core/emotion_camera.js. The UI
+gained shared component classes, a study context bar, progress stat cards and a
+screenshot/GIF tool (scripts/dev/screenshots.py). README and docs/INTERVIEW_GUIDE.md
+were rewritten for the résumé. Full suite: 288 passed, 31 subtests, one Tesseract skip
+(one run took 68 min because the machine had about 1.4 GB free memory).
