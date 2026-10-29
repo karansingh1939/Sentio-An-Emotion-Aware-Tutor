@@ -7,17 +7,23 @@ Open http://127.0.0.1:8001 and leave the terminal open. Stop with Ctrl+C.
 2. On Today, choose **Add your first notes**. Upload a readable TXT, PDF or DOCX
    in Library. Wait for **Ready to study**. Upload progress reports actual stages;
    keyword retrieval can remain available when semantic retrieval is unavailable.
-3. Choose **Study** beside those notes, check the subject and topic, and start.
+3. Choose **Study** beside those notes. Studying starts at once; the topic comes from
+   the notes' opening line. Choose **Summarize these notes** for a short summary, key
+   concepts and suggested questions; click a question to ask it. The overview is saved,
+   so it appears instantly next time.
    Optionally pick a **Goal for this session** from the goals you added on Today.
    The tutor sees that goal as background. Changing or completing it stops any
    answer or practice still being prepared for the old goal.
-4. Ask a question about the selected notes. Sources show the passages used.
-   Stop cancels generation. If generation fails validation, Sentio may show quoted
+4. Ask a question about the selected notes. The passages found appear first, while the
+   answer is written. Click any citation, inline or below the answer, to read the
+   exact passage. Stop cancels generation. If generation fails validation, Sentio may show quoted
    passages explicitly labelled as a fallback, rather than claim a verified explanation.
    Selected-note chat always checks those sources, including requests to review or
    summarize them. Use Today for your revision plan and saved-practice progress.
 5. Choose **Try a quiz** or **Make flashcards**. These use the current study notes
    without asking you to configure another session. Start with three items.
+   Choose **Check answer** for instant feedback on one question; nothing is recorded
+   until you submit the quiz.
    Source-recall quizzes are labelled and test recalled wording, not deep understanding.
    Every saved quiz and card shows how it was made: which model generated it, or that
    it was quoted from your notes, and which pages it used. If a question or answer is

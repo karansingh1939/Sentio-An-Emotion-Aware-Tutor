@@ -16,7 +16,6 @@ from typing import Any, Dict, Optional, Tuple
 
 from sentio.ai.practice_schema import practice_schema
 from sentio.ai.prompts import grading_prompt
-from sentio.ai.streaming import output_schema
 from sentio.ai.structured_parser import (
     QuizScoringSchema,
     ShortAnswerGrade,
@@ -143,43 +142,20 @@ JSON Template:
         # 4. Helper function for LLM call with retry
         batch_schema = practice_schema("quiz", num_questions)
 
-        def llm_call(sys_p, hist, user_p):
-            from sentio.shared.exceptions import InvalidModelOutput
-
-            with output_schema(batch_schema):
-                try:
-                    return self.agent.nlp._backend.complete(
-                        system_prompt=sys_p,
-                        history=hist,
-                        user_message=user_p,
-                        max_tokens=1024,
-                        temperature=0.7,
-                    )
-                except InvalidModelOutput as invalid:
-                    # Let the structured parser repair it or ask the model to regenerate.
-                    return invalid.raw, 0
-
-        original_args = {
-            "system_prompt": system_prompt,
-            "history": [],
-            "user_message": "Generate the quiz now.",
-        }
-
         # Call LLM
         checkpoint("generating quiz")
         from sentio.ai.source_practice import practice_provenance, source_recall
+        from sentio.ai.structured_parser import generate_structured
         from sentio.shared.exceptions import LLMServiceUnavailableError
 
         mode = "generated"
         try:
-            raw_text, tokens = llm_call(system_prompt, [], "Generate the quiz now.")
-
-            # 5. Parse and validate
-            quiz_data = parse_structured_output(
-                raw_text=raw_text,
-                schema_class=batch_schema,
-                llm_call_fn=llm_call,
-                original_prompt_args=original_args,
+            quiz_data = generate_structured(
+                self.agent.nlp._backend,
+                batch_schema,
+                system_prompt,
+                "Generate the quiz now.",
+                temperature=0.7,
             )
         except (ValueError, LLMServiceUnavailableError):
             if not grounded or not getattr(retrieved, "source_citations", []):
@@ -264,29 +240,7 @@ JSON Template:
         for i, q in enumerate(questions):
             student_ans = student_answers.get(i, "").strip()
             correct_ans = q["correct_answer"].strip()
-            q_type = q["question_type"]
-
-            is_correct = False
-            score = 0.0
-
-            # Grading logic by question type
-            if q_type in ["multiple_choice", "true_false"]:
-                is_correct = student_ans.lower() == correct_ans.lower()
-                score = 1.0 if is_correct else 0.0
-            elif q_type == "fill_in_the_blank":
-
-                def clean(text):
-                    return re.sub(r"[^\w\s]", "", text.lower()).strip()
-
-                is_correct = clean(student_ans) == clean(correct_ans)
-                score = 1.0 if is_correct else 0.0
-            else:  # short_answer
-                is_correct, score = self._grade_short_answer(
-                    question=q["question_text"],
-                    correct_answer=correct_ans,
-                    student_answer=student_ans,
-                )
-
+            is_correct, score = self.grade_answer(q, student_ans)
             total_correct_score += score
 
             feedback_items.append(
@@ -356,6 +310,24 @@ Score: {avg_score:.1%} ({total_correct_score}/{len(questions)} correct)"""
                 session.__dict__.update(snapshot)
             raise
         return result
+
+    def grade_answer(self, question, answer):
+        """Grade one answer: exact match for choices, normalized words for blanks."""
+        answer = answer.strip()
+        correct = question["correct_answer"].strip()
+        if question["question_type"] in ("multiple_choice", "true_false"):
+            is_correct = answer.lower() == correct.lower()
+            return is_correct, 1.0 if is_correct else 0.0
+        if question["question_type"] == "fill_in_the_blank":
+
+            def clean(text):
+                return re.sub(r"[^\w\s]", "", text.lower()).strip()
+
+            is_correct = clean(answer) == clean(correct)
+            return is_correct, 1.0 if is_correct else 0.0
+        return self._grade_short_answer(
+            question=question["question_text"], correct_answer=correct, student_answer=answer
+        )
 
     def _grade_short_answer(
         self, question: str, correct_answer: str, student_answer: str

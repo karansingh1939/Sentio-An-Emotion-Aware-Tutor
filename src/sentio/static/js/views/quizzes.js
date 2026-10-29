@@ -5,6 +5,11 @@ import { store } from '../core/store.js';
 import { toast } from '../components/ui.js';
 import { runPracticeJob } from '../core/jobs.js';
 
+function renderCheck(result) {
+  if (!result) return '';
+  return `<div class="answer-feedback ${result.is_correct ? 'correct' : 'incorrect'}" role="status"><strong>${result.is_correct ? 'Correct' : `Not quite. Answer: ${escapeHtml(result.correct_answer)}`}</strong><p>${escapeHtml(result.explanation)}</p></div>`;
+}
+
 export class QuizzesView {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
@@ -12,6 +17,7 @@ export class QuizzesView {
     this.quiz = null;
     this.currentQuestionIdx = 0;
     this.answers = {};
+    this.checks = {};
     this.results = null;
     this.isReviewMode = false;
     this.revision = 0;
@@ -31,6 +37,7 @@ export class QuizzesView {
     this.quiz = null;
     this.currentQuestionIdx = 0;
     this.answers = {};
+    this.checks = {};
     this.results = null;
     this.isReviewMode = false;
   }
@@ -161,6 +168,7 @@ export class QuizzesView {
             return;
           this.quiz = quiz;
           this.answers = {};
+          this.checks = {};
           this.currentQuestionIdx = 0;
           this.results = null;
           this.render();
@@ -214,6 +222,7 @@ export class QuizzesView {
       this.quiz = res;
       this.currentQuestionIdx = 0;
       this.answers = {};
+      this.checks = {};
       this.render();
     } catch (e) {
       toast('Failed to generate quiz: ' + e.message, true);
@@ -267,6 +276,8 @@ export class QuizzesView {
             `
             }
           </div>
+          ${q.question_id ? `<div class="btn-row quiz-check"><button class="workspace-action" type="button" id="check-answer-btn" ${selectedAns ? '' : 'disabled'}>Check answer</button></div>` : ''}
+          ${renderCheck(this.checks[this.currentQuestionIdx])}
         </sentio-card>
 
         <div class="row-between">
@@ -306,6 +317,7 @@ export class QuizzesView {
         const index = e.target.value.charCodeAt(0) - 65;
         this.answers[this.currentQuestionIdx] =
           this.quiz.questions[this.currentQuestionIdx].options[index];
+        this.clearCheck();
       };
     });
 
@@ -313,6 +325,7 @@ export class QuizzesView {
     if (textInput) {
       textInput.oninput = (e) => {
         this.answers[this.currentQuestionIdx] = e.target.value;
+        this.clearCheck();
       };
     }
 
@@ -336,6 +349,37 @@ export class QuizzesView {
     const submit = this.container.querySelector('#submit-quiz-btn');
     if (submit) {
       submit.onclick = () => this.submitQuiz();
+    }
+
+    const check = this.container.querySelector('#check-answer-btn');
+    if (check) check.onclick = () => this.checkAnswer();
+  }
+
+  // An edited answer invalidates its earlier check.
+  clearCheck() {
+    delete this.checks[this.currentQuestionIdx];
+    this.container.querySelector('.answer-feedback')?.remove();
+    const check = this.container.querySelector('#check-answer-btn');
+    if (check) check.disabled = !this.answers[this.currentQuestionIdx]?.trim();
+  }
+
+  async checkAnswer() {
+    const quiz = this.quiz;
+    const index = this.currentQuestionIdx;
+    const question = quiz.questions[index];
+    const button = this.container.querySelector('#check-answer-btn');
+    button.disabled = true;
+    try {
+      const result = await sentioAPI.post(
+        `/quizzes/${quiz.quiz_id}/questions/${question.question_id}/check`,
+        { answer: this.answers[index] },
+      );
+      if (this.quiz !== quiz) return;
+      this.checks[index] = result;
+      if (this.currentQuestionIdx === index) this.render();
+    } catch (error) {
+      toast(error.message, true);
+      button.disabled = false;
     }
   }
 

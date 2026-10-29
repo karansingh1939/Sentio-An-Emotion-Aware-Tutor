@@ -120,6 +120,12 @@ class FlashcardPayloadSchema(BaseModel):
     cards: List[FlashcardItem] = Field(..., description="List of generated flashcards")
 
 
+class DocumentOverviewSchema(BaseModel):
+    summary: str = Field(..., min_length=1, max_length=1500)
+    key_concepts: List[str] = Field(..., min_length=2, max_length=8)
+    suggested_questions: List[str] = Field(..., min_length=2, max_length=5)
+
+
 # ─────────────────────────────────────────────
 # OBSERVABILITY METRICS
 # ─────────────────────────────────────────────
@@ -649,3 +655,38 @@ def parse_structured_output(
         raise last_error
     else:
         raise ValueError(err_msg)
+
+
+def generate_structured(backend, schema_class, system_prompt, user_message, temperature=0.7):
+    """Ask the model for JSON matching schema_class; repair or regenerate invalid replies.
+
+    Raises ValueError or LLMServiceUnavailableError when no valid result is possible,
+    so callers can fall back to source-based content.
+    """
+    from sentio.ai.streaming import output_schema
+    from sentio.shared.exceptions import InvalidModelOutput
+
+    def call(sys_p, hist, user_p):
+        with output_schema(schema_class):
+            try:
+                return backend.complete(
+                    system_prompt=sys_p,
+                    history=hist,
+                    user_message=user_p,
+                    max_tokens=1024,
+                    temperature=temperature,
+                )
+            except InvalidModelOutput as invalid:
+                return invalid.raw, 0
+
+    raw_text, _ = call(system_prompt, [], user_message)
+    return parse_structured_output(
+        raw_text=raw_text,
+        schema_class=schema_class,
+        llm_call_fn=call,
+        original_prompt_args={
+            "system_prompt": system_prompt,
+            "history": [],
+            "user_message": user_message,
+        },
+    )
