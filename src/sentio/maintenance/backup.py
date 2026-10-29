@@ -4,6 +4,7 @@ import hashlib
 import json
 import shutil
 import sqlite3
+import time
 from contextlib import ExitStack, closing
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
@@ -13,6 +14,18 @@ from tempfile import TemporaryDirectory
 def _digest(path):
     with path.open("rb") as handle:
         return hashlib.file_digest(handle, "sha256").hexdigest()
+
+
+def _publish(staging, destination, attempts=8):
+    """Move a verified staging folder into place, waiting out brief Windows file locks."""
+    for attempt in range(attempts):
+        try:
+            return staging.rename(destination)
+        except PermissionError:
+            # Scanners and indexers briefly hold freshly written files on Windows.
+            if attempt == attempts - 1:
+                raise
+            time.sleep(0.05 * 2**attempt)
 
 
 def _safe_file(root, name):
@@ -61,7 +74,7 @@ def create_backup(home: Path, destination: Path) -> Path:
             }
             (staging / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
             verify_backup(staging)
-            staging.rename(destination)
+            _publish(staging, destination)
     return destination
 
 
@@ -121,4 +134,4 @@ def restore_backup(snapshot: Path, destination: Path) -> None:
             shutil.copy2(original, copied)
         if destination.exists():
             destination.rmdir()
-        staging.rename(destination)
+        _publish(staging, destination)

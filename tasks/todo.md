@@ -31,3 +31,14 @@ See docs/STUDY_GUIDE.md and docs/RELEASE_HANDOFF.md for user instructions and
 remaining work. Closed session-creation dialogs now discard delayed responses
 and close the unused session; the Chromium regression passes. Owned goal binding
 remains in the wider roadmap. No completed human evidence receipts are supplied.
+
+Maintenance checkpoint, 15 October 2026: four reproduced edge-case bugs repaired
+with regression tests (source routing, image sync, full streaming buffers, recovery
+retention). Full suite: 282 passed and 31 subtests passed; one external-Tesseract
+skip. JavaScript, formatting, lint and wheel/source builds pass. Details and
+remaining live/human validation limits are in continuation.md and
+reports/EDGE_CASE_AUDIT_2026-10-15.md. Wider roadmap gates remain unchanged.
+
+Maintenance checkpoint, 29 October 2026: backup/restore retry brief Windows rename
+locks instead of failing intermittently. Full suite: 284 passed and 31 subtests
+passed; one external-Tesseract skip.
