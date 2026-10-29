@@ -144,14 +144,20 @@ JSON Template:
         batch_schema = practice_schema("quiz", num_questions)
 
         def llm_call(sys_p, hist, user_p):
+            from sentio.shared.exceptions import InvalidModelOutput
+
             with output_schema(batch_schema):
-                return self.agent.nlp._backend.complete(
-                    system_prompt=sys_p,
-                    history=hist,
-                    user_message=user_p,
-                    max_tokens=1024,
-                    temperature=0.7,
-                )
+                try:
+                    return self.agent.nlp._backend.complete(
+                        system_prompt=sys_p,
+                        history=hist,
+                        user_message=user_p,
+                        max_tokens=1024,
+                        temperature=0.7,
+                    )
+                except InvalidModelOutput as invalid:
+                    # Let the structured parser repair it or ask the model to regenerate.
+                    return invalid.raw, 0
 
         original_args = {
             "system_prompt": system_prompt,

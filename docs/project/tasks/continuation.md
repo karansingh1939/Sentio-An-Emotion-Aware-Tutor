@@ -478,3 +478,10 @@ study context version; tutor sees it); saved quizzes and cards store provenance
 checks so earlier submissions replay unchanged (migration 9). Item 3 prepared:
 reports/evidence/review-study-2026-10-29-qwen2.5-7b.html (ignored, private) awaits
 the owner's review. New API, integration and Chromium regressions cover all three.
+
+Quiz repair follow-up, 29 October 2026: qwen2.5:7b quizzes fell back to source
+recall because schema mismatches were reported as provider unavailability, skipping
+the parser's repair/regeneration, and the model omitted true/false options. Added
+InvalidModelOutput, routed practice mismatches through repair/regeneration, and
+filled fixed true/false options. Two live journeys then generated quizzes with the
+model. The owner's .env now selects qwen2.5:7b (previous copy in backups/).
