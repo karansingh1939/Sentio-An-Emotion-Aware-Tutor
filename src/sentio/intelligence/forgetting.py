@@ -7,8 +7,9 @@ logger = logging.getLogger(__name__)
 
 class ForgettingEngine:
     """
-    Predicts forgetting risks and estimates knowledge stability (memory half-life)
-    based on spacing intervals, SM-2 history, and elapsed time.
+    Estimates forgetting risk and knowledge stability (memory half-life) for topics
+    without reviewed flashcards, from quiz attempts, mastery and elapsed time. Topics with
+    reviewed cards use the FSRS recall probability instead (see sentio.flashcards.fsrs).
     """
 
     def calculate_forgetting_risk(
@@ -16,8 +17,6 @@ class ForgettingEngine:
         last_attempt_at: Optional[float],
         current_time: float,
         repetition_count: int,
-        ease_factor: float,
-        interval_days: float,
         mastery: float,
     ) -> tuple[float, float]:
         """
@@ -25,21 +24,13 @@ class ForgettingEngine:
           1. Knowledge Stability (S) - expected memory half-life in days.
           2. Forgetting Risk (R) - probability of recall failure.
 
-        Formula for Stability (S):
-          - If SM-2 repetitions exist: S = interval_days * (ease_factor / 2.5)
-          - If SM-2 repetitions don't exist: S = max(1.0, 2.0 * repetition_count * mastery)
+        Formula for Stability (S): S = max(1.0, 3.0 * repetition_count * mastery)
 
         Formula for Forgetting Risk (R):
           R = 1.0 - exp(-ln(2) * delta_t_days / S)
         """
-        # 1. Estimate Knowledge Stability (Half-life in days)
-        if interval_days > 0:
-            stability = interval_days * (ease_factor / 2.5)
-        else:
-            # Fallback based on attempts and mastery
-            stability = max(1.0, 3.0 * max(1, repetition_count) * mastery)
-
-        stability = max(1.0, stability)  # Stability cannot be less than 1 day
+        # 1. Estimate Knowledge Stability (Half-life in days, at least one day)
+        stability = max(1.0, 3.0 * max(1, repetition_count) * mastery)
 
         # 2. Estimate Forgetting Risk
         if last_attempt_at is None:
@@ -66,8 +57,6 @@ class ForgettingEngine:
                 last_attempt_at=history.get("last_attempt_at"),
                 current_time=current_time,
                 repetition_count=history.get("attempts_count", 0),
-                ease_factor=history.get("ease_factor", 2.5),
-                interval_days=history.get("interval_days", 0.0),
                 mastery=history.get("mastery_score", 0.0),
             )
             results.append((topic, risk))

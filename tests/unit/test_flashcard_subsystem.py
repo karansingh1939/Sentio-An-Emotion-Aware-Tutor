@@ -5,7 +5,7 @@ Verifies:
   - Flashcard deck creation
   - AI-generated flashcards from context
   - Spaced repetition queue retrieval
-  - SM-2 algorithm calculations (success & failure)
+  - FSRS scheduling (success & failure)
   - Student memory loop integration (mastery updates)
   - Tutor chat struggle recommendation hook
 """
@@ -59,7 +59,7 @@ class TestFlashcardSubsystem(unittest.TestCase):
         # Store a card for review tests
         self.__class__.card_to_test = due_cards[0]
 
-    def test_04_sm2_review_success(self):
+    def test_04_fsrs_review_success(self):
         card = self.__class__.card_to_test
         card_id = card["card_id"]
 
@@ -79,9 +79,9 @@ class TestFlashcardSubsystem(unittest.TestCase):
         review_res = self.flashcard_service.review_card(card_id, quality_score=4)
 
         self.assertEqual(review_res["card_id"], card_id)
-        self.assertEqual(review_res["next_interval_days"], 1)  # first rep is 1 day
+        self.assertEqual(review_res["next_interval_days"], 3)  # Good on a new card
         self.assertEqual(review_res["repetition_count"], 1)
-        self.assertGreater(review_res["ease_factor"], 1.3)
+        self.assertAlmostEqual(review_res["stability"], 3.17, places=2)
 
         # Verify mastery score boosted in DB
         with self.agent.sm.persister._engine.connect() as conn:
@@ -94,7 +94,7 @@ class TestFlashcardSubsystem(unittest.TestCase):
         ending_mastery = row[0]
         self.assertGreater(ending_mastery, starting_mastery)
 
-    def test_05_sm2_review_failure(self):
+    def test_05_fsrs_review_failure(self):
         card = self.__class__.card_to_test
         card_id = card["card_id"]
 
@@ -114,7 +114,8 @@ class TestFlashcardSubsystem(unittest.TestCase):
         review_res = self.flashcard_service.review_card(card_id, quality_score=1)
 
         self.assertEqual(review_res["card_id"], card_id)
-        self.assertEqual(review_res["next_interval_days"], 1)
+        self.assertLess(review_res["next_interval_days"], 3)
+        self.assertLess(review_res["stability"], 3.17)
         self.assertEqual(review_res["repetition_count"], 0)  # reset
 
         # Verify mastery score demoted in DB

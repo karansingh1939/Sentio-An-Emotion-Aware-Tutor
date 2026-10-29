@@ -102,6 +102,11 @@ repaired or regenerated before any fallback. A document overview (summary, key
 concepts, suggested questions) is written as a background job from the document's
 opening passages and cached on the document row against its checksum.
 
+Flashcards are scheduled by `flashcards/fsrs.py`, a dependency-free FSRS-5 model: each
+card stores stability, difficulty and its last review time, and the next review is set
+for 90% predicted recall. Cards scheduled earlier by SM-2 are converted on their next
+review. The learner model reuses the same recall probability for forgetting risk.
+
 ## Optional emotion feature
 
 `sentio/emotion` holds the earlier emotion-aware prototype: a FER2013 CNN on the server
@@ -128,7 +133,6 @@ are graded against the correction.
 Remaining architectural work includes broader grounding evaluation and further splitting of legacy modules as their
 behavior is migrated. There is no public deployment or external model service
 required by this local release.
-
 
 ## Usability checkpoint, 2026-10-12
 

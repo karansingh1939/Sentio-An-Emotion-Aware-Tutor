@@ -7,7 +7,7 @@ This test suite verifies:
   3. D2 Quiz grading, database persistence, EMA mastery updates, and mistake logging.
   4. D3 Flashcard deck creation and AI generation.
   5. D3 Tutor suggestion hook triggers via chat endpoint.
-  6. D4 Spaced repetition reviews SM-2 scheduling and mastery updates.
+  6. D4 Spaced repetition reviews FSRS scheduling and mastery updates.
 """
 
 import json
@@ -329,24 +329,27 @@ class TestPhaseDE2E(unittest.TestCase):
             # All generated cards should be due immediately (repetition_count = 0)
             self.assertEqual(len(due_cards), 3)
             test_card_id = due_cards[0]["card_id"]
+            self.assertEqual(
+                due_cards[0]["next_intervals"], {"again": 1, "hard": 1, "good": 3, "easy": 16}
+            )
 
-            # 8. Submit SM-2 Review Success (D4 quality score 5)
+            # 8. Submit FSRS Review Success (D4 quality score 5 = Easy)
             resp_review_ok = client.post(
                 f"/api/v1/flashcards/{test_card_id}/review", json={"quality_score": 5}
             )
             self.assertEqual(resp_review_ok.status_code, 200)
             review_ok_data = resp_review_ok.json()
             self.assertEqual(review_ok_data["repetition_count"], 1)
-            self.assertEqual(review_ok_data["next_interval_days"], 1)
+            self.assertEqual(review_ok_data["next_interval_days"], 16)
 
-            # 9. Submit SM-2 Review Failure (D4 quality score 1)
+            # 9. Submit FSRS Review Failure (D4 quality score 1 = Again)
             resp_review_fail = client.post(
                 f"/api/v1/flashcards/{test_card_id}/review", json={"quality_score": 1}
             )
             self.assertEqual(resp_review_fail.status_code, 200)
             review_fail_data = resp_review_fail.json()
             self.assertEqual(review_fail_data["repetition_count"], 0)  # reset
-            self.assertEqual(review_fail_data["next_interval_days"], 1)
+            self.assertLess(review_fail_data["next_interval_days"], 16)
 
             # 10. Verify Tutor Chat Struggle Recommendation Hook (D3)
             # Send first explanation ask about "entropy"

@@ -5,6 +5,19 @@ import { store } from '../core/store.js';
 import { toast } from '../components/ui.js';
 import { runPracticeJob } from '../core/jobs.js';
 
+const RATINGS = [
+  ['again', 1, 'I could not recall the answer', 'Again'],
+  ['hard', 3, 'I recalled it with difficulty', 'Hard'],
+  ['good', 4, 'I recalled the answer', 'Good'],
+  ['easy', 5, 'I recalled it immediately', 'Easy'],
+];
+
+function formatDays(days) {
+  if (days < 30) return days === 1 ? '1 day' : `${days} days`;
+  if (days < 365) return `${Math.round(days / 30)} mo`;
+  return `${(days / 365).toFixed(1)} yr`;
+}
+
 export class FlashcardsView {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
@@ -99,7 +112,7 @@ export class FlashcardsView {
       <div class="view-header view-header row-between">
         <div>
           <h2 class="page-title">Flashcard Decks</h2>
-          <p class="muted">Spaced Repetition reviews (SM-2) for formulas, definitions, and concepts.</p>
+          <p class="muted">Spaced repetition scheduled by FSRS, a memory model fitted on real review data.</p>
         </div>
         <button id="show-create-deck-modal" style="background:var(--accent);color:var(--bg);border:none;padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;">
           + Create Deck
@@ -410,12 +423,14 @@ export class FlashcardsView {
           <label style="display:block;font-size:14px;color:var(--text-dim);text-align:center;font-weight:bold;">How well did you recall this concept?</label>
           
           <div class="review-ratings">
-            <button class="workspace-action rate-btn" data-score="1" title="I could not recall the answer">Again</button>
-            <button class="workspace-action rate-btn" data-score="3" title="I recalled it with difficulty">Hard</button>
-            <button class="workspace-action primary rate-btn" data-score="4" title="I recalled the answer">Good</button>
-            <button class="workspace-action rate-btn" data-score="5" title="I recalled it immediately">Easy</button>
+            ${RATINGS.map(
+              ([name, score, title, label]) => `
+              <button class="workspace-action rate-btn${name === 'good' ? ' primary' : ''}" data-score="${score}" title="${title}">
+                ${label}${card.next_intervals ? `<small class="rate-interval">${formatDays(card.next_intervals[name])}</small>` : ''}
+              </button>`,
+            ).join('')}
           </div>
-          <p class="muted">Again repeats the card sooner. Your rating schedules review; it is not a test score.</p>
+          <p class="muted">Each button shows when the card comes back. Your rating schedules review; it is not a test score.</p>
         </div>
 
         <button id="tutor-abort-review" style="background:none;border:1px solid var(--border);color:var(--red);padding:6px;border-radius:var(--radius);font-family:var(--mono);font-size:14px;cursor:pointer;margin-top:10px;">
@@ -463,7 +478,7 @@ export class FlashcardsView {
     this.container.querySelectorAll('.rate-btn').forEach((btn) => {
       btn.onclick = async (e) => {
         e.stopPropagation();
-        const score = parseInt(e.target.dataset.score, 10);
+        const score = parseInt(btn.dataset.score, 10);
         if (this.ratingInProgress) return;
         this.ratingInProgress = true;
         const revision = this.revision;

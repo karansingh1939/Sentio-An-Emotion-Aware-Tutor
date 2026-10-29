@@ -1050,7 +1050,7 @@ class SessionManager:
 
         with self.persister._engine.connect() as conn:
             query = """
-                SELECT card_id, topic_id, deck_id, front_text, back_text, interval_days, repetition_count, ease_factor, next_review_at, tags, provenance_json
+                SELECT card_id, topic_id, deck_id, front_text, back_text, interval_days, repetition_count, ease_factor, next_review_at, tags, provenance_json, stability, difficulty, last_review_at
                 FROM flashcards WHERE student_id = :sid AND next_review_at <= :now
             """
             params = {"sid": student_id, "now": time.time()}
@@ -1074,6 +1074,9 @@ class SessionManager:
                         "next_review_at": r[8],
                         "tags": json.loads(r[9]) if r[9] else [],
                         "provenance": json.loads(r[10]) if r[10] else None,
+                        "stability": r[11],
+                        "difficulty": r[12],
+                        "last_review_at": r[13],
                     }
                 )
             return cards
@@ -1112,7 +1115,9 @@ class SessionManager:
         card_id: str,
         interval: int,
         repetitions: int,
-        ease_factor: float,
+        stability: float,
+        difficulty: float,
+        reviewed_at: float,
         next_review: float,
         connection=None,
     ):
@@ -1124,13 +1129,16 @@ class SessionManager:
             conn.execute(
                 text("""
                     UPDATE flashcards 
-                    SET interval_days = :interval, repetition_count = :rep_count, ease_factor = :ef, next_review_at = :next_review
+                    SET interval_days = :interval, repetition_count = :rep_count, stability = :stability,
+                        difficulty = :difficulty, last_review_at = :reviewed_at, next_review_at = :next_review
                     WHERE card_id = :cid
                 """),
                 {
                     "interval": interval,
                     "rep_count": repetitions,
-                    "ef": ease_factor,
+                    "stability": stability,
+                    "difficulty": difficulty,
+                    "reviewed_at": reviewed_at,
                     "next_review": next_review,
                     "cid": card_id,
                 },
