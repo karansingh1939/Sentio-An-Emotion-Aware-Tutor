@@ -8,6 +8,7 @@ from threading import RLock
 from typing import Any, Dict, List, Optional
 
 from sentio.config import DATA_DIR, nlp_cfg
+from sentio.ingestion import SUPPORTED_DOCUMENT_EXTENSIONS
 from sentio.ingestion.ocr import ExtractionError
 from sentio.jobs.control import WorkCancelled, checkpoint, publish
 from sentio.rag.vector_db import QdrantVectorDB
@@ -374,7 +375,7 @@ class DocumentIngestionPipeline:
             if not folder.exists():
                 continue
             for path in folder.iterdir():
-                if not path.is_file() or path.suffix.lower() not in {".txt", ".pdf", ".docx"}:
+                if not path.is_file() or path.suffix.lower() not in SUPPORTED_DOCUMENT_EXTENSIONS:
                     continue
                 scanned_files.add((owner, category, path.name))
                 existing = self.sm.get_document_by_filename(path.name, owner, category)

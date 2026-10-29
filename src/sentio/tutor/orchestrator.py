@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import time
 from typing import Any, Dict, List, Optional, TypedDict
 
@@ -343,6 +344,10 @@ class SentioOrchestrator:
         deferred = control and getattr(control, "defer_turn", False)
         msg = state["user_message"].lower()
 
+        # Selected-source study always passes through retrieval and its evidence gate.
+        if state.get("document_id") not in (None, "none"):
+            return "research"
+
         # Scalable routing logic
         if any(
             kw in msg
@@ -361,9 +366,9 @@ class SentioOrchestrator:
             return "research"
         elif any(kw in msg for kw in ["quiz", "test", "question", "evaluate", "assess"]):
             return "research" if deferred else "quiz"
-        elif any(kw in msg for kw in ["plan", "schedule", "goals", "roadmap"]):
+        elif re.search(r"\b(plan|schedule|goals|roadmap)\b", msg):
             return "planner"
-        elif any(kw in msg for kw in ["feedback", "review", "grade"]):
+        elif re.search(r"\b(feedback|review|grade)\b", msg):
             return "feedback"
         else:
             return "research" if deferred else "tutor"

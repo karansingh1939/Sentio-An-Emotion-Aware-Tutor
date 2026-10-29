@@ -152,3 +152,45 @@ def test_malformed_output_is_error_and_never_a_completed_turn(study, monkeypatch
     assert "event: error" in response.text
     assert "event: complete" not in response.text
     assert agent.sm.get_or_raise(sid).total_exchanges == 0
+
+
+@pytest.mark.parametrize("terminal", ["cancelled", "complete", "error"])
+def test_full_stream_buffer_still_delivers_terminal_event(study, monkeypatch, terminal):
+    _, _, sid = study
+    session = agent.sm.get_or_raise(sid)
+    release = threading.Event()
+    original_chat = agent.chat
+
+    def fill_buffer(*args, **kwargs):
+        assert release.wait(3)
+        response = original_chat(*args, **kwargs) if terminal == "complete" else None
+        while not events.full():
+            current_control().emit("delta", {"text": "partial "})
+        if terminal == "cancelled":
+            current_control().emit("delta", {"text": "overflow"})
+        if terminal == "error":
+            raise RuntimeError("Synthetic provider failure with a full buffer")
+        return response
+
+    monkeypatch.setattr(agent, "chat", fill_buffer)
+    events, job_id = app.state.streams.begin(
+        session.student_id, sid, "full-buffer-" + terminal, "Explain inertia"
+    )
+    release.set()
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        job = app.state.jobs.get(job_id, session.student_id)
+        if job["status"] in ("succeeded", "failed", "cancelled"):
+            break
+        time.sleep(0.01)
+    else:
+        pytest.fail("Worker did not finish with a full stream buffer")
+    assert finish(events)[0] == terminal
+    assert session.total_exchanges == (1 if terminal == "complete" else 0)
+    assert len(app.state.streams.turns(session.student_id, sid)) == (
+        1 if terminal == "complete" else 0
+    )
+    assert (
+        job["status"]
+        == {"complete": "succeeded", "error": "failed", "cancelled": "cancelled"}[terminal]
+    )
