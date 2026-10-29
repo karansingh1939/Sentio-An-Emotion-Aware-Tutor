@@ -44,8 +44,6 @@ class IntelligenceService:
         Gathers database evidence to build a continuously evolving student model.
         """
         # Ensure database is loaded
-        if not self.sm.persister._use_db:
-            return LearnerModel(student_id=student_id)
 
         # 1. Fetch raw sql tables data
         engine = self.sm.persister._engine
@@ -270,17 +268,16 @@ class IntelligenceService:
             conf = model.confidence.get(topic, 0.5)
             # Count due cards
             due_cards = 0
-            if self.sm.persister._use_db:
-                with self.sm.persister._engine.connect() as conn:
-                    due_cards = (
-                        conn.execute(
-                            text(
-                                "SELECT COUNT(*) FROM flashcards WHERE student_id = :sid AND topic_id = :tid AND next_review_at <= :now"
-                            ),
-                            {"sid": student_id, "tid": topic, "now": time.time()},
-                        ).scalar()
-                        or 0
-                    )
+            with self.sm.persister._engine.connect() as conn:
+                due_cards = (
+                    conn.execute(
+                        text(
+                            "SELECT COUNT(*) FROM flashcards WHERE student_id = :sid AND topic_id = :tid AND next_review_at <= :now"
+                        ),
+                        {"sid": student_id, "tid": topic, "now": time.time()},
+                    ).scalar()
+                    or 0
+                )
 
             recs = self.recommendation_engine.generate_recommendations(
                 student_id=student_id,
@@ -304,12 +301,11 @@ class IntelligenceService:
         """
         # Get all topics seeded in the system
         all_topics = []
-        if self.sm.persister._use_db:
-            with self.sm.persister._engine.connect() as conn:
-                rows = conn.execute(
-                    text("SELECT topic_id FROM topics WHERE subject = :sub"), {"sub": subject}
-                ).fetchall()
-                all_topics = [r[0] for r in rows]
+        with self.sm.persister._engine.connect() as conn:
+            rows = conn.execute(
+                text("SELECT topic_id FROM topics WHERE subject = :sub"), {"sub": subject}
+            ).fetchall()
+            all_topics = [r[0] for r in rows]
 
         if not all_topics:
             all_topics = ["limits", "derivatives", "newtons_laws", "recursion"]
@@ -331,45 +327,43 @@ class IntelligenceService:
 
         # Get quiz attempts for this session
         quiz_attempts = []
-        if self.sm.persister._use_db:
-            with self.sm.persister._engine.connect() as conn:
-                rows = conn.execute(
-                    text(
-                        "SELECT topic, correct, question_text, student_answer, timestamp FROM quiz_attempts WHERE session_id = :sid"
-                    ),
-                    {"sid": session_id},
-                ).fetchall()
-                quiz_attempts = [
-                    {
-                        "topic": r[0],
-                        "correct": r[1],
-                        "question_text": r[2],
-                        "student_answer": r[3],
-                        "timestamp": r[4],
-                    }
-                    for r in rows
-                ]
+        with self.sm.persister._engine.connect() as conn:
+            rows = conn.execute(
+                text(
+                    "SELECT topic, correct, question_text, student_answer, timestamp FROM quiz_attempts WHERE session_id = :sid"
+                ),
+                {"sid": session_id},
+            ).fetchall()
+            quiz_attempts = [
+                {
+                    "topic": r[0],
+                    "correct": r[1],
+                    "question_text": r[2],
+                    "student_answer": r[3],
+                    "timestamp": r[4],
+                }
+                for r in rows
+            ]
 
         # Get emotion logs from DB
         emotion_events = []
-        if self.sm.persister._use_db:
-            with self.sm.persister._engine.connect() as conn:
-                rows = conn.execute(
-                    text(
-                        "SELECT timestamp, emotion, learning_state, confidence, strategy FROM emotion_events WHERE session_id = :sid"
-                    ),
-                    {"sid": session_id},
-                ).fetchall()
-                emotion_events = [
-                    {
-                        "timestamp": r[0],
-                        "emotion": r[1],
-                        "learning_state": r[2],
-                        "confidence": r[3],
-                        "strategy": r[4],
-                    }
-                    for r in rows
-                ]
+        with self.sm.persister._engine.connect() as conn:
+            rows = conn.execute(
+                text(
+                    "SELECT timestamp, emotion, learning_state, confidence, strategy FROM emotion_events WHERE session_id = :sid"
+                ),
+                {"sid": session_id},
+            ).fetchall()
+            emotion_events = [
+                {
+                    "timestamp": r[0],
+                    "emotion": r[1],
+                    "learning_state": r[2],
+                    "confidence": r[3],
+                    "strategy": r[4],
+                }
+                for r in rows
+            ]
 
         # Fallback to timeline if db empty
         if not emotion_events and session.emotion_timeline:
@@ -382,14 +376,13 @@ class IntelligenceService:
 
         due_date = time.time() + 86400.0
         # Check next review date from flashcards
-        if self.sm.persister._use_db:
-            with self.sm.persister._engine.connect() as conn:
-                due_date = conn.execute(
-                    text(
-                        "SELECT MIN(next_review_at) FROM flashcards WHERE student_id = :sid AND topic_id = :tid"
-                    ),
-                    {"sid": session.student_id, "tid": topic},
-                ).scalar() or (time.time() + 86400.0)
+        with self.sm.persister._engine.connect() as conn:
+            due_date = conn.execute(
+                text(
+                    "SELECT MIN(next_review_at) FROM flashcards WHERE student_id = :sid AND topic_id = :tid"
+                ),
+                {"sid": session.student_id, "tid": topic},
+            ).scalar() or (time.time() + 86400.0)
 
         # Recommendations list for UI display
         recs = [r.to_dict() for r in self.generate_recommendations(session.student_id)[:2]]
@@ -415,16 +408,15 @@ class IntelligenceService:
         prerequisites = []
         topic_prereq_map: Dict[str, List[str]] = {}
 
-        if self.sm.persister._use_db:
-            engine = self.sm.persister._engine
-            with engine.connect() as conn:
-                # Ensure base topics are in topics table first
-                self._seed_default_topics(conn)
+        engine = self.sm.persister._engine
+        with engine.connect() as conn:
+            # Ensure base topics are in topics table first
+            self._seed_default_topics(conn)
 
-                rows = conn.execute(
-                    text("SELECT parent_topic_id, child_topic_id FROM topic_prerequisites")
-                ).fetchall()
-                prerequisites = [(r[0], r[1]) for r in rows]
+            rows = conn.execute(
+                text("SELECT parent_topic_id, child_topic_id FROM topic_prerequisites")
+            ).fetchall()
+            prerequisites = [(r[0], r[1]) for r in rows]
 
         # Seed defaults if database table was empty
         if not prerequisites:
@@ -434,33 +426,32 @@ class IntelligenceService:
                 ("linear_equations", "quadratic_equations"),
                 ("quadratic_equations", "functions"),
             ]
-            if self.sm.persister._use_db:
-                with engine.connect() as conn:
-                    for parent, child in defaults:
-                        try:
-                            # Verify both topics exist in topics table
-                            conn.execute(
-                                text(
-                                    "INSERT OR IGNORE INTO topics (topic_id, subject, display_name, description) VALUES (:tid, 'mathematics', :name, '')"
-                                ),
-                                {"tid": parent, "name": parent.replace("_", " ").title()},
-                            )
-                            conn.execute(
-                                text(
-                                    "INSERT OR IGNORE INTO topics (topic_id, subject, display_name, description) VALUES (:tid, 'mathematics', :name, '')"
-                                ),
-                                {"tid": child, "name": child.replace("_", " ").title()},
-                            )
-                            # Insert prerequisite link
-                            conn.execute(
-                                text(
-                                    "INSERT OR IGNORE INTO topic_prerequisites (parent_topic_id, child_topic_id) VALUES (:parent, :child)"
-                                ),
-                                {"parent": parent, "child": child},
-                            )
-                        except Exception as e:
-                            logger.error(f"Error seeding topic prerequisite: {e}")
-                    conn.commit()
+            with engine.connect() as conn:
+                for parent, child in defaults:
+                    try:
+                        # Verify both topics exist in topics table
+                        conn.execute(
+                            text(
+                                "INSERT OR IGNORE INTO topics (topic_id, subject, display_name, description) VALUES (:tid, 'mathematics', :name, '')"
+                            ),
+                            {"tid": parent, "name": parent.replace("_", " ").title()},
+                        )
+                        conn.execute(
+                            text(
+                                "INSERT OR IGNORE INTO topics (topic_id, subject, display_name, description) VALUES (:tid, 'mathematics', :name, '')"
+                            ),
+                            {"tid": child, "name": child.replace("_", " ").title()},
+                        )
+                        # Insert prerequisite link
+                        conn.execute(
+                            text(
+                                "INSERT OR IGNORE INTO topic_prerequisites (parent_topic_id, child_topic_id) VALUES (:parent, :child)"
+                            ),
+                            {"parent": parent, "child": child},
+                        )
+                    except Exception as e:
+                        logger.error(f"Error seeding topic prerequisite: {e}")
+                conn.commit()
             prerequisites = defaults
 
         # Populate mapping
