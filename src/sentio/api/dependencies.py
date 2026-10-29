@@ -1,9 +1,7 @@
 """Shared application services and resource ownership checks."""
 
-import base64
 import logging
 
-import numpy as np
 from fastapi import HTTPException, status
 
 from sentio.config import PACKAGE_DIR, api_cfg
@@ -18,24 +16,6 @@ quiz_service = QuizService(agent)
 flashcard_service = FlashcardService(agent)
 
 logger = logging.getLogger(__name__)
-
-
-def _decode_frame(frame_b64):
-    """
-    Decode a base64 JPEG string to a BGR numpy array.
-    Returns None on failure (never raises).
-    """
-    if not frame_b64:
-        return None
-    try:
-        import cv2
-
-        buf = np.frombuffer(base64.b64decode(frame_b64), dtype=np.uint8)
-        frame = cv2.imdecode(buf, cv2.IMREAD_COLOR)
-        return frame
-    except Exception as exc:
-        logger.warning("Frame decode failed: %s", exc)
-        return None
 
 
 def _get_session_or_404(session_id):

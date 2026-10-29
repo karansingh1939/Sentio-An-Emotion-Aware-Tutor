@@ -32,10 +32,10 @@ from sentio.api.routes import (
     sessions,
     streaming,
     system,
-    telemetry,
     tutoring,
 )
 from sentio.config import api_cfg
+from sentio.emotion import routes as emotion_routes
 from sentio.shared.exceptions import LLMServiceUnavailableError
 from sentio.shared.utils import RateLimiter as RateLimiter
 from sentio.shared.utils import setup_logging
@@ -147,7 +147,6 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.include_router(system.router)
 app.include_router(sessions.router)
-app.include_router(telemetry.router)
 app.include_router(tutoring.router)
 app.include_router(quizzes.router)
 app.include_router(flashcards.router)
@@ -160,3 +159,4 @@ app.include_router(memory.router)
 app.include_router(planning.router)
 app.include_router(jobs.router)
 app.include_router(streaming.router)
+app.include_router(emotion_routes.router)

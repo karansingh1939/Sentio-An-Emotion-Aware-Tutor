@@ -1,5 +1,5 @@
 """
-train_emotion_model.py -- FER2013 Training Pipeline
+train.py -- FER2013 Training Pipeline for the optional emotion feature
 ====================================================
 End-to-end script for training the CNN emotion classifier.
 
@@ -20,9 +20,9 @@ Place fer2013.csv (or the train/test image folders) inside data/
 
 Run
 ---
-    python train_emotion_model.py
-    python train_emotion_model.py --backbone mobilenet --epochs 30
-    python train_emotion_model.py --data_dir data/train --test_dir data/test
+    python scripts/emotion/train.py
+    python scripts/emotion/train.py --backbone mobilenet --epochs 30
+    python scripts/emotion/train.py --data_dir data/train --test_dir data/test
 """
 
 import argparse
@@ -32,8 +32,8 @@ from pathlib import Path
 
 import numpy as np
 
-from sentio.ai.emotion_detector import EmotionDetector
 from sentio.config import LOG_DIR, dataset_cfg, emotion_cfg
+from sentio.emotion.detector import EmotionDetector
 
 logger = logging.getLogger(__name__)
 

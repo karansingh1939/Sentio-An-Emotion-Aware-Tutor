@@ -200,7 +200,7 @@ class SessionManager:
     def record_emotion(
         self,
         session_id: str,
-        emotion_result,  # EmotionResult from sentio.ai.emotion_detector
+        emotion_result,  # EmotionResult from sentio.emotion.detector
         strategy_active: str = "standard",
     ):
         """

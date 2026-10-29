@@ -34,6 +34,10 @@ export class SettingsView {
           </div>
         </sentio-card>
 
+        <sentio-card title="Camera (optional emotion feature)" class="emotion-only">
+          <label><input id="consent-cb" type="checkbox"> Allow the camera to estimate attention and emotion during study. Off by default; you can turn it off at any time.</label>
+        </sentio-card>
+
         <sentio-card title="Password recovery">
           <p>Save a recovery key so you can reset a forgotten password. Generating a new key replaces your previous key.</p>
           <label for="recovery-current-password">Current password</label>
@@ -73,9 +77,23 @@ export class SettingsView {
     };
     const cb = this.container.querySelector('#consent-cb');
     if (cb) {
-      cb.onchange = (e) => {
-        store.setState('telemetryActive', e.target.checked);
-        toast(`Telemetry consent updated: ${e.target.checked ? 'ENABLED' : 'DISABLED'}`);
+      cb.checked = Boolean(store.getState('telemetryActive'));
+      cb.onchange = async (e) => {
+        const allowed = e.target.checked;
+        const owner = store.getState('currentUser')?.id;
+        try {
+          // The server checks this saved consent before accepting any camera data.
+          await sentioAPI.post(`/student/${encodeURIComponent(owner)}/consent`, {
+            consent_version: 'camera-v1',
+            preferences: { telemetry: allowed },
+          });
+        } catch (error) {
+          e.target.checked = !allowed;
+          toast(`Camera consent could not be saved: ${error.message}`, true);
+          return;
+        }
+        store.setState('telemetryActive', allowed);
+        toast(`Camera consent ${allowed ? 'enabled' : 'disabled'}.`);
       };
     }
 
