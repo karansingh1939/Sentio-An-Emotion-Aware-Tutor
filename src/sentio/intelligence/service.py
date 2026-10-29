@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Tuple
 
 from sqlalchemy import text
 
+from sentio.flashcards import fsrs
 from sentio.intelligence.adaptation import AdaptationEngine
 from sentio.intelligence.confidence import ConfidenceEngine
 from sentio.intelligence.explanation import ExplanationEngine
@@ -67,7 +68,7 @@ class IntelligenceService:
             # Flashcards
             flashcards_rows = conn.execute(
                 text(
-                    "SELECT card_id, topic_id, deck_id, interval_days, repetition_count, ease_factor, next_review_at FROM flashcards WHERE student_id = :sid"
+                    "SELECT card_id, topic_id, deck_id, interval_days, repetition_count, ease_factor, next_review_at, stability, difficulty, last_review_at FROM flashcards WHERE student_id = :sid"
                 ),
                 {"sid": student_id},
             ).fetchall()
@@ -99,7 +100,11 @@ class IntelligenceService:
                 "repetition_count": r[4],
                 "ease_factor": r[5],
                 "next_review_at": r[6],
+                "stability": r[7],
+                "difficulty": r[8],
+                "last_review_at": r[9],
             }
+            card["recall_probability"] = fsrs.recall_probability(card, current_time)
             topic_flashcards.setdefault(r[1], []).append(card)
             if r[6] <= current_time:
                 due_flashcards_count[r[1]] = due_flashcards_count.get(r[1], 0) + 1
@@ -141,27 +146,22 @@ class IntelligenceService:
                 quiz_scores=q_scores,
             )
 
-            # Compute Forgetting Risk & Stability
-            flash_cards = topic_flashcards.get(topic_id, [])
-            avg_interval = (
-                sum(f["interval_days"] for f in flash_cards) / len(flash_cards)
-                if flash_cards
-                else 0.0
-            )
-            avg_ease = (
-                sum(f["ease_factor"] for f in flash_cards) / len(flash_cards)
-                if flash_cards
-                else 2.5
-            )
-
-            risk, stability = self.forgetting_engine.calculate_forgetting_risk(
-                last_attempt_at=last_at,
-                current_time=current_time,
-                repetition_count=attempts,
-                ease_factor=avg_ease,
-                interval_days=avg_interval,
-                mastery=adj_mastery,
-            )
+            # Forgetting risk: FSRS recall probability of reviewed cards, else a quiz estimate
+            reviewed = [
+                (f["recall_probability"], fsrs.memory_state(f)[0])
+                for f in topic_flashcards.get(topic_id, [])
+                if f["recall_probability"] is not None
+            ]
+            if reviewed:
+                risk = 1 - sum(r for r, _ in reviewed) / len(reviewed)
+                stability = sum(s for _, s in reviewed) / len(reviewed)
+            else:
+                risk, stability = self.forgetting_engine.calculate_forgetting_risk(
+                    last_attempt_at=last_at,
+                    current_time=current_time,
+                    repetition_count=attempts,
+                    mastery=adj_mastery,
+                )
             forgetting_risk[topic_id] = risk
             knowledge_stability[topic_id] = stability
 

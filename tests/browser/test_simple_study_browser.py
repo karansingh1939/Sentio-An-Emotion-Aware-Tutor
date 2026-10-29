@@ -159,7 +159,7 @@ async def test_first_time_notes_to_study_to_practice_without_hidden_setup(monkey
             await page.wait_for_selector("#rating-controls-panel", state="visible")
             assert not await page.locator(".flashcard-front").is_visible()
             assert await page.locator(".flashcard-back").is_visible()
-            assert await page.get_by_role("button", name="Again", exact=True).is_visible()
+            assert await page.get_by_role("button", name="Again 1 day", exact=True).is_visible()
             assert "Resistance to changes" in await page.locator("#view-flashcards").inner_text()
             assert errors == [], errors
             assert await page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
@@ -175,6 +175,12 @@ async def test_first_time_notes_to_study_to_practice_without_hidden_setup(monkey
                 await route.abort()
 
             await page.route("**/flashcards/*/review", lose_rating_response)
+            assert await page.locator(".rate-btn .rate-interval").all_inner_texts() == [
+                "1 day",
+                "1 day",
+                "3 days",
+                "16 days",
+            ]
             await page.click('.rate-btn[data-score="4"]')
             await page.wait_for_selector('sentio-toast:has-text("Review failed")')
             await page.click('.rate-btn[data-score="4"]')

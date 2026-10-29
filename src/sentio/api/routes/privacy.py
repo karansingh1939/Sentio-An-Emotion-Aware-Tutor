@@ -67,7 +67,7 @@ def export_student_data(student_id: str, user: dict = Depends(get_current_user))
             data["flashcards"] = (
                 conn.execute(
                     text(
-                        "SELECT card_id, topic_id, front_text, back_text, created_at, interval_days, repetition_count, ease_factor, next_review_at FROM flashcards WHERE student_id = :sid"
+                        "SELECT card_id, topic_id, front_text, back_text, created_at, interval_days, repetition_count, ease_factor, stability, difficulty, last_review_at, next_review_at FROM flashcards WHERE student_id = :sid"
                     ),
                     {"sid": student_id},
                 )

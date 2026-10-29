@@ -35,7 +35,7 @@ class TestLearningIntelligencePlatform(unittest.TestCase):
         """Verify mastery calculation behaves correctly with missing evidence sources."""
         # 1. All sources present
         quizzes = [{"correct": 1}, {"correct": 0}]  # 50% success
-        flashcards = [{"ease_factor": 2.5}]  # Ease factor = 2.5 (100% scale)
+        flashcards = [{"recall_probability": 1.0}, {"recall_probability": None}]
         tutor = [{"learning_state": "engaged"}, {"learning_state": "struggling"}]  # 50% success
 
         m = self.mastery.calculate_topic_mastery(quizzes, flashcards, tutor)
@@ -84,8 +84,6 @@ class TestLearningIntelligencePlatform(unittest.TestCase):
             last_attempt_at=time.time() - 86400,
             current_time=time.time(),
             repetition_count=5,
-            ease_factor=2.5,
-            interval_days=10.0,
             mastery=0.8,
         )
         # Memory decay risk should be very small for 1 day elapsed out of 10 days interval
@@ -96,8 +94,6 @@ class TestLearningIntelligencePlatform(unittest.TestCase):
             last_attempt_at=time.time() - (30 * 86400),
             current_time=time.time(),
             repetition_count=5,
-            ease_factor=2.5,
-            interval_days=10.0,
             mastery=0.8,
         )
         self.assertTrue(risk_high > 0.8)

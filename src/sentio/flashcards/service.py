@@ -1,7 +1,7 @@
 """
 service.py -- Flashcards & Spaced Repetition Subsystem (Phase D3 & D4)
 ================================================================================
-Provides deck creation, card generation, due review scheduling, and SM-2 calculations.
+Provides deck creation, card generation, due review scheduling, and FSRS scheduling.
 """
 
 import logging
@@ -11,6 +11,7 @@ from copy import deepcopy
 from typing import Any, Dict, List, Optional
 
 from sentio.ai.practice_schema import practice_schema
+from sentio.flashcards import fsrs
 from sentio.jobs.control import checkpoint, publish
 from sentio.repositories.practice import PracticeRepository
 
@@ -179,8 +180,12 @@ JSON Template:
         return flashcard_dict
 
     def get_due_reviews(self, student_id: str, deck_id: Optional[str] = None) -> List[dict]:
-        """Fetch all flashcards due for review."""
-        return self.agent.sm.get_due_flashcards(student_id, deck_id)
+        """Fetch flashcards due for review, with the interval each rating would give."""
+        cards = self.agent.sm.get_due_flashcards(student_id, deck_id)
+        now = time.time()
+        for card in cards:
+            card["next_intervals"] = fsrs.next_intervals(card, now)
+        return cards
 
     def review_card(
         self, card_id: str, quality_score: int, student_id=None, request_id=None
@@ -209,81 +214,38 @@ JSON Template:
         return result
 
     def _apply_rating(self, card, quality_score, connection):
-        """
-        Processes a card review attempt using SuperMemo SM-2.
-        - quality_score: integer quality rating from 0 (forgot completely) to 5 (perfect response)
-        """
-        card_id = card["card_id"]
-        student_id = card["student_id"]
-        topic_id = card["topic_id"]
+        """Schedule the card's next review with FSRS and update topic mastery."""
+        rating = fsrs.rating_from_quality(quality_score)
+        now = time.time()
+        stability, difficulty = fsrs.review(card, rating, now)
+        interval = fsrs.interval_days(stability)
+        recalled = rating != fsrs.AGAIN
+        repetitions = card["repetition_count"] + 1 if recalled else 0
+        next_review_at = now + interval * fsrs.DAY
 
-        interval = card["interval_days"]
-        repetitions = card["repetition_count"]
-        ease_factor = card["ease_factor"]
-
-        # SM-2 Math
-        if quality_score < 3:
-            # Review failure: reset intervals
-            repetitions = 0
-            interval = 1
-            ease_factor = max(1.3, ease_factor - 0.2)
-
-            # Demote mastery in Student Memory loop
-            self.agent.sm.update_topic_mastery(
-                student_id=student_id,
-                topic_id=topic_id,
-                correct=False,
-                difficulty="intermediate",
-                connection=connection,
-            )
-            logger.info(
-                f"Flashcard review failure (score {quality_score}) - Demoting mastery for topic {topic_id}"
-            )
-        else:
-            # Review success: calculate intervals
-            repetitions += 1
-            if repetitions == 1:
-                interval = 1
-            elif repetitions == 2:
-                interval = 6
-            else:
-                interval = round(interval * ease_factor)
-
-            # Ease factor shift
-            # EF' = EF + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
-            q = quality_score
-            ease_factor = ease_factor + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
-            ease_factor = max(1.3, ease_factor)
-
-            # Boost mastery slightly since user got it right
-            self.agent.sm.update_topic_mastery(
-                student_id=student_id,
-                topic_id=topic_id,
-                correct=True,
-                difficulty="intermediate",
-                connection=connection,
-            )
-            logger.info(
-                f"Flashcard review success (score {quality_score}) - Boosting mastery for topic {topic_id}"
-            )
-
-        next_review_at = time.time() + (interval * 86400)
-
-        # Update SQLite
+        self.agent.sm.update_topic_mastery(
+            student_id=card["student_id"],
+            topic_id=card["topic_id"],
+            correct=recalled,
+            difficulty="intermediate",
+            connection=connection,
+        )
         self.agent.sm.update_flashcard_review(
-            card_id=card_id,
+            card_id=card["card_id"],
             interval=interval,
             repetitions=repetitions,
-            ease_factor=ease_factor,
+            stability=stability,
+            difficulty=difficulty,
+            reviewed_at=now,
             next_review=next_review_at,
             connection=connection,
         )
-
         return {
-            "card_id": card_id,
+            "card_id": card["card_id"],
             "quality_score": quality_score,
             "next_interval_days": interval,
             "repetition_count": repetitions,
-            "ease_factor": round(ease_factor, 3),
+            "stability": round(stability, 2),
+            "difficulty": round(difficulty, 2),
             "next_review_at": next_review_at,
         }

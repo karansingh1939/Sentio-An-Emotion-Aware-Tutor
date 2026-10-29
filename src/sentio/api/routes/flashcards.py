@@ -127,7 +127,7 @@ def get_review_receipt(
 
 @router.post(PREFIX + "/flashcards/{card_id}/review", tags=["Flashcards"])
 def review_flashcard(card_id: str, req: ReviewCardRequest, user: dict = Depends(get_current_user)):
-    """Record review rating (0-5) and calculate next intervals using SM-2."""
+    """Record review rating (0-5) and schedule the next review with FSRS."""
     card = agent.sm.get_flashcard(card_id)
     if not card or card.get("student_id") != user["student_id"]:
         raise HTTPException(status_code=403, detail="Access denied or flashcard not found.")
