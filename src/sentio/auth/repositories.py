@@ -22,8 +22,6 @@ class AuthRepository:
         self.persister = persister
 
     def _execute(self, query: str, params: Dict[str, Any] = None) -> Any:
-        if not self.persister._use_db:
-            return None
         with self.persister._engine.connect() as conn:
             result = conn.execute(text(query), params or {})
             conn.commit()
@@ -90,8 +88,6 @@ class AuthRepository:
 
     def delete_account(self, student_id: str, connection=None):
         """Delete the complete owned SQL inventory atomically."""
-        if not self.persister._use_db:
-            return
         params = {"sid": student_id}
         dependent_tables = {
             "document_chunks": "document_id IN (SELECT id FROM documents WHERE student_id = :sid)",
@@ -170,8 +166,6 @@ class AuthRepository:
 
     def delete_telemetry(self, student_id: str):
         """Purges only webcam-attention and emotion events telemetry."""
-        if not self.persister._use_db:
-            return
         with self.persister._engine.connect() as conn:
             sessions_res = conn.execute(
                 text("SELECT session_id FROM sessions WHERE student_id = :sid"), {"sid": student_id}

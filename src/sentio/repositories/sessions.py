@@ -12,72 +12,61 @@ logger = logging.getLogger(__name__)
 
 class SessionPersister:
     """
-    Saves and loads Session summaries.
-    Primary: SQLite via SQLAlchemy.
-    Fallback: JSON files (no extra deps required).
+    Saves and loads Session summaries in SQLite via SQLAlchemy.
     """
 
     def __init__(self):
-        self._use_db = False
         self._engine = None
-        self._json_dir = session_cfg.SESSION_LOG_PATH
-        self._json_dir.mkdir(parents=True, exist_ok=True)
         self.auth_repo = None
         self.token_manager = None
         self.auth_service = None
 
     def load(self):
-        """Try SQLAlchemy; fall back to JSON."""
-        if self._use_db:
+        """Open SQLite, create tables and apply migrations."""
+        if self._engine is not None:
             return
-        try:
-            from sqlalchemy import create_engine
-            from sqlalchemy.pool import StaticPool
+        from sqlalchemy import create_engine
+        from sqlalchemy.pool import StaticPool
 
-            pool_options = (
-                {"poolclass": StaticPool}
-                if session_cfg.DB_URL in ("sqlite://", "sqlite:///:memory:")
-                else {}
-            )
-            self._engine = create_engine(
-                session_cfg.DB_URL,
-                connect_args={"check_same_thread": False},
-                hide_parameters=True,
-                **pool_options,
-            )
-            self._init_db()
-            from sentio.repositories.migrations import apply_migrations
+        pool_options = (
+            {"poolclass": StaticPool}
+            if session_cfg.DB_URL in ("sqlite://", "sqlite:///:memory:")
+            else {}
+        )
+        self._engine = create_engine(
+            session_cfg.DB_URL,
+            connect_args={"check_same_thread": False},
+            hide_parameters=True,
+            **pool_options,
+        )
+        self._init_db()
+        from sentio.repositories.migrations import apply_migrations
 
-            apply_migrations(self._engine)
-            self._use_db = True
+        apply_migrations(self._engine)
 
-            from sentio.auth.repositories import AuthRepository
-            from sentio.auth.service import AuthService
-            from sentio.auth.token_manager import TokenManager
-            from sentio.config import KNOWN_INSECURE_SECRETS, api_cfg
+        from sentio.auth.repositories import AuthRepository
+        from sentio.auth.service import AuthService
+        from sentio.auth.token_manager import TokenManager
+        from sentio.config import KNOWN_INSECURE_SECRETS, api_cfg
 
-            env = os.getenv("ENV", os.getenv("ENVIRONMENT", "development")).lower().strip()
-            secret = getattr(api_cfg, "API_SECRET", "").strip()
-            if env in ("prod", "production"):
-                if not secret or secret in KNOWN_INSECURE_SECRETS or len(secret) < 16:
-                    raise RuntimeError(
-                        "CRITICAL SECURITY FAILURE: Insecure or missing TokenManager secret key in production mode."
-                    )
-            else:
-                if not secret or secret in KNOWN_INSECURE_SECRETS:
-                    from sentio.auth.local_secret import local_secret
+        env = os.getenv("ENV", os.getenv("ENVIRONMENT", "development")).lower().strip()
+        secret = getattr(api_cfg, "API_SECRET", "").strip()
+        if env in ("prod", "production"):
+            if not secret or secret in KNOWN_INSECURE_SECRETS or len(secret) < 16:
+                raise RuntimeError(
+                    "CRITICAL SECURITY FAILURE: Insecure or missing TokenManager secret key in production mode."
+                )
+        else:
+            if not secret or secret in KNOWN_INSECURE_SECRETS:
+                from sentio.auth.local_secret import local_secret
 
-                    secret = local_secret(session_cfg.DB_URL)
+                secret = local_secret(session_cfg.DB_URL)
 
-            self.token_manager = TokenManager(secret_key=secret)
-            self.auth_repo = AuthRepository(self)
-            self.auth_service = AuthService(self.auth_repo, self.token_manager)
+        self.token_manager = TokenManager(secret_key=secret)
+        self.auth_repo = AuthRepository(self)
+        self.auth_service = AuthService(self.auth_repo, self.token_manager)
 
-            logger.info(f"Session persistence: SQLite ({session_cfg.DB_URL})")
-        except ImportError:
-            logger.warning(
-                "SQLAlchemy not installed. Using JSON file persistence. Run: pip install sqlalchemy"
-            )
+        logger.info(f"Session persistence: SQLite ({session_cfg.DB_URL})")
 
     def _init_db(self):
         from sqlalchemy import text
@@ -415,16 +404,11 @@ class SessionPersister:
 
     def save_session(self, session: Session, connection=None):
         data = session.to_dict()
-        if self._use_db:
-            self._save_to_db(session, data, connection=connection)
-        else:
-            self._save_to_json(session.session_id, data)
+        self._save_to_db(session, data, connection=connection)
 
     def save_owned_session(self, session):
         from sqlalchemy import text
 
-        if not self._use_db:
-            return self.save_session(session)
         with self._engine.connect() as connection:
             connection.exec_driver_sql("BEGIN IMMEDIATE")
             if not connection.execute(
@@ -466,15 +450,8 @@ class SessionPersister:
             if connection is None:
                 conn.commit()
 
-    def _save_to_json(self, session_id: str, data: dict):
-        path = self._json_dir / f"{session_id}.json"
-        with open(path, "w") as f:
-            json.dump(data, f, indent=2)
-
     def load_session_data(self, session_id: str) -> Optional[dict]:
-        if self._use_db:
-            return self._load_from_db(session_id)
-        return self._load_from_json(session_id)
+        return self._load_from_db(session_id)
 
     def _load_from_db(self, session_id: str) -> Optional[dict]:
         from sqlalchemy import text
@@ -491,18 +468,9 @@ class SessionPersister:
             return data
         return None
 
-    def _load_from_json(self, session_id: str) -> Optional[dict]:
-        path = self._json_dir / f"{session_id}.json"
-        if path.exists():
-            with open(path) as f:
-                return json.load(f)
-        return None
-
     def list_sessions(self, student_id: Optional[str] = None, limit: int = 50) -> List[dict]:
         """List recent sessions, optionally filtered by student."""
-        if self._use_db:
-            return self._list_from_db(student_id, limit)
-        return self._list_from_json(student_id, limit)
+        return self._list_from_db(student_id, limit)
 
     def session_page(self, owner, active_only=False, limit=50, offset=0):
         from sqlalchemy import text
@@ -542,22 +510,7 @@ class SessionPersister:
             rows = conn.execute(text(query), params).fetchall()
         return [json.loads(r[0]) for r in rows]
 
-    def _list_from_json(self, student_id: Optional[str], limit: int) -> List[dict]:
-        files = sorted(
-            self._json_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True
-        )[:limit]
-        results = []
-        for f in files:
-            with open(f) as fp:
-                data = json.load(fp)
-            if student_id and data.get("student_id") != student_id:
-                continue
-            results.append(data)
-        return results
-
     def register_document(self, doc: dict, connection=None) -> bool:
-        if not self._use_db:
-            return False
         from sqlalchemy import text
 
         try:
@@ -587,8 +540,6 @@ class SessionPersister:
     def get_document_by_checksum(
         self, checksum: str, student_id: Optional[str] = None
     ) -> Optional[dict]:
-        if not self._use_db:
-            return None
         from sqlalchemy import text
 
         try:
@@ -612,8 +563,6 @@ class SessionPersister:
     def get_document_by_filename(
         self, filename: str, student_id: Optional[str] = None, category: Optional[str] = None
     ) -> Optional[dict]:
-        if not self._use_db:
-            return None
         from sqlalchemy import text
 
         try:
@@ -638,8 +587,6 @@ class SessionPersister:
             return None
 
     def delete_document(self, doc_id: str) -> bool:
-        if not self._use_db:
-            return False
         from sqlalchemy import text
 
         try:
@@ -652,8 +599,6 @@ class SessionPersister:
             return False
 
     def list_documents(self, student_id: Optional[str] = None) -> List[dict]:
-        if not self._use_db:
-            return []
         from sqlalchemy import text
 
         try:
@@ -673,8 +618,6 @@ class SessionPersister:
             raise
 
     def save_document_chunks(self, doc_id: str, chunks: List[dict], connection=None) -> bool:
-        if not self._use_db:
-            return False
         from sqlalchemy import text
 
         try:
@@ -709,8 +652,6 @@ class SessionPersister:
             return False
 
     def get_document_chunks(self, doc_id: str) -> List[dict]:
-        if not self._use_db:
-            return []
         from sqlalchemy import text
 
         try:
@@ -728,8 +669,6 @@ class SessionPersister:
             return []
 
     def get_all_chunks(self, student_id: Optional[str] = None) -> List[dict]:
-        if not self._use_db:
-            return []
         from sqlalchemy import text
 
         try:
@@ -751,8 +690,6 @@ class SessionPersister:
             raise
 
     def clear_all_documents_and_chunks(self) -> bool:
-        if not self._use_db:
-            return False
         from sqlalchemy import text
 
         try:

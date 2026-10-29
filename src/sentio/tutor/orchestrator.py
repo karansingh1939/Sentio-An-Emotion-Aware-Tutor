@@ -92,9 +92,9 @@ class SentioOrchestrator:
         from sentio.repositories.planning import active_goal
 
         sm = self.tutor_agent.sm
-        # Goal context is optional; lightweight managers without sessions or a database skip it.
+        # Goal context is optional; lightweight managers without sessions skip it.
         session = sm.get_session(session_id) if hasattr(sm, "get_session") else None
-        if session is None or not session.metadata.get("goal_id") or not sm.persister._use_db:
+        if session is None or not session.metadata.get("goal_id"):
             return None
         with sm.persister._engine.connect() as connection:
             return active_goal(connection, student_id, session.metadata["goal_id"])
