@@ -49,3 +49,7 @@ continuation.md). Full suite unchanged at 284 passed and 31 subtests passed.
 Checkpoint, 29 October 2026: session goals, quiz editing and practice provenance
 implemented; four-model grounding comparison recorded. Owner actions: choose the
 model and complete the qwen2.5:7b answer review.
+
+Checkpoint, 29 October 2026: résumé simplification complete (whiteboard, extra
+backends and JSON fallback removed; simpler LangGraph; optional consented emotion
+feature; UI polish; interview guide). Owner actions unchanged: answer review.

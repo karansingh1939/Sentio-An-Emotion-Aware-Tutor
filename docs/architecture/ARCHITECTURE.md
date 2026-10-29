@@ -1,7 +1,11 @@
 # Sentio local architecture
 
-This records the implemented boundaries and remaining gaps on the private study
-overhaul branch. It is not a claim that every release milestone has passed.
+This records the implemented boundaries and remaining gaps. It is not a claim that
+every release milestone has passed.
+
+**Style:** a local-first modular monolith. One FastAPI process serves the API and a
+framework-free browser UI; requests flow `routes → services → repositories → SQLite`,
+with SQL only in repositories. Generation runs on a local Ollama model.
 
 ```mermaid
 flowchart TD
@@ -71,9 +75,40 @@ context; replay returns the saved result without incrementing exchanges again.
 Replacing a same-named document changes its checksum and invalidates old context
 and history. Citation checks establish reference membership, not semantic truth.
 
-Storage and saved browsing are independent of local generation and camera
-readiness. Camera assets are optional, locally provisioned and loaded on demand.
-MLflow and training dependencies stay outside normal application startup.
+## Tutor workflow (LangGraph)
+
+```mermaid
+flowchart LR
+    memory_lookup --> retrieve
+    retrieve -->|insufficient selected evidence| refuse
+    retrieve -->|evidence or general study| generate
+    refuse --> END
+    generate --> END
+```
+
+`memory_lookup` adds learner history, mistakes and the session goal. `retrieve` runs
+hybrid keyword/dense search over the owner's active chunks and classifies evidence.
+`refuse` answers without the model when selected notes do not support the question.
+`generate` asks Ollama for schema-constrained JSON, validates citations against the
+retrieved passages, and falls back to labelled source excerpts. Quizzes, flashcards and
+plans have their own endpoints and jobs rather than graph branches.
+
+Practice generation passes schema mismatches (`InvalidModelOutput`) to the structured
+parser, which repairs or regenerates the reply before falling back to source recall.
+
+## Optional emotion feature
+
+`sentio/emotion` holds the earlier emotion-aware prototype: a FER2013 CNN on the server
+and MediaPipe attention estimates in the browser (`static/js/core/emotion_camera.js`).
+It is off unless `ENABLE_EMOTION=true`; the server checks the learner's latest saved
+consent before accepting telemetry, live frames or chat frames, and bounds frame size
+and dimensions before decoding. The detected learning state only adjusts tone and
+pacing. See [the emotion guide](../guides/EMOTION.md).
+
+## Other boundaries
+
+Storage and saved browsing are independent of local generation and the emotion
+feature. MLflow and training dependencies stay outside normal application startup.
 The learned evidence model is not integrated: reviewed labels, baseline parity,
 quality/coverage comparisons, latency and live acceptance are still required.
 
@@ -84,8 +119,7 @@ mode, model, cited pages and note checksums). Owners can edit quiz questions; ea
 edit bumps a quiz revision so earlier submissions replay unchanged while new answers
 are graded against the correction.
 
-Remaining architectural work includes backend camera-consent enforcement,
-broader grounding evaluation and further splitting of legacy modules as their
+Remaining architectural work includes broader grounding evaluation and further splitting of legacy modules as their
 behavior is migrated. There is no public deployment or external model service
 required by this local release.
 
