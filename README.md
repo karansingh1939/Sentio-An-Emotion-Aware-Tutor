@@ -35,7 +35,9 @@ flowchart LR
 3. **Structured, validated output.** The local Ollama model must return JSON matching a
    schema; invalid replies are repaired or regenerated, and citations must name a
    retrieved passage. Otherwise Sentio shows the passages themselves, clearly labelled.
-4. **Practice and review.** Quizzes and flashcards are generated as background jobs,
+4. **Sources first, one click to the passage.** Retrieved passages stream to the browser
+   before the answer, and every citation opens the exact passage it refers to.
+5. **Practice and review.** Quizzes and flashcards are generated as background jobs,
    saved with their provenance (model, cited pages, note versions) and scheduled with
    SM-2 spaced repetition.
 
@@ -64,8 +66,9 @@ flowchart LR
   models and chose `qwen2.5:7b` on measured results.
 - **Durable, cancellable work** — background job lanes, streaming answers that can be
   stopped, idempotent request receipts and transactions that reject stale study context.
-- **Study features** — session goals, editable quizzes with revision checks, practice
-  provenance, spaced-repetition review, progress estimates.
+- **Study features** — one-click study from the Library, a cached note overview with
+  suggested questions, clickable citations, instant answer checks, session goals,
+  editable quizzes with revision checks, practice provenance, spaced-repetition review.
 - **Optional emotion-aware tone** — my earlier facial-emotion CNN (FER2013) and browser
   attention tracking, now an opt-in, consented side feature
   ([details](docs/guides/EMOTION.md)).

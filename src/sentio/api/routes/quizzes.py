@@ -91,6 +91,30 @@ def edit_question(
     return {"saved": True, "quiz_id": quiz_id, "question_id": question_id, "revision": revision}
 
 
+class AnswerCheck(BaseModel):
+    answer: str = Field(min_length=1, max_length=1000)
+
+
+@router.post(PREFIX + "/quizzes/{quiz_id}/questions/{question_id}/check", tags=["Practice"])
+def check_answer(
+    quiz_id: str, question_id: str, body: AnswerCheck, user: dict = Depends(get_current_user)
+):
+    """Instant feedback on one answer. Nothing is recorded until the quiz is submitted."""
+    quiz = agent.sm.get_quiz(quiz_id)
+    question = quiz and next(
+        (q for q in quiz["questions"] if q["question_id"] == question_id), None
+    )
+    if not question or quiz["student_id"] != user["student_id"]:
+        raise HTTPException(404, "Question not found.")
+    is_correct, score = quiz_service.grade_answer(question, body.answer)
+    return {
+        "is_correct": is_correct,
+        "score": score,
+        "correct_answer": question["correct_answer"],
+        "explanation": question["explanation"],
+    }
+
+
 @router.post(PREFIX + "/sessions/{session_id}/quiz", tags=["Tutoring"])
 def submit_quiz(session_id: str, req: QuizRequest, user: dict = Depends(get_current_user)):
     """

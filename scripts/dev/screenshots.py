@@ -37,6 +37,23 @@ ANSWER = json.dumps(
 )
 
 
+OVERVIEW = json.dumps(
+    {
+        "summary": (
+            "These notes explain Newton's first law: objects keep their state of motion until "
+            "a net external force acts, inertia resists changes in velocity, and mass measures "
+            "inertia."
+        ),
+        "key_concepts": ["Newton's first law", "Inertia", "Net force", "Mass"],
+        "suggested_questions": [
+            "What is inertia?",
+            "How does mass relate to inertia?",
+            "What makes an object accelerate?",
+        ],
+    }
+)
+
+
 def configure(home):
     os.environ.update(
         {
@@ -56,6 +73,8 @@ def configure(home):
     def fake(self, system_prompt, history, user_message, **kwargs):
         if system_prompt.startswith("You are a patient study tutor."):
             return ANSWER, 40
+        if system_prompt.startswith("You summarize a learner's own notes."):
+            return OVERVIEW, 40
         return complete(system_prompt, history, user_message, **kwargs)
 
     OllamaBackend.load = lambda self: None
@@ -100,20 +119,21 @@ async def capture(url, output, widths, themes):
         )
         await page.wait_for_selector(".library-ready .study-doc-btn", timeout=60000)
         await page.locator(".library-ready .study-doc-btn").click()
-        await page.wait_for_selector("#new-sess-topic")
-        await page.fill("#new-sess-topic", "Newton's first law")
-        await page.click("#new-sess-submit-btn")
-        await page.wait_for_selector("sentio-modal", state="detached")
+        await page.wait_for_selector("#view-tutor", state="visible")
         await page.wait_for_function("!document.getElementById('msg-input').disabled")
-        await page.fill("#msg-input", "What is inertia?")
-        await page.click("#send-btn")
-        await page.wait_for_selector(".msg.tutor", timeout=60000)
+        await page.click("#make-overview-btn")
+        await page.wait_for_selector(".suggested-question", timeout=60000)
+        await page.locator(".suggested-question").first.click()
+        await page.wait_for_selector(".msg.tutor:not(.sources-preview)", timeout=60000)
         shots.append(("study", "#/tutor"))
 
         await page.locator("#session-active-bar").get_by_role("link", name="Try a quiz").click()
         await page.wait_for_selector("#generate-quiz-btn:enabled")
         await page.click("#generate-quiz-btn")
         await page.wait_for_selector("#edit-question-btn", timeout=60000)
+        await page.check('input[name="quiz-opt"][value="A"]')
+        await page.click("#check-answer-btn")
+        await page.wait_for_selector(".answer-feedback")
         shots.append(("quiz", None))
 
         await page.goto(url + "/#/tutor")
@@ -150,6 +170,9 @@ async def capture(url, output, widths, themes):
                         await page.wait_for_selector(".saved-quiz", timeout=10000)
                         await page.locator(".saved-quiz").first.click()
                         await page.wait_for_selector("#edit-question-btn")
+                        await page.check('input[name="quiz-opt"][value="A"]')
+                        await page.click("#check-answer-btn")
+                        await page.wait_for_selector(".answer-feedback")
                     elif name == "flashcards":
                         await page.goto(url + "/#/flashcards")
                         await page.wait_for_selector(".start-review-btn:enabled")

@@ -93,8 +93,14 @@ hybrid keyword/dense search over the owner's active chunks and classifies eviden
 retrieved passages, and falls back to labelled source excerpts. Quizzes, flashcards and
 plans have their own endpoints and jobs rather than graph branches.
 
-Practice generation passes schema mismatches (`InvalidModelOutput`) to the structured
-parser, which repairs or regenerates the reply before falling back to source recall.
+When the stream is open, `retrieve` emits a `sources` event, so the browser shows the
+passages before the answer arrives.
+
+Schema-constrained generation goes through one helper, `generate_structured`, used by
+quizzes, flashcards and document overviews: a mismatch (`InvalidModelOutput`) is
+repaired or regenerated before any fallback. A document overview (summary, key
+concepts, suggested questions) is written as a background job from the document's
+opening passages and cached on the document row against its checksum.
 
 ## Optional emotion feature
 

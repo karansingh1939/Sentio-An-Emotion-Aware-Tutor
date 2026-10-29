@@ -139,6 +139,7 @@ class NLPConfig:
 class TutorConfig:
     # Supported subjects
     SUBJECTS = [
+        "general",
         "mathematics",
         "physics",
         "chemistry",

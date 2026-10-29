@@ -353,6 +353,11 @@ class SentioOrchestrator:
             student_id=state.get("student_id"),
             document_id=state.get("document_id"),
         )
+        control = current_control()
+        citations = getattr(content, "source_citations", None) or []
+        if control and control.emit and citations:
+            # Streaming clients show the passages while the model is still writing.
+            control.emit("sources", {"sources": citations[:5]})
         tone = self.tutor_agent.kb.get_tone_instruction(state["learning_state"])
 
         t1 = time.perf_counter()
