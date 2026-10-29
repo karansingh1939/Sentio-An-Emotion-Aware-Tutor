@@ -12,8 +12,8 @@ from sentio.ingestion import SUPPORTED_DOCUMENT_EXTENSIONS
 from sentio.ingestion.ocr import ExtractionError
 from sentio.jobs.control import WorkCancelled, checkpoint, publish
 from sentio.rag.vector_db import QdrantVectorDB
-from sentio.repositories.document_repository import DocumentRepository
-from sentio.session.session_manager import SessionManager
+from sentio.repositories.documents import DocumentRepository
+from sentio.session.manager import SessionManager
 
 logger = logging.getLogger(__name__)
 _ingestion_lock = RLock()

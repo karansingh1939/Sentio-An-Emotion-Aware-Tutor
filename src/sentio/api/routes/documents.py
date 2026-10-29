@@ -184,7 +184,7 @@ async def upload_job(
     user: dict = Depends(get_current_user),
 ):
     from sentio.api.routes.jobs import fingerprint, get_jobs, submission_id
-    from sentio.repositories.job_repository import JobConflict, JobExpired
+    from sentio.repositories.jobs import JobConflict, JobExpired
 
     jobs = get_jobs(request)
     request_id = submission_id(request)
@@ -242,7 +242,7 @@ def preview(
     offset: int = Query(0, ge=0),
     user: dict = Depends(get_current_user),
 ):
-    from sentio.repositories.document_repository import DocumentRepository
+    from sentio.repositories.documents import DocumentRepository
 
     result = DocumentRepository(agent.sm.persister).preview(
         document_id, user["student_id"], limit, offset

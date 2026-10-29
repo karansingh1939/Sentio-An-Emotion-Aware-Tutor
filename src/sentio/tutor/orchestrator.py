@@ -505,7 +505,7 @@ class SentioOrchestrator:
         t0 = time.perf_counter()
         logger.info("Executing real Quiz Node in LangGraph orchestrator.")
 
-        from sentio.quiz.quiz_service import QuizService
+        from sentio.quiz.service import QuizService
 
         quiz_service = QuizService(self.tutor_agent)
 

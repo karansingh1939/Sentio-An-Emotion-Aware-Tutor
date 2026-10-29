@@ -44,7 +44,7 @@ changes do not claim an inference speedup.
 ## Reproduce
 
 ```powershell
-uv run python scripts/benchmark_ollama_cpu.py --repetitions 3 --cases 3 --output reports/latency.json
+uv run python scripts/eval/benchmark_ollama_cpu.py --repetitions 3 --cases 3 --output reports/latency.json
 ```
 
 Hardware: Intel64 Family 6 Model 154 Stepping 3, GenuineIntel; 20 logical CPUs; 15.70 GiB RAM; Windows-11-10.0.26200-SP0. Model `phi3:mini`, digest `4f222292793889a9a40a020799cfd28d53f3e01af25d48e06c5e708610fc47e9`. The active Ollama model reported zero VRAM during the experiment.

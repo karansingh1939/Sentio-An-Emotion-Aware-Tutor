@@ -53,7 +53,7 @@ runs are the next step before any high-stakes grading use.
 ## Reproduction and configuration
 
 ```powershell
-uv run python scripts/evaluate_retrieval.py --grade --output reports/evaluation.json
+uv run python scripts/eval/evaluate_retrieval.py --grade --output reports/evaluation.json
 ```
 
 Hardware: Intel64 Family 6 Model 154 Stepping 3, GenuineIntel; 20 logical CPUs; 15.70 GiB RAM; Windows-11-10.0.26200-SP0.

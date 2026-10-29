@@ -49,5 +49,5 @@ before publishing broader accuracy claims.
 Reproduce with installed Tesseract English data and the OCR extra:
 
 ```powershell
-uv run python scripts/evaluate_ocr.py --output reports/ocr-evaluation.json
+uv run python scripts/eval/evaluate_ocr.py --output reports/ocr-evaluation.json
 ```
