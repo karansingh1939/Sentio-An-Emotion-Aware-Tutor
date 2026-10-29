@@ -403,3 +403,45 @@ reports/evidence/review-evidence-2026-10-14.html. No human labels were invented.
 docs/HUMAN_HANDOFF.md records the remaining author review, complete classifier
 labels, actual students and independent review. Training/analysis can resume
 when actual receipts arrive; wider roadmap gates remain unchanged.
+
+## Edge-case repairs — 15 October 2026
+
+Branch: codex/fix-audit-edge-cases. All four reproduced findings from
+reports/EDGE_CASE_AUDIT_2026-10-15.md are fixed: selected documents always reach
+retrieval/evidence validation; upload and sync share image extensions; full
+stream buffers preserve completion/error/cancellation; successful recovery
+operations trigger retention, including historical done records. Today remains
+the revision-plan/progress entry point while selected-note chat stays grounded.
+
+Regression cases failed before the changes. Focused modules: 47 passed. Full
+Python/Chromium suite: 282 passed, 31 subtests passed, one Tesseract skip, one
+existing TestClient timeout deprecation warning. All six JS scripts, Prettier,
+Ruff lint/format, and offline wheel/source builds pass. An in-memory routing
+mutation was rejected by six regression cases. Test socket/key restrictions were
+resolved with permitted isolated execution; no tests or quality gates weakened.
+
+Remaining: real OCR needs Tesseract, and live-model semantic quality, independent
+human review and student-use acceptance still require their separate evidence.
+The frontend agent's earlier interrupted audit was not exhaustive. No personal
+documents/databases were changed. Resume the existing roadmap/human handoff;
+the four audited bugs have no remaining implementation work in this branch.
+
+Fresh evidence recheck requested by owner: 51 focused tests passed in 10.04s;
+full Python/Chromium run passed 282 tests and 31 subtests in 159.46s, with one
+missing-Tesseract skip and one existing TestClient deprecation warning. JS/lint/
+formatting passed again. Reports, raw output, JUnit, source hashes, and read-only
+synthetic database observations are saved under
+reports/verification/edge-recheck-20261015/EVIDENCE.md. Application code and tests
+were unchanged during the recheck. Live semantic quality and real OCR remain
+separate validation limits.
+
+## Backup rename lock — 29 October 2026
+
+A full run on Windows failed once with WinError 5 when create_backup renamed its
+verified staging folder; reruns passed. Backup and restore now retry that final
+rename with short backoff on PermissionError (up to 8 attempts, about 6s) and
+re-raise if the lock persists, leaving no partial snapshot. Two regressions
+simulate transient and persistent locks; a real lock during one loop added an
+extra attempt and the backup still succeeded. Backup tests: 20 consecutive
+passes. Full Python/Chromium suite: 284 passed, 31 subtests passed, one
+missing-Tesseract skip, one existing TestClient deprecation warning.
