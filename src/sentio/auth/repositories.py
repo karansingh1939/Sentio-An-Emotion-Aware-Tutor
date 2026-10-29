@@ -9,6 +9,12 @@ from sentio.auth.models import AuditLog, ConsentHistory, RefreshToken, UserAccou
 logger = logging.getLogger(__name__)
 
 
+def _existing_tables(connection):
+    return set(
+        connection.execute(text("SELECT name FROM sqlite_master WHERE type='table'")).scalars()
+    )
+
+
 class AuthRepository:
     """SQL persistence layer for all authentication and privacy entities."""
 
@@ -123,10 +129,14 @@ class AuthRepository:
             if connection is not None
             else self.persister._engine.begin() as connection
         ):
+            # Legacy tables such as whiteboards exist only in older databases.
+            existing = _existing_tables(connection)
             for table, condition in dependent_tables.items():
-                connection.execute(text(f"DELETE FROM {table} WHERE {condition}"), params)
+                if table in existing:
+                    connection.execute(text(f"DELETE FROM {table} WHERE {condition}"), params)
             for table in owned_tables:
-                connection.execute(text(f"DELETE FROM {table} WHERE student_id = :sid"), params)
+                if table in existing:
+                    connection.execute(text(f"DELETE FROM {table} WHERE student_id = :sid"), params)
 
     def export_study_artifacts(self, student_id):
         inventory = {
@@ -146,6 +156,7 @@ class AuthRepository:
             "emotion_events": "session_id IN (SELECT session_id FROM sessions WHERE student_id = :sid)",
         }
         with self.persister._engine.connect() as connection:
+            existing = _existing_tables(connection)
             return {
                 table: [
                     dict(row)
@@ -154,6 +165,7 @@ class AuthRepository:
                     ).mappings()
                 ]
                 for table, condition in inventory.items()
+                if table in existing
             }
 
     def delete_telemetry(self, student_id: str):

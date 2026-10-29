@@ -8,7 +8,6 @@ import { SettingsView } from './views/settings.js';
 import { DocumentsView } from './views/documents.js';
 import { QuizzesView } from './views/quizzes.js';
 import { FlashcardsView } from './views/flashcards.js';
-import { WhiteboardView } from './views/whiteboard.js';
 import { AnalyticsView } from './views/analytics.js';
 import { HistoryView } from './views/history.js';
 import { TutorView } from './views/tutor.js';
@@ -23,7 +22,6 @@ const viewControllers = {
   documents: new DocumentsView('view-documents'),
   quizzes: new QuizzesView('view-quizzes'),
   flashcards: new FlashcardsView('view-flashcards'),
-  whiteboard: new WhiteboardView('view-whiteboard'),
   analytics: new AnalyticsView('view-analytics'),
   history: new HistoryView('view-history'),
 };

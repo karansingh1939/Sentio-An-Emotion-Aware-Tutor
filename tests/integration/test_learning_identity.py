@@ -345,34 +345,6 @@ class TestLearningIdentity(unittest.TestCase):
             )
             self.assertEqual(response.status_code, 200)
 
-    def test_whiteboard_overwrite_and_export_check_existing_owner(self):
-        self.sm.save_whiteboard(
-            "board-a", self.a, self.session_a.session_id, "Private", '{"shapes": []}'
-        )
-        body = {
-            "whiteboard_id": "board-a",
-            "student_id": self.b,
-            "session_id": self.session_b.session_id,
-            "title": "Overwrite",
-            "canvas_state": {"width": 800, "height": 600, "shapes": []},
-        }
-        result = self.client.post(
-            self.prefix + "/whiteboards/sessions", headers=self.headers_b, json=body
-        )
-        self.assertEqual(result.status_code, 403)
-        self.assertEqual(self.sm.get_whiteboard("board-a")["title"], "Private")
-        with patch.object(
-            self.api.whiteboard_service, "export_canvas", return_value=b"png"
-        ) as export:
-            for headers, expected in [({}, 401), (self.headers_b, 403), (self.headers_a, 200)]:
-                result = self.client.post(
-                    self.prefix + "/whiteboards/board-a/export",
-                    headers=headers,
-                    json={"format": "png"},
-                )
-                self.assertEqual(result.status_code, expected)
-            self.assertEqual(export.call_count, 1)
-
     def test_websocket_requires_owner_access_token(self):
         path = self.prefix + "/ws/" + self.session_a.session_id
         for headers in [{}, self.headers_b, self.headers(self.tokens_a["refresh_token"])]:

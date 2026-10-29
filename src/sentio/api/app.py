@@ -13,7 +13,6 @@ from sentio.api.dependencies import PREFIX as PREFIX
 from sentio.api.dependencies import STATIC_DIR
 from sentio.api.dependencies import agent as agent
 from sentio.api.dependencies import quiz_service as quiz_service
-from sentio.api.dependencies import whiteboard_service as whiteboard_service
 from sentio.api.middleware import (
     BodyLimitMiddleware,
     RateLimitMiddleware,
@@ -35,7 +34,6 @@ from sentio.api.routes import (
     system,
     telemetry,
     tutoring,
-    whiteboards,
 )
 from sentio.config import api_cfg
 from sentio.shared.exceptions import LLMServiceUnavailableError
@@ -153,7 +151,6 @@ app.include_router(telemetry.router)
 app.include_router(tutoring.router)
 app.include_router(quizzes.router)
 app.include_router(flashcards.router)
-app.include_router(whiteboards.router)
 app.include_router(auth.router)
 app.include_router(privacy.router)
 app.include_router(intelligence.router)
