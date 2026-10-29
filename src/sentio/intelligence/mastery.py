@@ -31,20 +31,14 @@ class MasteryEngine:
             )
             evidences["quiz"] = correct_count / len(quiz_attempts)
 
-        # 2. Flashcard evidence (success rate: quality_score >= 3 is success)
-        if flashcard_reviews:
-            sum(
-                1
-                for r in flashcard_reviews
-                if r.get("interval_days", 0) > 1 or r.get("repetition_count", 0) > 0
-            )
-            # Alternatively, compute based on Ease Factor: average Ease Factor / 2.5 capped at 1.0
-            ease_factors = [f.get("ease_factor", 2.5) for f in flashcard_reviews]
-            if ease_factors:
-                avg_ease = sum(ease_factors) / len(ease_factors)
-                evidences["flashcard"] = min(1.0, avg_ease / 2.5)
-            else:
-                evidences["flashcard"] = 0.5
+        # 2. Flashcard evidence: mean FSRS recall probability of reviewed cards
+        recall = [
+            f["recall_probability"]
+            for f in flashcard_reviews
+            if f.get("recall_probability") is not None
+        ]
+        if recall:
+            evidences["flashcard"] = sum(recall) / len(recall)
 
         # 3. Tutoring session evidence (fraction of engaged/curious/neutral vs struggling/anxious/frustrated)
         if emotion_events:
