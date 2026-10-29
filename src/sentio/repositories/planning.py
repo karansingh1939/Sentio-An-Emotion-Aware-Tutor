@@ -6,6 +6,23 @@ import time
 from sqlalchemy import text
 
 
+def active_goal(connection, owner, goal_id):
+    """The owner's active goal bound to study context, or None if absent, foreign or finished."""
+    if not goal_id:
+        return None
+    row = (
+        connection.execute(
+            text(
+                "SELECT goal_id,goal_text FROM learning_goals WHERE student_id=:owner AND goal_id=:goal AND status='active'"
+            ),
+            {"owner": owner, "goal": goal_id},
+        )
+        .mappings()
+        .first()
+    )
+    return dict(row) if row else None
+
+
 class PlanningRepository:
     def __init__(self, engine):
         self.engine = engine

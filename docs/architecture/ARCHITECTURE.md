@@ -77,8 +77,14 @@ MLflow and training dependencies stay outside normal application startup.
 The learned evidence model is not integrated: reviewed labels, baseline parity,
 quality/coverage comparisons, latency and live acceptance are still required.
 
-Remaining architectural work includes shared goal selection in study context,
-persistent provenance and quiz editing, backend camera-consent enforcement,
+A session may bind one of its owner's active goals. The goal's ID and text are part
+of the study context version, so editing, completing or switching it invalidates
+in-flight turns and practice. Saved quizzes and cards store provenance (generation
+mode, model, cited pages and note checksums). Owners can edit quiz questions; each
+edit bumps a quiz revision so earlier submissions replay unchanged while new answers
+are graded against the correction.
+
+Remaining architectural work includes backend camera-consent enforcement,
 broader grounding evaluation and further splitting of legacy modules as their
 behavior is migrated. There is no public deployment or external model service
 required by this local release.

@@ -40,12 +40,20 @@ const { QuizzesView } = await loadView('quizzes');
 const quiz = new QuizzesView('view');
 quiz.quiz = {
   title: malicious,
-  questions: [{ question_text: malicious, options: [malicious, 'Safe'] }],
+  questions: [{ question_id: 'q0', question_text: malicious, options: [malicious, 'Safe'] }],
+  provenance: {
+    mode: 'source_recall',
+    sources: [{ filename: malicious, page: 2 }],
+    edited: true,
+  },
 };
 quiz.bindQuizEvents = () => {};
 quiz.renderQuizActive();
 assert.ok(!container.innerHTML.includes(malicious), 'Quiz renders model output as executable HTML');
 assert.ok(container.innerHTML.includes('&lt;img'));
+assert.ok(container.innerHTML.includes('Quoted from your notes'), 'Fallback quiz is labelled');
+assert.ok(container.innerHTML.includes('edited by you'), 'Edited quiz is labelled');
+assert.ok(container.innerHTML.includes('id="edit-question-btn"'), 'Saved question can be edited');
 quiz.results = {
   total_score: 0,
   passed: false,

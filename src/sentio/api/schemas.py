@@ -37,6 +37,10 @@ class GroundingRequest(BaseModel):
     document_id: str = Field(..., description="none | all | specific document ID")
 
 
+class SessionGoalRequest(BaseModel):
+    goal_id: Optional[str] = Field(None, description="Active owned goal ID, or null to clear")
+
+
 class CreateGoalRequest(BaseModel):
     goal_text: str = Field(
         ..., min_length=1, max_length=500, description="The description of the learning goal"

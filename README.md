@@ -94,12 +94,13 @@ datasets/           Versioned synthetic evidence corpus and manifests
 
 The project retains failed experiments and separates deterministic software tests from model-quality measurements.
 
-| Experiment                          | Recorded result                                                                    | What it establishes                                                                                 |
-| ----------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Retrieval on 12 synthetic documents | Keyword and hybrid each found the relevant passage in 17/18 positive cases         | Hybrid showed no gain on this small corpus; retrieved candidates do not establish supported answers |
-| Repeated semantic grading           | Baseline and candidate each passed 20/25 semantic rubrics per repeat               | The candidate traded false positives for false negatives; no prompt change was adopted              |
-| Local generation comparison         | 72 requests across two models and two prompt policies                              | Both models answered an unsupported question; faster output did not establish better grounding      |
-| Evidence classifier pipeline        | Frozen 30-document, 120-question corpus; review, calibration, and ablation tooling | Labels remain unreviewed and classifier training results are pending                                |
+| Experiment                          | Recorded result                                                                                        | What it establishes                                                                                 |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| Retrieval on 12 synthetic documents | Keyword and hybrid each found the relevant passage in 17/18 positive cases                             | Hybrid showed no gain on this small corpus; retrieved candidates do not establish supported answers |
+| Repeated semantic grading           | Baseline and candidate each passed 20/25 semantic rubrics per repeat                                   | The candidate traded false positives for false negatives; no prompt change was adopted              |
+| Local generation comparison         | 72 requests across two models and two prompt policies                                                  | Both models answered an unsupported question; faster output did not establish better grounding      |
+| Four installed local models         | `qwen2.5:7b` answered 3/4 covered questions vs 2/4 for `phi3:mini`; all four declined 6/6 absent facts | Larger local models can improve coverage at higher latency; 12 cases and lexical rubrics only       |
+| Evidence classifier pipeline        | Frozen 30-document, 120-question corpus; review, calibration, and ablation tooling                     | Labels remain unreviewed and classifier training results are pending                                |
 
 See [retrieval evaluation](reports/AI_EVALUATION_2026-10-11.md), [grading follow-up](reports/GRADING_FOLLOWUP_2026-10-11.md), [generation experiment](docs/evaluation/LOCAL_GENERATION_EXPERIMENT.md), and [evidence experiment](docs/evaluation/EVIDENCE_EXPERIMENT.md) for datasets, hardware, commands, raw outputs, and limitations.
 

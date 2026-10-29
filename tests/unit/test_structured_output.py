@@ -179,6 +179,40 @@ class TestStructuredParser(unittest.TestCase):
         self.assertEqual(metrics.regenerations, 1)
         self.assertEqual(metrics.recovered_successes, 1)
 
+    def test_true_false_without_options_uses_the_fixed_pair(self):
+        quiz = QuizPayloadSchema.model_validate(
+            {
+                "title": "Inertia",
+                "questions": [
+                    {
+                        "question_text": "Mass measures inertia.",
+                        "question_type": "true_false",
+                        "options": None,
+                        "correct_answer": "true",
+                    }
+                ],
+            }
+        )
+        self.assertEqual(quiz.questions[0].options, ["True", "False"])
+        self.assertEqual(quiz.questions[0].correct_answer, "True")
+
+    def test_choice_questions_without_usable_options_still_fail(self):
+        for question_type, answer in (("multiple_choice", "Mass"), ("true_false", "Maybe")):
+            with self.assertRaises(ValidationError):
+                QuizPayloadSchema.model_validate(
+                    {
+                        "title": "Inertia",
+                        "questions": [
+                            {
+                                "question_text": "Which quantity measures inertia?",
+                                "question_type": question_type,
+                                "options": None,
+                                "correct_answer": answer,
+                            }
+                        ],
+                    }
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

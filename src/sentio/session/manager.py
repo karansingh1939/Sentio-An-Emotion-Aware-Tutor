@@ -904,6 +904,7 @@ class SessionManager:
         title: str,
         questions: List[dict],
         connection=None,
+        provenance: Optional[dict] = None,
     ):
         if not self.persister._use_db:
             return
@@ -926,8 +927,8 @@ class SessionManager:
 
             conn.execute(
                 text("""
-                    INSERT INTO quizzes (quiz_id, student_id, session_id, title, created_at)
-                    VALUES (:qid, :sid, :sessid, :title, :ts)
+                    INSERT INTO quizzes (quiz_id, student_id, session_id, title, created_at, provenance_json)
+                    VALUES (:qid, :sid, :sessid, :title, :ts, :provenance)
                 """),
                 {
                     "qid": quiz_id,
@@ -935,10 +936,11 @@ class SessionManager:
                     "sessid": session_id,
                     "title": title,
                     "ts": time.time(),
+                    "provenance": json.dumps(provenance) if provenance else None,
                 },
             )
             for i, q in enumerate(questions):
-                q_id = f"{quiz_id}_q{i}"
+                q_id = q.get("question_id") or f"{quiz_id}_q{i}"
                 conn.execute(
                     text("""
                         INSERT INTO quiz_questions 
@@ -969,16 +971,18 @@ class SessionManager:
 
         with self.persister._engine.connect() as conn:
             q_row = conn.execute(
-                text("SELECT title, student_id, session_id FROM quizzes WHERE quiz_id = :qid"),
+                text(
+                    "SELECT title, student_id, session_id, revision, provenance_json FROM quizzes WHERE quiz_id = :qid"
+                ),
                 {"qid": quiz_id},
             ).fetchone()
             if not q_row:
                 return None
-            title, student_id, session_id = q_row
+            title, student_id, session_id, revision, provenance = q_row
 
             q_rows = conn.execute(
                 text("""
-                    SELECT question_text, question_type, options_json, correct_answer, explanation, difficulty, topic 
+                    SELECT question_text, question_type, options_json, correct_answer, explanation, difficulty, topic, question_id
                     FROM quiz_questions WHERE quiz_id = :qid ORDER BY rowid
                 """),
                 {"qid": quiz_id},
@@ -995,6 +999,7 @@ class SessionManager:
                         "explanation": r[4],
                         "difficulty": r[5],
                         "topic": r[6],
+                        "question_id": r[7],
                     }
                 )
 
@@ -1004,6 +1009,8 @@ class SessionManager:
                 "session_id": session_id,
                 "title": title,
                 "questions": questions,
+                "revision": revision or 0,
+                "provenance": json.loads(provenance) if provenance else None,
             }
 
     def save_flashcard_deck(self, deck_id: str, student_id: str, deck_name: str):
@@ -1037,7 +1044,13 @@ class SessionManager:
             return [{"deck_id": r[0], "deck_name": r[1], "created_at": r[2]} for r in result]
 
     def save_flashcards(
-        self, cards: List[dict], student_id: str, topic_id: str, deck_id: str, connection=None
+        self,
+        cards: List[dict],
+        student_id: str,
+        topic_id: str,
+        deck_id: str,
+        connection=None,
+        provenance: Optional[dict] = None,
     ):
         if not self.persister._use_db:
             return
@@ -1058,8 +1071,8 @@ class SessionManager:
                 conn.execute(
                     text("""
                         INSERT INTO flashcards 
-                        (card_id, student_id, topic_id, deck_id, front_text, back_text, created_at, interval_days, repetition_count, ease_factor, next_review_at, tags)
-                        VALUES (:cid, :sid, :tid, :did, :front, :back, :ts, 0, 0, 2.5, :next_ts, :tags)
+                        (card_id, student_id, topic_id, deck_id, front_text, back_text, created_at, interval_days, repetition_count, ease_factor, next_review_at, tags, provenance_json)
+                        VALUES (:cid, :sid, :tid, :did, :front, :back, :ts, 0, 0, 2.5, :next_ts, :tags, :provenance)
                     """),
                     {
                         "cid": card_id,
@@ -1071,6 +1084,7 @@ class SessionManager:
                         "ts": time.time(),
                         "next_ts": time.time(),
                         "tags": json.dumps(c.get("tags", [])),
+                        "provenance": json.dumps(provenance) if provenance else None,
                     },
                 )
             if connection is None:
@@ -1085,7 +1099,7 @@ class SessionManager:
 
         with self.persister._engine.connect() as conn:
             query = """
-                SELECT card_id, topic_id, deck_id, front_text, back_text, interval_days, repetition_count, ease_factor, next_review_at, tags
+                SELECT card_id, topic_id, deck_id, front_text, back_text, interval_days, repetition_count, ease_factor, next_review_at, tags, provenance_json
                 FROM flashcards WHERE student_id = :sid AND next_review_at <= :now
             """
             params = {"sid": student_id, "now": time.time()}
@@ -1108,6 +1122,7 @@ class SessionManager:
                         "ease_factor": r[7],
                         "next_review_at": r[8],
                         "tags": json.loads(r[9]) if r[9] else [],
+                        "provenance": json.loads(r[10]) if r[10] else None,
                     }
                 )
             return cards

@@ -328,6 +328,12 @@ class SessionPersister:
                 conn.execute(
                     text("ALTER TABLE quizzes ADD COLUMN submissions_json TEXT DEFAULT '{}'")
                 )
+            if "revision" not in quiz_columns:
+                conn.execute(
+                    text("ALTER TABLE quizzes ADD COLUMN revision INTEGER NOT NULL DEFAULT 0")
+                )
+            if "provenance_json" not in quiz_columns:
+                conn.execute(text("ALTER TABLE quizzes ADD COLUMN provenance_json TEXT"))
             conn.execute(
                 text("""
                 CREATE TABLE IF NOT EXISTS flashcard_decks (
@@ -364,6 +370,8 @@ class SessionPersister:
                 )
             if "tags" not in card_columns:
                 conn.execute(text("ALTER TABLE flashcards ADD COLUMN tags TEXT"))
+            if "provenance_json" not in card_columns:
+                conn.execute(text("ALTER TABLE flashcards ADD COLUMN provenance_json TEXT"))
 
             # Identity & Privacy Platform tables
             conn.execute(

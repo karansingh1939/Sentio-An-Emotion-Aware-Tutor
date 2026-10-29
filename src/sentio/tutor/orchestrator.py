@@ -88,6 +88,17 @@ class SentioOrchestrator:
 
     # ── Nodes Implementation ───────────────────
 
+    def _session_goal(self, student_id, session_id):
+        from sentio.repositories.planning import active_goal
+
+        sm = self.tutor_agent.sm
+        # Goal context is optional; lightweight managers without sessions or a database skip it.
+        session = sm.get_session(session_id) if hasattr(sm, "get_session") else None
+        if session is None or not session.metadata.get("goal_id") or not sm.persister._use_db:
+            return None
+        with sm.persister._engine.connect() as connection:
+            return active_goal(connection, student_id, session.metadata["goal_id"])
+
     def memory_lookup_node(self, state: OrchestratorState) -> OrchestratorState:
         t0 = time.perf_counter()
 
@@ -96,6 +107,9 @@ class SentioOrchestrator:
 
         # 1. Retrieve standard student history and memory context
         memory_context = self.tutor_agent.sm.get_student_memory_context(student_id)
+        goal = self._session_goal(student_id, session_id)
+        if goal:
+            memory_context += f"\nGoal for this study session: {goal['goal_text']}"
 
         # 2. Retrieve telemetry summary for the current session
         attention_summary = self.tutor_agent.sm.get_attention_summary(session_id)

@@ -1,4 +1,4 @@
-import { escapeHtml } from '../core/html.js';
+import { describeProvenance, escapeHtml } from '../core/html.js';
 // Quizzes View Controller for Sentio (ES Module)
 import { sentioAPI } from '../core/api.js';
 import { store } from '../core/store.js';
@@ -147,7 +147,7 @@ export class QuizzesView {
       store.getState('activeRoute') !== '#/quizzes'
     )
       return;
-    panel.innerHTML = `<sentio-card title="Saved quizzes">${quizzes.status === 'fulfilled' ? `<ul class="study-list">${(quizzes.value.quizzes || []).map((quiz) => `<li><button class="workspace-action saved-quiz" data-id="${escapeHtml(quiz.quiz_id)}">${escapeHtml(quiz.title)}</button></li>`).join('') || '<li>No saved quizzes yet.</li>'}</ul>` : '<p role="alert">Saved quizzes unavailable. Reopen Review to retry.</p>'}</sentio-card><sentio-card title="Mistake review">${feedback.status === 'fulfilled' ? `<p>${escapeHtml(feedback.value.summary)}</p><ul class="study-list">${feedback.value.mistakes.map((mistake) => `<li><strong>${escapeHtml(mistake.topic)}</strong><p>${escapeHtml(mistake.question_text)}</p><small>Your answer: ${escapeHtml(mistake.student_answer)}</small><p>Revisit the explanation in your saved quiz or study notes before trying again.</p></li>`).join('')}</ul>` : '<p role="alert">Practice evidence unavailable.</p>'}</sentio-card>`;
+    panel.innerHTML = `<sentio-card title="Saved quizzes">${quizzes.status === 'fulfilled' ? `<ul class="study-list">${(quizzes.value.quizzes || []).map((quiz) => `<li><button class="workspace-action saved-quiz" data-id="${escapeHtml(quiz.quiz_id)}">${escapeHtml(quiz.title)}</button>${quiz.provenance ? `<br><small>${escapeHtml(describeProvenance(quiz.provenance))}</small>` : ''}</li>`).join('') || '<li>No saved quizzes yet.</li>'}</ul>` : '<p role="alert">Saved quizzes unavailable. Reopen Review to retry.</p>'}</sentio-card><sentio-card title="Mistake review">${feedback.status === 'fulfilled' ? `<p>${escapeHtml(feedback.value.summary)}</p><ul class="study-list">${feedback.value.mistakes.map((mistake) => `<li><strong>${escapeHtml(mistake.topic)}</strong><p>${escapeHtml(mistake.question_text)}</p><small>Your answer: ${escapeHtml(mistake.student_answer)}</small><p>Revisit the explanation in your saved quiz or study notes before trying again.</p></li>`).join('')}</ul>` : '<p role="alert">Practice evidence unavailable.</p>'}</sentio-card>`;
     panel.querySelectorAll('.saved-quiz').forEach((button) => {
       button.onclick = async () => {
         button.disabled = true;
@@ -232,6 +232,7 @@ export class QuizzesView {
         <div>
           <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">${escapeHtml(this.quiz.title || 'Dynamic Assessment')}</h2>
           <p style="color:var(--text-dim);font-size:14px;">Select your answer and navigate using the controls below.</p>
+          ${this.quiz.provenance ? `<p class="practice-provenance"><small>${escapeHtml(describeProvenance(this.quiz.provenance))}</small></p>` : ''}
         </div>
         <span style="font-family:var(--mono);font-size:14px;background:var(--border);padding:4px 8px;border-radius:4px;color:var(--accent);font-weight:bold;">
           Question ${this.currentQuestionIdx + 1} of ${totalQ}
@@ -243,6 +244,7 @@ export class QuizzesView {
           <p style="font-size:13px;line-height:1.5;color:var(--text);margin-bottom:16px;font-weight:500;">
             ${escapeHtml(q.question_text)}
           </p>
+          ${q.question_id ? '<button class="workspace-action" type="button" id="edit-question-btn">Edit this question</button>' : ''}
 
           <div style="display:flex;flex-direction:column;gap:10px;">
             ${
@@ -294,6 +296,8 @@ export class QuizzesView {
 
   bindQuizEvents() {
     const totalQ = this.quiz.questions.length;
+    const editButton = this.container.querySelector('#edit-question-btn');
+    if (editButton) editButton.onclick = () => this.editCurrentQuestion();
 
     // Save state on change
     const options = this.container.querySelectorAll('input[name="quiz-opt"]');
@@ -436,6 +440,58 @@ export class QuizzesView {
     this.container.querySelector('#close-quiz-btn').onclick = () => {
       this.resetQuizState();
       this.render();
+    };
+  }
+
+  editCurrentQuestion() {
+    const quiz = this.quiz;
+    const question = quiz.questions[this.currentQuestionIdx];
+    const owner = store.getState('currentUser')?.id;
+    const revision = this.revision;
+    const choices = ['multiple_choice', 'true_false'].includes(question.question_type);
+    const modal = document.createElement('sentio-modal');
+    modal.setAttribute('title', 'Edit question');
+    modal.innerHTML = `<form><label for="edit-question-text">Question</label><textarea id="edit-question-text" maxlength="2000" required>${escapeHtml(question.question_text)}</textarea>${choices ? `<label for="edit-question-options">Options, one per line</label><textarea id="edit-question-options" required>${escapeHtml((question.options || []).join('\n'))}</textarea>` : ''}<label for="edit-question-answer">Correct answer${choices ? ' (must match an option exactly)' : ''}</label><input id="edit-question-answer" maxlength="1000" required value="${escapeHtml(question.correct_answer)}"><label for="edit-question-explanation">Explanation</label><textarea id="edit-question-explanation" maxlength="5000">${escapeHtml(question.explanation)}</textarea><p><small>Earlier results keep their grades. New answers use this correction.</small></p><button class="workspace-action primary" type="submit">Save question</button><p role="status"></p></form>`;
+    document.body.appendChild(modal);
+    modal.querySelector('form').onsubmit = async (event) => {
+      event.preventDefault();
+      const body = {
+        question_text: modal.querySelector('#edit-question-text').value.trim(),
+        options: choices
+          ? modal
+              .querySelector('#edit-question-options')
+              .value.split('\n')
+              .map((option) => option.trim())
+              .filter(Boolean)
+          : null,
+        correct_answer: modal.querySelector('#edit-question-answer').value.trim(),
+        explanation: modal.querySelector('#edit-question-explanation').value.trim(),
+        expected_revision: quiz.revision ?? 0,
+      };
+      if (!body.question_text || !body.correct_answer) return;
+      const button = modal.querySelector('button[type="submit"]');
+      button.disabled = true;
+      try {
+        await sentioAPI.request(`/quizzes/${quiz.quiz_id}/questions/${question.question_id}`, {
+          method: 'PUT',
+          body: JSON.stringify(body),
+        });
+        const updated = await sentioAPI.get(`/quizzes/${quiz.quiz_id}`);
+        modal.close();
+        if (
+          revision === this.revision &&
+          owner === store.getState('currentUser')?.id &&
+          store.getState('activeRoute') === '#/quizzes' &&
+          this.quiz === quiz
+        ) {
+          this.quiz = updated;
+          this.render();
+          toast('Question saved.');
+        }
+      } catch (error) {
+        modal.querySelector('[role="status"]').textContent = error.message;
+        button.disabled = false;
+      }
     };
   }
 }
