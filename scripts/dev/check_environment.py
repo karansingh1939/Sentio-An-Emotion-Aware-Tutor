@@ -6,7 +6,6 @@ Validates Python runtime, dependencies, system variables, and service connection
 """
 
 import logging
-import os
 import re
 import sys
 import tomllib
@@ -55,10 +54,7 @@ def check_environment_variables():
     logger.info("Checking environment variables...")
     from sentio.config import nlp_cfg
 
-    backend = nlp_cfg.LLM_BACKEND
-    logger.info("  LLM_BACKEND is set to: %s", backend)
-    if backend == "openai" and not os.getenv("OPENAI_API_KEY"):
-        logger.warning("  [WARN] LLM_BACKEND is 'openai' but OPENAI_API_KEY is not set.")
+    logger.info("  Ollama: %s (model %s)", nlp_cfg.OLLAMA_BASE_URL, nlp_cfg.OLLAMA_MODEL)
     return True
 
 

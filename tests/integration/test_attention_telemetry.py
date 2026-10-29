@@ -18,7 +18,6 @@ from unittest.mock import patch
 import sentio.config as config
 from tests.helpers import login_student
 
-config.nlp_cfg.LLM_BACKEND = "ollama"
 config.tutor_cfg.ENABLE_ADAPTIVE_TUTORING = False
 
 # Mock system_health_check to prevent webcam lock during testing

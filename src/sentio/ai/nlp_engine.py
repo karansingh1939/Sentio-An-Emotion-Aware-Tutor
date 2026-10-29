@@ -6,7 +6,7 @@ from sentio.ai.history import ConversationHistory
 from sentio.ai.models import TutorResponse
 from sentio.ai.parser import ResponseParser
 from sentio.ai.prompts import PromptBuilder
-from sentio.ai.providers import HuggingFaceBackend, LLMBackend, OllamaBackend, OpenAIBackend
+from sentio.ai.providers import LLMBackend, OllamaBackend
 from sentio.config import nlp_cfg, tutor_cfg
 from sentio.shared.exceptions import LLMServiceUnavailableError
 
@@ -38,20 +38,8 @@ class NLPEngine:
     # ── Setup ──────────────────────────────────
 
     def load(self):
-        """Initialize the configured LLM backend."""
-        backend_name = self.cfg.LLM_BACKEND.lower()
-
-        if backend_name == "openai":
-            self._backend = OpenAIBackend(self.cfg)
-        elif backend_name == "huggingface":
-            self._backend = HuggingFaceBackend(self.cfg)
-        elif backend_name == "ollama":
-            self._backend = OllamaBackend(self.cfg)
-        else:
-            raise ValueError(
-                f"Unknown LLM backend: '{backend_name}'. Choose: openai | huggingface | ollama"
-            )
-
+        """Connect to the local Ollama model."""
+        self._backend = OllamaBackend(self.cfg)
         self._backend.load()
         logger.info(f"NLPEngine ready. Backend: {self._backend.name}")
 
