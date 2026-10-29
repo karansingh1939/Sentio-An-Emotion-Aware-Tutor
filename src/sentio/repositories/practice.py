@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from sqlalchemy import text
 
 from sentio.jobs.control import WorkCancelled
+from sentio.repositories.planning import active_goal
 
 
 class ReviewConflict(ValueError):
@@ -31,6 +32,7 @@ class PracticeRepository:
                 )
                 if source == "all" or row[0] in selected
             ]
+            goal = active_goal(conn, session.student_id, session.metadata.get("goal_id"))
         if source not in (None, "none", "all") and {r[0] for r in documents} != set(selected):
             raise WorkCancelled("Selected notes are no longer available. Choose sources and retry.")
         return {
@@ -39,6 +41,7 @@ class PracticeRepository:
             "difficulty": session.difficulty,
             "source": source,
             "documents": documents,
+            "goal": goal,
         }
 
     @contextmanager
@@ -112,10 +115,10 @@ class PracticeRepository:
                 text("SELECT COUNT(*) FROM quizzes WHERE student_id=:owner"), params
             ).scalar()
             rows = [
-                dict(row)
+                {**row, "provenance": json.loads(row["provenance"]) if row["provenance"] else None}
                 for row in connection.execute(
                     text(
-                        "SELECT quiz_id,session_id,title,created_at FROM quizzes WHERE student_id=:owner ORDER BY created_at DESC,quiz_id DESC LIMIT :limit OFFSET :offset"
+                        "SELECT quiz_id,session_id,title,created_at,revision,provenance_json AS provenance FROM quizzes WHERE student_id=:owner ORDER BY created_at DESC,quiz_id DESC LIMIT :limit OFFSET :offset"
                     ),
                     params,
                 ).mappings()
@@ -130,7 +133,7 @@ class PracticeRepository:
         with self.engine.begin() as connection:
             result = connection.execute(
                 text(
-                    "UPDATE flashcards SET front_text=:front,back_text=:back WHERE card_id=:card AND student_id=:owner"
+                    "UPDATE flashcards SET front_text=:front,back_text=:back,provenance_json=CASE WHEN provenance_json IS NULL THEN NULL ELSE json_set(provenance_json,'$.edited',json('true')) END WHERE card_id=:card AND student_id=:owner"
                 ),
                 {"owner": owner, "card": card_id, "front": front, "back": back},
             )

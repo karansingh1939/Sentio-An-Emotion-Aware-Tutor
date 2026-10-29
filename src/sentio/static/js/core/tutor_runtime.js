@@ -121,6 +121,8 @@ async function startSession(options = {}) {
     (document.getElementById('f-grounding')
       ? document.getElementById('f-grounding').value
       : 'none');
+  const goalId = options.goalId ?? (document.getElementById('f-goal')?.value || '');
+  const metadata = { document_id: grounding, ...(goalId ? { goal_id: goalId } : {}) };
 
   sessionStartingFor = studentId;
   document.getElementById('start-btn').disabled = true;
@@ -130,7 +132,7 @@ async function startSession(options = {}) {
       subject,
       topic,
       difficulty,
-      metadata: { document_id: grounding },
+      metadata,
     });
     if (!current()) {
       if (
@@ -151,14 +153,15 @@ async function startSession(options = {}) {
       return null;
     }
     window.setLegacySessionId(data.session_id);
-    if (window.store)
-      window.store.setState('activeSession', { ...data, metadata: { document_id: grounding } });
+    if (window.store) window.store.setState('activeSession', { ...data, metadata });
 
-    // Set up grounding change listener
+    // Set up grounding and goal change listeners
     const groundingSelect = document.getElementById('f-grounding');
     if (groundingSelect) {
       groundingSelect.onchange = (event) => window.updateGrounding(event.target.value);
     }
+    const goalSelect = document.getElementById('f-goal');
+    if (goalSelect) goalSelect.onchange = (event) => window.updateSessionGoal(event.target.value);
 
     // UI
     const setupCard = document.getElementById('session-setup-card');
@@ -614,6 +617,34 @@ window.updateGrounding = async (documentId) => {
     if (getActiveSessionId() !== sid || owner !== window.store?.getState('currentUser')?.id) return;
     document.getElementById('f-grounding').value =
       window.store?.getState('activeSession')?.metadata?.document_id || 'none';
+    toast(error.message, true);
+  }
+};
+window.updateSessionGoal = async (goalId) => {
+  const owner = window.store?.getState('currentUser')?.id;
+  const sid = getActiveSessionId();
+  await window.stopGeneration();
+  if (!sid || getActiveSessionId() !== sid || owner !== window.store?.getState('currentUser')?.id)
+    return;
+  try {
+    const response = await fetch(`${API}/sessions/${sid}/goal`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ goal_id: goalId || null }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.detail || 'Goal update failed.');
+    if (getActiveSessionId() !== sid || owner !== window.store?.getState('currentUser')?.id) return;
+    const context = window.store?.getState('activeSession') || {};
+    window.store?.setState('activeSession', {
+      ...context,
+      metadata: { ...context.metadata, goal_id: goalId || null },
+    });
+    toast(goalId ? 'Session goal updated.' : 'Session goal cleared.');
+  } catch (error) {
+    if (getActiveSessionId() !== sid || owner !== window.store?.getState('currentUser')?.id) return;
+    document.getElementById('f-goal').value =
+      window.store?.getState('activeSession')?.metadata?.goal_id || '';
     toast(error.message, true);
   }
 };

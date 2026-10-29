@@ -1,8 +1,10 @@
 """Quizzes API routes."""
 
 import logging
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field, ValidationError
 
 from sentio.api.dependencies import (
     PREFIX,
@@ -37,6 +39,56 @@ def saved_quiz(quiz_id: str, user: dict = Depends(get_current_user)):
     if not quiz or quiz["student_id"] != user["student_id"]:
         raise HTTPException(404, "Quiz not found.")
     return quiz
+
+
+class QuestionEdit(BaseModel):
+    question_text: str = Field(min_length=1, max_length=2000)
+    options: Optional[List[str]] = Field(None, max_length=8)
+    correct_answer: str = Field(min_length=1, max_length=1000)
+    explanation: str = Field("", max_length=5000)
+    expected_revision: Optional[int] = Field(None, ge=0)
+
+
+@router.put(PREFIX + "/quizzes/{quiz_id}/questions/{question_id}", tags=["Practice"])
+def edit_question(
+    quiz_id: str, question_id: str, body: QuestionEdit, user: dict = Depends(get_current_user)
+):
+    """Correct a saved question. Earlier results keep their grades; new answers use the edit."""
+    from sentio.ai.structured_parser import QuizQuestion
+    from sentio.repositories.quizzes import QuizRepository, RevisionConflict
+
+    quiz = agent.sm.get_quiz(quiz_id)
+    stored = quiz and next((q for q in quiz["questions"] if q["question_id"] == question_id), None)
+    if not stored or quiz["student_id"] != user["student_id"]:
+        raise HTTPException(404, "Question not found.")
+    try:
+        question = QuizQuestion(
+            question_text=body.question_text.strip(),
+            question_type=stored["question_type"],
+            options=[o.strip() for o in body.options] if body.options else None,
+            correct_answer=body.correct_answer.strip(),
+            explanation=body.explanation.strip() or "No explanation provided.",
+        )
+    except ValidationError as exc:
+        reason = exc.errors()[0]["msg"].removeprefix("Value error, ")
+        raise HTTPException(422, reason) from exc
+    if question.question_type not in ("multiple_choice", "true_false"):
+        question.options = None
+    try:
+        revision = QuizRepository(agent.sm.persister).edit_question(
+            user["student_id"],
+            quiz_id,
+            question_id,
+            question.model_dump(
+                include={"question_text", "options", "correct_answer", "explanation"}
+            ),
+            body.expected_revision,
+        )
+    except RevisionConflict as exc:
+        raise HTTPException(409, str(exc)) from exc
+    if revision is None:
+        raise HTTPException(404, "Question not found.")
+    return {"saved": True, "quiz_id": quiz_id, "question_id": question_id, "revision": revision}
 
 
 @router.post(PREFIX + "/sessions/{session_id}/quiz", tags=["Tutoring"])

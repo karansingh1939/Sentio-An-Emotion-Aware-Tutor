@@ -12,6 +12,7 @@ export class TutorView {
     this.resumeRevision = 0;
     this.sessionListRevision = 0;
     this.documentListRevision = 0;
+    this.goalListRevision = 0;
   }
 
   init() {
@@ -92,6 +93,7 @@ export class TutorView {
     }
 
     this.loadGroundingDocuments();
+    this.loadSessionGoals();
   }
 
   async loadSessions() {
@@ -213,6 +215,13 @@ export class TutorView {
         // Also attach grounding change listener in resume session
         groundingSelect.onchange = (event) => window.updateGrounding(event.target.value);
       }
+      await this.loadSessionGoals();
+      if (!current()) return;
+      const goalSelect = document.getElementById('f-goal');
+      if (goalSelect) {
+        goalSelect.value = res.metadata?.goal_id || '';
+        goalSelect.onchange = (event) => window.updateSessionGoal(event.target.value);
+      }
 
       // Update UI elements for active session
       const setupCard = document.getElementById('session-setup-card');
@@ -331,6 +340,35 @@ export class TutorView {
     }
 
     return docs;
+  }
+
+  async loadSessionGoals() {
+    const revision = ++this.goalListRevision;
+    const owner = store.getState('currentUser')?.id;
+    const current = () =>
+      revision === this.goalListRevision &&
+      owner === store.getState('currentUser')?.id &&
+      store.getState('activeRoute') === '#/tutor';
+    if (!owner) return [];
+    let goals = [];
+    try {
+      const res = await sentioAPI.get(`/students/${encodeURIComponent(owner)}/goals`);
+      if (!current()) return [];
+      goals = res.goals || [];
+    } catch (e) {
+      if (current()) toast('Goals could not load. Add or retry them from Today.', true);
+      return [];
+    }
+    const select = document.getElementById('f-goal');
+    if (select) {
+      const currentVal = store.getState('activeSession')?.metadata?.goal_id || select.value;
+      select.innerHTML = `
+        <option value="">No goal</option>
+        ${goals.map((g) => `<option value="${escapeHtml(g.goal_id)}">${escapeHtml(g.goal_text)}</option>`).join('')}
+      `;
+      if ([...select.options].some((o) => o.value === currentVal)) select.value = currentVal;
+    }
+    return goals;
   }
 
   async createNewSessionDialog(options = {}) {

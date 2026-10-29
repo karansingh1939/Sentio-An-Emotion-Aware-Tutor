@@ -1,4 +1,4 @@
-import { escapeHtml } from '../core/html.js';
+import { describeProvenance, escapeHtml } from '../core/html.js';
 // Flashcards View Controller for Sentio (ES Module)
 import { sentioAPI } from '../core/api.js';
 import { store } from '../core/store.js';
@@ -366,6 +366,7 @@ export class FlashcardsView {
 
       <div style="max-width:550px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:20px;">
         <button class="workspace-action" type="button" id="edit-current-card">Edit this card</button>
+        ${card.provenance ? `<p class="practice-provenance"><small>${escapeHtml(describeProvenance(card.provenance))}</small></p>` : ''}
         <!-- Flip Card Arena -->
         <div id="flashcard-flip-trigger" role="button" tabindex="0" aria-label="Show or hide the answer" aria-expanded="${this.isFlipped}" style="perspective:1000px;cursor:pointer;width:100%;">
           <div class="flashcard-inner ${this.isFlipped ? 'flipped' : ''}">
@@ -560,6 +561,7 @@ export class FlashcardsView {
         });
         card.front_text = front;
         card.back_text = back;
+        if (card.provenance) card.provenance = { ...card.provenance, edited: true };
         modal.close();
         if (
           revision === this.revision &&

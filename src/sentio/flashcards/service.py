@@ -115,14 +115,20 @@ JSON Template:
         batch_schema = practice_schema("flashcards", num_cards)
 
         def llm_call(sys_p, hist, user_p):
+            from sentio.shared.exceptions import InvalidModelOutput
+
             with output_schema(batch_schema):
-                return self.agent.nlp._backend.complete(
-                    system_prompt=sys_p,
-                    history=hist,
-                    user_message=user_p,
-                    max_tokens=1024,
-                    temperature=0.6,
-                )
+                try:
+                    return self.agent.nlp._backend.complete(
+                        system_prompt=sys_p,
+                        history=hist,
+                        user_message=user_p,
+                        max_tokens=1024,
+                        temperature=0.6,
+                    )
+                except InvalidModelOutput as invalid:
+                    # Let the structured parser repair it or ask the model to regenerate.
+                    return invalid.raw, 0
 
         original_args = {
             "system_prompt": system_prompt,
@@ -131,9 +137,10 @@ JSON Template:
         }
 
         checkpoint("generating flashcards")
-        from sentio.ai.source_practice import source_recall
+        from sentio.ai.source_practice import practice_provenance, source_recall
         from sentio.shared.exceptions import LLMServiceUnavailableError
 
+        mode = "generated"
         try:
             raw_text, _ = llm_call(system_prompt, [], "Generate flashcards now.")
 
@@ -148,6 +155,7 @@ JSON Template:
             if document_id in (None, "none") or not getattr(retrieved, "source_citations", []):
                 raise
             checkpoint("making source recall cards")
+            mode = "source_recall"
             recalls = source_recall(retrieved, num_cards)
             flashcard_data = batch_schema.model_validate(
                 {
@@ -169,6 +177,8 @@ JSON Template:
             else flashcard_data.dict()
         )
 
+        provenance = practice_provenance(mode, retrieved, self.agent.nlp._backend, source_snapshot)
+
         # 4. Save cards to database
         def save(connection=None):
             self.agent.sm.save_flashcards(
@@ -177,6 +187,7 @@ JSON Template:
                 topic_id=topic_id,
                 deck_id=deck_id,
                 connection=connection,
+                provenance=provenance,
             )
 
         def save_current():
