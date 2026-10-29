@@ -19,14 +19,14 @@ export class SettingsView {
   render() {
     this.container.innerHTML = `
       <div class="view-header">
-        <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">Settings</h2>
-        <p style="color:var(--text-dim);font-size:14px;">Manage account recovery and your saved study data.</p>
+        <h2 class="page-title">Settings</h2>
+        <p class="muted">Manage account recovery and your saved study data.</p>
       </div>
 
       <div style="margin-top:20px;width:100%;">
         <sentio-card title="Your study data">
-          <div style="display:flex;flex-direction:column;gap:12px;">
-            <p style="color:var(--text-dim);font-size:14px;">Download your saved study data, or delete your local account and its records.</p>
+          <div class="stack">
+            <p class="muted">Download your saved study data, or delete your local account and its records.</p>
             <div style="display:flex;gap:12px;margin-top:8px;">
               <button id="export-data-btn" style="background:var(--accent);color:var(--bg);border:none;padding:8px 16px;border-radius:var(--radius);font-family:var(--mono);cursor:pointer;font-size:14px;font-weight:bold;">📥 Export My Data</button>
               <button id="purge-data-btn" style="background:none;color:var(--red);border:1px solid var(--red);padding:8px 16px;border-radius:var(--radius);font-family:var(--mono);cursor:pointer;font-size:14px;font-weight:bold;">🗑️ Purge My Account Data</button>
@@ -46,8 +46,8 @@ export class SettingsView {
           <p id="recovery-error" role="alert"></p><div id="recovery-key-result"></div>
         </sentio-card>
         <sentio-card title="Account Actions">
-          <div style="display:flex;flex-direction:column;gap:12px;">
-            <p style="color:var(--text-dim);font-size:14px;">Sign out of your active student session on this machine.</p>
+          <div class="stack">
+            <p class="muted">Sign out of your active student session on this machine.</p>
             <button id="signout-btn" style="background:none;border:1px solid var(--red);color:var(--red);padding:8px 16px;border-radius:var(--radius);font-family:var(--mono);cursor:pointer;font-size:14px;font-weight:bold;align-self:flex-start;transition:background 0.2s;">🚪 Sign Out of Sentio</button>
           </div>
         </sentio-card>

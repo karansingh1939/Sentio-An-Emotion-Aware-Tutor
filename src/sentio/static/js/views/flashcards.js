@@ -40,7 +40,7 @@ export class FlashcardsView {
     const revision = this.revision;
     const owner = store.getState('currentUser')?.id;
     this.container.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:center;height:60%;">
+      <div class="center-state">
         <sentio-loader size="32px"></sentio-loader>
       </div>
     `;
@@ -96,10 +96,10 @@ export class FlashcardsView {
 
   renderDeckBrowser() {
     this.container.innerHTML = `
-      <div class="view-header" style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+      <div class="view-header view-header row-between">
         <div>
-          <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">Flashcard Decks</h2>
-          <p style="color:var(--text-dim);font-size:14px;">Spaced Repetition reviews (SM-2) for formulas, definitions, and concepts.</p>
+          <h2 class="page-title">Flashcard Decks</h2>
+          <p class="muted">Spaced Repetition reviews (SM-2) for formulas, definitions, and concepts.</p>
         </div>
         <button id="show-create-deck-modal" style="background:var(--accent);color:var(--bg);border:none;padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;">
           + Create Deck
@@ -108,7 +108,7 @@ export class FlashcardsView {
 
       <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;width:100%;">
         <!-- Left: Decks Listing -->
-        <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="stack stack-lg">
           <sentio-card title="Spaced Repetition Decks">
             ${
               this.decks.length === 0
@@ -148,23 +148,23 @@ export class FlashcardsView {
             <p style="font-size:14px;color:var(--text-dim);line-height:1.4;margin-bottom:12px;">${store.getState('activeSession')?.status === 'active' ? 'Turn your current study topic into question-and-answer cards. Review them again when they are due.' : 'First choose Study beside your notes in Library. Your saved cards remain available.'}</p>
             ${store.getState('activeSession')?.status === 'active' ? '<a href="#/tutor">Change what you are studying</a>' : '<a class="workspace-action" href="#/documents">Choose notes</a>'}
             
-            <div style="display:flex;flex-direction:column;gap:12px;">
+            <div class="stack">
               <div>
-                <label for="gen-deck-select" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Select Target Deck</label>
-<select id="gen-deck-select" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;">
+                <label class="form-label" for="gen-deck-select">Select Target Deck</label>
+<select class="input" id="gen-deck-select">
                   ${this.decks.map((d) => `<option value="${escapeHtml(d.deck_id)}">${escapeHtml(d.deck_name)}</option>`).join('')}
                   ${this.decks.length === 0 ? `<option value="">No decks available</option>` : ''}
                 </select>
               </div>
 
               <div>
-                <label for="gen-topic-input" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Study topic</label>
-<input type="text" id="gen-topic-input" readonly value="${escapeHtml(store.getState('activeSession')?.topic || '')}" placeholder="e.g. recursion" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;" />
+                <label class="form-label" for="gen-topic-input">Study topic</label>
+<input class="input" type="text" id="gen-topic-input" readonly value="${escapeHtml(store.getState('activeSession')?.topic || '')}" placeholder="e.g. recursion" />
               </div>
 
               <div>
-                <label for="gen-cards-num" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Number of Cards</label>
-<select id="gen-cards-num" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;">
+                <label class="form-label" for="gen-cards-num">Number of Cards</label>
+<select class="input" id="gen-cards-num">
                   <option value="1">1 Card</option>
                 <option value="3" selected>3 Cards</option>
                 <option value="5">5 Cards</option>
@@ -209,12 +209,12 @@ export class FlashcardsView {
     const modal = document.createElement('sentio-modal');
     modal.setAttribute('title', 'Create Flashcard Deck');
     modal.innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="stack">
         <div>
-          <label for="create-deck-name" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;">Deck Name</label>
-<input type="text" id="create-deck-name" placeholder="e.g. Calculus Formulas" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;" />
+          <label class="form-label" for="create-deck-name">Deck Name</label>
+<input class="input" type="text" id="create-deck-name" placeholder="e.g. Calculus Formulas" />
         </div>
-        <button id="create-deck-submit" style="margin-top:10px;background:var(--accent);color:var(--bg);border:none;padding:10px;border-radius:var(--radius);font-family:var(--mono);font-weight:bold;cursor:pointer;">Create</button>
+        <button class="workspace-action primary" id="create-deck-submit">Create</button>
       </div>
     `;
     document.body.appendChild(modal);
@@ -262,9 +262,9 @@ export class FlashcardsView {
     }
 
     this.container.innerHTML = `
-      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60%;gap:12px;">
+      <div class="center-state">
         <sentio-loader size="36px"></sentio-loader>
-        <span style="font-size:14px;color:var(--accent);font-weight:bold;font-family:var(--mono);">Extracting concepts and generating spaced cards...</span>
+        <span class="accent-strong">Extracting concepts and generating spaced cards...</span>
       </div>
     `;
 
@@ -354,19 +354,21 @@ export class FlashcardsView {
     const total = this.dueCards.length;
 
     this.container.innerHTML = `
-      <div class="view-header" style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
+      <div class="view-header view-header row-between">
         <div>
-          <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">Review your cards</h2>
-          <p style="color:var(--text-dim);font-size:14px;">Recall your answer, reveal the card, then choose how easily you remembered it.</p>
+          <h2 class="page-title">Review your cards</h2>
+          <p class="muted">Recall your answer, reveal the card, then choose how easily you remembered it.</p>
         </div>
-        <span style="font-family:var(--mono);font-size:14px;background:var(--border);padding:4px 8px;border-radius:4px;color:var(--accent);font-weight:bold;">
+        <span class="badge">
           Card ${this.currentCardIdx + 1} of ${total}
         </span>
       </div>
 
       <div style="max-width:550px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:20px;">
-        <button class="workspace-action" type="button" id="edit-current-card">Edit this card</button>
-        ${card.provenance ? `<p class="practice-provenance"><small>${escapeHtml(describeProvenance(card.provenance))}</small></p>` : ''}
+        <div class="card-toolbar">
+          ${card.provenance ? `<p class="practice-provenance"><small>${escapeHtml(describeProvenance(card.provenance))}</small></p>` : '<span></span>'}
+          <button class="workspace-action" type="button" id="edit-current-card">Edit this card</button>
+        </div>
         <!-- Flip Card Arena -->
         <div id="flashcard-flip-trigger" role="button" tabindex="0" aria-label="Show or hide the answer" aria-expanded="${this.isFlipped}" style="perspective:1000px;cursor:pointer;width:100%;">
           <div class="flashcard-inner ${this.isFlipped ? 'flipped' : ''}">
