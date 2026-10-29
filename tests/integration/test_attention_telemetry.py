@@ -312,7 +312,6 @@ class TestPhaseEFinal(unittest.TestCase):
             self.assertIn("INSTRUCTION (Student is DISTRACTED)", student_memory)
             self.assertIn("shorter explanations", student_memory)
             self.assertIn("simpler, more direct wording", student_memory)
-            self.assertIn("Suggest/offer whiteboard", student_memory)
         finally:
             config.tutor_cfg.ENABLE_ADAPTIVE_TUTORING = False
 

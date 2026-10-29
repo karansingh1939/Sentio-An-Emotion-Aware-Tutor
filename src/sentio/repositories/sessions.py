@@ -293,7 +293,7 @@ class SessionPersister:
             if "summary" not in session_columns:
                 conn.execute(text("ALTER TABLE sessions ADD COLUMN summary TEXT"))
 
-            # Phase D: Quiz, Flashcards & Whiteboards Schemas
+            # Quiz and flashcard schemas
             conn.execute(
                 text("""
                 CREATE TABLE IF NOT EXISTS quizzes (
@@ -342,21 +342,6 @@ class SessionPersister:
                     deck_name    TEXT NOT NULL,
                     created_at   REAL NOT NULL,
                     FOREIGN KEY (student_id) REFERENCES students(student_id)
-                )
-            """)
-            )
-            conn.execute(
-                text("""
-                CREATE TABLE IF NOT EXISTS whiteboards (
-                    whiteboard_id      TEXT PRIMARY KEY,
-                    student_id         TEXT NOT NULL,
-                    session_id         TEXT NOT NULL,
-                    title              TEXT NOT NULL,
-                    canvas_state_json  TEXT NOT NULL,
-                    created_at         REAL NOT NULL,
-                    updated_at         REAL NOT NULL,
-                    FOREIGN KEY (student_id) REFERENCES students(student_id),
-                    FOREIGN KEY (session_id) REFERENCES sessions(session_id)
                 )
             """)
             )

@@ -10,14 +10,12 @@ from sentio.config import PACKAGE_DIR, api_cfg
 from sentio.flashcards.service import FlashcardService
 from sentio.quiz.service import QuizService
 from sentio.tutor.agent import TutorAgent
-from sentio.whiteboard.service import WhiteboardService
 
 agent = TutorAgent()
 PREFIX = api_cfg.API_PREFIX
 STATIC_DIR = PACKAGE_DIR / "static"
 quiz_service = QuizService(agent)
 flashcard_service = FlashcardService(agent)
-whiteboard_service = WhiteboardService(agent)
 
 logger = logging.getLogger(__name__)
 

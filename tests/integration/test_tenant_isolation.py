@@ -26,7 +26,7 @@ class TestTenantIsolation(unittest.TestCase):
         api_cfg.ENFORCE_AUTH = self.original_enforce
 
     def test_two_user_resource_isolation(self):
-        """Verify User B cannot access User A's sessions, files, flashcards, or whiteboards."""
+        """Verify User B cannot access User A's sessions, files or flashcards."""
         with TestClient(app) as client:
             timestamp = int(time.time() * 1000)
             email_a = f"usera_{timestamp}@sentio.edu"
@@ -144,37 +144,3 @@ class TestTenantIsolation(unittest.TestCase):
             )
             # Should filter/deny due cards for B
             self.assertEqual(due_b.json().get("due_count", 0), 0)
-
-            # 7. Save and access Whiteboards
-            canvas_state = {"width": 800, "height": 600, "shapes": []}
-            wb_save_b = client.post(
-                f"{PREFIX}/whiteboards/sessions",
-                headers=headers_b,
-                json={
-                    "whiteboard_id": "wb_test_id",
-                    "student_id": student_id_b,
-                    "session_id": session_id_a,
-                    "title": "Hack concept map",
-                    "canvas_state": canvas_state,
-                },
-            )
-            # Denied because B does not own session_id_a
-            self.assertEqual(wb_save_b.status_code, 403)
-
-            # Save whiteboard legitimately for A
-            wb_save_a = client.post(
-                f"{PREFIX}/whiteboards/sessions",
-                headers=headers_a,
-                json={
-                    "whiteboard_id": "wb_test_id_a",
-                    "student_id": student_id_a,
-                    "session_id": session_id_a,
-                    "title": "A's kinematics concept map",
-                    "canvas_state": canvas_state,
-                },
-            )
-            self.assertEqual(wb_save_a.status_code, 200)
-
-            # Try loading A's whiteboard using B's credentials
-            wb_load_b = client.get(f"{PREFIX}/whiteboards/wb_test_id_a", headers=headers_b)
-            self.assertEqual(wb_load_b.status_code, 403)

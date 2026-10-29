@@ -2,7 +2,7 @@
 structured_parser.py -- Structured Output Reliability Layer (Phase D0)
 =======================================================================
 Provides:
-  - Pydantic schemas for Quiz, Flashcards, Quiz Scoring, and Whiteboards
+  - Pydantic schemas for Quiz, Flashcards and Quiz Scoring
   - 4-Attempt JSON Recovery Layer (Direct -> Repair -> Regex -> Regenerate)
   - Configurable retry/regeneration logic
   - In-memory metrics tracking for parse/recovery observability
@@ -118,27 +118,6 @@ class FlashcardItem(BaseModel):
 class FlashcardPayloadSchema(BaseModel):
     deck_name: str = Field(..., description="The grouping deck topic name")
     cards: List[FlashcardItem] = Field(..., description="List of generated flashcards")
-
-
-# --- 4. Whiteboard Diagram Payload ---
-class WhiteboardShape(BaseModel):
-    type: str = Field(..., description="rectangle | circle | line | arrow | text")
-    x: float = Field(..., description="X coordinate of shape placement")
-    y: float = Field(..., description="Y coordinate of shape placement")
-    width: Optional[float] = Field(None, description="Width of rectangle or circle radius/diameter")
-    height: Optional[float] = Field(None, description="Height of shape")
-    points: Optional[List[Tuple[float, float]]] = Field(None, description="Points for lines/arrows")
-    color: str = Field("black", description="Stroke color")
-    text: Optional[str] = Field(None, description="Text value if type is text or label")
-    fontSize: Optional[int] = Field(None, description="Font size for text label")
-
-
-class WhiteboardDiagramSchema(BaseModel):
-    title: str = Field("Tutor Diagram", description="Title of the whiteboard drawing")
-    mermaid_code: Optional[str] = Field(
-        None, description="Mermaid.js diagram string for structural renderings"
-    )
-    shapes: List[WhiteboardShape] = Field(default_factory=list, description="List of vector shapes")
 
 
 # ─────────────────────────────────────────────
@@ -429,55 +408,6 @@ def regex_fallback_parse(raw: str, schema_class: Type[BaseModel]) -> Dict[str, A
 
         if card_blocks:
             result["cards"] = card_blocks
-
-    elif schema_class == WhiteboardDiagramSchema:
-        title_m = re.search(r'"title"\s*:\s*"([^"]+)"', raw)
-        if title_m:
-            result["title"] = title_m.group(1)
-
-        mermaid_m = re.search(r'"mermaid_code"\s*:\s*"([^"]+)"', raw)
-        if not mermaid_m:
-            mermaid_m = re.search(r'"mermaid_code"\s*:\s*"""(.*?)"""', raw, re.DOTALL)
-        if not mermaid_m:
-            mermaid_m = re.search(r"```mermaid\s*(.*?)\s*```", raw, re.DOTALL)
-        if mermaid_m:
-            result["mermaid_code"] = mermaid_m.group(1).strip()
-
-        shapes = []
-        matches = re.finditer(r'\{\s*"type"\s*:\s*"([^"]+)"(.*?)\}', raw, re.DOTALL)
-        for m in matches:
-            stype = m.group(1)
-            rest = m.group(2)
-
-            shape_data = {"type": stype}
-
-            x_m = re.search(r'"x"\s*:\s*([0-9.-]+)', rest)
-            y_m = re.search(r'"y"\s*:\s*([0-9.-]+)', rest)
-            if x_m:
-                shape_data["x"] = float(x_m.group(1))
-            if y_m:
-                shape_data["y"] = float(y_m.group(1))
-
-            w_m = re.search(r'"width"\s*:\s*([0-9.-]+)', rest)
-            if w_m:
-                shape_data["width"] = float(w_m.group(1))
-
-            h_m = re.search(r'"height"\s*:\s*([0-9.-]+)', rest)
-            if h_m:
-                shape_data["height"] = float(h_m.group(1))
-
-            color_m = re.search(r'"color"\s*:\s*"([^"]+)"', rest)
-            if color_m:
-                shape_data["color"] = color_m.group(1)
-
-            text_m = re.search(r'"text"\s*:\s*"([^"]+)"', rest)
-            if text_m:
-                shape_data["text"] = text_m.group(1)
-
-            shapes.append(shape_data)
-
-        if shapes:
-            result["shapes"] = shapes
 
     return result
 

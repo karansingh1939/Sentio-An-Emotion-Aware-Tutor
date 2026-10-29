@@ -141,8 +141,7 @@ class SentioOrchestrator:
                     adaptive_directives = (
                         "INSTRUCTION (Student is DISTRACTED):\n"
                         "- Provide significantly shorter explanations.\n"
-                        "- Use simpler, more direct wording.\n"
-                        "- Suggest/offer whiteboard drawing canvas visual support to help re-focus."
+                        "- Use simpler, more direct wording."
                     )
                 elif attention_state == "LOW_ENGAGEMENT":
                     adaptive_directives = (
