@@ -464,3 +464,17 @@ models and backups kept, with tmp keepers moved to backups/preserved-from-tmp-20
 Checks: 284 passed, 31 subtests passed, one Tesseract skip; JS, Prettier, Ruff,
 offline wheel/sdist build, all scripts' --help, all Markdown links, and app startup
 (/api/v1/ready, /, /docs) pass.
+
+## Quality and study features - 29 October 2026
+
+Branch: feature/quality-and-study-features. Item 1: live_study_journey.py gained
+--model; four installed models ran the 12-case grounding test
+(docs/evaluation/MODEL_COMPARISON_2026-10-29.md). qwen2.5:7b and llama3 answered 3/4
+covered questions vs 2/4 for phi3:mini, all declined 6/6 absent facts; qwen2.5:7b
+is recommended where memory allows. Default stays phi3:mini pending the owner's
+choice and author review. Item 2: sessions bind an owned active goal (part of the
+study context version; tutor sees it); saved quizzes and cards store provenance
+(mode, model, cited pages, note checksums); owners edit quiz questions with revision
+checks so earlier submissions replay unchanged (migration 9). Item 3 prepared:
+reports/evidence/review-study-2026-10-29-qwen2.5-7b.html (ignored, private) awaits
+the owner's review. New API, integration and Chromium regressions cover all three.

@@ -131,9 +131,10 @@ JSON Template:
         }
 
         checkpoint("generating flashcards")
-        from sentio.ai.source_practice import source_recall
+        from sentio.ai.source_practice import practice_provenance, source_recall
         from sentio.shared.exceptions import LLMServiceUnavailableError
 
+        mode = "generated"
         try:
             raw_text, _ = llm_call(system_prompt, [], "Generate flashcards now.")
 
@@ -148,6 +149,7 @@ JSON Template:
             if document_id in (None, "none") or not getattr(retrieved, "source_citations", []):
                 raise
             checkpoint("making source recall cards")
+            mode = "source_recall"
             recalls = source_recall(retrieved, num_cards)
             flashcard_data = batch_schema.model_validate(
                 {
@@ -169,6 +171,8 @@ JSON Template:
             else flashcard_data.dict()
         )
 
+        provenance = practice_provenance(mode, retrieved, self.agent.nlp._backend, source_snapshot)
+
         # 4. Save cards to database
         def save(connection=None):
             self.agent.sm.save_flashcards(
@@ -177,6 +181,7 @@ JSON Template:
                 topic_id=topic_id,
                 deck_id=deck_id,
                 connection=connection,
+                provenance=provenance,
             )
 
         def save_current():

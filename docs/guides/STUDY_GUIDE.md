@@ -8,6 +8,9 @@ Open http://127.0.0.1:8001 and leave the terminal open. Stop with Ctrl+C.
    in Library. Wait for **Ready to study**. Upload progress reports actual stages;
    keyword retrieval can remain available when semantic retrieval is unavailable.
 3. Choose **Study** beside those notes, check the subject and topic, and start.
+   Optionally pick a **Goal for this session** from the goals you added on Today.
+   The tutor sees that goal as background. Changing or completing it stops any
+   answer or practice still being prepared for the old goal.
 4. Ask a question about the selected notes. Sources show the passages used.
    Stop cancels generation. If generation fails validation, Sentio may show quoted
    passages explicitly labelled as a fallback, rather than claim a verified explanation.
@@ -16,6 +19,10 @@ Open http://127.0.0.1:8001 and leave the terminal open. Stop with Ctrl+C.
 5. Choose **Try a quiz** or **Make flashcards**. These use the current study notes
    without asking you to configure another session. Start with three items.
    Source-recall quizzes are labelled and test recalled wording, not deep understanding.
+   Every saved quiz and card shows how it was made: which model generated it, or that
+   it was quoted from your notes, and which pages it used. If a question or answer is
+   wrong, choose **Edit this question**. Earlier results keep their grades; answers
+   you submit afterwards use your correction, and the quiz is marked as edited.
 6. Review cards with Again, Hard, Good or Easy. Due reviews and saved work survive
    restart. Progress estimates include self-reported ratings; they are not exam results.
 
