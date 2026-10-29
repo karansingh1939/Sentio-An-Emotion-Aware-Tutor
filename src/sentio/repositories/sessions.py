@@ -348,6 +348,9 @@ class SessionPersister:
                 conn.execute(text("ALTER TABLE flashcards ADD COLUMN tags TEXT"))
             if "provenance_json" not in card_columns:
                 conn.execute(text("ALTER TABLE flashcards ADD COLUMN provenance_json TEXT"))
+            for column in ("stability", "difficulty", "last_review_at"):
+                if column not in card_columns:
+                    conn.execute(text(f"ALTER TABLE flashcards ADD COLUMN {column} REAL"))
 
             # Identity & Privacy Platform tables
             conn.execute(

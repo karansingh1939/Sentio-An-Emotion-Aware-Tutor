@@ -330,7 +330,6 @@ label: the guided reports/evidence/review-v1.html page is ready with examples,
 small batches, Skip and export. Zero real evidence labels are reviewed; no real
 classifier, calibration gain or adoption result may be claimed or synthesized.
 
-
 ## User-priority checkpoint: simpler workflow and account recovery
 
 2026-10-12. User reports confusing workflow/unnecessary controls and missing
@@ -511,3 +510,12 @@ job (POST /documents/{id}/overview/jobs), cached in documents.overview_json agai
 checksum. generate_structured now serves quizzes, flashcards and overviews. A
 retrieval fallback for unmatched practice topics was tried and reverted: it mislabelled
 unrelated topics.
+
+## FSRS scheduler - 29 October 2026
+
+Branch: feature/fsrs-scheduler. SM-2 was replaced by FSRS-5 (default parameters) in
+src/sentio/flashcards/fsrs.py. flashcards gained stability, difficulty and
+last_review_at columns (conditional ALTERs); ease_factor is kept only for converting
+older cards. Due cards include next_intervals, shown under each rating button. The
+learner model's forgetting risk and flashcard mastery evidence now use FSRS recall
+probability. Parameters are not yet fitted on the learner's own reviews.

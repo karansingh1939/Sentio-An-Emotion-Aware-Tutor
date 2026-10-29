@@ -39,7 +39,7 @@ flowchart LR
    before the answer, and every citation opens the exact passage it refers to.
 5. **Practice and review.** Quizzes and flashcards are generated as background jobs,
    saved with their provenance (model, cited pages, note versions) and scheduled with
-   SM-2 spaced repetition.
+   FSRS, a memory model that predicts each card's recall probability.
 
 | Study with citations                       | Quiz with provenance                    | Progress                                        |
 | ------------------------------------------ | --------------------------------------- | ----------------------------------------------- |
@@ -68,7 +68,8 @@ flowchart LR
   stopped, idempotent request receipts and transactions that reject stale study context.
 - **Study features** — one-click study from the Library, a cached note overview with
   suggested questions, clickable citations, instant answer checks, session goals,
-  editable quizzes with revision checks, practice provenance, spaced-repetition review.
+  editable quizzes with revision checks, practice provenance, FSRS spaced repetition
+  with the next interval shown on each rating.
 - **Optional emotion-aware tone** — my earlier facial-emotion CNN (FER2013) and browser
   attention tracking, now an opt-in, consented side feature
   ([details](docs/guides/EMOTION.md)).

@@ -19,6 +19,7 @@ Every claim here links to code, a test or a measurement in this repository.
 | Evidence gate        | The LangGraph workflow always retrieves first. If the selected notes have no relevant passage, the `refuse` node answers without calling the model, so it cannot hallucinate.                                                                                                 | `src/sentio/tutor/orchestrator.py`, `tests/unit/test_study_prompt_boundaries.py`  |
 | Structured output    | The model must return JSON matching a schema. Invalid replies are repaired or regenerated (up to twice), citations must reference retrieved passages, and only then does it fall back to quoted passages. This fixed `qwen2.5:7b` quizzes, which had failed on every request. | `src/sentio/ai/structured_parser.py`, `tests/integration/test_practice_repair.py` |
 | Model evaluation     | A 12-case grounding test over real HTTP: 4 answerable, 6 absent facts, 2 ambiguous. `qwen2.5:7b` answered 3/4 covered questions vs 2/4 for `phi3:mini`; all models refused 6/6 absent facts.                                                                                  | `docs/evaluation/MODEL_COMPARISON_2026-10-29.md`                                  |
+| Spaced repetition    | FSRS-5 replaces SM-2. Each card has stability (days until recall drops to 90%) and difficulty; recall decays as a power curve and each rating updates both with the published parameters. The same recall probability feeds the Progress forgetting risk.                     | `src/sentio/flashcards/fsrs.py`, `tests/unit/test_fsrs.py`                        |
 | Reliability          | Long work runs as durable background jobs; answers stream and can be stopped; request receipts make retries idempotent; saves re-check the study context (notes, goal) in one transaction and reject stale work.                                                              | `src/sentio/tutor/stream_service.py`, `src/sentio/jobs/service.py`                |
 | Emotion side feature | My earlier FER2013 CNN and browser attention tracking, kept as an opt-in feature: off by default, consent checked on the server, frames size-limited, and it only changes the tutor's tone.                                                                                   | `src/sentio/emotion/`, `docs/guides/EMOTION.md`                                   |
 
@@ -32,6 +33,9 @@ Every claim here links to code, a test or a measurement in this repository.
 - **Why SQLite and not Postgres?** One user, one process, zero setup. Qdrant is only an
   index that can be rebuilt; SQLite is the source of truth. Multi-user hosting would
   need Postgres and a shared job queue.
+- **Why FSRS instead of SM-2?** SM-2 uses fixed rules and an ease factor; FSRS is a
+  model of memory with parameters fitted on large public review logs, and it gives a
+  recall probability I can reuse. Next step: fit the parameters on my own review history.
 - **What would you improve next?** A trained evidence classifier once labels are
   reviewed, a larger held-out evaluation set, and a cross-encoder re-ranker comparison.
 - **What was hard?** Making generation reliable on small local models: they break JSON,

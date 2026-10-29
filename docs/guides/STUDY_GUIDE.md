@@ -29,8 +29,10 @@ Open http://127.0.0.1:8001 and leave the terminal open. Stop with Ctrl+C.
    it was quoted from your notes, and which pages it used. If a question or answer is
    wrong, choose **Edit this question**. Earlier results keep their grades; answers
    you submit afterwards use your correction, and the quiz is marked as edited.
-6. Review cards with Again, Hard, Good or Easy. Due reviews and saved work survive
-   restart. Progress estimates include self-reported ratings; they are not exam results.
+6. Review cards with Again, Hard, Good or Easy. Each button shows when the card will
+   come back; the FSRS scheduler sets the interval so you review a card when your chance
+   of recalling it has fallen to about 90%. Due reviews and saved work survive restart.
+   Progress estimates include self-reported ratings; they are not exam results.
 
 To change notes, return to Library and choose Study on the new document. Saved
 practice remains accessible. Settings contains diagnostics, data export and account
@@ -40,7 +42,7 @@ installation enables it (see EMOTION.md).
 ## Forgotten password
 
 Existing accounts: while signed in, open Settings and create a recovery key using
- your current password. Download it and store it somewhere private.
+your current password. Download it and store it somewhere private.
 
 On the sign-in screen choose **Forgot password?**, enter your email, saved recovery
 key and new password. Successful recovery invalidates previous sign-ins and consumes
