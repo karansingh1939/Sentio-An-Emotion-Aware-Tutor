@@ -1,10 +1,10 @@
 """
-emotion_detector.py — Computer Vision Pipeline for Emotion Detection
-=====================================================================
+detector.py — Computer Vision Pipeline for Emotion Detection
+============================================================
 Responsibilities:
   1. Build / load a CNN model for 7-class facial emotion recognition
   2. Detect faces in frames using OpenCV Haar Cascades
-  3. Run real-time inference on webcam or single frames
+  3. Run inference on single frames sent by the browser
   4. Smooth predictions over a sliding window to avoid jitter
   5. Map raw emotions → pedagogical learning states
 
@@ -21,9 +21,6 @@ Usage:
 
     # Single frame
     result = detector.detect_from_frame(frame)   # BGR numpy array
-
-    # Live webcam loop
-    detector.run_webcam_loop(callback=my_fn)
 """
 
 from __future__ import annotations
@@ -32,7 +29,7 @@ import logging
 from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -605,48 +602,6 @@ class EmotionDetector:
         """
         return [self.detect_from_frame(f) for f in frames]
 
-    # ── Webcam Loop ────────────────────────────
-
-    def run_webcam_loop(
-        self, callback: Optional[Callable[[EmotionResult], None]] = None, display: bool = True
-    ):
-        """
-        Start a live webcam loop. Runs until 'q' is pressed.
-
-        Args:
-            callback: Called with each EmotionResult (use to feed tutor agent)
-            display:  Whether to show annotated video window
-        """
-        cap = cv2.VideoCapture(self.cfg.WEBCAM_INDEX)
-        if not cap.isOpened():
-            raise RuntimeError(f"Cannot open webcam at index {self.cfg.WEBCAM_INDEX}")
-        logger.info("Webcam loop started. Press 'q' to quit.")
-
-        try:
-            while True:
-                ret, frame = cap.read()
-                if not ret:
-                    logger.warning("Failed to read frame from webcam.")
-                    break
-
-                result = self.detect_from_frame(frame)
-
-                if result and callback:
-                    callback(result)
-
-                if display:
-                    annotated = self._annotate_frame(frame, result)
-                    cv2.imshow("Emotion-Aware Tutor — Face Cam", annotated)
-
-                if cv2.waitKey(1) & 0xFF == ord("q"):
-                    break
-
-        finally:
-            cap.release()
-            if display:
-                cv2.destroyAllWindows()
-            logger.info("Webcam loop ended.")
-
     # ── Annotation ─────────────────────────────
 
     def _annotate_frame(self, frame: np.ndarray, result: Optional[EmotionResult]) -> np.ndarray:
@@ -745,6 +700,3 @@ if __name__ == "__main__":
     dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
     result = detector.detect_from_frame(dummy_frame)
     print(f"Dummy frame result: {result}")
-
-    # Uncomment to test live webcam
-    # detector.run_webcam_loop(display=True)

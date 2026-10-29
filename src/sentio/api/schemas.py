@@ -1,6 +1,6 @@
 """Validated HTTP request bodies."""
 
-from typing import Any, Dict, Literal, Optional
+from typing import Dict, Optional
 
 from pydantic import BaseModel, Field
 
@@ -85,20 +85,6 @@ class ReviewCardRequest(BaseModel):
         default=None, min_length=8, max_length=80, pattern=r"^[a-zA-Z0-9_-]+$"
     )
     quality_score: int = Field(..., ge=0, le=5, description="SM-2 response quality score (0 to 5)")
-
-
-class SaveWhiteboardRequest(BaseModel):
-    whiteboard_id: str = Field(..., min_length=1, max_length=120, description="Whiteboard ID")
-    student_id: str = Field(..., description="Student ID")
-    session_id: str = Field(..., description="Active Session ID")
-    title: str = Field(
-        "Tutor Drawing", min_length=1, max_length=200, description="Title of the whiteboard"
-    )
-    canvas_state: Dict[str, Any] = Field(..., description="Vector shapes state dictionary")
-
-
-class ExportWhiteboardRequest(BaseModel):
-    format: Literal["png", "pdf"] = "png"
 
 
 class MermaidRequest(BaseModel):

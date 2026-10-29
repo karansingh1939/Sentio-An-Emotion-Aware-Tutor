@@ -6,8 +6,8 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 
-from sentio.ai.emotion_detector import EmotionDetector, FaceDetection
 from sentio.config import emotion_cfg
+from sentio.emotion.detector import EmotionDetector, FaceDetection
 
 
 @pytest.fixture

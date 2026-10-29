@@ -1,14 +1,6 @@
 import { store } from './store.js';
 
 const groups = {
-  '#/tutor': [
-    ['#/tutor', 'Tutor'],
-    ['#/whiteboard', 'Whiteboard'],
-  ],
-  '#/whiteboard': [
-    ['#/tutor', 'Tutor'],
-    ['#/whiteboard', 'Whiteboard'],
-  ],
   '#/quizzes': [
     ['#/quizzes', 'Quizzes'],
     ['#/flashcards', 'Flashcards'],
@@ -47,8 +39,7 @@ export function initWorkspace() {
       )
       .join('');
     tools.hidden = !links.length;
-    const parent =
-      route === '#/flashcards' ? '#/quizzes' : route === '#/whiteboard' ? '#/tutor' : route;
+    const parent = route === '#/flashcards' ? '#/quizzes' : route;
     document.querySelectorAll('.nav-link').forEach((link) => {
       const active = link.getAttribute('href') === parent;
       link.classList.toggle('active', active);

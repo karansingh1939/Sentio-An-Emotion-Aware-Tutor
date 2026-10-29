@@ -124,13 +124,12 @@ def set_session_grounding(
         streams.cancel_session(user["student_id"], session_id)
     previous = session.metadata.get("document_id")
     session.metadata["document_id"] = req.document_id
-    if agent.sm.persister._use_db:
-        try:
-            agent.sm.persister.save_session(session)
-        except Exception as e:
-            session.metadata["document_id"] = previous
-            logger.warning(f"Failed to persist updated session grounding state: {e}")
-            raise HTTPException(503, "Source change could not be saved. Retry.") from e
+    try:
+        agent.sm.persister.save_session(session)
+    except Exception as e:
+        session.metadata["document_id"] = previous
+        logger.warning(f"Failed to persist updated session grounding state: {e}")
+        raise HTTPException(503, "Source change could not be saved. Retry.") from e
     agent.nlp.clear_history(session_id)
     agent.kb.reset_session(session_id)
     return {"success": True, "document_id": req.document_id}
@@ -161,13 +160,12 @@ def set_session_goal(
         streams.cancel_session(user["student_id"], session_id)
     previous = session.metadata.get("goal_id")
     session.metadata["goal_id"] = req.goal_id
-    if agent.sm.persister._use_db:
-        try:
-            agent.sm.persister.save_session(session)
-        except Exception as e:
-            session.metadata["goal_id"] = previous
-            logger.warning(f"Failed to persist updated session goal: {e}")
-            raise HTTPException(503, "Goal change could not be saved. Retry.") from e
+    try:
+        agent.sm.persister.save_session(session)
+    except Exception as e:
+        session.metadata["goal_id"] = previous
+        logger.warning(f"Failed to persist updated session goal: {e}")
+        raise HTTPException(503, "Goal change could not be saved. Retry.") from e
     return {"success": True, "goal": goal}
 
 
@@ -181,16 +179,4 @@ def list_sessions(
 ):
     """List all sessions, optionally filtered by student or active status."""
     student_id = user["student_id"]
-    if agent.sm.persister._use_db:
-        return agent.sm.persister.session_page(student_id, active_only, limit, offset)
-    sessions = agent.list_sessions(student_id=student_id, active_only=active_only)
-    sessions.sort(key=lambda row: (row.get("created_at", 0), row["session_id"]), reverse=True)
-    total = len(sessions)
-    page = sessions[offset : offset + limit]
-    return {
-        "sessions": page,
-        "count": len(page),
-        "total": total,
-        "offset": offset,
-        "next_offset": offset + len(page) if offset + len(page) < total else None,
-    }
+    return agent.sm.persister.session_page(student_id, active_only, limit, offset)

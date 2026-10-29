@@ -4,7 +4,7 @@ Sentio runs locally using Python 3.12, uv, and Ollama. The API serves the bundle
 
 ## Local installation
 
-Follow the [README quick start](../../README.md#quick-start). Copy `.env.example` to `.env`; use `LLM_BACKEND=ollama` and `OLLAMA_MODEL=phi3:mini`. Start the Ollama application or run `ollama serve`, then install the configured model with `ollama pull phi3:mini`.
+Follow the [README quick start](../../README.md#quick-start). Copy `.env.example` to `.env`; set `OLLAMA_MODEL` (default `phi3:mini`; `qwen2.5:7b` is recommended with about 5 GB free memory, see the model comparison). Start the Ollama application or run `ollama serve`, then install the configured model with `ollama pull phi3:mini`.
 
 ```sh
 uv sync --locked

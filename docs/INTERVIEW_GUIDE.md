@@ -1,0 +1,47 @@
+# Interview guide
+
+A one-minute pitch, the six things worth explaining, and the questions they invite.
+Every claim here links to code, a test or a measurement in this repository.
+
+## Pitch
+
+> Sentio is a local AI study tutor. You upload your notes, and it answers questions
+> only from them, with page citations. If the notes don't cover a question, it refuses
+> instead of guessing. The same notes become quizzes and spaced-repetition flashcards.
+> I built the retrieval pipeline with an evidence gate, made the model's structured
+> output reliable, and compared four local models to choose one on measured results.
+
+## Talking points
+
+| Topic                | What to say                                                                                                                                                                                                                                                                   | Show                                                                              |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| RAG pipeline         | Notes are chunked (500 chars, 100 overlap) and indexed twice: BM25 for exact terms and MiniLM embeddings in Qdrant. A hybrid score (0.75 dense + 0.25 keyword) ranks owner-scoped chunks.                                                                                     | `src/sentio/rag/knowledge_base.py`, `src/sentio/rag/reranker.py`                  |
+| Evidence gate        | The LangGraph workflow always retrieves first. If the selected notes have no relevant passage, the `refuse` node answers without calling the model, so it cannot hallucinate.                                                                                                 | `src/sentio/tutor/orchestrator.py`, `tests/unit/test_study_prompt_boundaries.py`  |
+| Structured output    | The model must return JSON matching a schema. Invalid replies are repaired or regenerated (up to twice), citations must reference retrieved passages, and only then does it fall back to quoted passages. This fixed `qwen2.5:7b` quizzes, which had failed on every request. | `src/sentio/ai/structured_parser.py`, `tests/integration/test_practice_repair.py` |
+| Model evaluation     | A 12-case grounding test over real HTTP: 4 answerable, 6 absent facts, 2 ambiguous. `qwen2.5:7b` answered 3/4 covered questions vs 2/4 for `phi3:mini`; all models refused 6/6 absent facts.                                                                                  | `docs/evaluation/MODEL_COMPARISON_2026-10-29.md`                                  |
+| Reliability          | Long work runs as durable background jobs; answers stream and can be stopped; request receipts make retries idempotent; saves re-check the study context (notes, goal) in one transaction and reject stale work.                                                              | `src/sentio/tutor/stream_service.py`, `src/sentio/jobs/service.py`                |
+| Emotion side feature | My earlier FER2013 CNN and browser attention tracking, kept as an opt-in feature: off by default, consent checked on the server, frames size-limited, and it only changes the tutor's tone.                                                                                   | `src/sentio/emotion/`, `docs/guides/EMOTION.md`                                   |
+
+## Questions to expect
+
+- **Why local models?** Privacy (notes never leave the machine) and zero cost. The
+  trade-off is latency: 15–60 s per answer on CPU.
+- **How do you know answers are correct?** I don't claim that. Citations prove which
+  passage was used, the evidence gate prevents unsupported answers, and correctness is
+  measured with the grounding test and a human review of real replies.
+- **Why SQLite and not Postgres?** One user, one process, zero setup. Qdrant is only an
+  index that can be rebuilt; SQLite is the source of truth. Multi-user hosting would
+  need Postgres and a shared job queue.
+- **What would you improve next?** A trained evidence classifier once labels are
+  reviewed, a larger held-out evaluation set, and a cross-encoder re-ranker comparison.
+- **What was hard?** Making generation reliable on small local models: they break JSON,
+  omit fields and invent citations. The schema, repair loop and evidence gate exist
+  because of failures recorded in the reports.
+
+## Demo in five minutes
+
+1. `uv run sentio --port 8001`, sign up, upload a short notes file in Library.
+2. Ask a question the notes answer: point at the citation.
+3. Ask something the notes don't cover: show the refusal.
+4. Make a quiz, open **Edit this question**, show the provenance label.
+5. Open `docs/evaluation/MODEL_COMPARISON_2026-10-29.md` and explain the model choice.

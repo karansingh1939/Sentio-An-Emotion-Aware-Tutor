@@ -73,11 +73,10 @@ class SessionManager:
         )
         session.add_topic(topic)
         self._sessions[session_id] = session
-        if self.persister._use_db:
-            try:
-                self.persister.save_session(session)
-            except Exception as e:
-                logger.warning(f"Failed to persist session {session_id[:8]} to SQLite: {e}")
+        try:
+            self.persister.save_session(session)
+        except Exception as e:
+            logger.warning(f"Failed to persist session {session_id[:8]} to SQLite: {e}")
         logger.info(
             f"Session created: {session_id[:8]}… | "
             f"student={student_id} | {subject}/{topic} [{difficulty}]"
@@ -90,51 +89,50 @@ class SessionManager:
         if session_id in self._sessions:
             return self._sessions[session_id]
 
-        if self.persister._use_db:
-            data = self.persister.load_session_data(session_id)
-            if data:
-                session = Session(
-                    session_id=data["session_id"],
-                    student_id=data["student_id"],
-                    subject=data["subject"],
-                    topic=data["topic"],
-                    difficulty=data["difficulty"],
-                    status=SessionStatus(data["status"]),
-                    created_at=data["created_at"],
-                    updated_at=data["updated_at"],
-                    closed_at=data["closed_at"],
-                    total_exchanges=data.get("total_exchanges", 0),
-                    total_tokens=data.get("total_tokens", 0),
-                    topics_covered=data.get("topics_covered", []),
-                    metadata=data.get("metadata", {}),
-                    summary=data.get("summary"),
-                )
-                session.response_latencies = data.get("response_latencies", [])
+        data = self.persister.load_session_data(session_id)
+        if data:
+            session = Session(
+                session_id=data["session_id"],
+                student_id=data["student_id"],
+                subject=data["subject"],
+                topic=data["topic"],
+                difficulty=data["difficulty"],
+                status=SessionStatus(data["status"]),
+                created_at=data["created_at"],
+                updated_at=data["updated_at"],
+                closed_at=data["closed_at"],
+                total_exchanges=data.get("total_exchanges", 0),
+                total_tokens=data.get("total_tokens", 0),
+                topics_covered=data.get("topics_covered", []),
+                metadata=data.get("metadata", {}),
+                summary=data.get("summary"),
+            )
+            session.response_latencies = data.get("response_latencies", [])
 
-                from sqlalchemy import text
+            from sqlalchemy import text
 
-                with self.persister._engine.connect() as conn:
-                    rows = conn.execute(
-                        text(
-                            "SELECT timestamp, topic, difficulty, correct, response_time_sec, question_text FROM quiz_attempts WHERE session_id = :sid ORDER BY timestamp, id"
-                        ),
-                        {"sid": session_id},
-                    ).fetchall()
-                for row in rows:
-                    session.quiz_tracker.record(
-                        QuizAttempt(
-                            timestamp=row[0],
-                            topic=row[1],
-                            difficulty=row[2],
-                            correct=bool(row[3]),
-                            response_time_sec=row[4] or 0,
-                            question_preview=row[5] or "",
-                        )
+            with self.persister._engine.connect() as conn:
+                rows = conn.execute(
+                    text(
+                        "SELECT timestamp, topic, difficulty, correct, response_time_sec, question_text FROM quiz_attempts WHERE session_id = :sid ORDER BY timestamp, id"
+                    ),
+                    {"sid": session_id},
+                ).fetchall()
+            for row in rows:
+                session.quiz_tracker.record(
+                    QuizAttempt(
+                        timestamp=row[0],
+                        topic=row[1],
+                        difficulty=row[2],
+                        correct=bool(row[3]),
+                        response_time_sec=row[4] or 0,
+                        question_preview=row[5] or "",
                     )
+                )
 
-                # Cache in memory
-                self._sessions[session_id] = session
-                return session
+            # Cache in memory
+            self._sessions[session_id] = session
+            return session
         return None
 
     def get_or_raise(self, session_id: str) -> Session:
@@ -202,7 +200,7 @@ class SessionManager:
     def record_emotion(
         self,
         session_id: str,
-        emotion_result,  # EmotionResult from sentio.ai.emotion_detector
+        emotion_result,  # EmotionResult from sentio.emotion.detector
         strategy_active: str = "standard",
     ):
         """
@@ -252,38 +250,35 @@ class SessionManager:
         session.touch()
 
         # 1. Update SQLite database table `quiz_attempts` if database is active
-        if self.persister._use_db:
-            self.ensure_student_exists(session.student_id, connection=connection)
-            self.ensure_topic_exists(attempt.topic, connection=connection)
-            from sqlalchemy import text
+        self.ensure_student_exists(session.student_id, connection=connection)
+        self.ensure_topic_exists(attempt.topic, connection=connection)
+        from sqlalchemy import text
 
-            with (
-                nullcontext(connection)
-                if connection is not None
-                else self.persister._engine.connect()
-            ) as conn:
-                conn.execute(
-                    text("""
-                        INSERT INTO quiz_attempts 
-                        (session_id, student_id, topic, question_text, student_answer, 
-                         correct, score, response_time_sec, difficulty, timestamp)
-                        VALUES (:sid, :stud, :topic, :q_text, :ans, :correct, :score, :resp_time, :diff, :ts)
-                    """),
-                    {
-                        "sid": session_id,
-                        "stud": session.student_id,
-                        "topic": attempt.topic,
-                        "q_text": question_preview or "Quiz Question",
-                        "ans": student_answer,
-                        "correct": 1 if correct else 0,
-                        "score": score if score is not None else (1.0 if correct else 0.0),
-                        "resp_time": response_time_sec,
-                        "diff": attempt.difficulty,
-                        "ts": attempt.timestamp,
-                    },
-                )
-                if connection is None:
-                    conn.commit()
+        with (
+            nullcontext(connection) if connection is not None else self.persister._engine.connect()
+        ) as conn:
+            conn.execute(
+                text("""
+                    INSERT INTO quiz_attempts 
+                    (session_id, student_id, topic, question_text, student_answer, 
+                     correct, score, response_time_sec, difficulty, timestamp)
+                    VALUES (:sid, :stud, :topic, :q_text, :ans, :correct, :score, :resp_time, :diff, :ts)
+                """),
+                {
+                    "sid": session_id,
+                    "stud": session.student_id,
+                    "topic": attempt.topic,
+                    "q_text": question_preview or "Quiz Question",
+                    "ans": student_answer,
+                    "correct": 1 if correct else 0,
+                    "score": score if score is not None else (1.0 if correct else 0.0),
+                    "resp_time": response_time_sec,
+                    "diff": attempt.difficulty,
+                    "ts": attempt.timestamp,
+                },
+            )
+            if connection is None:
+                conn.commit()
 
         # 2. Update topic mastery automatically
         self.update_topic_mastery(
@@ -402,8 +397,6 @@ class SessionManager:
     # ── Student Memory System ──────────────────
 
     def ensure_student_exists(self, student_id: str, connection=None):
-        if not self.persister._use_db:
-            return
         from sqlalchemy import text
 
         with (
@@ -423,8 +416,6 @@ class SessionManager:
                     conn.commit()
 
     def ensure_topic_exists(self, topic_id: str, subject: str = "general", connection=None):
-        if not self.persister._use_db:
-            return
         from sqlalchemy import text
 
         with (
@@ -458,8 +449,6 @@ class SessionManager:
     ):
         self.ensure_student_exists(student_id, connection=connection)
         self.ensure_topic_exists(topic_id, connection=connection)
-        if not self.persister._use_db:
-            return
         from sqlalchemy import text
 
         from sentio.config import mastery_cfg
@@ -524,8 +513,6 @@ class SessionManager:
             )
 
     def get_weak_topics(self, student_id: str) -> List[dict]:
-        if not self.persister._use_db:
-            return []
         from sqlalchemy import text
 
         with self.persister._engine.connect() as conn:
@@ -538,8 +525,6 @@ class SessionManager:
         return [{"topic_id": r[0], "mastery_score": r[1], "display_name": r[2]} for r in rows]
 
     def get_strong_topics(self, student_id: str) -> List[dict]:
-        if not self.persister._use_db:
-            return []
         from sqlalchemy import text
 
         with self.persister._engine.connect() as conn:
@@ -562,8 +547,6 @@ class SessionManager:
         if topic_id:
             self.ensure_topic_exists(topic_id)
         goal_id = str(uuid.uuid4())
-        if not self.persister._use_db:
-            return goal_id
         from sqlalchemy import text
 
         with self.persister._engine.connect() as conn:
@@ -584,8 +567,6 @@ class SessionManager:
         return goal_id
 
     def get_learning_goals(self, student_id: str, status: str = "active") -> List[dict]:
-        if not self.persister._use_db:
-            return []
         from sqlalchemy import text
 
         with self.persister._engine.connect() as conn:
@@ -609,8 +590,6 @@ class SessionManager:
         ]
 
     def get_student_mistake_metrics(self, student_id: str) -> dict:
-        if not self.persister._use_db:
-            return {"recent_mistakes_list": [], "recurring_mistakes": [], "mistake_frequency": {}}
         from sqlalchemy import text
 
         with self.persister._engine.connect() as conn:
@@ -752,8 +731,6 @@ class SessionManager:
         head_pose_yaw: float,
         emotion: str,
     ):
-        if not self.persister._use_db:
-            return
         from sqlalchemy import text
 
         with self.persister._engine.connect() as conn:
@@ -777,8 +754,6 @@ class SessionManager:
             conn.commit()
 
     def get_attention_logs(self, session_id: str) -> List[dict]:
-        if not self.persister._use_db:
-            return []
         from sqlalchemy import text
 
         with self.persister._engine.connect() as conn:
@@ -803,16 +778,6 @@ class SessionManager:
             ]
 
     def get_attention_summary(self, session_id: str) -> dict:
-        if not self.persister._use_db:
-            return {
-                "count": 0,
-                "avg_attention": 0.0,
-                "focus_rate": 0.0,
-                "avg_eye_openness": 0.0,
-                "avg_pitch": 0.0,
-                "avg_yaw": 0.0,
-                "recent_state": "unknown",
-            }
         from sqlalchemy import text
 
         with self.persister._engine.connect() as conn:
@@ -869,8 +834,6 @@ class SessionManager:
             }
 
     def clear_session_telemetry(self, session_id: str):
-        if not self.persister._use_db:
-            return
         from sqlalchemy import text
 
         with self.persister._engine.connect() as conn:
@@ -906,8 +869,6 @@ class SessionManager:
         connection=None,
         provenance: Optional[dict] = None,
     ):
-        if not self.persister._use_db:
-            return
         import json
 
         from sqlalchemy import text
@@ -963,8 +924,6 @@ class SessionManager:
                 conn.commit()
 
     def get_quiz(self, quiz_id: str) -> Optional[dict]:
-        if not self.persister._use_db:
-            return None
         import json
 
         from sqlalchemy import text
@@ -1014,8 +973,6 @@ class SessionManager:
             }
 
     def save_flashcard_deck(self, deck_id: str, student_id: str, deck_name: str):
-        if not self.persister._use_db:
-            return
         from sqlalchemy import text
 
         with self.persister._engine.connect() as conn:
@@ -1029,8 +986,6 @@ class SessionManager:
             conn.commit()
 
     def list_flashcard_decks(self, student_id: str) -> List[dict]:
-        if not self.persister._use_db:
-            return []
         from sqlalchemy import text
 
         with self.persister._engine.connect() as conn:
@@ -1052,8 +1007,6 @@ class SessionManager:
         connection=None,
         provenance: Optional[dict] = None,
     ):
-        if not self.persister._use_db:
-            return
         import json
         import uuid
 
@@ -1091,8 +1044,6 @@ class SessionManager:
                 conn.commit()
 
     def get_due_flashcards(self, student_id: str, deck_id: Optional[str] = None) -> List[dict]:
-        if not self.persister._use_db:
-            return []
         import json
 
         from sqlalchemy import text
@@ -1128,8 +1079,6 @@ class SessionManager:
             return cards
 
     def get_flashcard(self, card_id: str) -> Optional[dict]:
-        if not self.persister._use_db:
-            return None
         import json
 
         from sqlalchemy import text
@@ -1167,8 +1116,6 @@ class SessionManager:
         next_review: float,
         connection=None,
     ):
-        if not self.persister._use_db:
-            return
         from sqlalchemy import text
 
         with (
@@ -1190,83 +1137,3 @@ class SessionManager:
             )
             if connection is None:
                 conn.commit()
-
-    def save_whiteboard(
-        self,
-        whiteboard_id: str,
-        student_id: str,
-        session_id: str,
-        title: str,
-        canvas_state_json: str,
-        connection=None,
-    ):
-        if not self.persister._use_db:
-            return
-        from sqlalchemy import text
-
-        with (
-            nullcontext(connection)
-            if connection is not None
-            else self.persister._engine.connect() as conn
-        ):
-            exists = conn.execute(
-                text("SELECT 1 FROM whiteboards WHERE whiteboard_id = :wid"), {"wid": whiteboard_id}
-            ).scalar()
-
-            if exists:
-                conn.execute(
-                    text("""
-                        UPDATE whiteboards 
-                        SET title = :title, canvas_state_json = :state, updated_at = :ts
-                        WHERE whiteboard_id = :wid AND student_id = :sid
-                    """),
-                    {
-                        "title": title,
-                        "state": canvas_state_json,
-                        "ts": time.time(),
-                        "wid": whiteboard_id,
-                        "sid": student_id,
-                    },
-                )
-            else:
-                self.ensure_student_exists(student_id, connection=conn)
-                conn.execute(
-                    text("""
-                        INSERT INTO whiteboards (whiteboard_id, student_id, session_id, title, canvas_state_json, created_at, updated_at)
-                        VALUES (:wid, :sid, :sessid, :title, :state, :ts, :ts)
-                    """),
-                    {
-                        "wid": whiteboard_id,
-                        "sid": student_id,
-                        "sessid": session_id,
-                        "title": title,
-                        "state": canvas_state_json,
-                        "ts": time.time(),
-                    },
-                )
-            if connection is None:
-                conn.commit()
-
-    def get_whiteboard(self, whiteboard_id: str) -> Optional[dict]:
-        if not self.persister._use_db:
-            return None
-        from sqlalchemy import text
-
-        with self.persister._engine.connect() as conn:
-            r = conn.execute(
-                text(
-                    "SELECT whiteboard_id, student_id, session_id, title, canvas_state_json, created_at, updated_at FROM whiteboards WHERE whiteboard_id = :wid"
-                ),
-                {"wid": whiteboard_id},
-            ).fetchone()
-            if not r:
-                return None
-            return {
-                "whiteboard_id": r[0],
-                "student_id": r[1],
-                "session_id": r[2],
-                "title": r[3],
-                "canvas_state_json": r[4],
-                "created_at": r[5],
-                "updated_at": r[6],
-            }

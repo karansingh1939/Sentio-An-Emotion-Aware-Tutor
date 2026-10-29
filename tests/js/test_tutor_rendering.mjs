@@ -50,9 +50,13 @@ context.appendTutorMessage({
 });
 assert.match(renderedTutor, /Generated explanation: check the claims against your notes/);
 
-const cameraFunctions = source.slice(
-  source.indexOf('async function startWebcam()'),
-  source.indexOf('async function toggleWebcamDirect()'),
+const cameraSource = await readFile(
+  new URL('../../src/sentio/static/js/core/emotion_camera.js', import.meta.url),
+  'utf8',
+);
+const cameraFunctions = cameraSource.slice(
+  cameraSource.indexOf('async function startWebcam()'),
+  cameraSource.indexOf('async function toggleWebcamDirect()'),
 );
 let resolvePermission;
 let stopped = 0;

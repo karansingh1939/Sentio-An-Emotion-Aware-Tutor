@@ -49,9 +49,8 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
-from sentio.ai.emotion_detector import EmotionDetector, EmotionResult
 from sentio.ai.nlp_engine import NLPEngine, TutorResponse
-from sentio.config import emotion_cfg, tutor_cfg
+from sentio.emotion.detector import EmotionDetector, EmotionResult
 from sentio.rag.knowledge_base import KnowledgeBase
 from sentio.session.manager import SessionManager
 
@@ -491,86 +490,6 @@ class TutorAgent:
         """Return past closed session summaries for a student."""
         self._require_loaded()
         return self.sm.get_student_history(student_id, limit=limit)
-
-    # ── Webcam Loop Integration ─────────────────
-
-    def run_live_session(
-        self,
-        session_id,
-        get_student_input_fn,
-        display_response_fn,
-        display_webcam=True,
-    ):
-        """
-        Blocking live tutoring loop with webcam.
-
-        Args:
-            session_id           : Active session ID
-            get_student_input_fn : Callable() -> str  (e.g. input() or STT)
-            display_response_fn  : Callable(AgentResponse) -> None
-            display_webcam       : Show annotated webcam window
-
-        The loop runs until the student types 'quit' or 'exit',
-        or until the session exceeds MAX_SESSION_DURATION_MIN.
-        """
-        import cv2
-
-        self._require_loaded()
-        session = self.sm.get_or_raise(session_id)
-
-        cap = cv2.VideoCapture(emotion_cfg.WEBCAM_INDEX)
-        if not cap.isOpened():
-            logger.warning("Webcam not available. Running without video.")
-            cap = None
-
-        logger.info("Live session started. Type 'quit' to end.")
-
-        try:
-            while session.is_active:
-                # Timeout guard
-                if session.duration_minutes >= tutor_cfg.MAX_SESSION_DURATION_MIN:
-                    logger.info("Session reached max duration. Closing.")
-                    break
-
-                # Grab latest frame
-                frame = None
-                if cap:
-                    ret, frame = cap.read()
-                    if not ret:
-                        frame = None
-                    if display_webcam and frame is not None:
-                        annotated = self.detector._annotate_frame(
-                            frame,
-                            self.detector._last_result,
-                        )
-                        cv2.imshow("Emotion-Aware Tutor", annotated)
-                        if cv2.waitKey(1) & 0xFF == ord("q"):
-                            break
-
-                # Get student input
-                student_msg = get_student_input_fn()
-                if not student_msg:
-                    continue
-                if student_msg.strip().lower() in ("quit", "exit", "bye"):
-                    break
-
-                # Process and display
-                response = self.chat(
-                    session_id=session_id,
-                    student_message=student_msg,
-                    frame=frame,
-                )
-                display_response_fn(response)
-
-        finally:
-            if cap:
-                cap.release()
-            if display_webcam:
-                cv2.destroyAllWindows()
-
-        analytics = self.end_session(session_id)
-        logger.info("Live session ended. %s", analytics.summary_text())
-        return analytics
 
     # ── Internal Helpers ───────────────────────
 

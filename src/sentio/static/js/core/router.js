@@ -9,7 +9,6 @@ class SentioRouter {
       '#/documents',
       '#/quizzes',
       '#/flashcards',
-      '#/whiteboard',
       '#/analytics',
       '#/history',
       '#/settings',

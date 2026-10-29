@@ -49,9 +49,9 @@ export class QuizzesView {
     const revision = ++this.revision;
     const owner = store.getState('currentUser')?.id;
     this.container.innerHTML = `
-      <div class="view-header" style="margin-bottom:20px;">
-        <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">Check your understanding</h2>
-        <p style="color:var(--text-dim);font-size:14px;">Answer questions, read the explanations, then revisit anything you missed.</p>
+      <div class="view-header view-header">
+        <h2 class="page-title">Check your understanding</h2>
+        <p class="muted">Answer questions, read the explanations, then revisit anything you missed.</p>
       </div>
 
       <div style="max-width:550px;width:100%;margin:0 auto;">
@@ -60,8 +60,8 @@ export class QuizzesView {
           ${store.getState('activeSessionId') ? '<a href="#/tutor">Change what you are studying</a>' : '<a class="workspace-action" href="#/documents">Choose notes</a>'}
           <div style="display:flex;flex-direction:column;gap:14px;margin-top:10px;">
             <div>
-              <label for="quiz-subject" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Subject</label>
-<select id="quiz-subject" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;">
+              <label class="form-label" for="quiz-subject">Subject</label>
+<select class="input" id="quiz-subject">
                 <option value="physics">Physics</option>
                 <option value="computer_science">Computer Science</option>
                 <option value="mathematics">Mathematics</option>
@@ -71,22 +71,22 @@ export class QuizzesView {
             </div>
 
             <div>
-              <label for="quiz-topic" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Topic</label>
-<input type="text" id="quiz-topic" value="" placeholder="Choose a study topic" aria-label="Quiz topic" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;" />
+              <label class="form-label" for="quiz-topic">Topic</label>
+<input class="input" type="text" id="quiz-topic" value="" placeholder="Choose a study topic" aria-label="Quiz topic" />
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
               <div>
-                <label for="quiz-difficulty" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Difficulty</label>
-<select id="quiz-difficulty" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;">
+                <label class="form-label" for="quiz-difficulty">Difficulty</label>
+<select class="input" id="quiz-difficulty">
                   <option value="beginner">Beginner</option>
                   <option value="intermediate" selected>Intermediate</option>
                   <option value="advanced">Advanced</option>
                 </select>
               </div>
               <div>
-                <label for="quiz-num-questions" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Number of Questions</label>
-<select id="quiz-num-questions" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;">
+                <label class="form-label" for="quiz-num-questions">Number of Questions</label>
+<select class="input" id="quiz-num-questions">
                   <option value="1">1 Question</option>
                   <option value="3" selected>3 Questions</option>
                   <option value="5">5 Questions</option>
@@ -190,9 +190,9 @@ export class QuizzesView {
     }
 
     this.container.innerHTML = `
-      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60%;gap:12px;">
+      <div class="center-state">
         <sentio-loader size="36px"></sentio-loader>
-        <span style="font-size:14px;color:var(--accent);font-weight:bold;font-family:var(--mono);">AI is custom-crafting your assessment...</span>
+        <span class="accent-strong">AI is custom-crafting your assessment...</span>
       </div>
     `;
 
@@ -228,23 +228,23 @@ export class QuizzesView {
     const selectedAns = this.answers[this.currentQuestionIdx] || '';
 
     this.container.innerHTML = `
-      <div class="view-header" style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
+      <div class="view-header view-header row-between">
         <div>
-          <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">${escapeHtml(this.quiz.title || 'Dynamic Assessment')}</h2>
-          <p style="color:var(--text-dim);font-size:14px;">Select your answer and navigate using the controls below.</p>
+          <h2 class="page-title">${escapeHtml(this.quiz.title || 'Dynamic Assessment')}</h2>
+          <p class="muted">Select your answer and navigate using the controls below.</p>
           ${this.quiz.provenance ? `<p class="practice-provenance"><small>${escapeHtml(describeProvenance(this.quiz.provenance))}</small></p>` : ''}
         </div>
-        <span style="font-family:var(--mono);font-size:14px;background:var(--border);padding:4px 8px;border-radius:4px;color:var(--accent);font-weight:bold;">
+        <span class="badge">
           Question ${this.currentQuestionIdx + 1} of ${totalQ}
         </span>
       </div>
 
       <div style="max-width:650px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:20px;">
+        ${q.question_id ? '<div class="card-toolbar"><span></span><button class="workspace-action" type="button" id="edit-question-btn">Edit this question</button></div>' : ''}
         <sentio-card title="Concept Check">
           <p style="font-size:13px;line-height:1.5;color:var(--text);margin-bottom:16px;font-weight:500;">
             ${escapeHtml(q.question_text)}
           </p>
-          ${q.question_id ? '<button class="workspace-action" type="button" id="edit-question-btn">Edit this question</button>' : ''}
 
           <div style="display:flex;flex-direction:column;gap:10px;">
             ${
@@ -269,8 +269,8 @@ export class QuizzesView {
           </div>
         </sentio-card>
 
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <button id="prev-question-btn" ${this.currentQuestionIdx === 0 ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : ''} style="background:none;border:1px solid var(--border);color:var(--text);padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;">
+        <div class="row-between">
+          <button id="prev-question-btn" class="workspace-action" ${this.currentQuestionIdx === 0 ? 'disabled' : ''}>
             ◀ Previous
           </button>
           
@@ -344,9 +344,9 @@ export class QuizzesView {
     const owner = store.getState('currentUser')?.id;
     const activeSessionId = this.quiz?.session_id || store.getState('activeSessionId');
     this.container.innerHTML = `
-      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60%;gap:12px;">
+      <div class="center-state">
         <sentio-loader size="36px"></sentio-loader>
-        <span style="font-size:14px;color:var(--accent);font-weight:bold;font-family:var(--mono);">Grading responses and updating student memory...</span>
+        <span class="accent-strong">Grading responses and updating student memory...</span>
       </div>
     `;
 
@@ -380,9 +380,9 @@ export class QuizzesView {
     const passed = this.results.passed;
 
     this.container.innerHTML = `
-      <div class="view-header" style="margin-bottom:20px;">
-        <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">Assessment Results</h2>
-        <p style="color:var(--text-dim);font-size:14px;">Review explanations and pedagogical feedback to improve retention.</p>
+      <div class="view-header view-header">
+        <h2 class="page-title">Assessment Results</h2>
+        <p class="muted">Review explanations and pedagogical feedback to improve retention.</p>
       </div>
 
       <div style="max-width:700px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:20px;">
@@ -397,19 +397,19 @@ export class QuizzesView {
               ${passed ? 'PASSED' : 'RETRY ADVISED'}
             </span>
           </div>
-          <p style="font-size:14px;line-height:1.5;color:var(--text-dim);">${escapeHtml(this.results.summary)}</p>
-          ${this.quiz.questions.some((q) => q.question_type === 'short_answer') ? '<p style="font-size:14px;line-height:1.5;color:var(--text-dim);">Short-answer scores are practice feedback. AI grading can misjudge valid wording; compare your answer with the reference and explanation below.</p>' : ''}
+          <p class="muted">${escapeHtml(this.results.summary)}</p>
+          ${this.quiz.questions.some((q) => q.question_type === 'short_answer') ? '<p class="muted">Short-answer scores are practice feedback. AI grading can misjudge valid wording; compare your answer with the reference and explanation below.</p>' : ''}
         </sentio-card>
 
         <!-- Detailed Feedback -->
         <sentio-card title="Detailed Questions Review">
-          <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="stack stack-lg">
             ${this.results.feedback
               .map((f, idx) => {
                 const qOriginal = this.quiz.questions[f.question_index];
                 return `
                 <div style="border:1px solid var(--border);border-radius:var(--radius);padding:12px;background:var(--bg3);display:flex;flex-direction:column;gap:6px;">
-                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div class="row-between">
                     <span style="font-weight:bold;font-size:14px;color:var(--text);">Question ${idx + 1}</span>
                     <span style="color:${f.is_correct ? 'var(--green)' : 'var(--red)'};font-weight:bold;font-size:14px;">
                       ${f.is_correct ? '✅ CORRECT' : '❌ INCORRECT'}

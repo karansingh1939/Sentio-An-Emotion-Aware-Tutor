@@ -28,7 +28,8 @@ Open http://127.0.0.1:8001 and leave the terminal open. Stop with Ctrl+C.
 
 To change notes, return to Library and choose Study on the new document. Saved
 practice remains accessible. Settings contains diagnostics, data export and account
-controls; camera and voice experiments are absent from the normal study path.
+controls. The camera-based emotion feature is optional and off unless your
+installation enables it (see EMOTION.md).
 
 ## Forgotten password
 

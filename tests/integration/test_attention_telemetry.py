@@ -18,7 +18,6 @@ from unittest.mock import patch
 import sentio.config as config
 from tests.helpers import login_student
 
-config.nlp_cfg.LLM_BACKEND = "ollama"
 config.tutor_cfg.ENABLE_ADAPTIVE_TUTORING = False
 
 # Mock system_health_check to prevent webcam lock during testing
@@ -53,6 +52,14 @@ class TestPhaseEFinal(unittest.TestCase):
 
         self.client = TestClient(app)
         self.student_id = login_student(self.client)
+        enabled = patch.object(config.emotion_cfg, "ENABLED", True)
+        enabled.start()
+        self.addCleanup(enabled.stop)
+        consent = self.client.post(
+            f"/api/v1/student/{self.student_id}/consent",
+            json={"consent_version": "camera-v1", "preferences": {"telemetry": True}},
+        )
+        self.assertEqual(consent.status_code, 200)
 
         # Create a test session
         res = self.client.post(
@@ -312,7 +319,6 @@ class TestPhaseEFinal(unittest.TestCase):
             self.assertIn("INSTRUCTION (Student is DISTRACTED)", student_memory)
             self.assertIn("shorter explanations", student_memory)
             self.assertIn("simpler, more direct wording", student_memory)
-            self.assertIn("Suggest/offer whiteboard", student_memory)
         finally:
             config.tutor_cfg.ENABLE_ADAPTIVE_TUTORING = False
 

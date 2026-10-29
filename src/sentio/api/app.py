@@ -13,7 +13,6 @@ from sentio.api.dependencies import PREFIX as PREFIX
 from sentio.api.dependencies import STATIC_DIR
 from sentio.api.dependencies import agent as agent
 from sentio.api.dependencies import quiz_service as quiz_service
-from sentio.api.dependencies import whiteboard_service as whiteboard_service
 from sentio.api.middleware import (
     BodyLimitMiddleware,
     RateLimitMiddleware,
@@ -33,11 +32,10 @@ from sentio.api.routes import (
     sessions,
     streaming,
     system,
-    telemetry,
     tutoring,
-    whiteboards,
 )
 from sentio.config import api_cfg
+from sentio.emotion import routes as emotion_routes
 from sentio.shared.exceptions import LLMServiceUnavailableError
 from sentio.shared.utils import RateLimiter as RateLimiter
 from sentio.shared.utils import setup_logging
@@ -149,11 +147,9 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.include_router(system.router)
 app.include_router(sessions.router)
-app.include_router(telemetry.router)
 app.include_router(tutoring.router)
 app.include_router(quizzes.router)
 app.include_router(flashcards.router)
-app.include_router(whiteboards.router)
 app.include_router(auth.router)
 app.include_router(privacy.router)
 app.include_router(intelligence.router)
@@ -163,3 +159,4 @@ app.include_router(memory.router)
 app.include_router(planning.router)
 app.include_router(jobs.router)
 app.include_router(streaming.router)
+app.include_router(emotion_routes.router)

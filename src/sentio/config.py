@@ -40,6 +40,11 @@ for directory in [
 # EMOTION DETECTION (Computer Vision)
 # ─────────────────────────────────────────────
 class EmotionConfig:
+    # Optional side feature: off unless ENABLE_EMOTION=true (and the learner consents).
+    ENABLED = os.getenv("ENABLE_EMOTION", "false").lower().strip() in ("1", "true", "yes")
+    MAX_FRAME_BYTES = 512 * 1024
+    MAX_FRAME_PIXELS = 1280 * 720
+
     # Emotion classes the model can detect
     CLASSES = [
         "angry",
@@ -108,31 +113,7 @@ class EmotionConfig:
 # NLP / LANGUAGE MODEL
 # ─────────────────────────────────────────────
 class NLPConfig:
-    # Which LLM backend to use: "openai" | "huggingface" | "ollama"
-    # ---------------------------------------------------------------
-    # Set backend before running:
-    #   PowerShell : $env:LLM_BACKEND="ollama"
-    #   CMD        : set LLM_BACKEND=ollama
-    # Default = "openai" (needs OPENAI_API_KEY).
-    # ---------------------------------------------------------------
-    LLM_BACKEND = os.getenv("LLM_BACKEND", "ollama")
-
-    # OpenAI settings
-    # PowerShell : $env:OPENAI_API_KEY="sk-..."
-    # CMD        : set OPENAI_API_KEY=sk-...
-    # OR paste your key directly below (not for shared code):
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-    OPENAI_MODEL = "gpt-4o-mini"
-    OPENAI_MAX_TOKENS = 512
-    OPENAI_TEMPERATURE = 0.7
-
-    # HuggingFace settings (used if LLM_BACKEND == "huggingface")
-    HF_MODEL_NAME = "microsoft/phi-2"
-    HF_MAX_NEW_TOKENS = 256
-    HF_TEMPERATURE = 0.7
-    HF_DEVICE = "cuda"  # "cuda" | "cpu" | "mps"
-
-    # Ollama settings (local LLM, used if LLM_BACKEND == "ollama")
+    # Local Ollama model used for every generation
     OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
     OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "phi3:mini")
 

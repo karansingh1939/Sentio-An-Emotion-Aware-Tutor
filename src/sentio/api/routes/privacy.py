@@ -32,71 +32,70 @@ def export_student_data(student_id: str, user: dict = Depends(get_current_user))
         # Retrieve all student data from SQL tables
         persister = agent.sm.persister
         data = {}
-        if persister._use_db:
-            engine = persister._engine
-            with engine.connect() as conn:
-                data["account"] = (
-                    conn.execute(
-                        text(
-                            "SELECT student_id, email, role, created_at FROM student_accounts WHERE student_id = :sid"
-                        ),
-                        {"sid": student_id},
-                    )
-                    .mappings()
-                    .all()
+        engine = persister._engine
+        with engine.connect() as conn:
+            data["account"] = (
+                conn.execute(
+                    text(
+                        "SELECT student_id, email, role, created_at FROM student_accounts WHERE student_id = :sid"
+                    ),
+                    {"sid": student_id},
                 )
-                data["sessions"] = (
-                    conn.execute(
-                        text(
-                            "SELECT session_id, subject, topic, difficulty, status, created_at, closed_at, duration_min, summary FROM sessions WHERE student_id = :sid"
-                        ),
-                        {"sid": student_id},
-                    )
-                    .mappings()
-                    .all()
+                .mappings()
+                .all()
+            )
+            data["sessions"] = (
+                conn.execute(
+                    text(
+                        "SELECT session_id, subject, topic, difficulty, status, created_at, closed_at, duration_min, summary FROM sessions WHERE student_id = :sid"
+                    ),
+                    {"sid": student_id},
                 )
-                data["student_knowledge"] = (
-                    conn.execute(
-                        text(
-                            "SELECT topic_id, mastery_score, attempts_count, consecutive_correct, last_attempt_at FROM student_knowledge WHERE student_id = :sid"
-                        ),
-                        {"sid": student_id},
-                    )
-                    .mappings()
-                    .all()
+                .mappings()
+                .all()
+            )
+            data["student_knowledge"] = (
+                conn.execute(
+                    text(
+                        "SELECT topic_id, mastery_score, attempts_count, consecutive_correct, last_attempt_at FROM student_knowledge WHERE student_id = :sid"
+                    ),
+                    {"sid": student_id},
                 )
-                data["flashcards"] = (
-                    conn.execute(
-                        text(
-                            "SELECT card_id, topic_id, front_text, back_text, created_at, interval_days, repetition_count, ease_factor, next_review_at FROM flashcards WHERE student_id = :sid"
-                        ),
-                        {"sid": student_id},
-                    )
-                    .mappings()
-                    .all()
+                .mappings()
+                .all()
+            )
+            data["flashcards"] = (
+                conn.execute(
+                    text(
+                        "SELECT card_id, topic_id, front_text, back_text, created_at, interval_days, repetition_count, ease_factor, next_review_at FROM flashcards WHERE student_id = :sid"
+                    ),
+                    {"sid": student_id},
                 )
-                data["quiz_attempts"] = (
-                    conn.execute(
-                        text(
-                            "SELECT id, session_id, topic, question_text, student_answer, correct, score, response_time_sec, difficulty, timestamp FROM quiz_attempts WHERE student_id = :sid"
-                        ),
-                        {"sid": student_id},
-                    )
-                    .mappings()
-                    .all()
+                .mappings()
+                .all()
+            )
+            data["quiz_attempts"] = (
+                conn.execute(
+                    text(
+                        "SELECT id, session_id, topic, question_text, student_answer, correct, score, response_time_sec, difficulty, timestamp FROM quiz_attempts WHERE student_id = :sid"
+                    ),
+                    {"sid": student_id},
                 )
-                data["learning_goals"] = (
-                    conn.execute(
-                        text(
-                            "SELECT goal_id, topic_id, goal_text, target_date, status, created_at, completed_at FROM learning_goals WHERE student_id = :sid"
-                        ),
-                        {"sid": student_id},
-                    )
-                    .mappings()
-                    .all()
+                .mappings()
+                .all()
+            )
+            data["learning_goals"] = (
+                conn.execute(
+                    text(
+                        "SELECT goal_id, topic_id, goal_text, target_date, status, created_at, completed_at FROM learning_goals WHERE student_id = :sid"
+                    ),
+                    {"sid": student_id},
                 )
-                data["audit_logs"] = persister.auth_repo.get_audit_logs(student_id)
-                data["consent_history"] = persister.auth_repo.get_consent_history(student_id)
+                .mappings()
+                .all()
+            )
+            data["audit_logs"] = persister.auth_repo.get_audit_logs(student_id)
+            data["consent_history"] = persister.auth_repo.get_consent_history(student_id)
 
         data.update(persister.auth_repo.export_study_artifacts(student_id))
         # Serialize database mappings to json-serializable list/dict structure
