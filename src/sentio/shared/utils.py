@@ -506,7 +506,7 @@ def system_health_check():
         logger.info("Emotion model found: %s (%.1f MB)", model_path, size_mb)
     else:
         logger.warning(
-            "Emotion model NOT found at %s. Run: python train_emotion_model.py", model_path
+            "Emotion model NOT found at %s. Run: python scripts/emotion/train.py", model_path
         )
 
     # Webcam (Skipped physical check in backend context to avoid blocking/timeouts)

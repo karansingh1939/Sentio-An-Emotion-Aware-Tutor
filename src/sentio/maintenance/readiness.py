@@ -59,6 +59,6 @@ def readiness(agent):
             "ready": agent.detector.model is not None,
             "experimental": True,
             "weights_available": emotion_cfg.MODEL_PATH.exists(),
-            "enabled": False,
+            "enabled": emotion_cfg.ENABLED,
         },
     }

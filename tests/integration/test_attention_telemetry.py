@@ -52,6 +52,14 @@ class TestPhaseEFinal(unittest.TestCase):
 
         self.client = TestClient(app)
         self.student_id = login_student(self.client)
+        enabled = patch.object(config.emotion_cfg, "ENABLED", True)
+        enabled.start()
+        self.addCleanup(enabled.stop)
+        consent = self.client.post(
+            f"/api/v1/student/{self.student_id}/consent",
+            json={"consent_version": "camera-v1", "preferences": {"telemetry": True}},
+        )
+        self.assertEqual(consent.status_code, 200)
 
         # Create a test session
         res = self.client.post(

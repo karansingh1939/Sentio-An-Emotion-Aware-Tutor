@@ -538,8 +538,12 @@ th {
 #recovery-error {
   color: var(--red);
 }
-#cam-quick-toggle-btn,
 .input-controls-left {
+  display: none;
+}
+/* Optional emotion feature: hidden unless the server enables it. */
+html:not([data-emotion='on']) #cam-quick-toggle-btn,
+html:not([data-emotion='on']) .emotion-only {
   display: none;
 }
 .active-bar-actions {

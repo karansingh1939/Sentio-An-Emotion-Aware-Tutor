@@ -23,16 +23,16 @@ class TestLearningIdentity(unittest.TestCase):
     def setUpClass(cls):
         # Authentication tests need neither TensorFlow nor an external model service.
         detector = SimpleNamespace(EmotionDetector=Mock(), EmotionResult=Mock())
-        previous = sys.modules.get("sentio.ai.emotion_detector")
-        sys.modules["sentio.ai.emotion_detector"] = detector
+        previous = sys.modules.get("sentio.emotion.detector")
+        sys.modules["sentio.emotion.detector"] = detector
         try:
             with patch("sentio.shared.utils.setup_logging"):
                 cls.api = importlib.import_module("sentio.api.app")
         finally:
             if previous is None:
-                del sys.modules["sentio.ai.emotion_detector"]
+                del sys.modules["sentio.emotion.detector"]
             else:
-                sys.modules["sentio.ai.emotion_detector"] = previous
+                sys.modules["sentio.emotion.detector"] = previous
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -346,6 +346,16 @@ class TestLearningIdentity(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
 
     def test_websocket_requires_owner_access_token(self):
+        from sentio.config import emotion_cfg
+
+        enabled = patch.object(emotion_cfg, "ENABLED", True)
+        enabled.start()
+        self.addCleanup(enabled.stop)
+        self.client.post(
+            self.prefix + f"/student/{self.a}/consent",
+            headers=self.headers_a,
+            json={"consent_version": "camera-v1", "preferences": {"telemetry": True}},
+        )
         path = self.prefix + "/ws/" + self.session_a.session_id
         for headers in [{}, self.headers_b, self.headers(self.tokens_a["refresh_token"])]:
             with self.subTest(headers_present=bool(headers)):

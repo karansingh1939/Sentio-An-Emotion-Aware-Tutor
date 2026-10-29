@@ -40,6 +40,11 @@ for directory in [
 # EMOTION DETECTION (Computer Vision)
 # ─────────────────────────────────────────────
 class EmotionConfig:
+    # Optional side feature: off unless ENABLE_EMOTION=true (and the learner consents).
+    ENABLED = os.getenv("ENABLE_EMOTION", "false").lower().strip() in ("1", "true", "yes")
+    MAX_FRAME_BYTES = 512 * 1024
+    MAX_FRAME_PIXELS = 1280 * 720
+
     # Emotion classes the model can detect
     CLASSES = [
         "angry",

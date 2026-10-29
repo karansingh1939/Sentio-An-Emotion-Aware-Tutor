@@ -39,7 +39,7 @@ def test_packaged_frontend_and_provider_failure(monkeypatch):
 
 
 def test_missing_model_disables_inference(tmp_path):
-    from sentio.ai.emotion_detector import EmotionDetector
+    from sentio.emotion.detector import EmotionDetector
 
     detector = EmotionDetector()
     detector.build_model = Mock()
