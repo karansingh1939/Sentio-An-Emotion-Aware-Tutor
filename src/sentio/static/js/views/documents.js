@@ -40,7 +40,7 @@ export class DocumentsView {
       store.getState('currentUser')?.id === owner &&
       store.getState('activeRoute') === '#/documents';
     this.container.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:center;height:60%;">
+      <div class="center-state">
         <sentio-loader size="32px"></sentio-loader>
       </div>
     `;
@@ -76,10 +76,10 @@ export class DocumentsView {
     const filteredDocs = this.documents;
 
     this.container.innerHTML = `
-      <div class="view-header" style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+      <div class="view-header view-header row-between">
         <div>
-          <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-bottom:6px;">Document Library</h2>
-          <p style="color:var(--text-dim);font-size:14px;">Upload your notes, then choose Study to ask questions about them.</p>
+          <h2 class="page-title">Document Library</h2>
+          <p class="muted">Upload your notes, then choose Study to ask questions about them.</p>
         </div>
         <button ${store.getState('currentUser')?.role === 'admin' ? '' : 'hidden'} id="sync-library-btn" style="background:none;color:var(--accent);border:1px solid var(--accent);padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;transition:background 0.2s;">
           🔄 Sync Disk Folder
@@ -89,7 +89,7 @@ export class DocumentsView {
       ${this.justUploadedId ? `<div class="notice library-ready" role="status">Your notes are ready. <button class="workspace-action primary study-doc-btn" data-id="${escapeHtml(this.justUploadedId)}">Study these notes</button></div>` : ''}
       <div class="library-layout" style="display:grid;grid-template-columns:1fr 340px;gap:20px;width:100%;">
         <!-- Left: Search and List -->
-        <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="stack stack-lg">
           <sentio-card title="Your notes">
             <div style="display:flex;gap:10px;margin-bottom:16px;">
               <input type="text" id="doc-search-input" value="${escapeHtml(this.filterQuery)}" placeholder="Search files by name or category..." style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;" />
@@ -136,8 +136,8 @@ export class DocumentsView {
                           </td>
                           <td style="padding:10px;text-align:right;">
                             <button class="workspace-action primary study-doc-btn" data-id="${escapeHtml(d.id)}" ${d.status === 'indexed' ? '' : 'disabled'}>Study</button>
-                            <button class="preview-doc-btn" data-id="${escapeHtml(d.id)}">Preview</button>
-                            <button class="delete-doc-btn" data-id="${escapeHtml(d.id)}" style="background:none;border:none;color:var(--red);cursor:pointer;font-family:var(--mono);font-size:14px;">Delete</button>
+                            <button class="workspace-action preview-doc-btn" data-id="${escapeHtml(d.id)}">Preview</button>
+                            <button class="link-danger delete-doc-btn" data-id="${escapeHtml(d.id)}">Delete</button>
                           </td>
                         </tr>
                       `;
@@ -157,13 +157,13 @@ export class DocumentsView {
             <div id="drop-zone" role="button" tabindex="0" aria-label="Choose a study material file" style="border:2px dashed var(--border);border-radius:var(--radius-lg);padding:24px 16px;text-align:center;background:var(--bg3);cursor:pointer;transition:border-color 0.2s, background 0.2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
               <span style="font-size:32px;">📄</span>
               <span style="font-size:14px;font-weight:bold;color:var(--text);">Drag & Drop your file here</span>
-              <span style="font-size:14px;color:var(--text-dim);">or choose a file</span>
+              <span class="muted">or choose a file</span>
               <input type="file" id="file-uploader" style="display:none;" accept="${this.ocrReady ? '.pdf,.docx,.txt,.png,.jpg,.jpeg' : '.pdf,.docx,.txt'}" />
             </div>
 
-            <p style="font-size:14px;color:var(--text-dim);">20 MiB maximum. ${this.ocrReady ? 'English OCR enabled; up to 20 scanned pages.' : 'Scans and images require the optional OCR tools.'}</p><div style="margin-top:16px;">
-              <label for="upload-category" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Organize as</label>
-<select id="upload-category" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;">
+            <p class="muted">20 MiB maximum. ${this.ocrReady ? 'English OCR enabled; up to 20 scanned pages.' : 'Scans and images require the optional OCR tools.'}</p><div style="margin-top:16px;">
+              <label class="form-label" for="upload-category">Organize as</label>
+<select class="input" id="upload-category">
                 <option value="uploaded">General Uploads</option>
                 <option value="textbooks">Textbooks</option>
                 <option value="notes">Lecture Notes</option>

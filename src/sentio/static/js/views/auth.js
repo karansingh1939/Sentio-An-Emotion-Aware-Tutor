@@ -60,22 +60,22 @@ export class AuthView {
 
         <form id="auth-form" style="display:flex;flex-direction:column;gap:12px;margin-top:10px;">
           <div>
-            <label for="auth-email" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Email Address</label>
-<input type="email" id="auth-email" autocomplete="username" required placeholder="student@sentio.edu" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;" />
+            <label class="form-label" for="auth-email">Email Address</label>
+<input class="input" type="email" id="auth-email" autocomplete="username" required placeholder="student@sentio.edu" />
           </div>
 
           ${this.isRecoverMode ? '<div><label for="auth-recovery-key">Recovery key</label><input id="auth-recovery-key" autocomplete="off" type="password"><details><summary>I do not have a recovery key</summary><p>If you can still sign in, create a key in Settings. Otherwise this local app cannot verify ownership. It cannot send reset emails. Your saved notes are not deleted by failed recovery attempts.</p></details></div>' : ''}
           <div>
-            <label for="auth-password" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">${this.isRecoverMode ? 'New password' : 'Password'}</label>
-<input type="password" id="auth-password" autocomplete="${this.isRegisterMode || this.isRecoverMode ? 'new-password' : 'current-password'}" required placeholder="••••••••" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;" />
+            <label class="form-label" for="auth-password">${this.isRecoverMode ? 'New password' : 'Password'}</label>
+<input class="input" type="password" id="auth-password" autocomplete="${this.isRegisterMode || this.isRecoverMode ? 'new-password' : 'current-password'}" required placeholder="••••••••" />
           </div>
 
           ${
             this.isRegisterMode || this.isRecoverMode
               ? `
             <div>
-              <label for="auth-confirm-password" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;font-weight:bold;">Confirm Password</label>
-<input type="password" id="auth-confirm-password" autocomplete="new-password" required placeholder="••••••••" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;" />
+              <label class="form-label" for="auth-confirm-password">Confirm Password</label>
+<input class="input" type="password" id="auth-confirm-password" autocomplete="new-password" required placeholder="••••••••" />
             </div>
           `
               : ''
@@ -93,10 +93,10 @@ export class AuthView {
           ${
             this.isRegisterMode
               ? `
-            Already have an account? <button type="button" id="auth-toggle-btn" style="color:var(--accent);cursor:pointer;font-weight:bold;text-decoration:underline;">Sign In</button>
+            Already have an account? <button class="accent-strong" type="button" id="auth-toggle-btn">Sign In</button>
           `
               : `
-            New to Sentio? <button type="button" id="auth-toggle-btn" style="color:var(--accent);cursor:pointer;font-weight:bold;text-decoration:underline;">Create Account</button>
+            New to Sentio? <button class="accent-strong" type="button" id="auth-toggle-btn">Create Account</button>
           `
           }
         </div>

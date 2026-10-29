@@ -386,11 +386,11 @@ export class TutorView {
     const modal = document.createElement('sentio-modal');
     modal.setAttribute('title', options.documentId ? 'Study these notes' : 'Start studying');
     modal.innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="stack">
         <p>${options.documentId ? `Using ${escapeHtml(options.document?.filename || 'your selected notes')}.` : 'Choose what you want to understand.'}</p>
         <div>
-          <label for="new-sess-subject" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;">Subject</label>
-<select id="new-sess-subject" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;">
+          <label class="form-label" for="new-sess-subject">Subject</label>
+<select class="input" id="new-sess-subject">
             <option value="mathematics">Mathematics</option>
             <option value="physics">Physics</option>
             <option value="computer_science">Computer Science</option>
@@ -401,27 +401,27 @@ export class TutorView {
           </select>
         </div>
         <div>
-          <label for="new-sess-topic" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;">Topic</label>
-<input type="text" id="new-sess-topic" placeholder="What would you like to study?" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;" />
+          <label class="form-label" for="new-sess-topic">Topic</label>
+<input class="input" type="text" id="new-sess-topic" placeholder="What would you like to study?" />
         </div>
         <div>
-          <label for="new-sess-difficulty" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;">Difficulty</label>
-<select id="new-sess-difficulty" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;">
+          <label class="form-label" for="new-sess-difficulty">Difficulty</label>
+<select class="input" id="new-sess-difficulty">
             <option value="beginner" selected>Beginner</option>
             <option value="intermediate">Intermediate</option>
             <option value="advanced">Advanced</option>
           </select>
         </div>
         <div>
-          <label for="new-sess-grounding" style="display:block;font-size:14px;color:var(--text-dim);margin-bottom:6px;">Grounding Source</label>
-<select id="new-sess-grounding" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-family:var(--mono);font-size:14px;">
+          <label class="form-label" for="new-sess-grounding">Grounding Source</label>
+<select class="input" id="new-sess-grounding">
             <option value="none">General questions (without notes)</option>
             <option value="all">Search all my notes</option>
             ${docs.map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.filename)}</option>`).join('')}
           </select>
         </div>
         <p id="new-sess-error" role="alert"></p>
-        <button id="new-sess-submit-btn" style="margin-top:10px;background:var(--accent);color:var(--bg);border:none;padding:10px;border-radius:var(--radius);font-family:var(--mono);font-weight:bold;cursor:pointer;">Start studying</button>
+        <button class="workspace-action primary" id="new-sess-submit-btn">Start studying</button>
       </div>
     `;
 
@@ -542,7 +542,7 @@ export class TutorView {
 
         return `
         <div class="citation-card" style="border:1px solid var(--border);border-radius:var(--radius);padding:10px;background:var(--bg3);display:flex;flex-direction:column;gap:6px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div class="row-between">
             <span style="font-weight:bold;font-size:14px;color:var(--accent);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(filename)}">
               📄 ${escapeHtml(filename)}
             </span>
@@ -550,7 +550,7 @@ export class TutorView {
               Page ${escapeHtml(page)}
             </span>
           </div>
-          <div style="font-size:14px;color:var(--text-dim);">Page: ${escapeHtml(page)}</div>
+          <div class="muted">Page: ${escapeHtml(page)}</div>
           <details style="margin-top:4px;">
             <summary style="font-size:14px;color:var(--accent);cursor:pointer;outline:none;">Preview Source Text</summary>
             <p style="font-size:14px;color:var(--text);margin-top:6px;line-height:1.4;background:var(--bg2);padding:6px;border-radius:4px;border:1px solid var(--border);max-height:140px;overflow-y:auto;white-space:pre-wrap;">${escapeHtml(textSnippet)}</p>

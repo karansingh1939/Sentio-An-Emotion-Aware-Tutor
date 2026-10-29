@@ -582,3 +582,184 @@ html:not([data-emotion='on']) .emotion-only {
     flex-wrap: wrap;
   }
 }
+
+/* ── Shared components ─────────────────────────────────────────── */
+a {
+  color: var(--accent);
+}
+/* Native controls without bespoke styling still get the workspace look. */
+input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not(
+    [type='hidden']
+  ),
+select,
+textarea {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  color: var(--text);
+}
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--accent);
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+}
+button:not([class]):not([id^='cam-']):not([id^='theme']) {
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 6px 14px;
+  cursor: pointer;
+}
+form label,
+.form-label {
+  display: block;
+  font-size: 14px;
+  color: var(--text-dim);
+  margin: 12px 0 6px;
+  font-weight: 600;
+}
+.input {
+  width: 100%;
+}
+.page-title {
+  font-family: var(--display);
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.stack-lg {
+  gap: 16px;
+}
+.row-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.center-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  gap: 12px;
+  text-align: center;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: var(--accent);
+  font-weight: 650;
+  white-space: nowrap;
+}
+.accent-strong {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 14px;
+}
+.link-danger {
+  background: none;
+  border: none;
+  color: var(--red);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 6px 8px;
+}
+.practice-provenance {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+.practice-provenance small {
+  font-size: 12.5px;
+}
+.study-guide a {
+  text-decoration: none;
+  font-weight: 650;
+}
+/* Study context: notes and goal for the current session, side by side. */
+.study-context {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+.study-context .field {
+  flex: 1 1 240px;
+  margin: 0;
+}
+.study-context .field label {
+  margin: 0 0 4px;
+}
+.study-context select {
+  width: 100%;
+}
+/* Progress statistics */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.stat {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+}
+.stat-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text);
+}
+.stat-label {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin-top: 4px;
+}
+.mastery-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+.mastery-list progress {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.card-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
