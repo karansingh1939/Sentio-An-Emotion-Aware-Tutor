@@ -114,25 +114,27 @@ def test_selected_source_questions_cannot_bypass_evidence_gate(monkeypatch, sele
     assert result["agent_response"].backend_used == "evidence_gate"
 
 
-@pytest.mark.parametrize("selected", [None, "none"])
-@pytest.mark.parametrize(
-    ("message", "route"),
-    [
-        ("Make a study plan", "planner"),
-        ("Review my progress", "feedback"),
-        ("Summarize the planetary system", "research"),
-    ],
-)
-def test_general_study_routes_keep_planning_and_feedback(selected, message, route):
-    from sentio.jobs.control import WorkControl, execution
+@pytest.mark.parametrize("message", ["Make a study plan", "Review my progress", "Hello"])
+def test_general_messages_always_retrieve_before_generating(message):
     from sentio.tutor.orchestrator import SentioOrchestrator
 
-    control = WorkControl()
-    control.defer_turn = True
-    with execution(control):
-        assert (
-            SentioOrchestrator(None).route_after_memory(
-                {"user_message": message, "document_id": selected}
-            )
-            == route
-        )
+    retrieval = Mock(return_value=SimpleNamespace(evidence_outcome="general"))
+    orchestrator = SentioOrchestrator(
+        SimpleNamespace(kb=SimpleNamespace(retrieve=retrieval, get_tone_instruction=str))
+    )
+    state = dict(
+        subject="science",
+        topic="notes",
+        difficulty="beginner",
+        learning_state="neutral",
+        user_message=message,
+        session_id="session",
+        student_id="owner",
+        document_id=None,
+        agent_timeline=[],
+        selected_route=["memory_lookup"],
+    )
+    retrieved = orchestrator.retrieve_node(state)
+    retrieval.assert_called_once()
+    assert retrieved["selected_route"] == ["memory_lookup", "retrieve"]
+    assert orchestrator.route_after_retrieval(retrieved) == "generate"
