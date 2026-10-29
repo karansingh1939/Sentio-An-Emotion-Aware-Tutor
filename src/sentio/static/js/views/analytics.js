@@ -37,11 +37,15 @@ export class AnalyticsView {
     const topics = Object.entries(profile.topic_mastery || {});
     this.container.innerHTML = `
       <div class="view-header"><h2>Your progress</h2><p>Use your saved practice to decide what to revisit.</p></div>
-      <p>Practice estimate: <strong>${topics.length ? percentage(profile.overall_mastery) + '%' : 'Not assessed yet'}</strong></p>
-      <p>Estimates combine quiz answers and self-reported card ratings. They guide review; they do not prove understanding.</p>
-      <p>Learning streak: ${escapeHtml(profile.learning_streak || 0)} days</p>
-      ${topics.length ? `<ul style="padding:0;list-style:none">${topics.map(([topic, mastery]) => `<li style="margin:20px 0"><label>${escapeHtml(topic.replaceAll('_', ' '))}: ${percentage(mastery)}%<br><progress style="width:100%" max="100" value="${percentage(mastery)}" aria-label="${escapeHtml(topic)} mastery"></progress></label></li>`).join('')}</ul>` : '<p role="status">Complete a quiz or flashcard review to build your topic mastery.</p>'}
-      <p>Review priorities: ${escapeHtml((profile.review_priorities || []).join(', ') || 'No reviews due')}</p>
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-value">${topics.length ? percentage(profile.overall_mastery) + '%' : '—'}</div><div class="stat-label">Practice estimate${topics.length ? '' : ' (not assessed yet)'}</div></div>
+        <div class="stat"><div class="stat-value">${escapeHtml(profile.learning_streak || 0)}</div><div class="stat-label">Day learning streak</div></div>
+        <div class="stat"><div class="stat-value">${escapeHtml((profile.review_priorities || []).length)}</div><div class="stat-label">Topics to review: ${escapeHtml((profile.review_priorities || []).join(', ') || 'none due')}</div></div>
+      </div>
+      <sentio-card title="Topic mastery">
+        ${topics.length ? `<ul class="mastery-list">${topics.map(([topic, mastery]) => `<li><label>${escapeHtml(topic.replaceAll('_', ' '))}: ${percentage(mastery)}%<progress max="100" value="${percentage(mastery)}" aria-label="${escapeHtml(topic)} mastery"></progress></label></li>`).join('')}</ul>` : '<p role="status">Complete a quiz or flashcard review to build your topic mastery.</p>'}
+        <p class="muted">Estimates combine quiz answers and self-reported card ratings. They guide review; they do not prove understanding.</p>
+      </sentio-card>
     `;
   }
 }

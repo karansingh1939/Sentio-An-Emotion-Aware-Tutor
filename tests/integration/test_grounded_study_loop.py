@@ -30,11 +30,7 @@ TOPIC = "Newton's First Law"
 def study(tmp_path, monkeypatch):
     with patch.dict(
         sys.modules,
-        {
-            "sentio.ai.emotion_detector": SimpleNamespace(
-                EmotionDetector=Mock(), EmotionResult=Mock()
-            )
-        },
+        {"sentio.emotion.detector": SimpleNamespace(EmotionDetector=Mock(), EmotionResult=Mock())},
     ):
         with patch("sentio.shared.utils.setup_logging"):
             api = importlib.import_module("sentio.api.app")

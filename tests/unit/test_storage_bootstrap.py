@@ -41,7 +41,7 @@ def test_legacy_column_upgrade_rolls_back_and_then_preserves_rows(tmp_path):
         )
 
     def fail(connection, cursor, statement, parameters, context, executemany):
-        if "CREATE TABLE IF NOT EXISTS whiteboards" in statement:
+        if "CREATE TABLE IF NOT EXISTS flashcard_decks" in statement:
             raise RuntimeError("Interrupted upgrade")
 
     event.listen(engine, "before_cursor_execute", fail)

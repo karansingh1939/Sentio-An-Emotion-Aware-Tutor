@@ -1,5 +1,5 @@
 """
-test_phase_d_e2e.py -- E2E Integration Test Suite for Phase D (Structured Parser, Quiz, Flashcards, Whiteboard)
+test_phase_d_e2e.py -- E2E Integration Test Suite for Phase D (Structured Parser, Quiz, Flashcards)
 ========================================================================================================
 This test suite verifies:
   1. D0 Structured output parsing, recovery layer logic, and diagnostic metrics.
@@ -8,17 +8,14 @@ This test suite verifies:
   4. D3 Flashcard deck creation and AI generation.
   5. D3 Tutor suggestion hook triggers via chat endpoint.
   6. D4 Spaced repetition reviews SM-2 scheduling and mastery updates.
-  7. D5/D6 Whiteboard saving, loading, Mermaid parsing, and PNG/PDF export endpoints.
 """
 
-import io
 import json
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-from PIL import Image
 
 from sentio.ai.structured_parser import (
     QuizPayloadSchema,
@@ -221,7 +218,7 @@ class TestPhaseDE2E(unittest.TestCase):
         self.assertEqual(res.title, "Regen Quiz")
         self.assertEqual(parser_metrics.regenerations, 1)
 
-    def test_02_e2e_quiz_and_flashcard_and_whiteboard_flow(self):
+    def test_02_e2e_quiz_and_flashcard_flow(self):
         """Sequential E2E endpoint tests using TestClient."""
         with TestClient(app) as client:
             self.student_id = login_student(client, admin=True)
@@ -370,76 +367,6 @@ class TestPhaseDE2E(unittest.TestCase):
                 "💡 *Tip: You seem to be working on 'Entropy'. Would you like to add this to your flashcard deck?*",
                 resp_chat_2.json()["text"],
             )
-
-            # 11. Whiteboard: Sync State (D5)
-            whiteboard_id = "wb_e2e_999"
-            canvas_state = {
-                "width": 800,
-                "height": 600,
-                "shapes": [
-                    {
-                        "type": "rectangle",
-                        "x": 100.0,
-                        "y": 100.0,
-                        "width": 200.0,
-                        "height": 80.0,
-                        "color": "blue",
-                        "strokeWidth": 3,
-                    },
-                    {
-                        "type": "arrow",
-                        "points": [[200.0, 180.0], [200.0, 300.0]],
-                        "color": "black",
-                        "strokeWidth": 2,
-                    },
-                    {
-                        "type": "text",
-                        "x": 110.0,
-                        "y": 120.0,
-                        "text": "Concept Node",
-                        "color": "green",
-                        "fontSize": 14,
-                    },
-                ],
-            }
-            resp_wb_save = client.post(
-                "/api/v1/whiteboards/sessions",
-                json={
-                    "whiteboard_id": whiteboard_id,
-                    "student_id": self.student_id,
-                    "session_id": self.session_id,
-                    "title": "Thermodynamics Concept Map",
-                    "canvas_state": canvas_state,
-                },
-            )
-            self.assertEqual(resp_wb_save.status_code, 200)
-            self.assertTrue(resp_wb_save.json()["saved"])
-
-            # 12. Whiteboard: Load State (D5)
-            resp_wb_load = client.get(f"/api/v1/whiteboards/{whiteboard_id}")
-            self.assertEqual(resp_wb_load.status_code, 200)
-            loaded_wb = resp_wb_load.json()
-            self.assertEqual(loaded_wb["title"], "Thermodynamics Concept Map")
-            self.assertEqual(len(loaded_wb["canvas_state"]["shapes"]), 3)
-
-            # 13. Whiteboard: Export PNG (D6)
-            resp_export_png = client.post(
-                f"/api/v1/whiteboards/{whiteboard_id}/export", json={"format": "png"}
-            )
-            self.assertEqual(resp_export_png.status_code, 200)
-            self.assertEqual(resp_export_png.headers["content-type"], "image/png")
-            # Verify valid PNG by opening with Pillow
-            img = Image.open(io.BytesIO(resp_export_png.content))
-            self.assertEqual(img.format, "PNG")
-            self.assertEqual(img.size, (800, 600))
-
-            # 14. Whiteboard: Export PDF (D6)
-            resp_export_pdf = client.post(
-                f"/api/v1/whiteboards/{whiteboard_id}/export", json={"format": "pdf"}
-            )
-            self.assertEqual(resp_export_pdf.status_code, 200)
-            self.assertEqual(resp_export_pdf.headers["content-type"], "application/pdf")
-            self.assertTrue(resp_export_pdf.content.startswith(b"%PDF"))
 
 
 if __name__ == "__main__":

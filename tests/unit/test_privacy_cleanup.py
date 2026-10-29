@@ -26,7 +26,11 @@ def test_account_deletion_removes_study_artifacts_files_and_cached_sessions(stud
         ],
     )
     s.sm.save_flashcard_deck("private-deck", s.a, "Private deck")
-    s.sm.save_whiteboard("private-board", s.a, s.session_id, "Private", '{"shapes": []}')
+    with s.sm.persister._engine.begin() as conn:
+        conn.execute(
+            text("CREATE TABLE IF NOT EXISTS whiteboards (whiteboard_id TEXT, student_id TEXT)")
+        )
+        conn.execute(text("INSERT INTO whiteboards VALUES ('legacy-board', :id)"), {"id": s.a})
     response = s.client.delete(s.prefix + f"/student/{s.a}/data", headers=s.headers)
     assert response.status_code == 200, response.text
     with s.sm.persister._engine.connect() as conn:
@@ -55,7 +59,6 @@ def test_export_includes_document_and_study_artifact_inventory(study):
         "quizzes",
         "quiz_questions",
         "flashcard_decks",
-        "whiteboards",
     } <= data.keys()
     assert len(data["documents"]) == 2
     assert "password_hash" not in data["account"][0]

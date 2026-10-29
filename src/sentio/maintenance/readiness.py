@@ -4,8 +4,6 @@ from sentio.config import emotion_cfg, nlp_cfg
 
 
 def ai_readiness():
-    if nlp_cfg.LLM_BACKEND != "ollama":
-        return {"ready": False, "action": "Configure Ollama for free local tutoring."}
     import requests
 
     model = nlp_cfg.OLLAMA_MODEL
@@ -61,6 +59,6 @@ def readiness(agent):
             "ready": agent.detector.model is not None,
             "experimental": True,
             "weights_available": emotion_cfg.MODEL_PATH.exists(),
-            "enabled": False,
+            "enabled": emotion_cfg.ENABLED,
         },
     }

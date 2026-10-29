@@ -9,6 +9,12 @@ from sentio.auth.models import AuditLog, ConsentHistory, RefreshToken, UserAccou
 logger = logging.getLogger(__name__)
 
 
+def _existing_tables(connection):
+    return set(
+        connection.execute(text("SELECT name FROM sqlite_master WHERE type='table'")).scalars()
+    )
+
+
 class AuthRepository:
     """SQL persistence layer for all authentication and privacy entities."""
 
@@ -16,8 +22,6 @@ class AuthRepository:
         self.persister = persister
 
     def _execute(self, query: str, params: Dict[str, Any] = None) -> Any:
-        if not self.persister._use_db:
-            return None
         with self.persister._engine.connect() as conn:
             result = conn.execute(text(query), params or {})
             conn.commit()
@@ -84,8 +88,6 @@ class AuthRepository:
 
     def delete_account(self, student_id: str, connection=None):
         """Delete the complete owned SQL inventory atomically."""
-        if not self.persister._use_db:
-            return
         params = {"sid": student_id}
         dependent_tables = {
             "document_chunks": "document_id IN (SELECT id FROM documents WHERE student_id = :sid)",
@@ -123,10 +125,14 @@ class AuthRepository:
             if connection is not None
             else self.persister._engine.begin() as connection
         ):
+            # Legacy tables such as whiteboards exist only in older databases.
+            existing = _existing_tables(connection)
             for table, condition in dependent_tables.items():
-                connection.execute(text(f"DELETE FROM {table} WHERE {condition}"), params)
+                if table in existing:
+                    connection.execute(text(f"DELETE FROM {table} WHERE {condition}"), params)
             for table in owned_tables:
-                connection.execute(text(f"DELETE FROM {table} WHERE student_id = :sid"), params)
+                if table in existing:
+                    connection.execute(text(f"DELETE FROM {table} WHERE student_id = :sid"), params)
 
     def export_study_artifacts(self, student_id):
         inventory = {
@@ -146,6 +152,7 @@ class AuthRepository:
             "emotion_events": "session_id IN (SELECT session_id FROM sessions WHERE student_id = :sid)",
         }
         with self.persister._engine.connect() as connection:
+            existing = _existing_tables(connection)
             return {
                 table: [
                     dict(row)
@@ -154,12 +161,11 @@ class AuthRepository:
                     ).mappings()
                 ]
                 for table, condition in inventory.items()
+                if table in existing
             }
 
     def delete_telemetry(self, student_id: str):
         """Purges only webcam-attention and emotion events telemetry."""
-        if not self.persister._use_db:
-            return
         with self.persister._engine.connect() as conn:
             sessions_res = conn.execute(
                 text("SELECT session_id FROM sessions WHERE student_id = :sid"), {"sid": student_id}

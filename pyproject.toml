@@ -34,8 +34,6 @@ dependencies = [
 [project.optional-dependencies]
 camera = ["tensorflow>=2.16,<3"]
 ocr = ["pypdfium2>=5,<6"]
-openai = ["openai>=1.30,<3"]
-huggingface = ["accelerate>=0.29,<2"]
 training = ["pandas>=2,<4", "matplotlib>=3.8,<4"]
 experiments = ["scikit-learn>=1.6,<2", "matplotlib>=3.8,<4", "mlflow>=3,<4"]
 

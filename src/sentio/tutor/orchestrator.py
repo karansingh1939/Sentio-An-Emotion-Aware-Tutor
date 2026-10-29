@@ -1,6 +1,5 @@
 import logging
 import os
-import re
 import time
 from typing import Any, Dict, List, Optional, TypedDict
 
@@ -51,39 +50,24 @@ class SentioOrchestrator:
         self.graph = self._compile_graph()
 
     def _compile_graph(self):
+        """memory_lookup -> retrieve -> (refuse | generate) -> END.
+
+        Every turn reads learner memory and retrieves evidence first. When the selected
+        notes do not support the question, the graph refuses without calling the model.
+        """
         workflow = StateGraph(OrchestratorState)
-
-        # Register nodes
         workflow.add_node("memory_lookup", self.memory_lookup_node)
-        workflow.add_node("research", self.research_node)
-        workflow.add_node("tutor", self.tutor_node)
-        workflow.add_node("quiz", self.quiz_node)
-        workflow.add_node("planner", self.planner_node)
-        workflow.add_node("feedback", self.feedback_node)
+        workflow.add_node("retrieve", self.retrieve_node)
+        workflow.add_node("refuse", self.refuse_node)
+        workflow.add_node("generate", self.generate_node)
 
-        # Set entry point
         workflow.set_entry_point("memory_lookup")
-
-        # Add routing conditional edge from memory_lookup
+        workflow.add_edge("memory_lookup", "retrieve")
         workflow.add_conditional_edges(
-            "memory_lookup",
-            self.route_after_memory,
-            {
-                "research": "research",
-                "tutor": "tutor",
-                "quiz": "quiz",
-                "planner": "planner",
-                "feedback": "feedback",
-            },
+            "retrieve", self.route_after_retrieval, {"refuse": "refuse", "generate": "generate"}
         )
-
-        # Map transitions to final tutor dialogue formulator
-        workflow.add_edge("research", "tutor")
-        workflow.add_edge("quiz", "tutor")
-        workflow.add_edge("planner", "tutor")
-        workflow.add_edge("feedback", "tutor")
-        workflow.add_edge("tutor", END)
-
+        workflow.add_edge("refuse", END)
+        workflow.add_edge("generate", END)
         return workflow.compile()
 
     # ── Nodes Implementation ───────────────────
@@ -92,9 +76,9 @@ class SentioOrchestrator:
         from sentio.repositories.planning import active_goal
 
         sm = self.tutor_agent.sm
-        # Goal context is optional; lightweight managers without sessions or a database skip it.
+        # Goal context is optional; lightweight managers without sessions skip it.
         session = sm.get_session(session_id) if hasattr(sm, "get_session") else None
-        if session is None or not session.metadata.get("goal_id") or not sm.persister._use_db:
+        if session is None or not session.metadata.get("goal_id"):
             return None
         with sm.persister._engine.connect() as connection:
             return active_goal(connection, student_id, session.metadata["goal_id"])
@@ -141,8 +125,7 @@ class SentioOrchestrator:
                     adaptive_directives = (
                         "INSTRUCTION (Student is DISTRACTED):\n"
                         "- Provide significantly shorter explanations.\n"
-                        "- Use simpler, more direct wording.\n"
-                        "- Suggest/offer whiteboard drawing canvas visual support to help re-focus."
+                        "- Use simpler, more direct wording."
                     )
                 elif attention_state == "LOW_ENGAGEMENT":
                     adaptive_directives = (
@@ -353,41 +336,11 @@ class SentioOrchestrator:
 
         return new_strategy, new_difficulty, new_state, None
 
-    def route_after_memory(self, state: OrchestratorState) -> str:
-        control = current_control()
-        deferred = control and getattr(control, "defer_turn", False)
-        msg = state["user_message"].lower()
+    def route_after_retrieval(self, state: OrchestratorState) -> str:
+        outcome = getattr(state.get("retrieved_content"), "evidence_outcome", "general")
+        return "refuse" if outcome == "insufficient" else "generate"
 
-        # Selected-source study always passes through retrieval and its evidence gate.
-        if state.get("document_id") not in (None, "none"):
-            return "research"
-
-        # Scalable routing logic
-        if any(
-            kw in msg
-            for kw in [
-                "explain",
-                "what is",
-                "why",
-                "how",
-                "define",
-                "concept",
-                "details",
-                "lookup",
-                "search",
-            ]
-        ):
-            return "research"
-        elif any(kw in msg for kw in ["quiz", "test", "question", "evaluate", "assess"]):
-            return "research" if deferred else "quiz"
-        elif re.search(r"\b(plan|schedule|goals|roadmap)\b", msg):
-            return "planner"
-        elif re.search(r"\b(feedback|review|grade)\b", msg):
-            return "feedback"
-        else:
-            return "research" if deferred else "tutor"
-
-    def research_node(self, state: OrchestratorState) -> OrchestratorState:
+    def retrieve_node(self, state: OrchestratorState) -> OrchestratorState:
         t0 = time.perf_counter()
 
         content = self.tutor_agent.kb.retrieve(
@@ -407,11 +360,11 @@ class SentioOrchestrator:
 
         timeline = list(state["agent_timeline"])
         timeline.append(
-            {"agent": "research", "start_time": t0, "end_time": t1, "latency_ms": latency}
+            {"agent": "retrieve", "start_time": t0, "end_time": t1, "latency_ms": latency}
         )
 
         route = list(state["selected_route"])
-        route.append("research")
+        route.append("retrieve")
 
         return {
             **state,
@@ -422,26 +375,31 @@ class SentioOrchestrator:
             "retrieval_latency_ms": state.get("retrieval_latency_ms", 0.0) + latency,
         }
 
-    def tutor_node(self, state: OrchestratorState) -> OrchestratorState:
-        t0 = time.perf_counter()
-
-        from sentio.ai.grounding import MISSING_EVIDENCE, validate_references
+    def refuse_node(self, state: OrchestratorState) -> OrchestratorState:
+        """The selected notes do not support the question: answer without the model."""
+        from sentio.ai.grounding import MISSING_EVIDENCE
         from sentio.ai.models import TutorResponse
 
-        if getattr(state.get("retrieved_content"), "evidence_outcome", "general") == "insufficient":
-            checkpoint("insufficient selected evidence")
-            response = TutorResponse(
-                text=MISSING_EVIDENCE,
-                strategy_used=state["strategy"],
-                learning_state=state["learning_state"],
-                backend_used="evidence_gate",
-            )
-            return {
-                **state,
-                "agent_response": response,
-                "llm_latency_ms": 0,
-                "selected_route": [*state["selected_route"], "insufficient_evidence"],
-            }
+        checkpoint("insufficient selected evidence")
+        response = TutorResponse(
+            text=MISSING_EVIDENCE,
+            strategy_used=state["strategy"],
+            learning_state=state["learning_state"],
+            backend_used="evidence_gate",
+        )
+        return {
+            **state,
+            "agent_response": response,
+            "llm_latency_ms": 0,
+            "selected_route": [*state["selected_route"], "refuse"],
+        }
+
+    def generate_node(self, state: OrchestratorState) -> OrchestratorState:
+        """Generate a schema-checked answer, validate citations, or fall back to excerpts."""
+        t0 = time.perf_counter()
+
+        from sentio.ai.grounding import validate_references
+        from sentio.ai.models import TutorResponse
 
         tone = state.get("tone_instruction", "Be encouraging.")
         system_prompt, user_message = self.tutor_agent.nlp.prompt_builder.build_study_messages(
@@ -500,10 +458,12 @@ class SentioOrchestrator:
             validate_references(tutor_resp.text, content)
 
         timeline = list(state["agent_timeline"])
-        timeline.append({"agent": "tutor", "start_time": t0, "end_time": t1, "latency_ms": latency})
+        timeline.append(
+            {"agent": "generate", "start_time": t0, "end_time": t1, "latency_ms": latency}
+        )
 
         route = list(state["selected_route"])
-        route.append("tutor")
+        route.append("generate")
 
         return {
             **state,
@@ -511,134 +471,6 @@ class SentioOrchestrator:
             "agent_timeline": timeline,
             "selected_route": route,
             "llm_latency_ms": latency,
-        }
-
-    # ── Stub Nodes for Extensibility ──────────
-
-    def quiz_node(self, state: OrchestratorState) -> OrchestratorState:
-        t0 = time.perf_counter()
-        logger.info("Executing real Quiz Node in LangGraph orchestrator.")
-
-        from sentio.quiz.service import QuizService
-
-        quiz_service = QuizService(self.tutor_agent)
-
-        try:
-            quiz = quiz_service.generate_quiz(
-                student_id=state["student_id"],
-                session_id=state["session_id"],
-                subject=state["subject"],
-                topic=state["topic"],
-                difficulty=state["difficulty"],
-                num_questions=3,
-            )
-        except Exception as e:
-            logger.error(f"Quiz node generation failed: {e}")
-            quiz = None
-
-        t1 = time.perf_counter()
-        latency = (t1 - t0) * 1000
-
-        timeline = list(state["agent_timeline"])
-        timeline.append({"agent": "quiz", "start_time": t0, "end_time": t1, "latency_ms": latency})
-        route = list(state["selected_route"])
-        route.append("quiz")
-
-        # Inject the generated quiz markdown context into the state so the tutor node can reference it
-        quiz_context = ""
-        if quiz:
-            quiz_context = f"\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nGENERATED QUIZ FOR STUDENT (Present this quiz to the student in your response text)\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nQuiz ID: {quiz['quiz_id']}\nTitle: {quiz['title']}\n\n"
-            for idx, q in enumerate(quiz["questions"]):
-                quiz_context += f"Question {idx + 1}: ({q['question_type']}) {q['question_text']}\n"
-                if q["options"]:
-                    for opt in q["options"]:
-                        quiz_context += f"  - {opt}\n"
-                quiz_context += "\n"
-
-        # Append quiz_context to student_memory
-        updated_student_memory = state["student_memory"] or ""
-        if quiz_context:
-            updated_student_memory += "\n" + quiz_context
-
-        return {
-            **state,
-            "student_memory": updated_student_memory,
-            "agent_timeline": timeline,
-            "selected_route": route,
-            "retrieval_latency_ms": state.get("retrieval_latency_ms", 0.0) + latency,
-        }
-
-    def planner_node(self, state: OrchestratorState) -> OrchestratorState:
-        from sentio.study.planning import PlanningService
-
-        t0 = time.perf_counter()
-        checkpoint("reading revision plan")
-        plan = PlanningService(self.tutor_agent.sm.persister._engine).daily_plan(
-            state["student_id"], persist=False
-        )
-        summary = (
-            "Revision priorities from saved practice (completion is self-reported):\n"
-            + "\n".join(
-                f"- {task['title']} ({task['minutes']} min; {'completed' if task['completed_at'] else 'pending'})"
-                for task in plan["tasks"]
-            )
-        )
-        t1 = time.perf_counter()
-
-        timeline = list(state["agent_timeline"])
-        timeline.append(
-            {
-                "agent": "planner",
-                "start_time": t0,
-                "end_time": t1,
-                "latency_ms": (t1 - t0) * 1000,
-            }
-        )
-        route = list(state["selected_route"])
-        route.append("planner")
-
-        return {
-            **state,
-            "student_memory": (state["student_memory"] or "") + "\n" + summary,
-            "agent_timeline": timeline,
-            "selected_route": route,
-        }
-
-    def feedback_node(self, state: OrchestratorState) -> OrchestratorState:
-        from sentio.study.planning import PlanningService
-
-        t0 = time.perf_counter()
-        checkpoint("reading practice evidence")
-        feedback = PlanningService(self.tutor_agent.sm.persister._engine).feedback(
-            state["student_id"]
-        )
-        summary = (
-            feedback["summary"]
-            + "\nRecent mistakes:\n"
-            + "\n".join(
-                f"- {mistake['topic']}: {mistake['question_text']}"
-                for mistake in feedback["mistakes"]
-            )
-        )
-        t1 = time.perf_counter()
-
-        timeline = list(state["agent_timeline"])
-        timeline.append(
-            {
-                "agent": "feedback",
-                "start_time": t0,
-                "end_time": t1,
-                "latency_ms": (t1 - t0) * 1000,
-            }
-        )
-        route = list(state["selected_route"])
-        route.append("feedback")
-
-        return {
-            **state,
-            "student_memory": (state["student_memory"] or "") + "\n" + summary,
-            "agent_timeline": timeline,
-            "selected_route": route,
         }
 
     # ── Execute ───────────────────────────────

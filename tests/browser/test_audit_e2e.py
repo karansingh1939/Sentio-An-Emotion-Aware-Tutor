@@ -253,7 +253,7 @@ async def test_sentio_real_browser_e2e_and_tenant_isolation():
             await page.wait_for_selector("#view-history tbody tr")
             assert "kinematics" in await page.inner_text("#view-history")
             await page.click('a[href="#/analytics"]')
-            await page.wait_for_selector("text=Practice estimate:")
+            await page.wait_for_selector("text=Practice estimate")
             assert "do not prove understanding" in await page.inner_text("#view-analytics")
             screenshot = Path(__file__).resolve().parents[2] / "logs" / "browser-study.png"
             screenshot.parent.mkdir(exist_ok=True)

@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="static/css/workspace.css" />
     <script type="module" src="static/js/app.js"></script>
     <script src="static/js/core/tutor_runtime.js" defer></script>
+    <script src="static/js/core/emotion_camera.js" defer></script>
   </head>
 
   <body>
@@ -177,19 +178,21 @@
               </div>
             </div>
 
-            <div class="field">
-              <label for="f-grounding">Notes to use</label>
-              <select id="f-grounding">
-                <option value="none">General questions (without notes)</option>
-                <option value="all">Search all my notes</option>
-              </select>
-            </div>
+            <div class="study-context">
+              <div class="field">
+                <label for="f-grounding">Notes to use</label>
+                <select id="f-grounding">
+                  <option value="none">General questions (without notes)</option>
+                  <option value="all">Search all my notes</option>
+                </select>
+              </div>
 
-            <div class="field">
-              <label for="f-goal">Goal for this session</label>
-              <select id="f-goal">
-                <option value="">No goal</option>
-              </select>
+              <div class="field">
+                <label for="f-goal">Goal for this session</label>
+                <select id="f-goal">
+                  <option value="">No goal</option>
+                </select>
+              </div>
             </div>
 
             <!-- Active Session Header Bar (Shown when session is active) -->
@@ -343,8 +346,8 @@
 
             <!-- Tab 1: Telemetry & Learning State -->
             <div id="tab-state" class="drawer-tab-content">
-              <!-- Camera / Video Feed Box -->
-              <div class="drawer-section">
+              <!-- Camera / Video Feed Box (optional emotion feature) -->
+              <div class="drawer-section emotion-only">
                 <div
                   style="
                     display: flex;
@@ -604,9 +607,6 @@
 
         <!-- 5. Flashcard View -->
         <div id="view-flashcards" class="view-container"></div>
-
-        <!-- 6. Whiteboard View -->
-        <div id="view-whiteboard" class="view-container"></div>
 
         <!-- 7. Analytics View -->
         <div id="view-analytics" class="view-container"></div>

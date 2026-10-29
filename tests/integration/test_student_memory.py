@@ -6,7 +6,6 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 # Import local codebase modules
-import sentio.config as config
 from sentio.api.app import app
 from sentio.session.manager import Session, SessionManager
 from sentio.tutor.orchestrator import SentioOrchestrator
@@ -18,11 +17,6 @@ class TestSentioPhaseB(unittest.TestCase):
     Test suite verifying the Phase B upgrades: Student Memory (B1),
     LangGraph Orchestrator (B2), and Observability Diagnostics (B3).
     """
-
-    @classmethod
-    def setUpClass(cls):
-        # Enforce file-based SQL and Ollama backend configurations for testing
-        config.nlp_cfg.LLM_BACKEND = "ollama"
 
     def setUp(self):
         # Clean up global agent and ensure it's not loaded
@@ -207,28 +201,24 @@ class TestSentioPhaseB(unittest.TestCase):
         self.assertIn("derivatives: 66.7% incorrect", context)
         self.assertIn("Topics with Recurring Struggles:", context)
 
-    def test_langgraph_routing(self):
-        """Verify the routing decisions based on student message content in Orchestrator."""
-        # 1. Test message requiring research lookup
-        state_research = self.orchestrator.route_after_memory(
-            {
-                "user_message": "Can you explain how derivatives represent slopes?",
-                "retrieved_content": None,
-            }
-        )
-        self.assertEqual(state_research, "research")
+    def test_langgraph_routes_on_evidence_not_keywords(self):
+        """Every turn retrieves; only missing selected evidence skips generation."""
+        from types import SimpleNamespace
 
-        # 2. Test standard message going straight to tutor node
-        state_tutor = self.orchestrator.route_after_memory(
-            {"user_message": "Okay, that makes sense. Thank you!", "retrieved_content": None}
+        self.assertEqual(
+            set(self.orchestrator.graph.get_graph().nodes) - {"__start__", "__end__"},
+            {"memory_lookup", "retrieve", "refuse", "generate"},
         )
-        self.assertEqual(state_tutor, "tutor")
-
-        # 3. Test quiz request going to quiz stub node
-        state_quiz = self.orchestrator.route_after_memory(
-            {"user_message": "Can you test me with a quiz question?", "retrieved_content": None}
+        for outcome, expected in (
+            ("insufficient", "refuse"),
+            ("supported", "generate"),
+            ("general", "generate"),
+        ):
+            state = {"retrieved_content": SimpleNamespace(evidence_outcome=outcome)}
+            self.assertEqual(self.orchestrator.route_after_retrieval(state), expected)
+        self.assertEqual(
+            self.orchestrator.route_after_retrieval({"retrieved_content": None}), "generate"
         )
-        self.assertEqual(state_quiz, "quiz")
 
     def test_fastapi_diagnostics_and_memory_endpoints(self):
         """Verify FastAPI routes for goals, diagnostics, and memory return 200/201."""
@@ -298,11 +288,11 @@ class TestSentioPhaseB(unittest.TestCase):
             self.assertIn("agent_timeline", diag_data["latest"])
             self.assertIn("memory_usage_kb", diag_data["latest"])
 
-            # Route should have visited memory_lookup, research, and tutor
+            # Route should have visited memory_lookup, retrieve, and generate
             route = diag_data["latest"]["selected_route"]
             self.assertIn("memory_lookup", route)
-            self.assertIn("research", route)
-            self.assertIn("tutor", route)
+            self.assertIn("retrieve", route)
+            self.assertIn("generate", route)
 
             # 6. Fetch student memory context
             resp_memory = client.get(f"/api/v1/students/{student_id}/memory")
