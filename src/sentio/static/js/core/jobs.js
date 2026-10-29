@@ -20,6 +20,8 @@ export function progressText(stage, endpoint) {
     'generating quiz': 'Writing questions from your notes. Local AI may take a few minutes…',
     'generating flashcards': 'Writing cards from your notes. Local AI may take a few minutes…',
     'generating answer': 'Writing an explanation…',
+    'reading your notes': 'Reading your notes…',
+    'writing overview': 'Summarizing your notes. Local AI may take a minute…',
     'waiting for local AI': 'Waiting for the local tutor to finish its current task…',
   };
   return labels[stage] || 'Working on your study material…';

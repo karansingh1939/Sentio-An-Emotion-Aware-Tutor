@@ -11,8 +11,6 @@ from copy import deepcopy
 from typing import Any, Dict, List, Optional
 
 from sentio.ai.practice_schema import practice_schema
-from sentio.ai.streaming import output_schema
-from sentio.ai.structured_parser import parse_structured_output
 from sentio.jobs.control import checkpoint, publish
 from sentio.repositories.practice import PracticeRepository
 
@@ -114,42 +112,19 @@ JSON Template:
 
         batch_schema = practice_schema("flashcards", num_cards)
 
-        def llm_call(sys_p, hist, user_p):
-            from sentio.shared.exceptions import InvalidModelOutput
-
-            with output_schema(batch_schema):
-                try:
-                    return self.agent.nlp._backend.complete(
-                        system_prompt=sys_p,
-                        history=hist,
-                        user_message=user_p,
-                        max_tokens=1024,
-                        temperature=0.6,
-                    )
-                except InvalidModelOutput as invalid:
-                    # Let the structured parser repair it or ask the model to regenerate.
-                    return invalid.raw, 0
-
-        original_args = {
-            "system_prompt": system_prompt,
-            "history": [],
-            "user_message": "Generate flashcards now.",
-        }
-
         checkpoint("generating flashcards")
         from sentio.ai.source_practice import practice_provenance, source_recall
+        from sentio.ai.structured_parser import generate_structured
         from sentio.shared.exceptions import LLMServiceUnavailableError
 
         mode = "generated"
         try:
-            raw_text, _ = llm_call(system_prompt, [], "Generate flashcards now.")
-
-            # 3. Parse and validate
-            flashcard_data = parse_structured_output(
-                raw_text=raw_text,
-                schema_class=batch_schema,
-                llm_call_fn=llm_call,
-                original_prompt_args=original_args,
+            flashcard_data = generate_structured(
+                self.agent.nlp._backend,
+                batch_schema,
+                system_prompt,
+                "Generate flashcards now.",
+                temperature=0.6,
             )
         except (ValueError, LLMServiceUnavailableError):
             if document_id in (None, "none") or not getattr(retrieved, "source_citations", []):

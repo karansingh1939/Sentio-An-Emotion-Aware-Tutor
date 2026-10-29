@@ -498,3 +498,16 @@ gained shared component classes, a study context bar, progress stat cards and a
 screenshot/GIF tool (scripts/dev/screenshots.py). README and docs/INTERVIEW_GUIDE.md
 were rewritten for the résumé. Full suite: 288 passed, 31 subtests, one Tesseract skip
 (one run took 68 min because the machine had about 1.4 GB free memory).
+
+## Easier study workflow - 29 October 2026
+
+Branch: feature/easier-study-workflow. Library Study starts a session in one click
+(topic from the notes' opening line, subject `general` now allowed). Retrieval emits a
+`sources` event before the answer; citations render as chips that open the passage
+(the hidden drawer citation panel was removed). Quiz questions can be checked
+instantly via POST /quizzes/{id}/questions/{qid}/check, which reuses the extracted
+QuizService.grade_answer and records nothing. Document overviews are generated as a
+job (POST /documents/{id}/overview/jobs), cached in documents.overview_json against the
+checksum. generate_structured now serves quizzes, flashcards and overviews. A
+retrieval fallback for unmatched practice topics was tried and reverted: it mislabelled
+unrelated topics.

@@ -240,6 +240,9 @@
               </div>
             </div>
 
+            <!-- Overview of the selected notes -->
+            <div id="notes-overview" class="notes-overview" hidden></div>
+
             <!-- Chat Messages Scroll Container -->
             <div id="chat-messages">
               <div id="welcome">
@@ -329,14 +332,6 @@
             <div class="drawer-tabs">
               <button
                 class="drawer-tab active"
-                data-tab="tab-citations"
-                aria-label="Sources used in your answer"
-                onclick="switchDrawerTab('tab-citations')"
-              >
-                Sources
-              </button>
-              <button
-                class="drawer-tab"
                 data-tab="tab-history"
                 onclick="switchDrawerTab('tab-history')"
               >
@@ -547,24 +542,7 @@
               </div>
             </div>
 
-            <!-- Tab 2: Citations -->
-            <div id="tab-citations" class="drawer-tab-content active">
-              <div class="drawer-section">
-                <div class="panel-label">Passages used in your answer</div>
-                <div
-                  id="tutor-citations-container"
-                  style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px"
-                >
-                  <sentio-empty-state
-                    message="No citations retrieved. Ask your tutor a question."
-                    icon="📄"
-                  ></sentio-empty-state>
-                </div>
-              </div>
-            </div>
-
-            <!-- Tab 3: Session History -->
-            <div id="tab-history" class="drawer-tab-content">
+            <div id="tab-history" class="drawer-tab-content active">
               <div class="drawer-section">
                 <div
                   style="

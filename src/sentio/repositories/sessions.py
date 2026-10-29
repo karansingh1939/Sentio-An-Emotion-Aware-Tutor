@@ -268,6 +268,8 @@ class SessionPersister:
                 conn.execute(
                     text("ALTER TABLE documents ADD COLUMN extraction_method TEXT DEFAULT 'text'")
                 )
+            if "overview_json" not in document_columns:
+                conn.execute(text("ALTER TABLE documents ADD COLUMN overview_json TEXT"))
 
             if "student_id" not in document_columns:
                 conn.execute(text("ALTER TABLE documents ADD COLUMN student_id TEXT"))

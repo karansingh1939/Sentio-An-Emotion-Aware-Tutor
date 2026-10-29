@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sentio.api.dependencies import (
     PREFIX,
     _verify_session_owner,
+    agent,
     flashcard_service,
     quiz_service,
 )
@@ -83,6 +84,26 @@ def cancel(job_id: str, jobs=Depends(get_jobs), user=Depends(get_current_user)):
         raise HTTPException(404, "Job not found.")
     accepted = jobs.cancel(job_id, user["student_id"])
     return {"accepted": accepted, "job": jobs.get(job_id, user["student_id"])}
+
+
+@router.post(PREFIX + "/documents/{document_id}/overview/jobs", tags=["Jobs"], status_code=202)
+def overview_job(
+    document_id: str, request: Request, jobs=Depends(get_jobs), user=Depends(get_current_user)
+):
+    from sentio.repositories.documents import DocumentRepository
+    from sentio.study.overview import generate_overview
+
+    owner = user["student_id"]
+    if DocumentRepository(agent.sm.persister).preview(document_id, owner, limit=1) is None:
+        raise HTTPException(404, "Document not found.")
+    return submit(
+        jobs,
+        owner,
+        "overview",
+        lambda control: generate_overview(agent, owner, document_id),
+        request_id=submission_id(request),
+        content={"request": {"document_id": document_id}},
+    )
 
 
 @router.post(PREFIX + "/quizzes/jobs", tags=["Jobs"], status_code=202)

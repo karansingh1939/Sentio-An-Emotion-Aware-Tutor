@@ -3,13 +3,14 @@ import { escapeHtml } from '../core/html.js';
 import { sentioAPI } from '../core/api.js';
 import { store } from '../core/store.js';
 import { toast } from '../components/ui.js';
+import { runPracticeJob } from '../core/jobs.js';
 
 export class TutorView {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
     this.sessionsList = [];
-    this.currentCitations = [];
     this.resumeRevision = 0;
+    this.overviewRevision = 0;
     this.sessionListRevision = 0;
     this.documentListRevision = 0;
     this.goalListRevision = 0;
@@ -38,8 +39,54 @@ export class TutorView {
       this.sessionListRevision++;
       this.documentListRevision++;
       this.sessionsList = [];
-      this.currentCitations = [];
       this.renderSessionsList();
+    });
+    store.subscribe('activeSession', (session) => this.renderOverview(session));
+  }
+
+  // Studying one document shows its overview, or offers to write one.
+  async renderOverview(session) {
+    const panel = document.getElementById('notes-overview');
+    if (!panel) return;
+    const revision = ++this.overviewRevision;
+    const documentId = session?.metadata?.document_id;
+    if (typeof documentId !== 'string' || ['none', 'all'].includes(documentId)) {
+      panel.hidden = true;
+      panel.innerHTML = '';
+      return;
+    }
+    const path = `/documents/${encodeURIComponent(documentId)}/overview`;
+    try {
+      const { overview } = await sentioAPI.get(path);
+      if (revision !== this.overviewRevision) return;
+      panel.hidden = false;
+      if (overview) return this.showOverview(panel, overview);
+      panel.innerHTML = `<div class="btn-row"><button type="button" class="workspace-action" id="make-overview-btn">Summarize these notes</button><span class="muted">A short summary, key concepts and questions to ask.</span></div>`;
+      panel.querySelector('#make-overview-btn').onclick = async () => {
+        const result = await runPracticeJob(`${path}/jobs`, {}, panel, { sessionScoped: false });
+        if (revision === this.overviewRevision && result) this.showOverview(panel, result);
+      };
+    } catch {
+      if (revision === this.overviewRevision) panel.hidden = true;
+    }
+  }
+
+  showOverview(panel, overview) {
+    panel.innerHTML = `<details open>
+      <summary><strong>Overview of these notes</strong></summary>
+      <p>${escapeHtml(overview.summary)}</p>
+      <div class="source-row">${overview.key_concepts.map((concept) => `<span class="badge">${escapeHtml(concept)}</span>`).join('')}</div>
+      <p class="muted">Ask about:</p>
+      <div class="btn-row">${overview.suggested_questions.map((question) => `<button type="button" class="workspace-action suggested-question">${escapeHtml(question)}</button>`).join('')}</div>
+      </details>`;
+    panel.querySelectorAll('.suggested-question').forEach((button) => {
+      button.onclick = () => {
+        const input = document.getElementById('msg-input');
+        if (!input || input.disabled) return;
+        input.value = button.textContent;
+        panel.querySelector('details').open = false;
+        window.sendMessage();
+      };
     });
   }
 
@@ -371,7 +418,7 @@ export class TutorView {
     return goals;
   }
 
-  async createNewSessionDialog(options = {}) {
+  async createNewSessionDialog() {
     const owner = store.getState('currentUser')?.id;
     const route = store.getState('activeRoute');
     let docs;
@@ -384,10 +431,10 @@ export class TutorView {
     if (owner !== store.getState('currentUser')?.id || store.getState('activeRoute') !== route)
       return;
     const modal = document.createElement('sentio-modal');
-    modal.setAttribute('title', options.documentId ? 'Study these notes' : 'Start studying');
+    modal.setAttribute('title', 'Start studying');
     modal.innerHTML = `
       <div class="stack">
-        <p>${options.documentId ? `Using ${escapeHtml(options.document?.filename || 'your selected notes')}.` : 'Choose what you want to understand.'}</p>
+        <p>Choose what you want to understand.</p>
         <div>
           <label class="form-label" for="new-sess-subject">Subject</label>
 <select class="input" id="new-sess-subject">
@@ -426,18 +473,6 @@ export class TutorView {
     `;
 
     document.body.appendChild(modal);
-    if (options.documentId) {
-      const source = modal.querySelector('#new-sess-grounding');
-      source.value = options.documentId;
-      source.disabled = true;
-      source.parentElement.hidden = true;
-      modal.querySelector('#new-sess-difficulty').parentElement.hidden = true;
-      modal.querySelector('#new-sess-topic').value = (options.document?.filename || '')
-        .replace(/\.[^.]+$/, '')
-        .replace(/[_-]+/g, ' ');
-      if (options.document?.subject)
-        modal.querySelector('#new-sess-subject').value = options.document.subject;
-    }
 
     modal.querySelector('#new-sess-submit-btn').onclick = async () => {
       const subject = modal.querySelector('#new-sess-subject').value;
@@ -510,54 +545,5 @@ export class TutorView {
         return result;
       };
     }
-
-    // Intercept appendTutorMessage
-    if (typeof window.appendTutorMessage === 'function') {
-      const originalAppendTutor = window.appendTutorMessage;
-      window.appendTutorMessage = (data) => {
-        originalAppendTutor(data);
-        if (data.source_citations) {
-          this.renderCitations(data.source_citations);
-        }
-      };
-    }
-  }
-
-  renderCitations(citations) {
-    const container = this.container.querySelector('#tutor-citations-container');
-    if (!container) return;
-
-    this.currentCitations = citations;
-
-    if (!citations || citations.length === 0) {
-      container.innerHTML = `<sentio-empty-state message="No citations retrieved for this response." icon="📄"></sentio-empty-state>`;
-      return;
-    }
-
-    container.innerHTML = citations
-      .map((c, idx) => {
-        const filename = c.filename || 'Source Document';
-        const page = c.page || 'N/A';
-        const textSnippet = c.text || 'Preview snippet unavailable.';
-
-        return `
-        <div class="citation-card" style="border:1px solid var(--border);border-radius:var(--radius);padding:10px;background:var(--bg3);display:flex;flex-direction:column;gap:6px;">
-          <div class="row-between">
-            <span style="font-weight:bold;font-size:14px;color:var(--accent);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(filename)}">
-              📄 ${escapeHtml(filename)}
-            </span>
-            <span style="font-size:14px;color:var(--text-dim);background:var(--border);padding:2px 4px;border-radius:4px;">
-              Page ${escapeHtml(page)}
-            </span>
-          </div>
-          <div class="muted">Page: ${escapeHtml(page)}</div>
-          <details style="margin-top:4px;">
-            <summary style="font-size:14px;color:var(--accent);cursor:pointer;outline:none;">Preview Source Text</summary>
-            <p style="font-size:14px;color:var(--text);margin-top:6px;line-height:1.4;background:var(--bg2);padding:6px;border-radius:4px;border:1px solid var(--border);max-height:140px;overflow-y:auto;white-space:pre-wrap;">${escapeHtml(textSnippet)}</p>
-          </details>
-        </div>
-      `;
-      })
-      .join('');
   }
 }

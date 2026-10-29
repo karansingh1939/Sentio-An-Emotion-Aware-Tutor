@@ -252,6 +252,16 @@ def preview(
     return result
 
 
+@router.get(PREFIX + "/documents/{document_id}/overview", tags=["Documents"])
+def document_overview(document_id: str, user: dict = Depends(get_current_user)):
+    from sentio.repositories.documents import DocumentRepository
+
+    repository = DocumentRepository(agent.sm.persister)
+    if repository.preview(document_id, user["student_id"], limit=1) is None:
+        raise HTTPException(404, "Document not found.")
+    return {"overview": repository.get_overview(document_id, user["student_id"])}
+
+
 @router.get(PREFIX + "/documents", tags=["Documents"])
 def list_documents(user: dict = Depends(get_current_user)):
     """List all registered study materials and their indexing status."""

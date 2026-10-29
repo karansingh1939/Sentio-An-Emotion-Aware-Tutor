@@ -277,7 +277,6 @@ function cleanupSession() {
     .forEach((message) => message.remove());
   const input = document.getElementById('msg-input');
   if (input) input.value = '';
-  window.tutorView?.renderCitations([]);
   sessionId = null;
   window.sessionId = null;
   if (window.store && typeof window.store.setState === 'function') {
@@ -456,6 +455,7 @@ async function sendMessage() {
   const stopButton = document.getElementById('stop-generation-btn');
   if (stopButton) stopButton.hidden = false;
   let partial = null;
+  let sourcesPreview = null;
   let data = null;
   try {
     const res = await fetch(`${API}/sessions/${currentSessionId}/chat/stream`, {
@@ -477,6 +477,9 @@ async function sendMessage() {
         bubble.style.whiteSpace = 'pre-wrap';
         bubble.textContent += value.text;
         partial.querySelector('.msg-meta').textContent = 'Tutor · Draft answer';
+      } else if (kind === 'sources') {
+        sourcesPreview?.remove();
+        sourcesPreview = appendSourcesPreview(value.sources);
       } else if (kind === 'status') {
         const progress = document.querySelector('#typing-indicator > span');
         if (progress) progress.textContent = value.stage;
@@ -490,6 +493,7 @@ async function sendMessage() {
       throw new Error('The connection ended before the answer was saved. Retry this question.');
     if (getActiveSessionId() !== currentSessionId) return;
     partial?.remove();
+    sourcesPreview?.remove();
     window.localStorage?.removeItem(pendingKey);
     showTyping(false);
 
@@ -516,6 +520,7 @@ async function sendMessage() {
       }
     }
   } catch (e) {
+    sourcesPreview?.remove();
     if (getActiveSessionId() !== currentSessionId) {
       partial?.remove();
       return;
@@ -690,11 +695,65 @@ function appendTutorMessage(data) {
         Tutor · ${timeNow()}
         <span class="msg-strategy-badge">${strategy}</span>
       </div>
-      <div class="msg-bubble">${renderMarkdown(data.text)}</div>
+      <div class="msg-bubble">${linkCitations(renderMarkdown(data.text), data.source_citations)}</div>
+      ${sourceChips(data.source_citations)}
       ${extra}
     </div>`;
+  div.citations = data.source_citations || [];
+  div.onclick = openCitation;
   container.insertBefore(div, document.getElementById('typing-indicator'));
   container.scrollTop = container.scrollHeight;
+}
+
+// ── CITATIONS ────────────────────────────────
+function sourceChips(citations) {
+  if (!citations?.length) return '';
+  return `<div class="source-row">${citations
+    .map(
+      (c, i) =>
+        `<button type="button" class="cite-chip" data-cite="${i}">${escHtml(c.filename)} · p.${escHtml(c.page)}</button>`,
+    )
+    .join('')}</div>`;
+}
+
+function linkCitations(html, citations) {
+  (citations || []).forEach((c, i) => {
+    const reference = escHtml(`[${c.filename} Page ${c.page}]`);
+    html = html
+      .split(reference)
+      .join(
+        `<button type="button" class="cite-chip inline" data-cite="${i}">${reference}</button>`,
+      );
+  });
+  return html;
+}
+
+function appendSourcesPreview(citations) {
+  const container = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg tutor sources-preview';
+  div.innerHTML = `<div class="msg-body"><div class="msg-meta">Found in your notes · writing the answer…</div>${sourceChips(citations)}</div>`;
+  div.citations = citations || [];
+  div.onclick = openCitation;
+  container.insertBefore(div, document.getElementById('typing-indicator'));
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+function showCitation(citation) {
+  const modal = document.createElement('sentio-modal');
+  modal.setAttribute('title', `${citation.filename} · page ${citation.page}`);
+  const passage = document.createElement('blockquote');
+  passage.className = 'cited-passage';
+  passage.textContent = citation.text || 'The passage text is not available.';
+  modal.appendChild(passage);
+  document.body.appendChild(modal);
+}
+
+function openCitation(event) {
+  const chip = event.target.closest('.cite-chip');
+  const citation = chip && this.citations?.[Number(chip.dataset.cite)];
+  if (citation) showCitation(citation);
 }
 
 function renderMarkdown(text) {
@@ -715,8 +774,10 @@ function renderMarkdown(text) {
 }
 
 function escHtml(s) {
-  if (!s) return '';
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 function showTyping(show) {
