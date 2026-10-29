@@ -1,6 +1,6 @@
 # Contributing to Sentio
 
-Start with the [README](Readme.md), [setup guide](docs/SETUP.md), and [architecture](docs/ARCHITECTURE.md). Check the [release handoff](docs/RELEASE_HANDOFF.md) for unfinished capabilities before expanding scope.
+Start with the [README](README.md), [setup guide](docs/guides/SETUP.md), and [architecture](docs/architecture/ARCHITECTURE.md). Check the [release handoff](docs/archive/RELEASE_HANDOFF.md) for unfinished capabilities before expanding scope.
 
 ## Development workflow
 
@@ -21,7 +21,7 @@ uv run ruff check src scripts tests
 uv run ruff format --check src scripts tests
 npm run format:check
 npm test
-uv run python scripts/run_tests.py -q
+uv run python scripts/dev/run_tests.py -q
 uv build
 ```
 

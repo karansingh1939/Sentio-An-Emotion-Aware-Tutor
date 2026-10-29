@@ -10,7 +10,7 @@ from threading import RLock
 
 from sqlalchemy import text
 
-from sentio.repositories.document_repository import DocumentRepository
+from sentio.repositories.documents import DocumentRepository
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ class DocumentRecovery:
         with self.engine.begin() as connection:
             connection.execute(
                 text(
-                    "DELETE FROM recovery_operations WHERE status IN ('completed','failed') AND created_at<:cutoff"
+                    "DELETE FROM recovery_operations WHERE status IN ('completed','done','failed') AND created_at<:cutoff"
                 ),
                 {"cutoff": time.time() - 7 * 86400},
             )
@@ -95,7 +95,7 @@ class DocumentRecovery:
                 SELECT operation_id FROM (
                     SELECT operation_id, ROW_NUMBER() OVER (
                         PARTITION BY student_id ORDER BY created_at DESC,operation_id DESC) AS position
-                    FROM recovery_operations WHERE status IN ('completed','failed'))
+                    FROM recovery_operations WHERE status IN ('completed','done','failed'))
                 WHERE position>500)""")
             )
 
@@ -199,7 +199,7 @@ class DocumentRecovery:
                     "Inactive vectors will be removed when retrieval is available.",
                 )
                 return False
-            self._state(operation, "done")
+            self._state(operation, "completed")
             return True
         except Exception:
             logger.exception("Document cleanup remains pending")

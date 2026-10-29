@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, Upl
 from sentio.api.dependencies import PREFIX, agent
 from sentio.auth.middleware import RoleRequired, get_current_user
 from sentio.config import BASE_DIR
+from sentio.ingestion import SUPPORTED_DOCUMENT_EXTENSIONS
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -97,7 +98,7 @@ async def stage_upload(request, file, category, subject, owner):
         raise HTTPException(
             400, "Use a filename of up to 180 characters without paths or reserved characters."
         )
-    if Path(file.filename).suffix.lower() not in [".pdf", ".docx", ".txt", ".png", ".jpg", ".jpeg"]:
+    if Path(file.filename).suffix.lower() not in SUPPORTED_DOCUMENT_EXTENSIONS:
         raise HTTPException(
             400, "Upload PDF, DOCX, TXT, PNG or JPEG. Scans and images require OCR."
         )
@@ -183,7 +184,7 @@ async def upload_job(
     user: dict = Depends(get_current_user),
 ):
     from sentio.api.routes.jobs import fingerprint, get_jobs, submission_id
-    from sentio.repositories.job_repository import JobConflict, JobExpired
+    from sentio.repositories.jobs import JobConflict, JobExpired
 
     jobs = get_jobs(request)
     request_id = submission_id(request)
@@ -241,7 +242,7 @@ def preview(
     offset: int = Query(0, ge=0),
     user: dict = Depends(get_current_user),
 ):
-    from sentio.repositories.document_repository import DocumentRepository
+    from sentio.repositories.documents import DocumentRepository
 
     result = DocumentRepository(agent.sm.persister).preview(
         document_id, user["student_id"], limit, offset

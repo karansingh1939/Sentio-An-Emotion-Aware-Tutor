@@ -19,8 +19,8 @@ from sentio.evaluation.metrics import aggregate, retrieval_metrics
 from sentio.ingestion.pipeline import DocumentIngestionPipeline
 from sentio.rag.knowledge_base import KnowledgeBase, SemanticRetriever
 from sentio.rag.vector_db import QdrantVectorDB
-from sentio.repositories.document_repository import DocumentRepository
-from sentio.session.session_manager import SessionManager
+from sentio.repositories.documents import DocumentRepository
+from sentio.session.manager import SessionManager
 
 
 class KeywordOnly:
@@ -110,7 +110,7 @@ def measure_retrieval(dataset_dir, dataset, model):
 
 def measure_grading(dataset):
     from sentio.ai.providers import OllamaBackend
-    from sentio.quiz.quiz_service import QuizService, numeric_value
+    from sentio.quiz.service import QuizService, numeric_value
 
     backend = OllamaBackend()
     backend.load()

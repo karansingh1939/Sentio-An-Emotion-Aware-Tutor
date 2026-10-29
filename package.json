@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "format": "prettier --write src/sentio/static tests/*.mjs",
-    "format:check": "prettier --check src/sentio/static tests/*.mjs",
-    "test": "node --experimental-vm-modules tests/test_quiz_view.mjs && node tests/test_tutor_rendering.mjs && node --experimental-vm-modules tests/test_web_rendering.mjs && node tests/test_store_state.mjs && node --experimental-vm-modules tests/test_ai_requests.mjs && node --experimental-vm-modules tests/test_job_client.mjs"
+    "format": "prettier --write src/sentio/static tests/js/*.mjs",
+    "format:check": "prettier --check src/sentio/static tests/js/*.mjs",
+    "test": "node --experimental-vm-modules tests/js/test_quiz_view.mjs && node tests/js/test_tutor_rendering.mjs && node --experimental-vm-modules tests/js/test_web_rendering.mjs && node tests/js/test_store_state.mjs && node --experimental-vm-modules tests/js/test_ai_requests.mjs && node --experimental-vm-modules tests/js/test_job_client.mjs"
   },
   "devDependencies": {
     "prettier": "3.6.2"

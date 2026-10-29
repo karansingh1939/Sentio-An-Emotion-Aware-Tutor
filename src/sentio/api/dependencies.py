@@ -7,10 +7,10 @@ import numpy as np
 from fastapi import HTTPException, status
 
 from sentio.config import PACKAGE_DIR, api_cfg
-from sentio.flashcards.flashcard_service import FlashcardService
-from sentio.quiz.quiz_service import QuizService
-from sentio.tutor.tutor_agent import TutorAgent
-from sentio.whiteboard.whiteboard_service import WhiteboardService
+from sentio.flashcards.service import FlashcardService
+from sentio.quiz.service import QuizService
+from sentio.tutor.agent import TutorAgent
+from sentio.whiteboard.service import WhiteboardService
 
 agent = TutorAgent()
 PREFIX = api_cfg.API_PREFIX

@@ -1,0 +1,46 @@
+[
+  {
+    "Path": "C:\\ai project\\src\\sentio\\tutor\\orchestrator.py",
+    "Hash": "E3D453EAEE6D1DBC3CD9877E06B1B1C8B1DD403C4C646169B56B79071037CF31"
+  },
+  {
+    "Path": "C:\\ai project\\src\\sentio\\tutor\\stream_service.py",
+    "Hash": "D1C726CE54A685E2A5676DFF16374586278CA2FD4CA0A091FBF07F1014EDA96D"
+  },
+  {
+    "Path": "C:\\ai project\\src\\sentio\\ingestion\\__init__.py",
+    "Hash": "563119BCCEBF83C607869C0996CE36A93B2A5EC30CB4BECA2968EE064EBB1734"
+  },
+  {
+    "Path": "C:\\ai project\\src\\sentio\\ingestion\\pipeline.py",
+    "Hash": "5EE82325F59B1280DC3FD1654DCA060B002E674A48F26F6AC7BFD450B984CEDA"
+  },
+  {
+    "Path": "C:\\ai project\\src\\sentio\\ingestion\\recovery.py",
+    "Hash": "AB0FFDDC7D306A406264C3DBD81592CB177EFAF7BEB197E049BE37122F851C86"
+  },
+  {
+    "Path": "C:\\ai project\\src\\sentio\\api\\routes\\documents.py",
+    "Hash": "0D8734530DA643506E84EC1244D40173D3B8C4897E4ED4CD076C036359EF84AB"
+  },
+  {
+    "Path": "C:\\ai project\\tests\\test_study_prompt_boundaries.py",
+    "Hash": "D672B3F62DF1770E14FFB8852D963979B12A1DC47E4DA4704F074DB8C37E8099"
+  },
+  {
+    "Path": "C:\\ai project\\tests\\test_streaming_turns.py",
+    "Hash": "65AE98E3B3FF44B35FF207406EE6BC54E7226B36504D1954E5ACA863DD1F6C7E"
+  },
+  {
+    "Path": "C:\\ai project\\tests\\test_ingestion_resilience.py",
+    "Hash": "601DEC27C945A2D109978BC99D359058E2C1F22DF8904F4011DF9BF96362968C"
+  },
+  {
+    "Path": "C:\\ai project\\tests\\test_document_recovery.py",
+    "Hash": "BBDB56BED5BC2E2A4B43A8F17A0E56C770FCBA72C3AA326AD594EC8E44591DD0"
+  },
+  {
+    "Path": "C:\\ai project\\tests\\test_grounding_contract.py",
+    "Hash": "CBEEAAB7ABF58101694453450DC892A07A6704BE0E82968275D67BCE0E97C44B"
+  }
+]
