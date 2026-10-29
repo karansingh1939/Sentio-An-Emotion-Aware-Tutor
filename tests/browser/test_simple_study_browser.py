@@ -82,12 +82,28 @@ async def test_first_time_notes_to_study_to_practice_without_hidden_setup(monkey
             )
             await page.wait_for_selector(".library-ready .study-doc-btn")
             assert "Ready to study" in await page.locator(".document-row").inner_text()
+            selected = await page.locator(".library-ready .study-doc-btn").get_attribute("data-id")
+            # Library: one click starts studying the notes, with no setup dialog.
             await page.locator(".library-ready .study-doc-btn").click()
+            await page.wait_for_selector("#view-tutor", state="visible")
+            await page.wait_for_function("!document.getElementById('msg-input').disabled")
+            await page.wait_for_function(
+                "value => document.getElementById('f-grounding').value === value", arg=selected
+            )
+            assert await page.locator("sentio-modal").count() == 0
+            from sentio.api.app import agent
+
+            studying = await page.evaluate("window.store.getState('activeSessionId')")
+            assert agent.sm.get_or_raise(studying).topic == "Inertia resists changes in velocity"
+
+            # The New session dialog still discards a response that arrives after it
+            # closes, closes that unused session and keeps the current one.
+            await page.click("#hud-toggle-btn")
+            await page.click("#tutor-new-session-btn")
             await page.wait_for_selector("#new-sess-topic")
             await page.select_option("#new-sess-subject", "physics")
             await page.fill("#new-sess-topic", "Inertia")
-            assert await page.locator("#new-sess-grounding").is_disabled()
-            selected = await page.locator("#new-sess-grounding").input_value()
+            await page.select_option("#new-sess-grounding", selected)
             created = asyncio.Event()
             release = asyncio.Event()
             delivered = asyncio.Event()
@@ -108,25 +124,18 @@ async def test_first_time_notes_to_study_to_practice_without_hidden_setup(monkey
             release.set()
             await asyncio.wait_for(delivered.wait(), timeout=10)
             await page.wait_for_function("!window.store.getState('loading')")
-            assert await page.evaluate("window.store.getState('activeSessionId')") is None
-            from sentio.api.app import agent
-
+            assert await page.evaluate("window.store.getState('activeSessionId')") == studying
             assert not agent.sm.get_or_raise(cancelled["session_id"]).is_active
             await page.unroute("**/api/v1/sessions", delay_session_response)
-            await page.click(".study-doc-btn")
-            await page.wait_for_selector("#new-sess-submit-btn")
-            await page.fill("#new-sess-topic", "Inertia")
-            await page.click("#new-sess-submit-btn")
-            await page.wait_for_selector("sentio-modal", state="detached")
-            await page.wait_for_selector("#view-tutor", state="visible")
-            await page.wait_for_function("!document.getElementById('msg-input').disabled")
-            await page.wait_for_function(
-                "value => document.getElementById('f-grounding').value === value", arg=selected
-            )
+            await page.click(".drawer-close-btn")
             await page.fill("#msg-input", "What is inertia?")
             await page.click("#send-btn")
             await page.wait_for_selector(".msg.tutor")
             assert "mechanics.txt" in await page.locator(".msg.tutor").inner_text()
+            await page.locator(".msg.tutor .cite-chip").first.click()
+            passage = page.locator("sentio-modal .cited-passage")
+            assert "Inertia resists changes in velocity" in await passage.inner_text()
+            await page.click("#modal-close-btn")
             await page.locator("#session-active-bar").get_by_role("link", name="Try a quiz").click()
             await page.wait_for_selector("#generate-quiz-btn:enabled")
             assert not await page.locator("#quiz-topic").is_visible()

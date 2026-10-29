@@ -183,10 +183,7 @@ export class DocumentsView {
   bindEvents() {
     this.container.querySelectorAll('.study-doc-btn').forEach((button) => {
       button.onclick = () =>
-        window.tutorView?.createNewSessionDialog({
-          documentId: button.dataset.id,
-          document: this.documents.find((item) => item.id === button.dataset.id),
-        });
+        this.studyDocument(this.documents.find((item) => item.id === button.dataset.id));
     });
     // 1. Search filter binding
     const search = this.container.querySelector('#doc-search-input');
@@ -449,6 +446,36 @@ export class DocumentsView {
         )
           this.uploadFile(next.file, next.category);
       }
+    }
+  }
+
+  // One click: subject and topic come from the document, so no setup dialog is needed.
+  // The opening line (usually a title) matches the notes better than the filename.
+  async studyDocument(doc) {
+    if (!doc) return;
+    const owner = store.getState('currentUser')?.id;
+    store.setState('loading', true);
+    try {
+      let topic = doc.filename.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ');
+      try {
+        const preview = await sentioAPI.get(
+          `/documents/${encodeURIComponent(doc.id)}/preview?limit=1`,
+        );
+        const opening = preview.chunks[0]?.text_content.split(/[\n.:!?]/)[0].trim();
+        if (opening) topic = opening.slice(0, 80);
+      } catch {
+        // The filename remains a usable topic.
+      }
+      const started = await window.startSession({
+        subject: doc.subject || 'general',
+        topic,
+        difficulty: 'beginner',
+        documentId: doc.id,
+        isCurrent: () => owner === store.getState('currentUser')?.id,
+      });
+      if (started) window.location.hash = '#/tutor';
+    } finally {
+      store.setState('loading', false);
     }
   }
 }

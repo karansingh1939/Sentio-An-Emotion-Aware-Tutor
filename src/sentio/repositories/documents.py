@@ -100,6 +100,41 @@ class DocumentRepository:
             "next_offset": offset + len(chunks) if offset + len(chunks) < total else None,
         }
 
+    def get_overview(self, document_id, owner):
+        """The cached overview, or None when absent or written for an older version."""
+        import json
+
+        from sqlalchemy import text
+
+        with self.persister._engine.connect() as connection:
+            row = connection.execute(
+                text(
+                    "SELECT checksum,overview_json FROM documents WHERE id=:id AND student_id=:owner"
+                ),
+                {"id": document_id, "owner": owner},
+            ).first()
+        overview = json.loads(row[1]) if row and row[1] else None
+        return overview if overview and overview.get("checksum") == row[0] else None
+
+    def save_overview(self, document_id, owner, overview):
+        import json
+
+        from sqlalchemy import text
+
+        with self.persister._engine.begin() as connection:
+            checksum = connection.execute(
+                text("SELECT checksum FROM documents WHERE id=:id AND student_id=:owner"),
+                {"id": document_id, "owner": owner},
+            ).scalar()
+            if checksum is None:
+                return None
+            saved = {**overview, "checksum": checksum}
+            connection.execute(
+                text("UPDATE documents SET overview_json=:overview WHERE id=:id"),
+                {"id": document_id, "overview": json.dumps(saved)},
+            )
+        return saved
+
     def clear_all_documents_and_chunks(self) -> bool:
         return self.persister.clear_all_documents_and_chunks()
 

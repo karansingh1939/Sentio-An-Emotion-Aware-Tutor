@@ -763,3 +763,84 @@ form label,
   gap: 12px;
   flex-wrap: wrap;
 }
+/* Citations: inline references and a source row open the cited passage. */
+.source-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.cite-chip {
+  min-height: 0;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cite-chip.inline {
+  padding: 0 6px;
+  font-size: inherit;
+  font-weight: 500;
+}
+.sources-preview .msg-meta {
+  color: var(--text-dim);
+}
+.cited-passage {
+  margin: 0;
+  padding: 12px 16px;
+  border-left: 3px solid var(--accent);
+  background: var(--bg3);
+  border-radius: var(--radius);
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+/* Instant feedback on one quiz answer */
+.quiz-check {
+  margin-top: 12px;
+}
+.answer-feedback {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border-left: 4px solid var(--green);
+  background: var(--bg3);
+  font-size: 14px;
+}
+.answer-feedback.incorrect {
+  border-left-color: var(--red);
+}
+.answer-feedback p {
+  margin-top: 6px;
+  color: var(--text-dim);
+}
+/* Overview of the selected notes, above the conversation */
+.notes-overview {
+  margin: 16px 24px 0;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg2);
+  display: grid;
+  gap: 8px;
+}
+.notes-overview details {
+  display: grid;
+  gap: 8px;
+}
+.notes-overview details[open] > summary {
+  margin-bottom: 8px;
+}
+.notes-overview summary {
+  cursor: pointer;
+}
+.notes-overview p {
+  margin: 0 0 8px;
+  line-height: 1.55;
+}
+.notes-overview .suggested-question {
+  text-align: left;
+}
