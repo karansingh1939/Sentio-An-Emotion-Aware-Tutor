@@ -26,7 +26,7 @@ def saved_quizzes(
     offset: int = Query(0, ge=0),
     user: dict = Depends(get_current_user),
 ):
-    from sentio.repositories.practice_repository import PracticeRepository
+    from sentio.repositories.practice import PracticeRepository
 
     return PracticeRepository(agent.sm.persister._engine).quizzes(user["student_id"], limit, offset)
 

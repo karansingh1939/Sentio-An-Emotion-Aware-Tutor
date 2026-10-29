@@ -10,7 +10,7 @@ from threading import RLock
 
 from sqlalchemy import text
 
-from sentio.repositories.document_repository import DocumentRepository
+from sentio.repositories.documents import DocumentRepository
 
 logger = logging.getLogger(__name__)
 

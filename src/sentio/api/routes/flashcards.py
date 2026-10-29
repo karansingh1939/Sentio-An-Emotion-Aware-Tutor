@@ -10,7 +10,7 @@ from sentio.api.dependencies import PREFIX, _verify_session_owner, agent, flashc
 from sentio.api.schemas import CreateDeckRequest, GenerateFlashcardsRequest, ReviewCardRequest
 from sentio.auth.middleware import get_current_user
 from sentio.jobs.control import WorkCancelled
-from sentio.repositories.practice_repository import PracticeRepository, ReviewConflict
+from sentio.repositories.practice import PracticeRepository, ReviewConflict
 from sentio.shared.exceptions import LLMServiceUnavailableError
 
 logger = logging.getLogger(__name__)

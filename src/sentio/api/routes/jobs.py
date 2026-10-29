@@ -16,8 +16,8 @@ from sentio.api.dependencies import (
 from sentio.api.schemas import GenerateFlashcardsRequest, QuizGenerateRequest
 from sentio.auth.middleware import get_current_user
 from sentio.jobs.control import WorkCancelled
-from sentio.repositories.job_repository import JobConflict, JobExpired
-from sentio.repositories.practice_repository import PracticeRepository
+from sentio.repositories.jobs import JobConflict, JobExpired
+from sentio.repositories.practice import PracticeRepository
 
 router = APIRouter()
 

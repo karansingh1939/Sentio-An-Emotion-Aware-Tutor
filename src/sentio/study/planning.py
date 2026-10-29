@@ -3,7 +3,7 @@
 import hashlib
 from datetime import date, datetime, time, timedelta
 
-from sentio.repositories.planning_repository import PlanningRepository
+from sentio.repositories.planning import PlanningRepository
 
 
 class PlanningService:

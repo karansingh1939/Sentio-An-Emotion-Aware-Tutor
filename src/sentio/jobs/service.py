@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import RLock
 
 from sentio.jobs.control import WorkCancelled, WorkControl, WorkInputError, execution
-from sentio.repositories.job_repository import JobRepository
+from sentio.repositories.jobs import JobRepository
 
 logger = logging.getLogger(__name__)
 
