@@ -51,6 +51,11 @@ class QuizQuestion(BaseModel):
         self.topic = self.topic or ""
         if not self.correct_answer.strip():
             raise ValueError("Correct answer must not be blank.")
+        # True/false options are fixed, so models that omit them lose nothing.
+        if self.question_type == "true_false" and not self.options:
+            if self.correct_answer.strip().lower() in ("true", "false"):
+                self.options = ["True", "False"]
+                self.correct_answer = self.correct_answer.strip().capitalize()
         if self.question_type in ("multiple_choice", "true_false"):
             if (
                 not self.options

@@ -28,6 +28,23 @@ answers.
   keep `phi3:mini` on low-memory machines. Switch with `OLLAMA_MODEL=qwen2.5:7b` in
   `.env` and restart Sentio. The shipped default stays `phi3:mini`.
 
+## Follow-up: quiz generation with qwen2.5:7b
+
+A full study journey with `qwen2.5:7b` passed every step, but its quiz fell back to
+source recall. Probing the production quiz prompt showed two causes:
+
+1. The Ollama backend reported any schema mismatch as "service unavailable", so the
+   structured parser's repair and regeneration steps never ran. Mismatches now raise
+   `InvalidModelOutput` carrying the raw reply; quiz and flashcard generation pass it
+   to the parser, which repairs it or asks the model to regenerate (up to twice)
+   before source recall.
+2. The model omitted options on true/false questions in 4 of 4 probes. True/false
+   options are fixed, so a missing pair is now filled in when the answer is True or
+   False. Multiple-choice questions without options still fail and are regenerated.
+
+After the fix, raw replies passed validation in 2 of 4 probes (from 0 of 4), and two
+full journeys produced model-generated quizzes in 48 s and 59 s with all steps passing.
+
 ## Limits
 
 One run per case and model, 12 author-drafted synthetic cases, lexical rubrics only,

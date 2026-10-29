@@ -6,7 +6,7 @@ import pytest
 from sentio.ai.providers import OllamaBackend
 from sentio.ai.streaming import TutorPayload, output_schema
 from sentio.jobs.control import WorkCancelled, WorkControl, execution
-from sentio.shared.exceptions import LLMServiceUnavailableError
+from sentio.shared.exceptions import InvalidModelOutput, LLMServiceUnavailableError
 
 real_complete = OllamaBackend.complete
 
@@ -58,10 +58,9 @@ def test_ollama_uses_schema_and_streams_only_readable_text():
     assert response.closed
 
 
-def test_disconnect_and_invalid_schema_never_succeed():
+def test_disconnect_and_truncation_never_succeed():
     for lines in (
         [json.dumps({"message": {"content": '{"text":"unfinished'}}).encode()],
-        [json.dumps({"message": {"content": '{"text":123}'}, "done": True}).encode()],
         [
             json.dumps(
                 {
@@ -77,6 +76,17 @@ def test_disconnect_and_invalid_schema_never_succeed():
         with output_schema(TutorPayload), pytest.raises(LLMServiceUnavailableError):
             backend.complete("prompt", [], "question")
         assert response.closed
+
+
+def test_completed_output_outside_the_schema_is_invalid_not_unavailable():
+    raw = '{"text":123}'
+    response = Response([json.dumps({"message": {"content": raw}, "done": True}).encode()])
+    backend, _ = backend_with(response)
+    with output_schema(TutorPayload), pytest.raises(InvalidModelOutput) as caught:
+        backend.complete("prompt", [], "question")
+    assert not isinstance(caught.value, LLMServiceUnavailableError)
+    assert caught.value.raw == raw
+    assert response.closed
 
 
 def test_stream_of_small_chunks_cannot_extend_generation_deadline(monkeypatch):

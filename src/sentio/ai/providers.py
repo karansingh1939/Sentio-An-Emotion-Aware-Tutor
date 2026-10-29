@@ -8,7 +8,7 @@ from typing import Dict, Generator, List
 from sentio.ai.streaming import current_schema, visible_text
 from sentio.config import nlp_cfg
 from sentio.jobs.control import WorkCancelled, checkpoint, current_control
-from sentio.shared.exceptions import LLMServiceUnavailableError
+from sentio.shared.exceptions import InvalidModelOutput, LLMServiceUnavailableError
 
 logger = logging.getLogger(__name__)
 _local_inference = BoundedSemaphore(1)
@@ -331,9 +331,16 @@ class OllamaBackend(LLMBackend):
             if not complete:
                 raise ValueError("Local model disconnected before completing the answer")
             if current_schema():
-                current_schema().model_validate_json(raw)
+                try:
+                    current_schema().model_validate_json(raw)
+                except ValueError as error:
+                    raise InvalidModelOutput(raw, error) from error
             return raw, tokens
         except WorkCancelled:
+            raise
+        except InvalidModelOutput:
+            if control:
+                control.check()
             raise
         except Exception as e:
             if control:
