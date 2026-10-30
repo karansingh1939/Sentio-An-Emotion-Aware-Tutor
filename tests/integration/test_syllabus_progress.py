@@ -57,7 +57,13 @@ def test_syllabus_matches_lectures_and_tracks_readiness(monkeypatch):
         # A lecture added later is matched automatically.
         client.post(
             "/api/v1/documents/upload",
-            files={"file": ("sync.txt", b"Semaphores protect a critical section.", "text/plain")},
+            files={
+                "file": (
+                    "sync.txt",
+                    b"Semaphores\nA semaphore protects a critical section.",
+                    "text/plain",
+                )
+            },
             data={"category": "notes", "course_id": course},
         )
         assert _items(client.get(f"/api/v1/courses/{course}/syllabus").json())["Semaphores"] == (

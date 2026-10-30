@@ -14,7 +14,20 @@ READY_RECENT_CORRECT = 4
 MAX_TITLE = 80
 
 _CONTINUED = re.compile(r"[\s\-–—:.…(\[]*\bcont(inued|'d|d)?\.?[)\]]?\s*$", re.IGNORECASE)
-_SENTENCE = re.compile(r"[.!?]\s")
+# A sentence break inside a line, but not after an abbreviation ("Hardwired vs. Microprogrammed").
+_SENTENCE = re.compile(
+    r"(?<!\bvs)(?<!\be\.g)(?<!\bi\.e)(?<!\betc)(?<!\bfig)(?<!\bno)(?<!\bst)[.!?]\s", re.IGNORECASE
+)
+_CLOSING = re.compile(
+    r"^(thank\s*you|thanks|any questions|questions|q\s*&\s*a|the end)\W*$", re.IGNORECASE
+)
+_PARENS = re.compile(r"\s*\([^)]*\)")
+# Lines that mark a deck's cover slide rather than a topic.
+_COVER = re.compile(
+    r"\b(course\s*code|week\s*\d+|lecture\s*(no\.?\s*)?\d+|semester|instructor|faculty|"
+    r"prepared by|presented by|submitted by)\b",
+    re.IGNORECASE,
+)
 MAX_TITLE_WORDS = 10
 _NUMBERED = re.compile(r"\s*[\(\[]\d+[\)\]]\s*$|\s*[-–:]\s*(part\s*)?\d+\s*$", re.IGNORECASE)
 _PAGE_NUMBER = re.compile(r"^(page\s*)?\d+(\s*(/|of)\s*\d+)?$", re.IGNORECASE)
@@ -31,7 +44,13 @@ def _candidates(text):
 
 def _key(title):
     title = _NUMBERED.sub("", _CONTINUED.sub("", title))
-    return " ".join(title.casefold().split())
+    return " ".join(re.sub(r"[-–—_/]", " ", title.casefold()).split())
+
+
+def _continues(heading, title):
+    """The same heading, or a sub-heading of it ("Control Bus- Example" after "Control Bus")."""
+    new, base = _key(heading), _key(_PARENS.sub("", title))
+    return new == _key(title) or (len(base) >= 3 and re.match(re.escape(base) + r"s?\b", new))
 
 
 def _heading(text, running):
@@ -43,7 +62,7 @@ def _heading(text, running):
         if (
             len(line) <= MAX_TITLE
             and len(line.split()) <= MAX_TITLE_WORDS
-            and not line.endswith((".", "?", "!", ":"))
+            and not line.endswith((".", "!", ":"))
             and not _SENTENCE.search(line)
             and len(rest.split()) <= 4  # "Peak value: The maximum value of ..." is body text
         ):
@@ -55,23 +74,24 @@ def _heading(text, running):
 def build_topics(pages, fallback_title):
     """Group ordered (page_number, text) pairs into topics of consecutive pages.
 
-    A line found at the top of most pages (a course name, a footer) is a running header,
-    not a topic. Pages without a heading, or repeating the previous heading ("Paging
-    (cont.)"), extend the current topic.
+    A line found on most pages (a course name, a footer) is a running header, not a topic.
+    Pages without a heading, repeating the previous heading ("Paging (cont.)") or extending
+    it ("Control Bus- Example" after "Control Bus") continue the current topic. A short
+    cover slide and closing slides ("Thank You", "Questions?") are not topics.
     """
     pages = [(number, text) for number, text in pages if text.strip()]
     if not pages:
         return []
-    firsts = Counter(next(_candidates(text), "").casefold() for _, text in pages)
-    running = {
-        line
-        for line, count in firsts.items()
-        if line and len(pages) >= 4 and count > len(pages) / 2
-    }
+    seen = Counter(line.casefold() for _, text in pages for line in set(_candidates(text)))
+    running = {line for line, count in seen.items() if len(pages) >= 4 and count > len(pages) / 2}
+    if len(pages) > 2 and _COVER.search(pages[0][1]):
+        pages = pages[1:]
     topics = []
     for number, text in pages:
         heading = _heading(text, running)
-        if topics and (heading is None or _key(heading) == _key(topics[-1]["title"])):
+        if heading and _CLOSING.match(heading):
+            continue
+        if topics and (heading is None or _continues(heading, topics[-1]["title"])):
             topics[-1]["last_page"] = number
             continue
         title = heading or (topics[-1]["title"] if topics else fallback_title)

@@ -73,3 +73,40 @@ def test_status_and_percentage():
         "total": 4,
         "percent_ready": 50,
     }
+
+
+PDF_WRAPPED = """NET101 Computer Networks
+Course Contents
+Module I (10 lectures hours):
+Network models, OSI layers, TCP/IP model, Physical layer, Small-
+scale networks, Switching and routing, Routing
+algorithms, Distance vector.
+Studio Work / Laboratory Experiments:
+Students will configure routers in the lab.
+"""
+
+
+def test_pdf_paragraphs_wrapped_across_lines_are_rejoined():
+    items = parse_syllabus(PDF_WRAPPED)
+    assert {item["unit"] for item in items} == {"Module I"}
+    assert [item["title"] for item in items] == [
+        "Network models",
+        "OSI layers",
+        "TCP/IP model",
+        "Physical layer",
+        "Small-scale networks",
+        "Switching and routing",
+        "Routing algorithms",
+        "Distance vector",
+    ]
+
+
+def test_acronyms_comparisons_and_passing_mentions():
+    topics = [
+        {"id": "clock", "title": "Router clock", "text": "Every router has a clock."},
+        {"id": "versus", "title": "Switch (L2) vs Router (L3)", "text": "Layers differ."},
+        {"id": "tables", "title": "Routing tables", "text": "Entries may be static."},
+    ]
+    assert match("AI Router", topics) == []  # "AI" is not in any title
+    assert match("Comparison with router", topics) == ["versus"]
+    assert match("Static", topics) == []  # mentioned in passing on a slide only
