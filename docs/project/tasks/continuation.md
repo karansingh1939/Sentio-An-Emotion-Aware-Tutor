@@ -597,4 +597,16 @@ cards from the chosen slides. The existing `card_reviews` receipts serve as the 
 so no new table was needed. GET /topics/due; `due` on course progress; `review_due` in the
 syllabus summary, excluded from percent_ready; Today card with Practise due topics.
 Flashcard tags are capped at 5 in the schema: without it the model could repeat tags until
-its token limit and lose the deck to the fallback. Next: measured syllabus matching.
+its token limit and lose the deck to the fallback.
+
+## Measured syllabus matching - 30 October 2026
+
+Branch: feature/syllabus-matching (stacked on feature/topic-memory). Syllabus titles are
+repaired (`repair_title`) from the course vocabulary and the syllabus's own words; unit hours
+are stored (`syllabus_items.unit_hours`) and weight percent_ready. `_words` is cached.
+`scripts/eval/syllabus_matching.py` writes a local labelling checklist and scores matchers.
+On the real CSET203 syllabus none of the three embedding ideas beat word overlap under
+nested cross-validation, so no embedding code went into the app. Labels were written by
+Claude at the user's request, not by a student; they live in git-ignored
+tmp/real-samples/syllabus-labels.json. The user can correct them with
+tmp/real-samples/syllabus-checklist.html. Next: the user's hands-on check, then Phase 4.

@@ -124,7 +124,19 @@ Matching to lecture topics is computed live by word overlap (title words count d
 slide text; plurals normalised), so new lectures match automatically; only the learner's
 corrections are stored (`link_mode` auto/manual/none). A syllabus topic's status comes from
 the states of the lecture topics it matches, and the course percentage is the share Ready
-now: topics due for review are shown separately, so the number falls between reviews.
+now: topics due for review are shown separately, so the number falls between reviews. When
+every unit states its hours, an item weighs its unit's hours divided by the unit's items.
+Words split by PDF extraction are rejoined when the whole word is in the syllabus or the
+course's slides and the pieces are not both real words.
+
+Matching stays lexical on measured evidence. `scripts/eval/syllabus_matching.py` compares it
+with three uses of MiniLM similarity by nested cross-validation, on one real 72-item syllabus
+(24 items in the notes). Labels were written by the AI assistant from the slides, with a
+strict "teaches or defines it" rule, so treat the numbers as an engineering check rather than
+a student study. Word overlap scored F1 0.56 on links and 0.86 on "is it in the notes" (with
+precision 1.00); adding similar topics gave 0.53 and 0.80, filling gaps gave 0.54 and 0.79,
+and pruning weak links gave 0.54 and 0.86. Embeddings measure relatedness, and a syllabus
+gap is usually close to a slide without being taught by it.
 
 Topic mastery (`study/topics.py`, `repositories/topics.py`): a lecture's topics are page
 ranges grouped by heading (slide titles; PDF page headings, skipping running headers),

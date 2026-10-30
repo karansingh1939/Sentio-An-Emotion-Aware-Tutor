@@ -80,8 +80,10 @@ flowchart LR
   through the FSRS memory model, so Ready means you probably still remember it, and Today
   lists the topics due for review.
 - **Syllabus progress** — paste or upload the course syllabus; each syllabus topic is
-  matched to lecture topics, so the course shows a percentage ready and lists the topics
-  your notes don't cover yet. Matches can be corrected.
+  matched to lecture topics, so the course shows a percentage ready, weighted by module
+  hours, and lists the topics your notes don't cover yet. Matches can be corrected. Word
+  matching was kept after a measured comparison with embeddings (see
+  `scripts/eval/syllabus_matching.py`).
 - **Optional emotion-aware tone** — my earlier facial-emotion CNN (FER2013) and browser
   attention tracking, now an opt-in, consented side feature
   ([details](docs/guides/EMOTION.md)).

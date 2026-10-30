@@ -1,21 +1,30 @@
 """Measure syllabus matching against a student's own labels.
 
 `checklist` writes a local page listing each syllabus item with its likely lecture topics;
-the student confirms the right ones and saves a labels file. `evaluate` then scores the
-matcher on those labels. Everything stays on this machine.
+the student confirms the right ones and saves a labels file. `evaluate` scores the word
+matcher on those labels, and three ways embeddings could improve it, each by nested
+cross-validation. Sentio keeps word matching because none of them beat it. Everything stays
+on this machine.
 """
 
 import argparse
 import json
+import random
 from pathlib import Path
+from statistics import mean
 
 from sentio.config import nlp_cfg
 from sentio.ingestion.pipeline import DocumentIngestionPipeline
-from sentio.study.syllabus import match, parse_syllabus, vocabulary
+from sentio.study.syllabus import MAX_LINKS, match, parse_syllabus, vocabulary
 from sentio.study.topics import build_topics
 
 PAGE = Path(__file__).with_name("syllabus_checklist.html")
 SUGGESTIONS = 5
+FOLDS = 5
+REPEATS = 20
+ADD_AT = (0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8)
+FILL_AT = (0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8)
+PRUNE_BY = (0.02, 0.05, 0.1, 0.15, 0.2, 0.3)
 
 
 def lecture_topics(decks):
@@ -85,11 +94,11 @@ def checklist(args):
 
 def scores(predicted, labels):
     """Precision, recall and F1 over item-to-topic links, and over "is it in the notes"."""
-    found = sum(len(set(predicted[title]) & set(truth)) for title, truth in labels.items())
-    made = sum(len(predicted[title]) for title in labels)
+    found = sum(len(set(predicted[item]) & set(truth)) for item, truth in labels.items())
+    made = sum(len(predicted[item]) for item in labels)
     wanted = sum(len(truth) for truth in labels.values())
-    hits = sum(bool(predicted[title]) and bool(truth) for title, truth in labels.items())
-    claimed = sum(bool(predicted[title]) for title in labels)
+    hits = sum(bool(predicted[item]) and bool(truth) for item, truth in labels.items())
+    claimed = sum(bool(predicted[item]) for item in labels)
     covered = sum(bool(truth) for truth in labels.values())
 
     def measured(correct, predicted_count, actual):
@@ -107,24 +116,98 @@ def scores(predicted, labels):
     return {"links": measured(found, made, wanted), "in_notes": measured(hits, claimed, covered)}
 
 
-def load_labels(path, items):
+def load_labels(path):
+    """{syllabus position: [topic ids]}, for rows confirmed or written by hand."""
     stored = json.loads(path.read_text(encoding="utf-8"))
-    titles = {item["title"] for item in items}
-    labels = {
-        row["title"]: row["topics"]
-        for row in stored["items"]
-        if row.get("confirmed") and row["title"] in titles
+    return {row["position"]: row["topics"] for row in stored["items"] if row.get("confirmed", True)}
+
+
+def with_embeddings(baseline, similar, add=None, fill=None, prune=None):
+    """Word matches changed by embedding similarity.
+
+    `add` also links topics at or above a similarity, `fill` links the closest topic only
+    when words found nothing, and `prune` drops links this far below the item's best one.
+    """
+    predicted = {}
+    for position, linked in baseline.items():
+        row, kept = similar[position], list(linked)
+        if prune is not None and kept:
+            best = max(row[topic] for topic in kept)
+            kept = [topic for topic in kept if row[topic] >= best - prune]
+        if add is not None:
+            close = sorted((t for t in row if row[t] >= add and t not in kept), key=row.get)
+            kept = (kept + close[::-1])[:MAX_LINKS]
+        if fill is not None and not kept:
+            closest = max(row, key=row.get)
+            kept = [closest] if row[closest] >= fill else []
+        predicted[position] = kept
+    return predicted
+
+
+def objective(predicted, labels):
+    measured = scores(predicted, labels)
+    return measured["links"]["f1"] + measured["in_notes"]["f1"]
+
+
+def nested_score(baseline, labels, candidates):
+    """Each item is predicted by the candidate that did best on the other folds, so choosing
+    a candidate cannot flatter the score. `baseline` is always among the candidates."""
+    candidates = [baseline, *candidates]
+    rounds = []
+    for seed in range(REPEATS):
+        positions = sorted(labels)
+        random.Random(seed).shuffle(positions)
+        predicted = {}
+        for fold in range(FOLDS):
+            held_out = set(positions[fold::FOLDS])
+            train = {k: v for k, v in labels.items() if k not in held_out}
+            chosen = max(candidates, key=lambda candidate: objective(candidate, train))
+            predicted.update({position: chosen[position] for position in held_out})
+        rounds.append(scores(predicted, labels))
+    return {
+        group: {
+            metric: round(mean(result[group][metric] for result in rounds), 3)
+            for metric in ("precision", "recall", "f1")
+        }
+        for group in ("links", "in_notes")
     }
-    if not labels:
-        raise SystemExit("No confirmed labels match this syllabus.")
-    return labels
 
 
 def evaluate(args):
     items, topics = load_course(args.syllabus, args.decks)
-    labels = load_labels(args.labels, items)
-    predicted = {item["title"]: match(item["title"], topics) for item in items}
-    report = {"items_labelled": len(labels), "word_overlap": scores(predicted, labels)}
+    labels = load_labels(args.labels)
+    baseline = {p: match(item["title"], topics) for p, item in enumerate(items)}
+    encode = encoder()
+    vectors = encode([item["title"] for item in items])
+    ids = [topic["id"] for topic in topics]
+    sources = [
+        {
+            position: dict(zip(ids, map(float, row)))
+            for position, row in enumerate(vectors @ encode(texts).T)
+        }
+        for texts in (
+            [topic["title"] for topic in topics],
+            [topic_passage(topic) for topic in topics],
+        )
+    ]
+    ideas = {
+        "add_similar_topics": {"add": ADD_AT},
+        "fill_gaps_only": {"fill": FILL_AT},
+        "prune_weak_links": {"prune": PRUNE_BY},
+    }
+    report = {
+        "items_labelled": len(labels),
+        "items_in_notes": sum(bool(truth) for truth in labels.values()),
+        "word_overlap": scores(baseline, labels),
+    }
+    for idea, settings in ideas.items():
+        ((name, values),) = settings.items()
+        candidates = [
+            with_embeddings(baseline, similar, **{name: value})
+            for similar in sources
+            for value in values
+        ]
+        report[idea] = nested_score(baseline, labels, candidates)
     print(json.dumps(report, indent=2))
     if args.output:
         args.output.write_text(json.dumps(report, indent=2), encoding="utf-8")

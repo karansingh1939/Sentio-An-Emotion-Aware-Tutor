@@ -141,6 +141,16 @@ def test_words_split_by_a_pdf_are_rejoined_only_when_the_whole_word_is_known():
     assert repair_title("a nd") == "a nd"  # Without a vocabulary nothing is guessed.
 
 
+def test_the_syllabus_own_words_repair_a_title_the_slides_cannot():
+    text = "Set Associative, As sociative, Pipeline problems, related probl ems"
+    assert [item["title"] for item in parse_syllabus(text)] == [
+        "Set Associative",
+        "Associative",
+        "Pipeline problems",
+        "related problems",
+    ]
+
+
 WEIGHTED = """Module I (10 lecture hours):
 Paging, Segmentation
 Module II (30 lectures):
