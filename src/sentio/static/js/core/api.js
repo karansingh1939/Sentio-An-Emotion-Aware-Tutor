@@ -46,7 +46,8 @@ class SentioAPIClient {
     return operation.promise;
   }
 
-  // Common request handler
+  // Common request handler. With `stream: true` the Response is returned unread and the
+  // caller's signal stays connected, so a streamed body can still be cancelled.
   async request(endpoint, options = {}) {
     const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
 
@@ -131,6 +132,7 @@ class SentioAPIClient {
         throw failure;
       }
 
+      if (options.stream) return response;
       // Handle raw responses or JSON
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
@@ -148,7 +150,7 @@ class SentioAPIClient {
       throw error;
     } finally {
       clearTimeout(id);
-      options.signal?.removeEventListener('abort', cancel);
+      if (!options.stream) options.signal?.removeEventListener('abort', cancel);
       this.pending--;
       store.setState('loading', this.pending > 0);
     }

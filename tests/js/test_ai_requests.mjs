@@ -45,12 +45,21 @@ const runtime = await readFile(
 );
 const input = { value: 'Explain forces', style: {} };
 const button = { disabled: false };
-let finish;
+let fail;
 let requests = 0;
 const errors = [];
 const tutor = vm.createContext({
   document: { getElementById: (id) => (id === 'msg-input' ? input : button) },
-  window: {},
+  window: {
+    sentioAPI: {
+      post: () => {
+        requests++;
+        return new Promise((_, reject) => {
+          fail = reject;
+        });
+      },
+    },
+  },
   API: '/api/v1',
   AbortController,
   generationInProgress: false,
@@ -63,19 +72,12 @@ const tutor = vm.createContext({
   appendMessage: () => {},
   showTyping: () => {},
   captureFrame: () => null,
-  getAuthHeaders: () => ({}),
   toast: (message) => errors.push(message),
   setTimeout: (_, ms) => {
     assert.equal(ms, 200000);
     return 1;
   },
   clearTimeout: () => {},
-  fetch: () => {
-    requests++;
-    return new Promise((resolve) => {
-      finish = resolve;
-    });
-  },
 });
 vm.runInContext(
   runtime.slice(
@@ -89,7 +91,7 @@ input.value = 'Duplicate request';
 await tutor.sendMessage();
 assert.equal(requests, 1);
 assert.equal(button.disabled, true);
-finish({ ok: false, json: async () => ({ detail: 'AI provider unavailable' }) });
+fail(new Error('AI provider unavailable'));
 await pending;
 assert.deepEqual(errors, ['AI provider unavailable']);
 assert.equal(button.disabled, false);
@@ -214,3 +216,32 @@ await assert.rejects(oldBody, /account changed/);
 console.log(
   'Concurrent refresh is shared; late refresh and private response bodies cannot replace a new account.',
 );
+
+// A streamed answer refreshes an expired token and stays cancellable after the response.
+const streamed = await authClient((state, url, options) => {
+  if (url.endsWith('/auth/refresh'))
+    return Promise.resolve(reply(true, { access_token: 'renewed' }));
+  const authorised = options.headers.Authorization === 'Bearer renewed';
+  return Promise.resolve(
+    authorised
+      ? {
+          ok: true,
+          status: 200,
+          headers: { get: () => 'text/event-stream' },
+          signal: options.signal,
+        }
+      : reply(false, { detail: 'Token has expired.' }, 401),
+  );
+});
+const stopper = new AbortController();
+const stream = await streamed.api.post(
+  '/sessions/s/chat/stream',
+  {},
+  { signal: stopper.signal, stream: true },
+);
+assert.equal(streamed.state.authToken, 'renewed');
+assert.equal(stream.signal.aborted, false);
+stopper.abort();
+assert.equal(stream.signal.aborted, true);
+assert.equal(streamed.api.pending, 0);
+console.log('An expired token is refreshed for streamed answers, which Stop can still cancel.');

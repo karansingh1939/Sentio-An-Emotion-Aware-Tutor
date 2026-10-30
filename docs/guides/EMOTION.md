@@ -10,8 +10,11 @@ side feature: the main product, cited study from your own notes, never depends o
 | Facial emotion CNN (7 classes, FER2013, 48×48 grayscale)                   | Server, `src/sentio/emotion/detector.py`    | emotion → learning state (for example `sad` → `struggling`) |
 | Attention estimate from MediaPipe face landmarks (eye openness, head pose) | Browser, `static/js/core/emotion_camera.js` | attention score and focus state sent as telemetry           |
 
-The learning state changes only the tutor's **tone and pacing** instructions (simpler
-wording, shorter answers when distracted). It never changes which notes are cited or
+The learning state changes the tutor's **tone and pacing** instructions (simpler
+wording, shorter answers when distracted). When a camera frame arrives through the
+emotion WebSocket or a chat request with a frame, a sustained "struggling" or
+"frustrated" state can also lower the session's difficulty by one step
+(`SessionManager._maybe_adapt_difficulty`). It never changes which notes are cited or
 whether the evidence check refuses an answer.
 
 ## Turning it on

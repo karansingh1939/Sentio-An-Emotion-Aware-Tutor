@@ -561,9 +561,7 @@ class KnowledgeBase:
             t_k_start = time.perf_counter()
             all_db_chunks = self.doc_repo.get_all_chunks(student_id=student_id)
             if document_id == "all":
-                subj_chunks = [c for c in all_db_chunks if c.get("subject") == subject]
-                if not subj_chunks:
-                    subj_chunks = all_db_chunks
+                subj_chunks = all_db_chunks
             elif isinstance(document_id, list):
                 subj_chunks = [c for c in all_db_chunks if c.get("document_id") in document_id]
             else:

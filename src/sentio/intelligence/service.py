@@ -1,5 +1,6 @@
 import logging
 import time
+from datetime import date, timedelta
 from typing import Any, Dict, List, Tuple
 
 from sqlalchemy import text
@@ -18,6 +19,19 @@ from sentio.intelligence.recommendation import RecommendationEngine
 from sentio.intelligence.session_summary import SessionSummaryEngine
 
 logger = logging.getLogger(__name__)
+
+
+def study_streak(timestamps, now):
+    """Consecutive local calendar days with a session, ending today or yesterday."""
+    days = {date.fromtimestamp(t) for t in timestamps if t}
+    day = date.fromtimestamp(now)
+    if day not in days:
+        day -= timedelta(days=1)
+    streak = 0
+    while day in days:
+        streak += 1
+        day -= timedelta(days=1)
+    return streak
 
 
 class IntelligenceService:
@@ -242,7 +256,7 @@ class IntelligenceService:
             strong_concepts=strong_concepts,
             misconceptions=misconceptions,
             review_priorities=review_priorities_list,
-            learning_streak=len(sessions_rows),
+            learning_streak=study_streak([r[2] for r in sessions_rows], current_time),
             avg_response_quality=overall_mastery,
             preferred_explanation_style="analogy" if "simplify" in weak_concepts else "standard",
             preferred_difficulty="beginner" if weak_concepts else "intermediate",

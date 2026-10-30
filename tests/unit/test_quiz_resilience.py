@@ -56,14 +56,15 @@ def progress(quiz):
     return attempts, mastery
 
 
-def test_summary_provider_failure_still_returns_saved_quiz_grade(quiz):
+def test_summary_is_plain_text_and_needs_no_model_call(quiz):
     quiz.backend.complete.side_effect = RuntimeError("Provider unavailable")
 
     result = quiz.service.score_quiz("quiz-1", {0: "Net force"}, quiz.session.session_id)
 
     assert result["total_score"] == 1.0
     assert result["feedback"][0]["is_correct"] is True
-    assert result["summary"].strip()
+    assert result["summary"].startswith("You scored 100%.")
+    quiz.backend.complete.assert_not_called()
     assert progress(quiz)[0] == 1
 
 

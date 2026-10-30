@@ -257,18 +257,7 @@ JSON Template:
         avg_score = total_correct_score / len(questions) if questions else 0.0
         passed = avg_score >= 0.6
 
-        # Build prompt to generate overall summary via LLM
-        summary_prompt = f"""Provide a warm, encouraging 2-3 sentence summary of student performance.
-Quiz: '{quiz["title"]}'
-Score: {avg_score:.1%} ({total_correct_score}/{len(questions)} correct)"""
-        try:
-            raw_summary, _ = self.agent.nlp._backend.complete(
-                summary_prompt, [], "Assess the performance."
-            )
-            summary = raw_summary.strip()
-        except Exception:
-            logger.warning("Quiz summary unavailable; returning deterministic grade.")
-            summary = f"You scored {avg_score:.0%}. Review the explanations and practice the concepts you missed."
+        summary = f"You scored {avg_score:.0%}. Review the explanations and practice the concepts you missed."
 
         scoring_result = {
             "total_score": avg_score,

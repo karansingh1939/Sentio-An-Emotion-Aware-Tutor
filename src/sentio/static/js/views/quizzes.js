@@ -373,6 +373,8 @@ export class QuizzesView {
       const result = await sentioAPI.post(
         `/quizzes/${quiz.quiz_id}/questions/${question.question_id}/check`,
         { answer: this.answers[index] },
+        // Short answers are graded by the local model, which can take minutes on CPU
+        { timeout: question.question_type === 'short_answer' ? 190000 : undefined },
       );
       if (this.quiz !== quiz) return;
       this.checks[index] = result;

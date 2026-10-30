@@ -33,18 +33,6 @@ window.setLegacySessionId = function (id) {
   }
 };
 
-function getAuthHeaders() {
-  const headers = { 'Content-Type': 'application/json' };
-  const token =
-    window.store && typeof window.store.getState === 'function'
-      ? window.store.getState('authToken')
-      : localStorage.getItem('sentio_token');
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  return headers;
-}
-
 // Emotion meta
 const EMOTIONS = ['angry', 'disgusted', 'fearful', 'happy', 'neutral', 'sad', 'surprised'];
 const EMOTION_EMOJI = {
@@ -458,16 +446,11 @@ async function sendMessage() {
   let sourcesPreview = null;
   let data = null;
   try {
-    const res = await fetch(`${API}/sessions/${currentSessionId}/chat/stream`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ message: msg, request_id: requestId }),
-      signal: controller.signal,
-    });
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.detail || 'Tutor generation failed. Please retry.');
-    }
+    const res = await window.sentioAPI.post(
+      `/sessions/${currentSessionId}/chat/stream`,
+      { message: msg, request_id: requestId },
+      { signal: controller.signal, stream: true },
+    );
     await readTutorEvents(res, (kind, value) => {
       if (getActiveSessionId() !== currentSessionId) return;
       if (kind === 'delta') {
@@ -510,9 +493,6 @@ async function sendMessage() {
       lastTutorResponseText = data.text;
       const playBtn = document.getElementById('play-speech-btn');
       if (playBtn) playBtn.disabled = false;
-
-      // Play the tutor response aloud
-      speakText(data.text);
     } else {
       toast('No response from tutor. Check server logs.', true);
       if (voiceModeActive) {
@@ -579,11 +559,7 @@ async function readTutorEvents(response, onEvent) {
 
 window.cancelTutorRequest = async (sid, requestId) => {
   try {
-    const response = await fetch(`${API}/sessions/${sid}/chat/${requestId}/cancel`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-    });
-    return response.ok && (await response.json()).accepted;
+    return (await window.sentioAPI.post(`/sessions/${sid}/chat/${requestId}/cancel`, {})).accepted;
   } catch (_) {
     return false;
   }
@@ -604,13 +580,7 @@ window.updateGrounding = async (documentId) => {
   if (!sid || getActiveSessionId() !== sid || owner !== window.store?.getState('currentUser')?.id)
     return;
   try {
-    const response = await fetch(`${API}/sessions/${sid}/grounding`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ document_id: documentId }),
-    });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.detail || 'Source update failed.');
+    await window.sentioAPI.post(`/sessions/${sid}/grounding`, { document_id: documentId });
     if (getActiveSessionId() !== sid || owner !== window.store?.getState('currentUser')?.id) return;
     const context = window.store?.getState('activeSession') || {};
     window.store?.setState('activeSession', {
@@ -632,13 +602,7 @@ window.updateSessionGoal = async (goalId) => {
   if (!sid || getActiveSessionId() !== sid || owner !== window.store?.getState('currentUser')?.id)
     return;
   try {
-    const response = await fetch(`${API}/sessions/${sid}/goal`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ goal_id: goalId || null }),
-    });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.detail || 'Goal update failed.');
+    await window.sentioAPI.post(`/sessions/${sid}/goal`, { goal_id: goalId || null });
     if (getActiveSessionId() !== sid || owner !== window.store?.getState('currentUser')?.id) return;
     const context = window.store?.getState('activeSession') || {};
     window.store?.setState('activeSession', {
