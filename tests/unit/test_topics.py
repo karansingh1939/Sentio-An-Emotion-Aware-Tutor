@@ -66,17 +66,17 @@ def test_questions_are_attributed_to_the_best_matching_passage():
 
 def test_topic_states_follow_the_ready_bar():
     assert topic_state([])["state"] == "not_started"
-    assert topic_state([True, True, True])["state"] == "practising"
-    assert topic_state([False, True, True, True, True])["state"] == "ready"
-    late_slip = topic_state([True, True, True, True, True, False, False])
+    assert topic_state([True, True])["state"] == "practising"
+    assert topic_state([False, True, True, True])["state"] == "ready"
+    late_slip = topic_state([True, True, True, True, False])
     assert late_slip == {
         "state": "practising",
-        "answers": 7,
-        "recent_correct": 3,
-        "recent_total": 5,
+        "answers": 5,
+        "recent_correct": 2,
+        "recent_total": 3,
     }
     assert is_weak(late_slip)
-    assert not is_weak(topic_state([True, True, True]))
+    assert not is_weak(topic_state([True, True]))
 
 
 def test_real_deck_layouts_cover_questions_abbreviations_subheadings_and_closing():

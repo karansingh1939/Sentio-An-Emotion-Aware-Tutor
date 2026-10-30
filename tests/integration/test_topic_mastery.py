@@ -109,7 +109,7 @@ def test_topics_follow_slides_and_quiz_answers_set_their_state(monkeypatch):
         _quiz(client, monkeypatch, owner, session, "deadlock", "Paging")
         lecture = client.get(f"/api/v1/documents/{document}/topics").json()
         assert _states(lecture) == {
-            "Paging": ("ready", 6, 5),
+            "Paging": ("ready", 6, 3),
             "Deadlock": ("practising", 3, 0),
         }
 

@@ -8,9 +8,9 @@ comes from the answers to questions on its pages. Everything here is determinist
 import re
 from collections import Counter
 
-READY_MIN_ANSWERS = 5
-READY_RECENT = 5
-READY_RECENT_CORRECT = 4
+READY_MIN_ANSWERS = 3
+READY_RECENT = 3
+READY_RECENT_CORRECT = 3
 MAX_TITLE = 80
 
 _CONTINUED = re.compile(r"[\s\-–—:.…(\[]*\bcont(inued|'d|d)?\.?[)\]]?\s*$", re.IGNORECASE)
@@ -148,7 +148,7 @@ def topic_state(results):
 
 
 def is_weak(topic):
-    """Practised, but recently below the Ready accuracy (4 of 5)."""
+    """Practised, with a wrong answer among the recent ones."""
     return (
         topic["state"] == "practising"
         and topic["recent_total"] > 0
