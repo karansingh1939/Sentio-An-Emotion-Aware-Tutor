@@ -77,3 +77,22 @@ def test_topic_states_follow_the_ready_bar():
     }
     assert is_weak(late_slip)
     assert not is_weak(topic_state([True, True, True]))
+
+
+def test_real_deck_layouts_cover_questions_abbreviations_subheadings_and_closing():
+    pages = [
+        (1, "Computer Networks\nCourse code: NET101\nWeek 2\nRouting"),
+        (2, "What is a Router?\nA router forwards packets."),
+        (3, "Static vs. Dynamic Routing\nTables are fixed or learned."),
+        (4, "Routing Table\nEach entry maps a prefix to a next hop."),
+        (5, "Routing Table- Example\nA default route catches the rest."),
+        (6, "Link-state Protocols\nRouters flood link states."),
+        (7, "Link State Protocols\nDijkstra computes paths."),
+        (8, "Thank You"),
+    ]
+    assert [(t["title"], t["first_page"], t["last_page"]) for t in build_topics(pages, "x")] == [
+        ("What is a Router?", 2, 2),
+        ("Static vs. Dynamic Routing", 3, 3),
+        ("Routing Table", 4, 5),
+        ("Link-state Protocols", 6, 7),
+    ]

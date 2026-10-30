@@ -115,7 +115,8 @@ class DocumentIngestionPipeline:
         pages = []
         for number, slide in enumerate(Presentation(filepath).slides, start=1):
             title = slide.shapes.title
-            lines = [title.text.strip()] if title is not None and title.text.strip() else []
+            heading = " ".join(title.text.split()) if title is not None else ""
+            lines = [heading] if heading else []
             body = [
                 shape for shape in slide.shapes if title is None or shape.shape_id != title.shape_id
             ]
