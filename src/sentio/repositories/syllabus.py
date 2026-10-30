@@ -10,7 +10,7 @@ import uuid
 from sqlalchemy import text
 
 from sentio.repositories.topics import TopicRepository
-from sentio.study.syllabus import item_status, match, summarise
+from sentio.study.syllabus import item_status, item_weights, match, summarise, vocabulary
 
 
 class SyllabusRepository:
@@ -34,7 +34,8 @@ class SyllabusRepository:
             for position, item in enumerate(items):
                 connection.execute(
                     text(
-                        "INSERT INTO syllabus_items VALUES (:id,:owner,:course,:unit,:title,:position,'auto',NULL)"
+                        "INSERT INTO syllabus_items (id,student_id,course_id,unit,title,position,link_mode,unit_hours) "
+                        "VALUES (:id,:owner,:course,:unit,:title,:position,'auto',:hours)"
                     ),
                     {
                         "id": str(uuid.uuid4()),
@@ -43,9 +44,18 @@ class SyllabusRepository:
                         "unit": item["unit"],
                         "title": item["title"],
                         "position": position,
+                        "hours": item.get("hours"),
                     },
                 )
         return True
+
+    def course_words(self, owner, course_id):
+        """The vocabulary of a course's lectures, for repairing a syllabus title."""
+        lectures = TopicRepository(self.engine).course_progress(owner, course_id, with_text=True)
+        topics = [
+            topic for lecture in (lectures or {}).get("lectures", []) for topic in lecture["topics"]
+        ]
+        return vocabulary(topic["text"] for topic in topics)
 
     def delete(self, owner, course_id):
         with self.engine.begin() as connection:
@@ -76,7 +86,7 @@ class SyllabusRepository:
                 dict(row)
                 for row in connection.execute(
                     text(
-                        "SELECT id,unit,title,link_mode,linked_topic_id FROM syllabus_items "
+                        "SELECT id,unit,title,link_mode,linked_topic_id,unit_hours FROM syllabus_items "
                         "WHERE course_id=:course AND student_id=:owner ORDER BY position"
                     ),
                     {"course": course_id, "owner": owner},
@@ -99,7 +109,7 @@ class SyllabusRepository:
         return {
             "course_id": course_id,
             "items": items,
-            "summary": summarise([item["status"] for item in items]),
+            "summary": summarise([item["status"] for item in items], item_weights(items)),
             "topics": [{key: topic[key] for key in _TOPIC_FIELDS} for topic in topics],
         }
 
