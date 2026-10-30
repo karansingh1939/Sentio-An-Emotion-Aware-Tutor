@@ -1,9 +1,10 @@
 """Sessions API routes."""
 
 import logging
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from pydantic import BaseModel
 
 from sentio.api.dependencies import PREFIX, _verify_session_owner, agent
 from sentio.api.schemas import CreateSessionRequest, GroundingRequest, SessionGoalRequest
@@ -146,6 +147,33 @@ def _owned_goal(owner, goal_id):
     if goal is None:
         raise HTTPException(404, "Goal not found or no longer active.")
     return goal
+
+
+class DifficultyChoice(BaseModel):
+    difficulty: Literal["beginner", "intermediate", "advanced"]
+
+
+@router.post(PREFIX + "/sessions/{session_id}/difficulty", tags=["Sessions"])
+def choose_difficulty(
+    session_id: str, req: DifficultyChoice, user: dict = Depends(get_current_user)
+):
+    """Set the level the learner chose and pin it: quiz streaks stop moving it until the
+    learner asks for a change in chat. Used by Undo after an automatic change."""
+    session = _verify_session_owner(session_id, user)
+    previous = (
+        session.difficulty,
+        session.metadata.get("difficulty_pinned"),
+        list(session.difficulty_log),
+    )
+    session.update_difficulty(req.difficulty, "learner_choice")
+    session.metadata["difficulty_pinned"] = True
+    try:
+        agent.sm.persister.save_session(session)
+    except Exception as e:
+        session.difficulty, session.metadata["difficulty_pinned"], session.difficulty_log = previous
+        logger.warning(f"Failed to persist chosen difficulty: {e}")
+        raise HTTPException(503, "Difficulty could not be saved. Retry.") from e
+    return {"difficulty": session.difficulty, "pinned": True}
 
 
 @router.post(PREFIX + "/sessions/{session_id}/goal", tags=["Sessions"])

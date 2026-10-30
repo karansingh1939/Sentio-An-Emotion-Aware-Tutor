@@ -25,6 +25,10 @@ Open http://127.0.0.1:8001 and leave the terminal open. Stop with Ctrl+C.
    passages explicitly labelled as a fallback, rather than claim a verified explanation.
    Selected-note chat always checks those sources, including requests to review or
    summarize them. Use Today for your revision plan and saved-practice progress.
+   The difficulty you chose stays unless you ask ("make it harder", "explain it more
+   simply") or your quiz answers show it: 3 correct in a row steps up, 2 wrong steps
+   down. Each change appears with its reason and an **Undo**, which keeps your level
+   until you ask for a change.
 5. Choose **Try a quiz** or **Make flashcards**. These use the current study notes
    without asking you to configure another session. Start with three items.
    Choose **Check answer** for instant feedback on one question; nothing is recorded

@@ -110,6 +110,14 @@ repaired or regenerated before any fallback. A document overview (summary, key
 concepts, suggested questions) is written as a background job from the document's
 opening passages and cached on the document row against its checksum.
 
+Difficulty (`tutor/difficulty.py`) has one policy: the learner's chosen level moves one
+step only on an explicit chat request (phrase patterns, not single words) or a quiz
+streak (3 correct up, 2 wrong down; the streak restarts after a change). `POST
+/sessions/{id}/difficulty` sets and pins a level, which quiz streaks then respect until the
+learner asks for a change. Changes are returned as `difficulty_change` (from, to, reason)
+on the stream `complete` event and on quiz results. Emotion and the learner model only
+shape tone and depth.
+
 Topic mastery (`study/topics.py`, `repositories/topics.py`): a lecture's topics are page
 ranges grouped by heading (slide titles; PDF page headings, skipping running headers),
 stored in `note_topics` with the document checksum and rebuilt when it changes. After a

@@ -12,7 +12,6 @@ from sentio.session.analytics import SessionAnalytics, SessionAnalyticsEngine
 from sentio.session.models import (
     EmotionEvent,
     QuizAttempt,
-    QuizTracker,
     Session,
     SessionStatus,
 )
@@ -203,10 +202,7 @@ class SessionManager:
         emotion_result,  # EmotionResult from sentio.emotion.detector
         strategy_active: str = "standard",
     ):
-        """
-        Record a new emotion detection result into the session timeline.
-        Also checks if difficulty should be adapted.
-        """
+        """Record an emotion detection result. It informs tone only, never difficulty."""
         session = self.get_or_raise(session_id)
         if not session.is_active:
             return
@@ -220,9 +216,6 @@ class SessionManager:
         )
         session.emotion_timeline.record(event)
         session.touch()
-
-        # Check if we should auto-adapt difficulty
-        self._maybe_adapt_difficulty(session)
 
     def record_quiz_attempt(
         self,
@@ -292,13 +285,14 @@ class SessionManager:
         )
 
         # 3. Difficulty adaptation based on quiz performance
-        self._maybe_adapt_difficulty(session)
+        change = self._maybe_adapt_difficulty(session)
 
         logger.debug(
             f"Quiz attempt | session={session_id[:8]} | "
             f"correct={correct} | streak_correct={session.quiz_tracker.consecutive_correct} "
             f"| streak_wrong={session.quiz_tracker.consecutive_wrong}"
         )
+        return change
 
     def record_exchange(
         self,
@@ -316,34 +310,25 @@ class SessionManager:
     # ── Difficulty Adaptation ──────────────────
 
     def _maybe_adapt_difficulty(self, session: Session):
+        """Step the level after a quiz streak (sentio.tutor.difficulty), unless it is pinned.
+
+        The streak restarts after a change, so one streak moves the level by one step.
+        Returns the change for the learner to see, or None.
         """
-        Check signals and update difficulty if thresholds are met.
-        Uses both emotion state AND quiz streaks.
-        """
+        from sentio.tutor.difficulty import describe, step, streak_change
+
         qt = session.quiz_tracker
-        state = session.current_learning_state
-
-        # Import the standalone adapter logic
-        from sentio.rag.knowledge_base import ContentAdapter, Difficulty
-
-        adapter = ContentAdapter()
-        new_diff = adapter.adapt_difficulty(
-            current=Difficulty(session.difficulty),
-            learning_state=state,
-            consecutive_correct=qt.consecutive_correct,
-            consecutive_wrong=qt.consecutive_wrong,
-        )
-
-        if new_diff.value != session.difficulty:
-            reason = self._build_reason(state, qt)
-            session.update_difficulty(new_diff.value, reason)
-
-    def _build_reason(self, state: str, qt: QuizTracker) -> str:
-        if qt.consecutive_correct >= 3:
-            return f"{qt.consecutive_correct}_correct_streak"
-        if qt.consecutive_wrong >= 2:
-            return f"{qt.consecutive_wrong}_wrong_streak"
-        return f"emotion_state_{state}"
+        change = streak_change(qt.consecutive_correct, qt.consecutive_wrong)
+        if change is None or session.metadata.get("difficulty_pinned"):
+            return None
+        direction, reason = change
+        previous = session.difficulty
+        new_level = step(previous, direction)
+        if new_level == previous:
+            return None
+        session.update_difficulty(new_level, reason)
+        qt.consecutive_correct = qt.consecutive_wrong = 0
+        return describe(previous, new_level, reason)
 
     # ── Queries & Analytics ────────────────────
 

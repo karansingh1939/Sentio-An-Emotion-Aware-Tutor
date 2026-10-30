@@ -105,6 +105,20 @@ async def test_multi_file_upload_into_a_course_then_study_it(monkeypatch):
             )
             chips = await page.locator(".msg.tutor .cite-chip:not(.inline)").all_inner_texts()
             assert "paging.pptx · slide 2" in chips
+
+            # Asking for harder work changes the level visibly, and Undo restores it.
+            await page.fill("#msg-input", "Can you make it harder?")
+            await page.click("#send-btn")
+            notice = page.locator(".difficulty-notice")
+            await notice.wait_for()
+            assert "Difficulty is now intermediate (you asked for harder)" in (
+                await notice.inner_text()
+            )
+            await notice.get_by_role("button", name="Undo").click()
+            await page.wait_for_selector('.difficulty-notice:has-text("Difficulty stays beginner")')
+            assert (
+                (await page.locator("#active-bar-meta").inner_text()).lower().startswith("beginner")
+            )
             assert errors == [], errors
             await browser.close()
     finally:

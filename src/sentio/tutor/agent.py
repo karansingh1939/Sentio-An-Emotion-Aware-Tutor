@@ -92,6 +92,7 @@ class AgentResponse:
     topics_covered: list
     total_latency_ms: float
     source_citations: List[dict] = field(default_factory=list)
+    difficulty_reason: Optional[str] = None
 
     # Timing
     timestamp: float = field(default_factory=time.time)
@@ -406,6 +407,7 @@ class TutorAgent:
             learning_state=final_state.get("learning_state", learning_state),
             strategy=final_state.get("strategy", strategy),
             difficulty=final_state.get("difficulty", difficulty),
+            difficulty_reason=final_state.get("difficulty_reason"),
             engagement_score=engagement,
             detected_emotion=emotion_result.emotion,
             emotion_confidence=emotion_result.confidence,
