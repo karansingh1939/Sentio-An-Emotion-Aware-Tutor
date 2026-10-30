@@ -1,4 +1,4 @@
-import { escapeHtml, pageLabel } from '../core/html.js';
+import { escapeHtml, pageLabel, pageRange } from '../core/html.js';
 // Documents View Controller for Sentio (ES Module)
 import { sentioAPI } from '../core/api.js';
 import { toast } from '../components/ui.js';
@@ -6,19 +6,13 @@ import { store } from '../core/store.js';
 import { pendingJobKey, runPracticeJob } from '../core/jobs.js';
 
 const NEW_COURSE = '__new__';
+const MAX_PRACTICE_TOPICS = 5;
 const STATE_LABEL = {
   ready: 'Ready',
   practising: 'Practising',
   not_started: 'Not started',
   no_notes: 'Not in your notes yet',
 };
-
-function pageRange(topic) {
-  const label = pageLabel(topic.filename, '').trim().toLowerCase();
-  return topic.first_page === topic.last_page
-    ? `${label} ${topic.first_page}`
-    : `${label}s ${topic.first_page}–${topic.last_page}`;
-}
 
 // One row per topic: where it is, how it is going, and what to do next.
 function topicList(topics, { showLecture = false } = {}) {
@@ -613,18 +607,21 @@ export class DocumentsView {
             .join('')}`;
         const weak = body.querySelector('.practise-weak-btn');
         if (weak)
-          weak.onclick = () =>
+          weak.onclick = () => {
+            const topics = progress.weak.slice(0, MAX_PRACTICE_TOPICS);
             this.startStudy(
               {
                 subject: course.name,
-                topic: progress.weak
+                topic: topics
                   .map((topic) => topic.title)
                   .join('; ')
                   .slice(0, 150),
                 documentId: `course:${course.id}`,
+                topicIds: topics.map((topic) => topic.id),
               },
               '#/quizzes',
             );
+          };
       }),
     );
   }
@@ -645,6 +642,7 @@ export class DocumentsView {
           subject: course?.name || 'My notes',
           topic: item.title,
           documentId: documents.length === 1 ? documents[0] : `course:${courseId}`,
+          topicIds: item.topics.map((topic) => topic.id),
         },
         '#/quizzes',
       );
@@ -719,9 +717,14 @@ export class DocumentsView {
       topic: topic.title,
       documentId: topic.document_id,
     };
-    if (action === 'review' || action === 'practise') {
+    if (action === 'review') {
       modal?.close();
-      await this.startStudy(study, action === 'review' ? '#/tutor' : '#/quizzes');
+      await this.startStudy(study, '#/tutor');
+      return;
+    }
+    if (action === 'practise') {
+      modal?.close();
+      await this.startStudy({ ...study, topicIds: [topic.id] }, '#/quizzes');
       return;
     }
     try {

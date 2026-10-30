@@ -436,6 +436,42 @@ class KnowledgeBase:
         content.evidence_outcome = "no_source" if document_id in (None, "none") else "insufficient"
         return content
 
+    def topic_content(self, subject, topic, difficulty, topics) -> RetrievedContent:
+        """Chosen topics' own slides as source material, in place of search results."""
+        from sentio.study.topics import MAX_PRACTICE_TEXT, fit_pages
+
+        content = RetrievedContent(
+            subject=subject,
+            topic=topic,
+            difficulty=Difficulty(difficulty),
+            learning_state="neutral",
+            strategy=tutor_cfg.STRATEGY_MAP.get("neutral", "standard"),
+            is_rag=True,
+            evidence_outcome="retrieved",
+        )
+        parts = []
+        for chosen in topics:
+            for page, passage in fit_pages(chosen["pages"], MAX_PRACTICE_TEXT // len(topics)):
+                index = len(content.source_citations) + 1
+                parts.append(
+                    f"[Document: {chosen['filename']} | Citation Index: {index} | "
+                    f"Topic: {chosen['title']}]\n{passage}\n"
+                )
+                content.source_citations.append(
+                    {
+                        "filename": chosen["filename"],
+                        "page": page,
+                        "document_id": chosen["document_id"],
+                        "chunk_id": None,
+                        "similarity_score": 1.0,
+                        "text": passage,
+                        "topic_id": chosen["id"],
+                        "topic": chosen["title"],
+                    }
+                )
+        content.rag_context = "\n".join(parts)
+        return content
+
     def _compute_single_bm25_score(self, searcher, query: str, doc_id: str) -> float:
         """Compute BM25 score of a single document ID for a query."""
         query_tokens = searcher._tokenize(query)

@@ -3,7 +3,12 @@ import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
 const malicious = '<img src=x onerror="alert(1)">';
-const container = { innerHTML: '', querySelector: () => null, querySelectorAll: () => [] };
+const container = {
+  innerHTML: '',
+  addEventListener: () => {},
+  querySelector: () => null,
+  querySelectorAll: () => [],
+};
 const context = vm.createContext({ document: { getElementById: () => container } });
 async function loadView(name) {
   const module = new vm.SourceTextModule(
@@ -44,6 +49,7 @@ quiz.quiz = {
   provenance: {
     mode: 'source_recall',
     sources: [{ filename: malicious, page: 2 }],
+    topics: [{ title: malicious, filename: 'a.pptx', first_page: 2, last_page: 3 }],
     edited: true,
   },
 };
@@ -51,6 +57,7 @@ quiz.bindQuizEvents = () => {};
 quiz.renderQuizActive();
 assert.ok(!container.innerHTML.includes(malicious), 'Quiz renders model output as executable HTML');
 assert.ok(container.innerHTML.includes('&lt;img'));
+assert.ok(container.innerHTML.includes('(slides 2–3)'), 'Quiz names the slides it covers');
 assert.ok(container.innerHTML.includes('Quoted from your notes'), 'Fallback quiz is labelled');
 assert.ok(container.innerHTML.includes('edited by you'), 'Edited quiz is labelled');
 assert.ok(container.innerHTML.includes('id="edit-question-btn"'), 'Saved question can be edited');

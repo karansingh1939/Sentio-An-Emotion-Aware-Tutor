@@ -33,6 +33,7 @@ context.document = {
   }),
 };
 context.STRATEGY_LABEL = {};
+context.window = {};
 context.timeNow = () => '';
 vm.runInContext(
   source.slice(

@@ -12,6 +12,8 @@ READY_MIN_ANSWERS = 3
 READY_RECENT = 3
 READY_RECENT_CORRECT = 3
 MAX_TITLE = 80
+MAX_PRACTICE_TOPICS = 5
+MAX_PRACTICE_TEXT = 3000  # Characters of slides in one quiz prompt.
 
 _CONTINUED = re.compile(r"[\s\-–—:.…(\[]*\bcont(inued|'d|d)?\.?[)\]]?\s*$", re.IGNORECASE)
 # A sentence break inside a line, but not after an abbreviation ("Hardwired vs. Microprogrammed").
@@ -103,30 +105,76 @@ def _words(text):
     return {word for word in _WORDS.findall((text or "").casefold()) if word not in _STOP}
 
 
-def attribute(question, citations):
-    """The (document_id, page) of the retrieved passage that best matches a question.
+def fit_pages(pages, budget):
+    """(page, text) pairs spread evenly across a topic, within a budget of characters."""
+    total = sum(len(text) for _, text in pages)
+    keep = max(1, len(pages) * budget // total) if total > budget else len(pages)
+    fitted = []
+    for index in range(keep):
+        page, text = pages[index * len(pages) // keep]
+        if budget > 0:
+            fitted.append((page, text[:budget]))
+            budget -= len(text)
+    return fitted
 
-    The question, its answer and its explanation are compared with each passage by word
-    overlap; ties keep the higher-ranked passage. Returns (None, None) when nothing
-    overlaps or a passage has no document.
-    """
-    asked = _words(
+
+def _asked(question):
+    return _words(
         " ".join(
             str(question.get(field) or "")
             for field in ("question_text", "correct_answer", "explanation")
         )
     )
+
+
+def _overlap(question, citation):
+    return len(_asked(question) & _words(citation.get("text")))
+
+
+def _best_overlap(question, citations):
+    """The passage sharing the most words with a question; ties keep the higher-ranked one."""
     best, best_score = None, 0
     for citation in citations:
-        score = len(asked & _words(citation.get("text")))
+        score = _overlap(question, citation)
         if score > best_score:
             best, best_score = citation, score
-    if best is None or not best.get("document_id"):
+    return best
+
+
+def place(citation):
+    """The (document_id, page) of a passage, or (None, None) without a document."""
+    if citation is None or not citation.get("document_id"):
         return None, None
     try:
-        return best["document_id"], int(best["page"])
+        return citation["document_id"], int(citation["page"])
     except (TypeError, ValueError):
-        return best["document_id"], None
+        return citation["document_id"], None
+
+
+def attribute(question, citations):
+    """The (document_id, page) of the retrieved passage that best matches a question."""
+    return place(_best_overlap(question, citations))
+
+
+def locate(question, citations, topic=None):
+    """The passage a question came from, and how that was decided.
+
+    The model names a passage by its Citation Index. That is kept when the passage exists
+    and shares at least half as many words with the question as the best match does.
+    Otherwise the best word overlap decides, among `topic` (the passages of the topic the
+    question was asked for) when given; a question asked for a topic stays in that topic
+    even when nothing overlaps.
+    """
+    index = question.get("source")
+    if isinstance(index, int) and 1 <= index <= len(citations):
+        named = _overlap(question, citations[index - 1])
+        strongest = _best_overlap(question, citations)
+        if named and 2 * named >= _overlap(question, strongest):
+            return citations[index - 1], "model"
+    best = _best_overlap(question, topic or citations)
+    if best is not None:
+        return best, "overlap"
+    return (topic[0], "topic") if topic else (None, "none")
 
 
 def topic_state(results):

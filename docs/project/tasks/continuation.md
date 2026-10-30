@@ -574,3 +574,15 @@ without a list is one topic). Live word-overlap matching to lecture topics (titl
 text x1, threshold 0.5, up to 3). Status from topic states; percent ready. Library course
 panel shows the syllabus, gaps ("Not in your notes yet"), match correction and Practise.
 Next: Phase 4 (camera mode switch on the study page).
+
+## Exact topic practice - 30 October 2026
+
+Branch: feature/topic-practice (stacked on feature/syllabus-progress). Sessions carry
+`topic_ids` (max 5, owner and source checked, in the study snapshot, cleared when the notes
+change). `KnowledgeBase.topic_content` builds quiz context from the topics' own pages;
+`study/topics.py` `fit_pages` caps it and `locate` places questions (named Citation Index
+if checked, then word overlap, then the assigned topic). Multi-topic quizzes take turns.
+`provenance.topics` and `provenance.located` record what happened; the quiz header shows
+"From: ...". Topic ids are now deterministic: two concurrent builds used to give the page
+ids that no longer existed. Fixed `npm test`, which had stopped at stale test stubs since
+Phase 2. Next: Ready fades with FSRS (`tmp/plans/improvements-topic-practice-memory-matching.md`).

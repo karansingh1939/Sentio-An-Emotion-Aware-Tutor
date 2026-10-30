@@ -72,10 +72,10 @@ flowchart LR
   suggested questions, clickable citations, instant answer checks, session goals,
   editable quizzes with revision checks, practice provenance, FSRS spaced repetition
   with the next interval shown on each rating.
-- **Topic mastery per lecture** — topics come from slide titles and page headings; every
-  quiz question is attributed to the slide it best matches, so each topic shows Not
-  started, Practising or Ready, and weak topics link back to their slides with one-click
-  review or practice.
+- **Topic mastery per lecture** — topics come from slide titles and page headings;
+  practising a topic quizzes on exactly its slides, and the model names each question's
+  slide for the server to check, so each topic shows Not started, Practising or Ready, and
+  weak topics link back to their slides with one-click review or practice.
 - **Syllabus progress** — paste or upload the course syllabus; each syllabus topic is
   matched to lecture topics, so the course shows a percentage ready and lists the topics
   your notes don't cover yet. Matches can be corrected.

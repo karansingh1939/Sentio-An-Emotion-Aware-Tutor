@@ -15,7 +15,7 @@ import re
 import threading
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, TypeVar
 
-from pydantic import BaseModel, Field, ValidationError, model_validator
+from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +42,16 @@ class QuizQuestion(BaseModel):
     topic: Optional[str] = Field(
         default="", description="Specific educational topic or sub-concept"
     )
+    source: Optional[int] = Field(
+        default=None, description="Citation Index of the passage this question is based on"
+    )
+
+    @field_validator("source", mode="before")
+    @classmethod
+    def readable_source(cls, value):
+        # The server checks the source, so an oddly written one never fails the quiz.
+        digits = re.search(r"\d+", str(value))
+        return int(digits[0]) if digits else None
 
     @model_validator(mode="after")
     def validate_answer(self):

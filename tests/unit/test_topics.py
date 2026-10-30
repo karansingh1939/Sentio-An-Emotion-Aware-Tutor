@@ -1,6 +1,14 @@
 """Topics from slide/page headings, question attribution and topic states."""
 
-from sentio.study.topics import attribute, build_topics, is_weak, topic_state
+from sentio.study.topics import (
+    attribute,
+    build_topics,
+    fit_pages,
+    is_weak,
+    locate,
+    place,
+    topic_state,
+)
 
 
 def test_slides_with_the_same_title_form_one_topic():
@@ -96,3 +104,55 @@ def test_real_deck_layouts_cover_questions_abbreviations_subheadings_and_closing
         ("Routing Table", 4, 5),
         ("Link-state Protocols", 6, 7),
     ]
+
+
+CITATIONS = [
+    {
+        "document_id": "d1",
+        "page": 2,
+        "text": "A page table maps pages to frames.",
+        "topic": "Paging",
+    },
+    {"document_id": "d1", "page": 5, "text": "Deadlock needs circular wait.", "topic": "Deadlock"},
+]
+DEADLOCK = {"question_text": "What does deadlock need?", "correct_answer": "Circular wait"}
+
+
+def test_a_named_passage_is_kept_when_it_shares_words_with_the_question():
+    assert locate({**DEADLOCK, "source": 2}, CITATIONS) == (CITATIONS[1], "model")
+    assert place(CITATIONS[1]) == ("d1", 5)
+    assert place(None) == (None, None)
+
+
+def test_a_wrong_or_missing_passage_falls_back_to_word_overlap():
+    for source in (None, 0, 3, 1):
+        assert locate({**DEADLOCK, "source": source}, CITATIONS) == (CITATIONS[1], "overlap")
+    assert locate({"question_text": "Unrelated?"}, CITATIONS) == (None, "none")
+
+
+def test_a_named_passage_far_weaker_than_the_best_match_is_not_believed():
+    citations = [
+        {"document_id": "d1", "page": 1, "text": "Memory uses frames."},
+        {"document_id": "d1", "page": 2, "text": "Deadlock needs circular wait and hold."},
+    ]
+    question = {"question_text": "Does deadlock need circular wait and memory?"}
+    assert locate({**question, "source": 1}, citations) == (citations[1], "overlap")
+    close = {"question_text": "Does memory deadlock?"}
+    assert locate({**close, "source": 1}, citations) == (citations[0], "model")
+
+
+def test_a_question_asked_for_a_topic_stays_in_it():
+    paging = CITATIONS[:1]
+    assert locate({"question_text": "Unrelated?"}, CITATIONS, paging) == (paging[0], "topic")
+    assert locate(DEADLOCK, CITATIONS, paging) == (paging[0], "topic")
+    assert locate({**DEADLOCK, "source": 2}, CITATIONS, paging) == (CITATIONS[1], "model")
+
+
+def test_long_topics_are_sampled_evenly_within_the_budget():
+    pages = [(n, "x" * 100) for n in range(1, 11)]
+    assert fit_pages(pages, 5000) == pages
+    fitted = fit_pages(pages, 500)
+    assert [page for page, _ in fitted] == [1, 3, 5, 7, 9]
+    assert [(page, len(text)) for page, text in fit_pages([(1, "x" * 900)], 300)] == [(1, 300)]
+    uneven = fit_pages([(1, "x" * 900), (2, "y" * 100)], 500)
+    assert sum(len(text) for _, text in uneven) <= 500
