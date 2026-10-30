@@ -404,6 +404,7 @@ class KnowledgeBase:
                         {
                             "filename": filename,
                             "page": page,
+                            "document_id": payload.get("document_id"),
                             "chunk_id": r["id"],
                             "similarity_score": round(score, 3),
                             "text": r["text"],

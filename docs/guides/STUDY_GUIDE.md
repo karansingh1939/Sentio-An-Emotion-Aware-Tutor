@@ -38,6 +38,14 @@ Open http://127.0.0.1:8001 and leave the terminal open. Stop with Ctrl+C.
    come back; the FSRS scheduler sets the interval so you review a card when your chance
    of recalling it has fallen to about 90%. Due reviews and saved work survive restart.
    Progress estimates include self-reported ratings; they are not exam results.
+7. See how each lecture is going: open **Progress by topic** under a course, or
+   **Topics** beside a lecture. Topics follow slide titles (PDF page headings; Word and
+   text files form one topic). Each topic is **Not started**, **Practising** or
+   **Ready** (at least 5 answers, and 4 of the last 5 correct). **Weak topics** lists
+   practised topics below that bar with their slides; **Review** opens the tutor on the
+   topic and **Practise** prepares a quiz on it. **Practise weak topics** covers all of
+   them at once. You can rename a topic or merge it into the one above. Only quizzes
+   taken after this update count, and the result is a practice estimate.
 
 To change notes, return to Library and choose Study on the new document. Saved
 practice remains accessible. Settings contains diagnostics, data export and account

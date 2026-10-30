@@ -185,8 +185,12 @@ JSON Template:
         # 6. Generate quiz_id and save to database
         quiz_id = str(uuid.uuid4())
         provenance = practice_provenance(mode, retrieved, self.agent.nlp._backend, source_snapshot)
+        from sentio.study.topics import attribute
+
+        citations = getattr(retrieved, "source_citations", [])
         for index, question in enumerate(quiz_dict["questions"]):
             question["question_id"] = f"{quiz_id}_q{index}"
+            question["source_document_id"], question["source_page"] = attribute(question, citations)
 
         def save(connection=None):
             self.agent.sm.save_quiz(
@@ -295,6 +299,7 @@ JSON Template:
                         student_answer=feedback["student_answer"],
                         score=feedback["score"],
                         connection=connection,
+                        question_id=question.get("question_id"),
                     )
                 results[answers_key] = result
                 repository.save_results(connection, quiz_id, results)

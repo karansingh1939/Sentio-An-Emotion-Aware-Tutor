@@ -543,3 +543,14 @@ built-in curriculum (knowledge_base.py 1,208 -> 516 lines); quizzes and flashcar
 require notes, and old `none` sessions get a "choose notes" reply. The tutor prompt keeps
 its CURRICULUM REFERENCE header so saved evaluation prompt hashes stay reproducible.
 Next: Phase 2 (topic maps, per-topic mastery, weak parts).
+
+## Phase 2: topics and mastery - 30 October 2026
+
+Branch: feature/topic-mastery (stacked on feature/notes-first). Topic maps per lecture
+(`note_topics`, deterministic from slide titles / page headings, checksum-invalidated,
+rename and merge-up). Questions get `source_document_id`/`source_page` by word overlap with
+retrieved passages (citations now include `document_id`); `quiz_attempts.question_id` links
+answers. GET /documents/{id}/topics, GET /courses/{id}/progress, PATCH /topics/{id},
+POST /topics/{id}/merge. Library shows course progress, a Progress-by-topic panel with
+weak topics and Review/Practise buttons, and a Topics dialog per lecture. Quiz subject is
+optional now. Not done: flashcards in the Ready rule; adaptive-difficulty rework (2b).

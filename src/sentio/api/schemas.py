@@ -56,7 +56,7 @@ class CreateGoalRequest(BaseModel):
 class QuizGenerateRequest(BaseModel):
     student_id: str = Field(..., description="Student ID")
     session_id: str = Field(..., description="Active Session ID")
-    subject: str = Field(..., description="Subject")
+    subject: str = Field("My notes", max_length=120, description="Session label")
     topic: str = Field(..., description="Topic")
     difficulty: str = Field("intermediate", description="beginner | intermediate | advanced")
     num_questions: int = Field(3, ge=1, le=20, description="Number of questions to generate")

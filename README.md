@@ -72,6 +72,10 @@ flowchart LR
   suggested questions, clickable citations, instant answer checks, session goals,
   editable quizzes with revision checks, practice provenance, FSRS spaced repetition
   with the next interval shown on each rating.
+- **Topic mastery per lecture** — topics come from slide titles and page headings; every
+  quiz question is attributed to the slide it best matches, so each topic shows Not
+  started, Practising or Ready, and weak topics link back to their slides with one-click
+  review or practice.
 - **Optional emotion-aware tone** — my earlier facial-emotion CNN (FER2013) and browser
   attention tracking, now an opt-in, consented side feature
   ([details](docs/guides/EMOTION.md)).

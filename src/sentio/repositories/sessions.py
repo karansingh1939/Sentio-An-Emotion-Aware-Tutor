@@ -333,6 +333,29 @@ class SessionPersister:
                 )
             if "provenance_json" not in quiz_columns:
                 conn.execute(text("ALTER TABLE quizzes ADD COLUMN provenance_json TEXT"))
+            question_columns = {
+                row[1] for row in conn.execute(text("PRAGMA table_info(quiz_questions)"))
+            }
+            if "source_document_id" not in question_columns:
+                conn.execute(text("ALTER TABLE quiz_questions ADD COLUMN source_document_id TEXT"))
+                conn.execute(text("ALTER TABLE quiz_questions ADD COLUMN source_page INTEGER"))
+            attempt_columns = {
+                row[1] for row in conn.execute(text("PRAGMA table_info(quiz_attempts)"))
+            }
+            if "question_id" not in attempt_columns:
+                conn.execute(text("ALTER TABLE quiz_attempts ADD COLUMN question_id TEXT"))
+            conn.execute(
+                text(
+                    "CREATE TABLE IF NOT EXISTS note_topics (id TEXT PRIMARY KEY, student_id TEXT NOT NULL, "
+                    "document_id TEXT NOT NULL, title TEXT NOT NULL, first_page INTEGER NOT NULL, "
+                    "last_page INTEGER NOT NULL, position INTEGER NOT NULL, checksum TEXT NOT NULL)"
+                )
+            )
+            conn.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS idx_note_topics_document ON note_topics(document_id)"
+                )
+            )
             conn.execute(
                 text("""
                 CREATE TABLE IF NOT EXISTS flashcard_decks (
