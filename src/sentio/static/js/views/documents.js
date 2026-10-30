@@ -6,6 +6,42 @@ import { store } from '../core/store.js';
 import { pendingJobKey, runPracticeJob } from '../core/jobs.js';
 
 const NEW_COURSE = '__new__';
+const STATE_LABEL = { ready: 'Ready', practising: 'Practising', not_started: 'Not started' };
+
+function pageRange(topic) {
+  const label = pageLabel(topic.filename, '').trim().toLowerCase();
+  return topic.first_page === topic.last_page
+    ? `${label} ${topic.first_page}`
+    : `${label}s ${topic.first_page}–${topic.last_page}`;
+}
+
+// One row per topic: where it is, how it is going, and what to do next.
+function topicList(topics, { showLecture = false } = {}) {
+  if (!topics.length) return '<p class="muted">No topics found in these notes yet.</p>';
+  return `<ul class="topic-list">${topics
+    .map(
+      (topic, index) => `
+      <li class="topic-row" data-topic="${escapeHtml(topic.id)}">
+        <div class="topic-main">
+          <strong>${escapeHtml(topic.title)}</strong>
+          <span class="muted">${showLecture ? escapeHtml(topic.filename) + ' · ' : ''}${escapeHtml(pageRange(topic))}${topic.answers ? ` · ${topic.recent_correct} of ${topic.recent_total} correct recently` : ''}</span>
+        </div>
+        <span class="topic-state ${escapeHtml(topic.state)}">${STATE_LABEL[topic.state]}</span>
+        <div class="topic-actions">
+          <button class="workspace-action" data-topic-action="review" data-topic="${escapeHtml(topic.id)}">Review</button>
+          <button class="workspace-action primary" data-topic-action="practise" data-topic="${escapeHtml(topic.id)}">Practise</button>
+          ${showLecture ? '' : `<button class="link-quiet" data-topic-action="rename" data-topic="${escapeHtml(topic.id)}">Rename</button>`}
+          ${showLecture || index === 0 ? '' : `<button class="link-quiet" data-topic-action="merge" data-topic="${escapeHtml(topic.id)}" title="Join this topic to the one above">Merge up</button>`}
+        </div>
+      </li>`,
+    )
+    .join('')}</ul>`;
+}
+
+function progressLine(summary) {
+  if (!summary.total) return 'No topics yet.';
+  return `${summary.ready} of ${summary.total} topics ready · ${summary.practising} practising · ${summary.not_started} not started`;
+}
 
 export class DocumentsView {
   constructor(containerId) {
@@ -19,6 +55,8 @@ export class DocumentsView {
     this.revision = 0;
     this.uploadInProgress = false;
     this.justUploadedId = null;
+    this.topics = new Map();
+    this.container.addEventListener('click', (event) => this.onTopicAction(event));
   }
 
   async init() {
@@ -65,6 +103,7 @@ export class DocumentsView {
       if (!this.courses.some((course) => course.id === this.uploadCourse)) this.uploadCourse = '';
       this.render();
       this.bindEvents();
+      this.loadCourseProgress(current);
       if (localStorage.getItem(pendingJobKey('/documents/jobs', false))) this.uploadFile(null);
     } catch (e) {
       if (!current()) return;
@@ -124,6 +163,7 @@ export class DocumentsView {
           <td style="padding:10px;text-align:right;">
             <button class="workspace-action primary study-doc-btn" data-id="${escapeHtml(d.id)}" ${d.status === 'indexed' ? '' : 'disabled'}>Study</button>
             <button class="workspace-action preview-doc-btn" data-id="${escapeHtml(d.id)}">Preview</button>
+            <button class="workspace-action topics-doc-btn" data-id="${escapeHtml(d.id)}" ${d.status === 'indexed' ? '' : 'disabled'}>Topics</button>
             <button class="link-danger delete-doc-btn" data-id="${escapeHtml(d.id)}">Delete</button>
           </td>
         </tr>
@@ -148,6 +188,15 @@ export class DocumentsView {
               : ''
           }
         </div>
+        ${
+          course
+            ? `<p class="muted course-progress" data-course="${escapeHtml(course.id)}">Loading progress…</p>
+              <details class="course-progress-panel" data-course="${escapeHtml(course.id)}">
+                <summary>Progress by topic</summary>
+                <div class="course-progress-body"></div>
+              </details>`
+            : ''
+        }
         ${
           docs.length
             ? `<div style="overflow-x:auto;">
@@ -280,6 +329,9 @@ export class DocumentsView {
     this.applyFilter();
     this.container.querySelectorAll('.preview-doc-btn').forEach((button) => {
       button.onclick = () => this.previewDocument(button.dataset.id);
+    });
+    this.container.querySelectorAll('.topics-doc-btn').forEach((button) => {
+      button.onclick = () => this.showDocumentTopics(button.dataset.id);
     });
 
     // 2. Courses: create, rename, delete, move lectures
@@ -441,6 +493,120 @@ export class DocumentsView {
     });
     const status = this.container.querySelector('#doc-search-status');
     if (status) status.textContent = `${shown} matching material${shown === 1 ? '' : 's'}`;
+  }
+
+  remember(topics) {
+    for (const topic of topics) this.topics.set(topic.id, topic);
+  }
+
+  // Each course shows how many topics are ready, a per-topic panel and its weak topics.
+  async loadCourseProgress(current) {
+    await Promise.all(
+      this.courses.map(async (course) => {
+        let progress;
+        try {
+          progress = await sentioAPI.get(`/courses/${encodeURIComponent(course.id)}/progress`);
+        } catch {
+          return;
+        }
+        if (!current()) return;
+        const line = this.container.querySelector(`.course-progress[data-course="${course.id}"]`);
+        const body = this.container.querySelector(
+          `.course-progress-panel[data-course="${course.id}"] .course-progress-body`,
+        );
+        if (!line || !body) return;
+        const topics = progress.lectures.flatMap((lecture) => lecture.topics);
+        this.remember(topics);
+        line.textContent = `${progressLine(progress.summary)}. Practice estimate from your quiz answers.`;
+        body.innerHTML = `
+          ${
+            progress.weak.length
+              ? `<div class="weak-topics stack">
+                  <div class="row-between"><h4>Weak topics</h4>
+                    <button class="workspace-action primary practise-weak-btn" data-course="${escapeHtml(course.id)}">Practise weak topics</button>
+                  </div>
+                  ${topicList(progress.weak, { showLecture: true })}
+                </div>`
+              : ''
+          }
+          ${progress.lectures
+            .map(
+              (lecture) =>
+                `<div class="stack"><h4>${escapeHtml(lecture.filename)}</h4>${topicList(lecture.topics)}</div>`,
+            )
+            .join('')}`;
+        const weak = body.querySelector('.practise-weak-btn');
+        if (weak)
+          weak.onclick = () =>
+            this.startStudy(
+              {
+                subject: course.name,
+                topic: progress.weak
+                  .map((topic) => topic.title)
+                  .join('; ')
+                  .slice(0, 150),
+                documentId: `course:${course.id}`,
+              },
+              '#/quizzes',
+            );
+      }),
+    );
+  }
+
+  async showDocumentTopics(documentId) {
+    const owner = store.getState('currentUser')?.id;
+    try {
+      const lecture = await sentioAPI.get(`/documents/${encodeURIComponent(documentId)}/topics`);
+      if (owner !== store.getState('currentUser')?.id) return;
+      this.remember(lecture.topics);
+      const modal = document.createElement('sentio-modal');
+      modal.setAttribute('title', `Topics in ${lecture.filename}`);
+      modal.innerHTML = `<p class="muted">Practice estimate from your quiz answers: Ready means at least 4 of your last 5 answers on the topic were correct.</p>${topicList(lecture.topics)}`;
+      modal.addEventListener('click', (event) => this.onTopicAction(event, modal));
+      document.body.appendChild(modal);
+    } catch (error) {
+      toast('Topics unavailable: ' + error.message, true);
+    }
+  }
+
+  async onTopicAction(event, modal = null) {
+    const button = event.target.closest('[data-topic-action]');
+    if (!button) return;
+    const topic = this.topics.get(button.dataset.topic);
+    if (!topic) return;
+    const action = button.dataset.topicAction;
+    const lecture = this.documents.find((d) => d.id === topic.document_id);
+    const study = {
+      subject: this.courseName(lecture?.course_id) || 'My notes',
+      topic: topic.title,
+      documentId: topic.document_id,
+    };
+    if (action === 'review' || action === 'practise') {
+      modal?.close();
+      await this.startStudy(study, action === 'review' ? '#/tutor' : '#/quizzes');
+      return;
+    }
+    try {
+      if (action === 'rename') {
+        const title = (window.prompt('Rename topic', topic.title) || '').trim();
+        if (!title || title === topic.title) return;
+        await sentioAPI.request(`/topics/${encodeURIComponent(topic.id)}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ name: title }),
+        });
+      } else if (action === 'merge') {
+        if (!confirm(`Join "${topic.title}" to the topic above it?`)) return;
+        await sentioAPI.post(`/topics/${encodeURIComponent(topic.id)}/merge`, {});
+      }
+    } catch (error) {
+      toast('Topic not updated: ' + error.message, true);
+      return;
+    }
+    if (modal) {
+      modal.close();
+      this.showDocumentTopics(topic.document_id);
+    }
+    this.loadDocuments();
   }
 
   async previewDocument(documentId) {
@@ -606,7 +772,7 @@ export class DocumentsView {
     return added;
   }
 
-  async startStudy(options) {
+  async startStudy(options, route = '#/tutor') {
     const owner = store.getState('currentUser')?.id;
     store.setState('loading', true);
     try {
@@ -615,7 +781,7 @@ export class DocumentsView {
         isCurrent: () => owner === store.getState('currentUser')?.id,
         ...options,
       });
-      if (started) window.location.hash = '#/tutor';
+      if (started) window.location.hash = route;
     } finally {
       store.setState('loading', false);
     }

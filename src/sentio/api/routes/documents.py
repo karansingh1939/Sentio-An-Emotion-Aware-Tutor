@@ -298,6 +298,9 @@ def delete_document(doc_id: str, request: Request, user: dict = Depends(get_curr
         raise HTTPException(
             503, "Document deletion could not finish. Retry after local recovery."
         ) from exc
+    from sentio.repositories.topics import TopicRepository
+
+    TopicRepository(agent.sm.persister._engine).forget_document(doc_id)
     return {"deleted": True, "document_id": doc_id, "cleanup_pending": not cleaned}
 
 

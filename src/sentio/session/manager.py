@@ -235,6 +235,7 @@ class SessionManager:
         connection=None,
         student_answer: str = "answered",
         score: Optional[float] = None,
+        question_id: Optional[str] = None,
     ):
         """Record a quiz answer and update difficulty if needed."""
         session = self.get_or_raise(session_id)
@@ -261,8 +262,8 @@ class SessionManager:
                 text("""
                     INSERT INTO quiz_attempts 
                     (session_id, student_id, topic, question_text, student_answer, 
-                     correct, score, response_time_sec, difficulty, timestamp)
-                    VALUES (:sid, :stud, :topic, :q_text, :ans, :correct, :score, :resp_time, :diff, :ts)
+                     correct, score, response_time_sec, difficulty, timestamp, question_id)
+                    VALUES (:sid, :stud, :topic, :q_text, :ans, :correct, :score, :resp_time, :diff, :ts, :qid)
                 """),
                 {
                     "sid": session_id,
@@ -275,6 +276,7 @@ class SessionManager:
                     "resp_time": response_time_sec,
                     "diff": attempt.difficulty,
                     "ts": attempt.timestamp,
+                    "qid": question_id,
                 },
             )
             if connection is None:
@@ -905,8 +907,8 @@ class SessionManager:
                 conn.execute(
                     text("""
                         INSERT INTO quiz_questions 
-                        (question_id, quiz_id, question_text, question_type, options_json, correct_answer, explanation, difficulty, topic)
-                        VALUES (:qid, :quiz_id, :text, :type, :opts, :correct, :exp, :diff, :topic)
+                        (question_id, quiz_id, question_text, question_type, options_json, correct_answer, explanation, difficulty, topic, source_document_id, source_page)
+                        VALUES (:qid, :quiz_id, :text, :type, :opts, :correct, :exp, :diff, :topic, :source_document, :source_page)
                     """),
                     {
                         "qid": q_id,
@@ -918,6 +920,8 @@ class SessionManager:
                         "exp": q["explanation"],
                         "diff": q.get("difficulty", "intermediate"),
                         "topic": q.get("topic", "general"),
+                        "source_document": q.get("source_document_id"),
+                        "source_page": q.get("source_page"),
                     },
                 )
             if connection is None:

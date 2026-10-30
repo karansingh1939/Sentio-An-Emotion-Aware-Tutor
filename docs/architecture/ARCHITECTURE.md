@@ -110,6 +110,14 @@ repaired or regenerated before any fallback. A document overview (summary, key
 concepts, suggested questions) is written as a background job from the document's
 opening passages and cached on the document row against its checksum.
 
+Topic mastery (`study/topics.py`, `repositories/topics.py`): a lecture's topics are page
+ranges grouped by heading (slide titles; PDF page headings, skipping running headers),
+stored in `note_topics` with the document checksum and rebuilt when it changes. After a
+quiz is generated, each question is attributed to the retrieved passage it overlaps most
+(`quiz_questions.source_document_id`, `source_page`), and each submitted answer records its
+`question_id`. A topic's state comes from the answers whose question page falls in its
+range, so renaming or merging topics regroups past answers without re-grading.
+
 Flashcards are scheduled by `flashcards/fsrs.py`, a dependency-free FSRS-5 model: each
 card stores stability, difficulty and its last review time, and the next review is set
 for 90% predicted recall. Cards scheduled earlier by SM-2 are converted on their next

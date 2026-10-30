@@ -33,6 +33,7 @@ from sentio.api.routes import (
     sessions,
     streaming,
     system,
+    topics,
     tutoring,
 )
 from sentio.config import api_cfg
@@ -157,6 +158,7 @@ app.include_router(intelligence.router)
 app.include_router(analytics.router)
 app.include_router(documents.router)
 app.include_router(courses.router)
+app.include_router(topics.router)
 app.include_router(memory.router)
 app.include_router(planning.router)
 app.include_router(jobs.router)
