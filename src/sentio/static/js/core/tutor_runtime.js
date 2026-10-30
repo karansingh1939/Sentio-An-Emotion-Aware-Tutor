@@ -481,6 +481,7 @@ async function sendMessage() {
     if (data.text) {
       exchangeCount++;
       appendTutorMessage(data);
+      if (data.difficulty_change) appendDifficultyNotice(data.difficulty_change, currentSessionId);
       updateStatePanel(data);
       addLog(
         'Exchange ' + exchangeCount + ' — state: ' + (data.learning_state || 'neutral'),
@@ -668,6 +669,37 @@ function appendTutorMessage(data) {
 }
 
 // ── CITATIONS ────────────────────────────────
+// Pin the session to a level the learner chose; quiz streaks stop moving it.
+window.setSessionDifficulty = async (sessionId, level) => {
+  await window.sentioAPI.post(`/sessions/${sessionId}/difficulty`, { difficulty: level });
+  const meta = document.getElementById('active-bar-meta');
+  if (meta) meta.textContent = [level, ...meta.textContent.split(' · ').slice(1)].join(' · ');
+  const session = window.store?.getState('activeSession');
+  if (session?.session_id === sessionId)
+    window.store.setState('activeSession', { ...session, difficulty: level });
+};
+
+// Every automatic level change is visible, says why, and can be undone.
+window.difficultyNotice = (change, sessionId) => {
+  const notice = document.createElement('p');
+  notice.className = 'difficulty-notice';
+  notice.setAttribute('role', 'status');
+  notice.innerHTML = `Difficulty is now <strong>${escHtml(change.to)}</strong> (${escHtml(change.reason_text)}). <button type="button" class="link-quiet">Undo</button>`;
+  notice.querySelector('button').onclick = async () => {
+    try {
+      await window.setSessionDifficulty(sessionId, change.from);
+      notice.textContent = `Difficulty stays ${change.from}. Ask in chat to change it.`;
+    } catch (error) {
+      toast('Difficulty not changed: ' + error.message, true);
+    }
+  };
+  return notice;
+};
+
+function appendDifficultyNotice(change, sessionId) {
+  document.getElementById('chat-messages').appendChild(window.difficultyNotice(change, sessionId));
+}
+
 // "slide 4" for PowerPoint lectures, "p.4" for other notes.
 function slideOrPage(citation) {
   return /\.pptx$/i.test(citation.filename || '') ? `slide ${citation.page}` : `p.${citation.page}`;

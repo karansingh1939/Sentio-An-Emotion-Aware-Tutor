@@ -25,6 +25,7 @@ from sentio.jobs.control import checkpoint, publish
 from sentio.repositories.practice import PracticeRepository
 from sentio.repositories.quizzes import QuizRepository
 from sentio.shared.exceptions import LLMServiceUnavailableError
+from sentio.tutor.difficulty import describe
 
 logger = logging.getLogger(__name__)
 
@@ -289,8 +290,10 @@ JSON Template:
                 if answers_key in results:
                     return results[answers_key]
                 snapshot = deepcopy(session.__dict__)
+                starting_level = session.difficulty
+                reasons = []
                 for feedback, question in zip(feedback_items, questions):
-                    self.agent.sm.record_quiz_attempt(
+                    change = self.agent.sm.record_quiz_attempt(
                         session_id=session_id,
                         correct=feedback["is_correct"],
                         topic=question["topic"],
@@ -300,6 +303,12 @@ JSON Template:
                         score=feedback["score"],
                         connection=connection,
                         question_id=question.get("question_id"),
+                    )
+                    if change:
+                        reasons.append(change["reason"])
+                if session.difficulty != starting_level:
+                    result["difficulty_change"] = describe(
+                        starting_level, session.difficulty, reasons[-1]
                     )
                 results[answers_key] = result
                 repository.save_results(connection, quiz_id, results)

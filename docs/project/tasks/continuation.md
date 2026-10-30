@@ -554,3 +554,12 @@ answers. GET /documents/{id}/topics, GET /courses/{id}/progress, PATCH /topics/{
 POST /topics/{id}/merge. Library shows course progress, a Progress-by-topic panel with
 weak topics and Review/Practise buttons, and a Topics dialog per lecture. Quiz subject is
 optional now. Not done: flashcards in the Ready rule; adaptive-difficulty rework (2b).
+
+## Phase 2b: fair difficulty - 30 October 2026
+
+Branch: feature/fair-difficulty (stacked on feature/topic-mastery). One policy in
+`tutor/difficulty.py`: explicit requests (phrase regexes with false-positive tests) and
+quiz streaks only; learner-model override and emotion-driven changes removed;
+ContentAdapter.adapt_difficulty deleted. Pinning via POST /sessions/{id}/difficulty;
+`difficulty_change` on stream and quiz results; tutor and quiz pages show the change with
+Undo. EMOTION.md is "tone only" again, now true.

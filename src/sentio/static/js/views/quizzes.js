@@ -437,6 +437,7 @@ export class QuizzesView {
             </span>
           </div>
           <p class="muted">${escapeHtml(this.results.summary)}</p>
+          <div id="quiz-difficulty-change"></div>
           ${this.quiz.questions.some((q) => q.question_type === 'short_answer') ? '<p class="muted">Short-answer scores are practice feedback. AI grading can misjudge valid wording; compare your answer with the reference and explanation below.</p>' : ''}
         </sentio-card>
 
@@ -476,6 +477,10 @@ export class QuizzesView {
       </div>
     `;
 
+    const change = this.results.difficulty_change;
+    const slot = this.container.querySelector('#quiz-difficulty-change');
+    if (change && slot && window.difficultyNotice)
+      slot.appendChild(window.difficultyNotice(change, store.getState('activeSessionId')));
     this.container.querySelector('#close-quiz-btn').onclick = () => {
       this.resetQuizState();
       this.render();

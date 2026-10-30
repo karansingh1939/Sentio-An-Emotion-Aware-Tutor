@@ -915,3 +915,12 @@ form label,
   gap: 16px;
   margin-top: 12px;
 }
+.difficulty-notice {
+  align-self: center;
+  margin: 4px 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px dashed var(--border);
+  font-size: 13px;
+  color: var(--text-dim);
+}

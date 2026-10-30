@@ -14,6 +14,7 @@ from sqlalchemy import text
 from sentio.jobs.control import WorkCancelled
 from sentio.repositories.courses import expand_source
 from sentio.repositories.planning import active_goal
+from sentio.tutor.difficulty import describe
 
 logger = logging.getLogger(__name__)
 
@@ -118,16 +119,21 @@ class StreamService:
                         try:
                             session.metadata["strategy"] = response.strategy
                             session.metadata["learning_state"] = response.learning_state
+                            change = None
                             if session.difficulty != response.difficulty:
-                                session.update_difficulty(
-                                    response.difficulty, "completed_tutor_turn"
-                                )
+                                reason = response.difficulty_reason or "completed_tutor_turn"
+                                change = describe(session.difficulty, response.difficulty, reason)
+                                session.update_difficulty(response.difficulty, reason)
+                            if response.difficulty_reason:
+                                session.metadata["difficulty_pinned"] = False
                             session.record_exchange(
                                 tokens=response.tutor_response.tokens_used,
                                 latency_ms=response.tutor_response.latency_ms,
                             )
                             response.total_exchanges = session.total_exchanges
                             result = response.to_dict()
+                            if change:
+                                result["difficulty_change"] = change
                             with self.engine.begin() as conn:
                                 conn.exec_driver_sql("BEGIN IMMEDIATE")
                                 if not conn.execute(

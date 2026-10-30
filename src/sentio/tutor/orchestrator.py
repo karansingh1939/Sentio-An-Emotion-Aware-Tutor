@@ -9,6 +9,7 @@ from langgraph.graph import END, StateGraph
 from sentio.ai.streaming import TutorPayload, output_schema
 from sentio.config import tutor_cfg
 from sentio.jobs.control import checkpoint, current_control
+from sentio.tutor.difficulty import asks_for_another_explanation, requested_change, step
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,7 @@ class OrchestratorState(TypedDict):
     subject: str
     topic: str
     difficulty: str
+    difficulty_reason: Optional[str]
     learning_state: str
     strategy: str
     user_message: str
@@ -153,7 +155,7 @@ class SentioOrchestrator:
             )
 
         # 4. Check explicit student adaptation requests (Phase 6 & 8)
-        new_strategy, new_difficulty, new_learning_state, text_directive = (
+        new_strategy, new_difficulty, new_learning_state, text_directive, difficulty_reason = (
             self._detect_student_adaptation_intent(
                 user_msg=state["user_message"],
                 current_difficulty=state["difficulty"],
@@ -178,12 +180,6 @@ class SentioOrchestrator:
                     hints_enabled = adaptation.get("hints_enabled", True)
                     adaptation_msg = f"Learner Model Adaptation: depth={depth}, pace={pace}, hints_enabled={hints_enabled}."
                     memory_context += f"\n{adaptation_msg}\n"
-                    if (
-                        not text_directive
-                        and adaptation.get("difficulty") == "beginner"
-                        and state["difficulty"] == "intermediate"
-                    ):
-                        new_difficulty = "beginner"
             except Exception as e:
                 logger.debug(f"AdaptationEngine lookup skipped: {e}")
 
@@ -202,6 +198,7 @@ class SentioOrchestrator:
             **state,
             "strategy": new_strategy,
             "difficulty": new_difficulty,
+            "difficulty_reason": difficulty_reason,
             "learning_state": new_learning_state,
             "student_memory": memory_context,
             "agent_timeline": timeline,
@@ -216,12 +213,13 @@ class SentioOrchestrator:
         current_strategy: str,
         current_state: str,
         session_id: str,
-    ) -> tuple[str, str, str, Optional[str]]:
+    ) -> tuple[str, str, str, Optional[str], Optional[str]]:
         """
         Deterministic, lightweight analysis of explicit student requests for:
         - difficulty adjustment (harder, easier)
         - pedagogical style adjustment (simplify, reframe, challenge, quiz)
-        Returns (new_strategy, new_difficulty, new_learning_state, directive_instruction)
+        Returns (new_strategy, new_difficulty, new_learning_state, directive_instruction,
+        difficulty_change_reason)
         """
         msg = user_msg.lower().strip()
         new_strategy = current_strategy
@@ -229,55 +227,32 @@ class SentioOrchestrator:
         new_state = current_state
         directive = None
 
-        difficulty_levels = ["beginner", "intermediate", "advanced"]
-
-        # 1. Check for explicit request to increase difficulty / challenge
-        harder_signals = [
-            "harder",
-            "more difficult",
-            "make this harder",
-            "make it harder",
-            "challenge me",
-            "more advanced",
-            "too easy",
-            "give me a harder",
-        ]
-        if any(sig in msg for sig in harder_signals):
-            new_strategy = "challenge"
-            idx = (
-                difficulty_levels.index(current_difficulty)
-                if current_difficulty in difficulty_levels
-                else 0
+        # Difficulty moves only on an explicit request (see sentio.tutor.difficulty).
+        direction = requested_change(msg)
+        if direction:
+            harder = direction == "harder"
+            new_strategy = "challenge" if harder else "simplify"
+            new_state = "engaged" if harder else "struggling"
+            new_difficulty = step(current_difficulty, direction)
+            reason = "request_harder" if harder else "request_easier"
+            directive = (
+                "INSTRUCTION (Student requested harder challenge):\n- Present a deeper, more advanced conceptual example.\n- Ask a thought-provoking challenge question."
+                if harder
+                else "INSTRUCTION (Student requested simpler explanation):\n- Strip away jargon and present an elementary, intuitive example.\n- Focus only on core fundamentals."
             )
-            if idx < len(difficulty_levels) - 1:
-                new_difficulty = difficulty_levels[idx + 1]
-            new_state = "engaged"
-            directive = "INSTRUCTION (Student requested harder challenge):\n- Present a deeper, more advanced conceptual example.\n- Ask a thought-provoking challenge question."
             try:
                 session = self.tutor_agent.sm.get_session(session_id)
                 if session and not getattr(current_control(), "defer_turn", False):
                     session.metadata["strategy"] = new_strategy
                     session.metadata["learning_state"] = new_state
-                    if session.difficulty != new_difficulty:
-                        session.update_difficulty(new_difficulty, "student_request_harder")
+                    session.metadata["difficulty_pinned"] = False
+                    session.update_difficulty(new_difficulty, reason)
             except Exception:
                 pass
-            return new_strategy, new_difficulty, new_state, directive
+            return new_strategy, new_difficulty, new_state, directive, reason
 
-        # 2. Check for explicit struggle, confusion, or request to explain another way
-        reframe_signals = [
-            "don't understand",
-            "dont understand",
-            "do not understand",
-            "explain another way",
-            "explain it another way",
-            "another way",
-            "explain differently",
-            "confused",
-            "lost",
-            "makes no sense",
-        ]
-        if any(sig in msg for sig in reframe_signals):
+        # Confusion changes the explanation and tone, not the level.
+        if asks_for_another_explanation(msg):
             new_strategy = "reframe"
             new_state = "struggling"
             directive = "INSTRUCTION (Student expressed confusion):\n- Reframe the concept using an entirely different, vivid real-world analogy.\n- Break down the mechanism step by step with clear intuition."
@@ -288,39 +263,7 @@ class SentioOrchestrator:
                     session.metadata["learning_state"] = new_state
             except Exception:
                 pass
-            return new_strategy, new_difficulty, new_state, directive
-
-        # 3. Check for explicit request to make it easier / simpler
-        simpler_signals = [
-            "easier",
-            "too hard",
-            "make it easier",
-            "too complex",
-            "simplify",
-            "simpler",
-            "give me an easier",
-        ]
-        if any(sig in msg for sig in simpler_signals):
-            new_strategy = "simplify"
-            new_state = "struggling"
-            idx = (
-                difficulty_levels.index(current_difficulty)
-                if current_difficulty in difficulty_levels
-                else 1
-            )
-            if idx > 0:
-                new_difficulty = difficulty_levels[idx - 1]
-            directive = "INSTRUCTION (Student requested simpler explanation):\n- Strip away jargon and present an elementary, intuitive example.\n- Focus only on core fundamentals."
-            try:
-                session = self.tutor_agent.sm.get_session(session_id)
-                if session and not getattr(current_control(), "defer_turn", False):
-                    session.metadata["strategy"] = new_strategy
-                    session.metadata["learning_state"] = new_state
-                    if session.difficulty != new_difficulty:
-                        session.update_difficulty(new_difficulty, "student_request_easier")
-            except Exception:
-                pass
-            return new_strategy, new_difficulty, new_state, directive
+            return new_strategy, new_difficulty, new_state, directive, None
 
         # 4. Check for quiz request
         quiz_signals = [
@@ -332,9 +275,9 @@ class SentioOrchestrator:
         ]
         if any(sig in msg for sig in quiz_signals):
             directive = "INSTRUCTION (Student requested a quiz):\n- Conclude your explanation with a specific multiple-choice or short-answer comprehension check."
-            return new_strategy, new_difficulty, new_state, directive
+            return new_strategy, new_difficulty, new_state, directive, None
 
-        return new_strategy, new_difficulty, new_state, None
+        return new_strategy, new_difficulty, new_state, None, None
 
     def route_after_retrieval(self, state: OrchestratorState) -> str:
         outcome = getattr(state.get("retrieved_content"), "evidence_outcome", "general")

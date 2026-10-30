@@ -106,7 +106,7 @@ class SemanticRetriever:
 
 
 class ContentAdapter:
-    """Maps a teaching strategy to a tone instruction and adapts difficulty."""
+    """Maps a teaching strategy to a tone instruction."""
 
     # Strategy → tone instruction (injected into prompts)
     STRATEGY_TONE: Dict[str, str] = {
@@ -121,38 +121,6 @@ class ContentAdapter:
 
     def get_tone(self, strategy: str) -> str:
         return self.STRATEGY_TONE.get(strategy, "Explain clearly and helpfully.")
-
-    def adapt_difficulty(
-        self,
-        current: Difficulty,
-        learning_state: str,
-        consecutive_correct: int,
-        consecutive_wrong: int,
-    ) -> Difficulty:
-        """
-        Decide if difficulty should change based on performance signals.
-
-        Rules:
-          - 3+ correct in a row + engaged/curious → step up
-          - 2+ wrong in a row + struggling/anxious → step down
-          - frustrated → step down (reduce cognitive load)
-        """
-        if consecutive_correct >= 3 and learning_state in ("engaged", "curious"):
-            new = current.step_up()
-            if new != current:
-                logger.info(f"Difficulty UP: {current} → {new}")
-            return new
-
-        if consecutive_wrong >= 2 or learning_state in ("struggling", "anxious"):
-            new = current.step_down()
-            if new != current:
-                logger.info(f"Difficulty DOWN: {current} → {new}")
-            return new
-
-        if learning_state == "frustrated":
-            return current.step_down()
-
-        return current
 
 
 # ─────────────────────────────────────────────
@@ -490,19 +458,6 @@ class KnowledgeBase:
             score += idf_val * (numerator / denominator)
 
         return score
-
-    def adapt_difficulty(
-        self,
-        current_difficulty: str,
-        learning_state: str,
-        consecutive_correct: int = 0,
-        consecutive_wrong: int = 0,
-    ) -> str:
-        """Proxy to ContentAdapter.adapt_difficulty."""
-        result = self.adapter.adapt_difficulty(
-            Difficulty(current_difficulty), learning_state, consecutive_correct, consecutive_wrong
-        )
-        return result.value
 
     def get_tone_instruction(self, learning_state: str) -> str:
         strategy = tutor_cfg.STRATEGY_MAP.get(learning_state, "standard")
