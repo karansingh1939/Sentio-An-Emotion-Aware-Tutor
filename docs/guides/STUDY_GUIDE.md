@@ -44,13 +44,18 @@ Open http://127.0.0.1:8001 and leave the terminal open. Stop with Ctrl+C.
    Progress estimates include self-reported ratings; they are not exam results.
 7. See how each lecture is going: open **Progress by topic** under a course, or
    **Topics** beside a lecture. Topics follow slide titles (PDF page headings; Word and
-   text files form one topic). Each topic is **Not started**, **Practising** or
-   **Ready** (your last 3 answers on it were all correct). **Weak topics** lists
+   text files form one topic). Each topic is **Not started**, **Practising**, **Ready**
+   (your last 3 answers on it were all correct and you probably still remember it) or
+   **Review due** (those answers were right, but enough time has passed that you may be
+   forgetting). A correct answer on a due topic makes it Ready again for longer: about
+   3 days after the first good sitting, then about 11, then about 35. Topics due for
+   review appear on Today and in the course panel. **Weak topics** lists
    practised topics below that bar with their slides; **Review** opens the tutor on the
    topic and **Practise** prepares a quiz on exactly that topic's slides, and the quiz
    shows which slides it covers. **Practise weak topics** spreads questions across your
-   5 weakest topics. You can rename a topic or merge it into the one above. Only quizzes
-   taken after this update count, and the result is a practice estimate.
+   5 weakest topics. You can rename a topic or merge it into the one above. Quizzes and
+   flashcard reviews count when they are linked to a slide; older ones may not be. The
+   result is a practice estimate.
 8. Add the course **Syllabus** in the same panel: paste it, or choose its PDF, Word,
    PowerPoint or text file. Sentio splits it into units and topics (skipping textbooks,
    references and outcomes) and matches each topic to your lecture topics. The course

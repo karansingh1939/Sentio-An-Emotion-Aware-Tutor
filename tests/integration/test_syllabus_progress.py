@@ -47,6 +47,7 @@ def test_syllabus_matches_lectures_and_tracks_readiness(monkeypatch):
         assert _items(progress)["Paging"] == "ready"
         assert progress["summary"] == {
             "ready": 1,
+            "review_due": 0,
             "practising": 0,
             "not_started": 1,
             "no_notes": 2,

@@ -114,7 +114,13 @@ def test_topics_follow_slides_and_quiz_answers_set_their_state(monkeypatch):
         }
 
         progress = client.get(f"/api/v1/courses/{course}/progress").json()
-        assert progress["summary"] == {"ready": 1, "practising": 1, "not_started": 0, "total": 2}
+        assert progress["summary"] == {
+            "ready": 1,
+            "review_due": 0,
+            "practising": 1,
+            "not_started": 0,
+            "total": 2,
+        }
         assert [t["title"] for t in progress["weak"]] == ["Deadlock"]
         assert progress["weak"][0]["filename"] == "memory.pptx"
 

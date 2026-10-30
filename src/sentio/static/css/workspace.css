@@ -901,6 +901,10 @@ form label,
   color: var(--yellow);
   border-color: var(--yellow);
 }
+.topic-state.review_due {
+  color: var(--accent);
+  border-color: var(--accent);
+}
 .link-quiet {
   background: none;
   border: none;

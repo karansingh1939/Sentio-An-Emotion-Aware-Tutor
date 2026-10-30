@@ -25,7 +25,7 @@ from sentio.ai.structured_parser import (
 from sentio.jobs.control import checkpoint, publish
 from sentio.repositories.practice import PracticeRepository
 from sentio.repositories.quizzes import QuizRepository
-from sentio.repositories.topics import TopicChanged, TopicRepository
+from sentio.repositories.topics import TopicRepository
 from sentio.shared.exceptions import LLMServiceUnavailableError
 from sentio.tutor.difficulty import describe
 
@@ -53,17 +53,6 @@ class QuizService:
     def __init__(self, agent, grader_fn: Optional[Any] = None):
         self.agent = agent
         self.grader_fn = grader_fn
-
-    def topic_focus(self, session):
-        """The topics a session practises, with their slides; [] when it has none."""
-        topic_ids = session.metadata.get("topic_ids")
-        if not topic_ids:
-            return []
-        engine = self.agent.sm.persister._engine
-        topics = TopicRepository(engine).passages(session.student_id, topic_ids)
-        if topics is None:
-            raise TopicChanged("This topic changed. Open the course and choose it again.")
-        return topics
 
     def generate_quiz(
         self,
@@ -104,7 +93,7 @@ class QuizService:
 
         checkpoint("retrieving sources")
         # 1. Use the chosen topics' slides, or retrieve RAG context
-        focus = self.topic_focus(session)
+        focus = TopicRepository(self.agent.sm.persister._engine).focus(session)
         retrieved = (
             self.agent.kb.topic_content(subject, topic, difficulty, focus)
             if focus
@@ -134,16 +123,9 @@ class QuizService:
             if grounded
             else "Use the topic and available context."
         )
-        turns = (
-            "\n- Cover the topics in turn: "
-            + ", ".join(
-                f"question {i + 1} on '{focus[i % len(focus)]['title']}'"
-                for i in range(num_questions)
-            )
-            + "."
-            if len(focus) > 1
-            else ""
-        )
+        from sentio.study.topics import locate, place, turn, turns_rule
+
+        turns = turns_rule(focus, num_questions, "question")
 
         # 3. Build prompts
         system_prompt = f"""Generate a quiz with exactly {num_questions} questions on '{topic}' ({difficulty}) in '{subject}'.
@@ -216,15 +198,11 @@ JSON Template:
         # 6. Generate quiz_id and save to database
         quiz_id = str(uuid.uuid4())
         provenance = practice_provenance(mode, retrieved, self.agent.nlp._backend, source_snapshot)
-        from sentio.study.topics import locate, place
-
         citations = getattr(retrieved, "source_citations", [])
-        pools = [[c for c in citations if c["topic_id"] == chosen["id"]] for chosen in focus]
         located = Counter()
         for index, question in enumerate(quiz_dict["questions"]):
             question["question_id"] = f"{quiz_id}_q{index}"
-            pool = pools[index % len(pools)] if pools else None
-            citation, how = locate(question, citations, pool)
+            citation, how = locate(question, citations, turn(index, citations, focus))
             question["source_document_id"], question["source_page"] = place(citation)
             question["topic"] = (citation or {}).get("topic", question["topic"])
             del question["source"]

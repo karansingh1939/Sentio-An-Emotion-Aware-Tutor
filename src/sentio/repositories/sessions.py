@@ -389,6 +389,9 @@ class SessionPersister:
             for column in ("stability", "difficulty", "last_review_at"):
                 if column not in card_columns:
                     conn.execute(text(f"ALTER TABLE flashcards ADD COLUMN {column} REAL"))
+            if "source_document_id" not in card_columns:
+                conn.execute(text("ALTER TABLE flashcards ADD COLUMN source_document_id TEXT"))
+                conn.execute(text("ALTER TABLE flashcards ADD COLUMN source_page INTEGER"))
 
             # Identity & Privacy Platform tables
             conn.execute(

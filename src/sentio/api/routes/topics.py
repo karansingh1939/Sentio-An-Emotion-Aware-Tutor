@@ -32,6 +32,12 @@ def course_progress(course_id: str, user: dict = Depends(get_current_user)):
     return progress
 
 
+@router.get(PREFIX + "/topics/due")
+def due_topics(user: dict = Depends(get_current_user)):
+    """Topics due for review across all notes, least remembered first."""
+    return {"topics": repository().due_topics(user["student_id"])}
+
+
 @router.patch(PREFIX + "/topics/{topic_id}")
 def rename_topic(topic_id: str, body: CourseName, user: dict = Depends(get_current_user)):
     if not repository().rename(user["student_id"], topic_id, body.name):

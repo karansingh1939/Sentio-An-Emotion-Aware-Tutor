@@ -1,4 +1,4 @@
-import { escapeHtml } from '../core/html.js';
+import { MAX_PRACTICE_TOPICS, escapeHtml, pageRange, topicMemory } from '../core/html.js';
 import { store } from '../core/store.js';
 import { sentioAPI } from '../core/api.js';
 
@@ -34,6 +34,7 @@ export class DashboardView {
       sentioAPI.get('/study/preferences'),
       sentioAPI.get(`/students/${id}/goals`),
       sentioAPI.get('/documents'),
+      sentioAPI.get('/topics/due'),
     ]);
     if (revision !== this.revision || store.getState('currentUser')?.id !== user.id) return;
     const values = results.map((result) => (result.status === 'fulfilled' ? result.value : null));
@@ -46,6 +47,7 @@ export class DashboardView {
       'Preferences',
       'Goals',
       'Library',
+      'Topics due',
     ];
     const failed = results.flatMap((result, index) =>
       result.status === 'rejected' ? [labels[index]] : [],
@@ -54,7 +56,27 @@ export class DashboardView {
     this.preferences = values[5];
     this.goals = values[6]?.goals;
     this.noteCount = values[7]?.documents?.filter((item) => item.status === 'indexed').length;
+    this.dueTopics = values[8]?.topics || [];
     this.render(values[0], values[1], values[2]?.sessions, values[3], failed);
+  }
+
+  // Topics from several lectures study all notes; the quiz still uses only their slides.
+  async practiseDue() {
+    const owner = store.getState('currentUser')?.id;
+    const topics = this.dueTopics.slice(0, MAX_PRACTICE_TOPICS);
+    const documents = new Set(topics.map((topic) => topic.document_id));
+    const started = await window.startSession({
+      difficulty: 'beginner',
+      subject: 'My notes',
+      topic: topics
+        .map((topic) => topic.title)
+        .join('; ')
+        .slice(0, 150),
+      documentId: documents.size === 1 ? topics[0].document_id : 'all',
+      topicIds: topics.map((topic) => topic.id),
+      isCurrent: () => owner === store.getState('currentUser')?.id,
+    });
+    if (started) window.location.hash = '#/quizzes';
   }
 
   render(profile, recommendations, sessions, ready, failed) {
@@ -81,6 +103,19 @@ export class DashboardView {
       </section>
       <div class="today-columns">
         <section>
+          ${
+            this.dueTopics.length
+              ? `<sentio-card title="Topics due for review"><p class="muted">You have probably started to forget these. A short quiz keeps them fresh.</p><ul class="study-list">${this.dueTopics
+                  .slice(0, MAX_PRACTICE_TOPICS)
+                  .map(
+                    (topic) =>
+                      `<li>${escapeHtml(topic.title)}<br><small>${escapeHtml(topic.filename)} · ${escapeHtml(pageRange(topic))} · ${escapeHtml(topicMemory(topic))}</small></li>`,
+                  )
+                  .join(
+                    '',
+                  )}</ul><button id="practise-due-btn" class="workspace-action primary">Practise due topics</button></sentio-card>`
+              : ''
+          }
           <sentio-card title="Daily revision">
             ${this.plan ? `<p>${escapeHtml(this.plan.budget_minutes)} minute budget. Completion is self-reported.</p><ul class="study-list">${this.plan.tasks.map((task) => `<li><label><input type="checkbox" class="plan-complete" data-task="${escapeHtml(task.task_id)}" ${task.completed_at ? 'checked' : ''}> ${escapeHtml(task.title)}</label><br><small>${escapeHtml(task.minutes)} min${task.evidence_count ? ` · ${escapeHtml(task.evidence_count)} saved practice records` : ''}</small> <a class="workspace-action" href="${escapeHtml(task.destination)}">Open</a></li>`).join('')}</ul>` : '<p>Daily plan unavailable. Retry when storage is ready.</p>'}
             ${this.preferences ? `<form id="budget-form"><label for="daily-budget">Budget for new daily plans (minutes)</label><input id="daily-budget" type="number" min="5" max="240" value="${escapeHtml(this.preferences.daily_minutes)}" required><button class="workspace-action" type="submit">Save budget</button></form>` : ''}
@@ -144,6 +179,8 @@ export class DashboardView {
       </div>`;
     const retry = this.container.querySelector('#retry-dash-btn');
     if (retry) retry.onclick = () => this.loadDashboardData();
+    const practiseDue = this.container.querySelector('#practise-due-btn');
+    if (practiseDue) practiseDue.onclick = () => this.practiseDue();
     const owner = store.getState('currentUser')?.id;
     const showStatus = (message) => {
       if (

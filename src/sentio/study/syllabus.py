@@ -169,13 +169,16 @@ def item_status(states):
         return "no_notes"
     if all(state == "ready" for state in states):
         return "ready"
+    if all(state in ("ready", "review_due") for state in states):
+        return "review_due"
     if all(state == "not_started" for state in states):
         return "not_started"
     return "practising"
 
 
 def summarise(statuses):
-    counts = {s: statuses.count(s) for s in ("ready", "practising", "not_started", "no_notes")}
+    names = ("ready", "review_due", "practising", "not_started", "no_notes")
+    counts = {status: statuses.count(status) for status in names}
     total = len(statuses)
     return {
         **counts,
