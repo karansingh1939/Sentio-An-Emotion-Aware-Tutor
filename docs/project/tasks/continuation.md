@@ -519,3 +519,15 @@ last_review_at columns (conditional ALTERs); ease_factor is kept only for conver
 older cards. Due cards include next_intervals, shown under each rating button. The
 learner model's forgetting risk and flashcard mastery evidence now use FSRS recall
 probability. Parameters are not yet fitted on the learner's own reviews.
+
+## Confirmed-bug fixes - 30 October 2026
+
+Branch: fix/confirmed-bugs, from a three-agent feature review (advocate, critic, judge;
+reports in tmp/feature-debate, not committed). Fixed: answers no longer read aloud
+automatically; "Search all my notes" searches every subject; stream, cancel, grounding,
+goal and telemetry requests go through sentioAPI (token refresh; `stream: true` keeps the
+caller's abort signal); Start dialog defaults to "Search all my notes" when notes exist;
+the session "×" now honestly ends (not deletes) active sessions; study streak counts
+consecutive days; quiz summary is deterministic (no model call); short-answer Check
+answer waits 190 s; EMOTION.md and INTERVIEW_GUIDE.md corrected. Not done: the judge's
+removals and simplifications (adaptive difficulty, voice code, dead endpoints).

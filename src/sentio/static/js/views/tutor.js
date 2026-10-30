@@ -191,7 +191,7 @@ export class TutorView {
             <div style="font-weight:bold;font-size:14px;color:${s.session_id === currentSessionId ? 'var(--accent)' : 'var(--text)'};text-transform:capitalize;">${escapeHtml(topicName)}</div>
             <div style="font-size:14px;color:var(--text-dim);text-transform:capitalize;">${escapeHtml(s.subject)} · ${escapeHtml(difficulty)}</div>
           </div>
-          <button class="delete-session-btn" data-id="${escapeHtml(s.session_id)}" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:4px;">&times;</button>
+          ${s.status === 'active' ? `<button class="delete-session-btn" data-id="${escapeHtml(s.session_id)}" title="End session" aria-label="End session" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:4px;">&times;</button>` : ''}
         </div>
       `;
       })
@@ -205,22 +205,22 @@ export class TutorView {
       };
     });
 
-    // Bind delete
+    // Bind end (DELETE closes the session; it stays in the list and can be resumed)
     listContainer.querySelectorAll('.delete-session-btn').forEach((btn) => {
       btn.onclick = async (e) => {
         e.stopPropagation();
-        const id = e.target.dataset.id;
-        if (confirm('Are you sure you want to delete this session summary?')) {
+        const id = e.currentTarget.dataset.id;
+        if (confirm('End this session? You can resume it later from this list.')) {
           try {
             await sentioAPI.delete(`/sessions/${id}`);
-            toast('Session deleted.');
+            toast('Session ended.');
             if (store.getState('activeSessionId') === id) {
-              // End active tracking if we delete current session
+              // Stop active tracking if the current session ended
               if (typeof window.endSession === 'function') window.endSession();
             }
             this.loadSessions();
           } catch (err) {
-            toast('Delete failed: ' + err.message, true);
+            toast('Could not end the session: ' + err.message, true);
           }
         }
       };
@@ -462,9 +462,9 @@ export class TutorView {
         <div>
           <label class="form-label" for="new-sess-grounding">Grounding Source</label>
 <select class="input" id="new-sess-grounding">
-            <option value="none">General questions (without notes)</option>
-            <option value="all">Search all my notes</option>
+            ${docs.length ? '<option value="all" selected>Search all my notes</option>' : ''}
             ${docs.map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.filename)}</option>`).join('')}
+            <option value="none">General questions (without notes)</option>
           </select>
         </div>
         <p id="new-sess-error" role="alert"></p>

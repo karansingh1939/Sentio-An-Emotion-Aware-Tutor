@@ -52,15 +52,7 @@ async function dispatchTelemetryWithRetry(payload, retriesLeft, delay) {
   if (!currentSessionId) return;
 
   try {
-    const res = await fetch(`${API}/sessions/${currentSessionId}/telemetry`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      throw new Error('Telemetry endpoint returned status ' + res.status);
-    }
+    await window.sentioAPI.post(`/sessions/${currentSessionId}/telemetry`, payload);
     console.log('Telemetry sent successfully');
   } catch (err) {
     console.warn(`Failed to send telemetry. Retries left: ${retriesLeft}. Error:`, err);
