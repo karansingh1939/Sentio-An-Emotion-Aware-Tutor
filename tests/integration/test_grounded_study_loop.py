@@ -285,10 +285,11 @@ def test_vector_scope_and_keyword_scope_preserve_student(study, scope):
     assert (OTHER in prompt) == (scope == "all")
 
 
-def test_no_document_scope_keeps_general_quizzes_available(study):
+def test_sessions_without_notes_cannot_make_ungrounded_quizzes(study):
     s = study
     s.sm.get_or_raise(s.session_id).metadata["document_id"] = "none"
     s.sm.persister.save_session(s.sm.get_or_raise(s.session_id))
-    assert s.generate().status_code == 200
-    prompt = s.backend.complete.call_args.kwargs["system_prompt"]
-    assert FACT not in prompt and OTHER not in prompt
+    response = s.generate()
+    assert response.status_code in (400, 422), response.text
+    assert "Choose notes" in response.text
+    s.backend.complete.assert_not_called()

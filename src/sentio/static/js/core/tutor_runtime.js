@@ -97,7 +97,7 @@ async function startSession(options = {}) {
     getActiveSessionId() === previousSession &&
     (!options.isCurrent || options.isCurrent());
   if (!current()) return null;
-  const subject = options.subject || document.getElementById('f-subject').value;
+  const subject = options.subject || 'My notes';
   const topic = (options.topic ?? document.getElementById('f-topic').value).trim();
   if (!topic) {
     toast('Choose a topic to study.', true);
@@ -106,9 +106,7 @@ async function startSession(options = {}) {
   const difficulty = options.difficulty || document.getElementById('f-difficulty').value;
   const grounding =
     options.documentId ??
-    (document.getElementById('f-grounding')
-      ? document.getElementById('f-grounding').value
-      : 'none');
+    (document.getElementById('f-grounding') ? document.getElementById('f-grounding').value : 'all');
   const goalId = options.goalId ?? (document.getElementById('f-goal')?.value || '');
   const metadata = { document_id: grounding, ...(goalId ? { goal_id: goalId } : {}) };
 
@@ -160,7 +158,7 @@ async function startSession(options = {}) {
     if (barTopic) barTopic.textContent = `${subject} · ${topic}`;
     const barMeta = document.getElementById('active-bar-meta');
     if (barMeta)
-      barMeta.textContent = `${difficulty} · ${grounding === 'none' ? 'General Tutor' : 'Document Grounded'}`;
+      barMeta.textContent = `${difficulty} · ${grounding === 'none' ? 'Not linked to notes' : 'From your notes'}`;
 
     const welcome = document.getElementById('welcome');
     if (welcome) welcome.style.display = 'none';
@@ -670,12 +668,17 @@ function appendTutorMessage(data) {
 }
 
 // ── CITATIONS ────────────────────────────────
+// "slide 4" for PowerPoint lectures, "p.4" for other notes.
+function slideOrPage(citation) {
+  return /\.pptx$/i.test(citation.filename || '') ? `slide ${citation.page}` : `p.${citation.page}`;
+}
+
 function sourceChips(citations) {
   if (!citations?.length) return '';
   return `<div class="source-row">${citations
     .map(
       (c, i) =>
-        `<button type="button" class="cite-chip" data-cite="${i}">${escHtml(c.filename)} · p.${escHtml(c.page)}</button>`,
+        `<button type="button" class="cite-chip" data-cite="${i}">${escHtml(c.filename)} · ${escHtml(slideOrPage(c))}</button>`,
     )
     .join('')}</div>`;
 }
@@ -686,7 +689,7 @@ function linkCitations(html, citations) {
     html = html
       .split(reference)
       .join(
-        `<button type="button" class="cite-chip inline" data-cite="${i}">${reference}</button>`,
+        `<button type="button" class="cite-chip inline" data-cite="${i}">${escHtml(`[${c.filename} ${slideOrPage(c)}]`)}</button>`,
       );
   });
   return html;
@@ -706,7 +709,7 @@ function appendSourcesPreview(citations) {
 
 function showCitation(citation) {
   const modal = document.createElement('sentio-modal');
-  modal.setAttribute('title', `${citation.filename} · page ${citation.page}`);
+  modal.setAttribute('title', `${citation.filename} · ${slideOrPage(citation)}`);
   const passage = document.createElement('blockquote');
   passage.className = 'cited-passage';
   passage.textContent = citation.text || 'The passage text is not available.';

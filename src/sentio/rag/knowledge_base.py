@@ -1,47 +1,18 @@
 """
-knowledge_base.py — Curriculum Knowledge Base for Emotion-Aware AI Tutor
-=========================================================================
-Responsibilities:
-  1. Store structured curriculum content (concepts, explanations, examples,
-     analogies, quizzes) per subject and difficulty level
-  2. Retrieve the best content chunk for a given topic + learning state
-  3. Adapt difficulty dynamically based on student performance
-  4. Support semantic search using sentence embeddings (RAG-lite)
-  5. Track which content has been shown to avoid repetition
+knowledge_base.py: retrieval over the learner's own notes.
 
-Architecture:
-  ┌─────────────────────────────────────────────────────────┐
-  │  KnowledgeBase                                          │
-  │   ├── CurriculumStore   (static structured content)     │
-  │   ├── SemanticRetriever (embedding-based search)        │
-  │   └── ContentAdapter    (strategy → content transform)  │
-  └─────────────────────────────────────────────────────────┘
-
-Usage:
-    kb = KnowledgeBase()
-    kb.load()
-
-    chunk = kb.retrieve(
-        subject="mathematics",
-        topic="derivatives",
-        difficulty="intermediate",
-        learning_state="struggling"
-    )
-    print(chunk.explanation)
-    print(chunk.analogy)
+KnowledgeBase.retrieve runs hybrid search (BM25 + MiniLM embeddings in Qdrant) over the
+selected notes and returns a RetrievedContent package with the passages, citations and
+an evidence outcome. When nothing relevant is found, or no notes are selected, the
+outcome tells the tutor workflow to refuse instead of calling the model.
 """
 
-import hashlib
-import json
 import logging
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from enum import Enum
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import numpy as np
-
-from sentio.config import DATA_DIR, nlp_cfg, tutor_cfg
+from sentio.config import nlp_cfg, tutor_cfg
 
 logger = logging.getLogger(__name__)
 
@@ -67,51 +38,6 @@ class Difficulty(str, Enum):
         return order[max(idx - 1, 0)]
 
 
-class ContentType(str, Enum):
-    CONCEPT = "concept"  # Core definition / theory
-    EXPLANATION = "explanation"  # Detailed walkthrough
-    ANALOGY = "analogy"  # Real-world comparison
-    EXAMPLE = "example"  # Worked example
-    QUIZ = "quiz"  # Comprehension check question
-    CHALLENGE = "challenge"  # Harder extension problem
-    MOTIVATION = "motivation"  # Why this matters (real-world hook)
-    HINT = "hint"  # Step-by-step nudge
-
-
-# ─────────────────────────────────────────────
-# DATA CLASSES
-# ─────────────────────────────────────────────
-
-
-@dataclass
-class ContentChunk:
-    """
-    A single retrievable piece of curriculum content.
-    Every chunk is tagged with subject, topic, difficulty, and type.
-    """
-
-    chunk_id: str
-    subject: str
-    topic: str
-    difficulty: Difficulty
-    content_type: ContentType
-    text: str  # The actual content text
-    tags: List[str] = field(default_factory=list)
-    prerequisites: List[str] = field(default_factory=list)
-    follow_ups: List[str] = field(default_factory=list)
-    embedding: Optional[np.ndarray] = field(default=None, repr=False)
-
-    def to_dict(self) -> dict:
-        d = asdict(self)
-        d.pop("embedding")  # Don't serialize numpy arrays
-        return d
-
-    @staticmethod
-    def make_id(subject: str, topic: str, difficulty: str, content_type: str) -> str:
-        raw = f"{subject}::{topic}::{difficulty}::{content_type}"
-        return hashlib.md5(raw.encode()).hexdigest()[:12]
-
-
 @dataclass
 class RetrievedContent:
     """
@@ -125,15 +51,6 @@ class RetrievedContent:
     learning_state: str
     strategy: str
 
-    concept: Optional[str] = None
-    explanation: Optional[str] = None
-    analogy: Optional[str] = None
-    example: Optional[str] = None
-    quiz_question: Optional[str] = None
-    challenge: Optional[str] = None
-    motivation: Optional[str] = None
-    hints: List[str] = field(default_factory=list)
-
     # Metadata
     chunks_used: List[str] = field(default_factory=list)  # chunk_ids
 
@@ -145,96 +62,7 @@ class RetrievedContent:
     rag_context: Optional[str] = None
 
     def has_content(self) -> bool:
-        return any(
-            [
-                self.concept,
-                self.explanation,
-                self.analogy,
-                self.example,
-                self.quiz_question,
-                self.is_rag and self.rag_context,
-            ]
-        )
-
-
-# ─────────────────────────────────────────────
-# CURRICULUM STORE
-# ─────────────────────────────────────────────
-
-
-class CurriculumStore:
-    """
-    In-memory store of all curriculum ContentChunks.
-    Seeded with built-in content; can also load from JSON files.
-    """
-
-    def __init__(self):
-        self._chunks: Dict[str, ContentChunk] = {}  # chunk_id → chunk
-        self._index: Dict[str, List[str]] = {}  # "subject::topic::diff" → [ids]
-
-    # ── Loading ────────────────────────────────
-
-    def seed_builtin(self):
-        """Load the built-in curriculum (hardcoded seed data)."""
-        for chunk_data in _BUILTIN_CURRICULUM:
-            chunk = ContentChunk(**chunk_data)
-            self.add(chunk)
-        logger.info(f"Seeded {len(self._chunks)} built-in content chunks.")
-
-    def load_from_file(self, path: Path):
-        """Load additional curriculum from a JSON file."""
-        if not path.exists():
-            logger.warning(f"Curriculum file not found: {path}")
-            return
-        with open(path) as f:
-            data = json.load(f)
-        for item in data:
-            self.add(ContentChunk(**item))
-        logger.info(f"Loaded {len(data)} chunks from {path}")
-
-    def save_to_file(self, path: Path):
-        """Persist all chunks to JSON."""
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "w") as f:
-            json.dump([c.to_dict() for c in self._chunks.values()], f, indent=2)
-        logger.info(f"Saved {len(self._chunks)} chunks → {path}")
-
-    # ── CRUD ───────────────────────────────────
-
-    def add(self, chunk: ContentChunk):
-        self._chunks[chunk.chunk_id] = chunk
-        key = f"{chunk.subject}::{chunk.topic}::{chunk.difficulty}"
-        self._index.setdefault(key, []).append(chunk.chunk_id)
-
-    def get(self, chunk_id: str) -> Optional[ContentChunk]:
-        return self._chunks.get(chunk_id)
-
-    def query(
-        self,
-        subject: str,
-        topic: str,
-        difficulty: Difficulty,
-        content_types: Optional[List[ContentType]] = None,
-    ) -> List[ContentChunk]:
-        """Retrieve all chunks matching subject + topic + difficulty."""
-        key = f"{subject}::{topic}::{difficulty}"
-        ids = self._index.get(key, [])
-        chunks = [self._chunks[i] for i in ids if i in self._chunks]
-        if content_types:
-            chunks = [c for c in chunks if c.content_type in content_types]
-        return chunks
-
-    def all_topics(self, subject: str) -> List[str]:
-        """List all topics available for a subject."""
-        topics = set()
-        for key in self._index:
-            parts = key.split("::")
-            if parts[0] == subject:
-                topics.add(parts[1])
-        return sorted(topics)
-
-    def __len__(self):
-        return len(self._chunks)
+        return bool(self.is_rag and self.rag_context)
 
 
 # ─────────────────────────────────────────────
@@ -243,17 +71,11 @@ class CurriculumStore:
 
 
 class SemanticRetriever:
-    """
-    Embedding-based semantic search over ContentChunks.
-    Uses sentence-transformers for dense retrieval (RAG-lite).
-    Falls back to keyword matching if model unavailable.
-    """
+    """Lazily loads the sentence-transformers model used to embed queries."""
 
     def __init__(self, model_name: str = nlp_cfg.EMBEDDING_MODEL):
         self.model_name = model_name
         self._model = None
-        self._chunk_ids: List[str] = []
-        self._embeddings: Optional[np.ndarray] = None
 
     def _load_model(self):
         """Lazy-load sentence-transformers model."""
@@ -277,48 +99,6 @@ class SemanticRetriever:
             )
             self._model = None
 
-    def index(self, chunks: List[ContentChunk]):
-        """Build embedding index from a list of chunks."""
-        self._load_model()
-        if not self._model:
-            return
-
-        texts = [c.text for c in chunks]
-        self._chunk_ids = [c.chunk_id for c in chunks]
-        self._embeddings = self._model.encode(
-            texts, batch_size=32, show_progress_bar=False, normalize_embeddings=True
-        )
-        logger.info(f"Indexed {len(chunks)} chunks for semantic search.")
-
-    def search(self, query: str, chunks: List[ContentChunk], top_k: int = 5) -> List[ContentChunk]:
-        """
-        Return top-k semantically similar chunks for a query.
-        Falls back to simple keyword overlap if embeddings unavailable.
-        """
-        self._load_model()
-
-        if self._model is None or self._embeddings is None:
-            return self._keyword_fallback(query, chunks, top_k)
-
-        query_emb = self._model.encode([query], normalize_embeddings=True)
-        # Cosine similarity (embeddings are L2-normalized → dot product)
-        scores = (self._embeddings @ query_emb.T).flatten()
-        top_indices = np.argsort(scores)[::-1][:top_k]
-        return [chunks[i] for i in top_indices]
-
-    def _keyword_fallback(
-        self, query: str, chunks: List[ContentChunk], top_k: int
-    ) -> List[ContentChunk]:
-        """Simple word-overlap scoring when embeddings aren't available."""
-        query_words = set(query.lower().split())
-        scored = []
-        for chunk in chunks:
-            chunk_words = set(chunk.text.lower().split())
-            overlap = len(query_words & chunk_words)
-            scored.append((overlap, chunk))
-        scored.sort(key=lambda x: x[0], reverse=True)
-        return [c for _, c in scored[:top_k]]
-
 
 # ─────────────────────────────────────────────
 # CONTENT ADAPTER
@@ -326,31 +106,7 @@ class SemanticRetriever:
 
 
 class ContentAdapter:
-    """
-    Given a teaching strategy (from TutorConfig.STRATEGY_MAP),
-    decides WHICH content types to prioritize and HOW to frame them.
-    """
-
-    # Strategy → ordered list of preferred content types
-    STRATEGY_CONTENT_PRIORITY: Dict[str, List[ContentType]] = {
-        "challenge": [ContentType.CHALLENGE, ContentType.EXAMPLE, ContentType.QUIZ],
-        "standard": [ContentType.EXPLANATION, ContentType.EXAMPLE, ContentType.QUIZ],
-        "explore": [
-            ContentType.CONCEPT,
-            ContentType.EXPLANATION,
-            ContentType.MOTIVATION,
-            ContentType.CHALLENGE,
-        ],
-        "simplify": [
-            ContentType.ANALOGY,
-            ContentType.HINT,
-            ContentType.EXAMPLE,
-            ContentType.EXPLANATION,
-        ],
-        "reassure": [ContentType.HINT, ContentType.ANALOGY, ContentType.EXAMPLE],
-        "reframe": [ContentType.ANALOGY, ContentType.MOTIVATION, ContentType.EXPLANATION],
-        "motivate": [ContentType.MOTIVATION, ContentType.EXAMPLE, ContentType.ANALOGY],
-    }
+    """Maps a teaching strategy to a tone instruction and adapts difficulty."""
 
     # Strategy → tone instruction (injected into prompts)
     STRATEGY_TONE: Dict[str, str] = {
@@ -362,11 +118,6 @@ class ContentAdapter:
         "reframe": "Try a completely different angle. Use a fresh analogy or visual metaphor.",
         "motivate": "Make it exciting. Connect to real-world applications. Use a story hook.",
     }
-
-    def get_priority_types(self, strategy: str) -> List[ContentType]:
-        return self.STRATEGY_CONTENT_PRIORITY.get(
-            strategy, [ContentType.EXPLANATION, ContentType.EXAMPLE]
-        )
 
     def get_tone(self, strategy: str) -> str:
         return self.STRATEGY_TONE.get(strategy, "Explain clearly and helpfully.")
@@ -426,21 +177,16 @@ class KnowledgeBase:
         )
     """
 
-    CURRICULUM_FILE = DATA_DIR / "curriculum.json"
-
     def __init__(
         self,
-        store: Optional[CurriculumStore] = None,
         retriever: Optional[SemanticRetriever] = None,
         adapter: Optional[ContentAdapter] = None,
         vdb: Optional[Any] = None,
         doc_repo: Optional[Any] = None,
         ranker: Optional[Any] = None,
     ):
-        self.store = store or CurriculumStore()
         self.retriever = retriever or SemanticRetriever()
         self.adapter = adapter or ContentAdapter()
-        self._shown: Dict[str, set] = {}  # session_id → {chunk_ids seen}
 
         # Connect to SQLite Document registry and Qdrant client
         from sentio.rag.reranker import HybridRanker
@@ -452,12 +198,10 @@ class KnowledgeBase:
         self.ranker = ranker or HybridRanker(w_vector=0.75, w_keyword=0.25)
 
     def load(self):
-        """Load built-in curriculum + any user-added JSON curriculum."""
-        self.store.seed_builtin()
-        self.store.load_from_file(self.CURRICULUM_FILE)
+        """Open the document registry and the vector index."""
         self.doc_repo.load()
         self.vdb.connect()
-        logger.info(f"KnowledgeBase ready. Total chunks: {len(self.store)}")
+        logger.info("KnowledgeBase ready.")
 
     def retrieve(
         self,
@@ -487,6 +231,12 @@ class KnowledgeBase:
             learning_state=learning_state,
             strategy=strategy,
         )
+
+        if student_id:
+            from sentio.repositories.courses import expand_source
+
+            with self.doc_repo.persister._engine.connect() as connection:
+                document_id = expand_source(connection, student_id, document_id)
 
         # Check if we have documents indexed and allowed for this student
         has_docs = False
@@ -713,43 +463,8 @@ class KnowledgeBase:
                 }
                 return content
 
-        if document_id not in (None, "none"):
-            content.evidence_outcome = "insufficient"
-            return content
-
-        # Fallback to static curriculum only in the explicitly general tutor.
-        priority_types = self.adapter.get_priority_types(strategy)
-        chunks = self.store.query(subject, topic, diff)
-
-        if not chunks:
-            for fallback_diff in [
-                Difficulty.INTERMEDIATE,
-                Difficulty.BEGINNER,
-                Difficulty.ADVANCED,
-            ]:
-                chunks = self.store.query(subject, topic, fallback_diff)
-                if chunks:
-                    break
-
-        if query and chunks:
-            chunks = self.retriever.search(query, chunks, top_k=min(10, len(chunks)))
-
-        seen = self._shown.get(session_id, set()) if session_id else set()
-        fresh = [c for c in chunks if c.chunk_id not in seen]
-        if not fresh:
-            fresh = chunks
-
-        type_map = {c.content_type: c for c in fresh}
-
-        for ct in priority_types:
-            chunk = type_map.get(ct)
-            if not chunk:
-                continue
-            self._assign_content(content, ct, chunk.text)
-            content.chunks_used.append(chunk.chunk_id)
-            if session_id:
-                self._shown.setdefault(session_id, set()).add(chunk.chunk_id)
-
+        # Answers come only from the learner's notes: without matching passages, refuse.
+        content.evidence_outcome = "no_source" if document_id in (None, "none") else "insufficient"
         return content
 
     def _compute_single_bm25_score(self, searcher, query: str, doc_id: str) -> float:
@@ -775,24 +490,6 @@ class KnowledgeBase:
 
         return score
 
-    def _assign_content(self, content: RetrievedContent, ct: ContentType, text: str):
-        """Map ContentType → RetrievedContent field."""
-        mapping = {
-            ContentType.CONCEPT: "concept",
-            ContentType.EXPLANATION: "explanation",
-            ContentType.ANALOGY: "analogy",
-            ContentType.EXAMPLE: "example",
-            ContentType.QUIZ: "quiz_question",
-            ContentType.CHALLENGE: "challenge",
-            ContentType.MOTIVATION: "motivation",
-            ContentType.HINT: "hints",
-        }
-        attr = mapping.get(ct)
-        if attr == "hints":
-            content.hints.append(text)
-        elif attr:
-            setattr(content, attr, text)
-
     def adapt_difficulty(
         self,
         current_difficulty: str,
@@ -806,403 +503,6 @@ class KnowledgeBase:
         )
         return result.value
 
-    def list_topics(self, subject: str) -> List[str]:
-        return self.store.all_topics(subject)
-
     def get_tone_instruction(self, learning_state: str) -> str:
         strategy = tutor_cfg.STRATEGY_MAP.get(learning_state, "standard")
         return self.adapter.get_tone(strategy)
-
-    def reset_session(self, session_id: str):
-        """Clear shown-content history for a session."""
-        self._shown.pop(session_id, None)
-
-
-# ─────────────────────────────────────────────
-# BUILT-IN CURRICULUM SEED DATA
-# ─────────────────────────────────────────────
-# Format: matches ContentChunk fields (without embedding)
-# Covers: mathematics (derivatives), physics (newton's laws),
-#         computer_science (recursion) across all 3 difficulty levels.
-# Add more topics by extending this list or loading curriculum.json.
-
-
-def _make_chunk(
-    subject, topic, difficulty, content_type, text, tags=None, prereqs=None, followups=None
-):
-    cid = ContentChunk.make_id(subject, topic, difficulty, content_type)
-    return {
-        "chunk_id": cid,
-        "subject": subject,
-        "topic": topic,
-        "difficulty": Difficulty(difficulty),
-        "content_type": ContentType(content_type),
-        "text": text,
-        "tags": tags or [],
-        "prerequisites": prereqs or [],
-        "follow_ups": followups or [],
-    }
-
-
-_BUILTIN_CURRICULUM = [
-    # ══════════════════════════════════════
-    # MATHEMATICS — DERIVATIVES
-    # ══════════════════════════════════════
-    _make_chunk(
-        "mathematics",
-        "derivatives",
-        "beginner",
-        "concept",
-        "A derivative measures how fast something changes. If you have a function f(x), "
-        "its derivative f'(x) tells you the slope of the curve at any point x — "
-        "in other words, how steeply the function is rising or falling.",
-        tags=["calculus", "rate-of-change", "slope"],
-    ),
-    _make_chunk(
-        "mathematics",
-        "derivatives",
-        "beginner",
-        "analogy",
-        "Imagine you're driving a car and watching your speedometer. "
-        "Your position is the function; your speed at any moment is the derivative. "
-        "The derivative doesn't tell you where you are — it tells you how fast you're moving.",
-        tags=["analogy", "speed", "intuition"],
-    ),
-    _make_chunk(
-        "mathematics",
-        "derivatives",
-        "beginner",
-        "example",
-        "Let's differentiate f(x) = x².\n"
-        "Using the power rule: bring the exponent down and reduce it by 1.\n"
-        "  f'(x) = 2x¹ = 2x\n"
-        "This means at x=3, the slope is 2×3 = 6. The curve is rising steeply there.",
-        tags=["power-rule", "worked-example"],
-    ),
-    _make_chunk(
-        "mathematics",
-        "derivatives",
-        "beginner",
-        "quiz",
-        "Quick check: What is the derivative of f(x) = x³? "
-        "Use the power rule. What does f'(2) equal?",
-        tags=["quiz", "power-rule"],
-    ),
-    _make_chunk(
-        "mathematics",
-        "derivatives",
-        "beginner",
-        "motivation",
-        "Derivatives power everything from GPS navigation (optimizing routes) "
-        "to machine learning (gradient descent updates model weights using derivatives). "
-        "Every neural network you've heard of — GPT, Stable Diffusion — relies on derivatives.",
-        tags=["motivation", "real-world", "ML"],
-    ),
-    _make_chunk(
-        "mathematics",
-        "derivatives",
-        "beginner",
-        "hint",
-        "Stuck? Remember the power rule: d/dx [xⁿ] = n·xⁿ⁻¹. "
-        "Just multiply by the exponent, then lower the exponent by 1.",
-        tags=["hint", "power-rule"],
-    ),
-    _make_chunk(
-        "mathematics",
-        "derivatives",
-        "intermediate",
-        "concept",
-        "The chain rule lets you differentiate composite functions: if h(x) = f(g(x)), "
-        "then h'(x) = f'(g(x)) · g'(x). You differentiate the outer function (leaving the "
-        "inner alone), then multiply by the derivative of the inner function.",
-        tags=["chain-rule", "composite-functions"],
-    ),
-    _make_chunk(
-        "mathematics",
-        "derivatives",
-        "intermediate",
-        "analogy",
-        "Think of the chain rule like gears. If gear A turns gear B, and gear B turns gear C, "
-        "the speed of C depends on both gear ratios multiplied together. "
-        "Each link in the chain contributes a factor.",
-        tags=["chain-rule", "analogy", "gears"],
-    ),
-    _make_chunk(
-        "mathematics",
-        "derivatives",
-        "intermediate",
-        "example",
-        "Differentiate h(x) = sin(x²).\n"
-        "  Outer function: f(u) = sin(u) → f'(u) = cos(u)\n"
-        "  Inner function: g(x) = x²   → g'(x) = 2x\n"
-        "  Chain rule:  h'(x) = cos(x²) · 2x = 2x·cos(x²)",
-        tags=["chain-rule", "trig", "worked-example"],
-    ),
-    _make_chunk(
-        "mathematics",
-        "derivatives",
-        "intermediate",
-        "quiz",
-        "Using the chain rule, differentiate h(x) = (3x + 1)⁵. What is h'(x)?",
-        tags=["quiz", "chain-rule"],
-    ),
-    _make_chunk(
-        "mathematics",
-        "derivatives",
-        "advanced",
-        "concept",
-        "Implicit differentiation handles equations where y cannot be easily isolated. "
-        "Differentiate both sides with respect to x, treating y as a function of x, "
-        "and apply the chain rule whenever you differentiate a y term (multiply by dy/dx).",
-        tags=["implicit-differentiation", "advanced"],
-    ),
-    _make_chunk(
-        "mathematics",
-        "derivatives",
-        "advanced",
-        "example",
-        "Find dy/dx for the circle x² + y² = 25.\n"
-        "  Differentiate both sides w.r.t. x:\n"
-        "    2x + 2y·(dy/dx) = 0\n"
-        "  Solve for dy/dx:\n"
-        "    dy/dx = -x/y\n"
-        "At point (3, 4): slope = -3/4.",
-        tags=["implicit", "circle", "worked-example"],
-    ),
-    _make_chunk(
-        "mathematics",
-        "derivatives",
-        "advanced",
-        "challenge",
-        "Challenge: Use implicit differentiation to find dy/dx for "
-        "x³ + y³ = 6xy (the folium of Descartes). "
-        "Then find the slope at the point (3, 3).",
-        tags=["challenge", "implicit", "folium"],
-    ),
-    # ══════════════════════════════════════
-    # PHYSICS — NEWTON'S LAWS
-    # ══════════════════════════════════════
-    _make_chunk(
-        "physics",
-        "newtons_laws",
-        "beginner",
-        "concept",
-        "Newton's Three Laws of Motion:\n"
-        "1. Inertia: An object stays at rest or in uniform motion unless acted on by a force.\n"
-        "2. F = ma: Force equals mass times acceleration.\n"
-        "3. Action-Reaction: For every action, there is an equal and opposite reaction.",
-        tags=["newton", "laws-of-motion", "forces"],
-    ),
-    _make_chunk(
-        "physics",
-        "newtons_laws",
-        "beginner",
-        "analogy",
-        "Law 1 — A hockey puck on ice keeps sliding forever because there's almost no friction. "
-        "Law 2 — Pushing an empty shopping cart (low mass) gives huge acceleration; "
-        "a full one needs much more force. "
-        "Law 3 — When you jump, you push the Earth down; the Earth pushes you up.",
-        tags=["analogy", "inertia", "everyday"],
-    ),
-    _make_chunk(
-        "physics",
-        "newtons_laws",
-        "beginner",
-        "example",
-        "A 10 kg box is pushed with a force of 50 N. Find its acceleration.\n"
-        "  F = ma  →  a = F/m = 50/10 = 5 m/s²\n"
-        "The box accelerates at 5 metres per second squared.",
-        tags=["F=ma", "worked-example", "calculation"],
-    ),
-    _make_chunk(
-        "physics",
-        "newtons_laws",
-        "beginner",
-        "motivation",
-        "Newton's laws explain how rockets launch (Law 3), "
-        "how seatbelts save lives (Law 1 — your body keeps moving in a crash), "
-        "and how athletes optimize performance. Every engineering structure uses these laws.",
-        tags=["motivation", "rockets", "engineering"],
-    ),
-    _make_chunk(
-        "physics",
-        "newtons_laws",
-        "intermediate",
-        "concept",
-        "Free body diagrams (FBDs) show all forces acting on an object as arrows. "
-        "Normal force acts perpendicular to surfaces; friction acts parallel (opposing motion); "
-        "gravity acts downward. Net force = vector sum of all forces → use F_net = ma.",
-        tags=["free-body-diagram", "normal-force", "friction"],
-    ),
-    _make_chunk(
-        "physics",
-        "newtons_laws",
-        "intermediate",
-        "example",
-        "A 5 kg block slides down a 30° frictionless incline. Find its acceleration.\n"
-        "  Component of gravity along incline: F = mg·sin(30°) = 5×10×0.5 = 25 N\n"
-        "  a = F/m = 25/5 = 5 m/s²\n"
-        "It accelerates at 5 m/s² down the slope.",
-        tags=["incline", "components", "worked-example"],
-    ),
-    _make_chunk(
-        "physics",
-        "newtons_laws",
-        "advanced",
-        "concept",
-        "In non-inertial (accelerating) reference frames, we introduce pseudo-forces "
-        "(e.g. centrifugal force, Coriolis force) to apply Newton's laws. "
-        "These are fictitious — they don't exist in an inertial frame — but they're "
-        "mathematically useful (e.g., weather systems, Foucault pendulum).",
-        tags=["non-inertial", "pseudo-forces", "reference-frames"],
-    ),
-    _make_chunk(
-        "physics",
-        "newtons_laws",
-        "advanced",
-        "challenge",
-        "Challenge: A 2 kg block sits on top of a 5 kg block on a frictionless surface. "
-        "The coefficient of static friction between the blocks is 0.4. "
-        "What is the maximum force F that can be applied to the lower block "
-        "without the upper block sliding? Draw the FBD first.",
-        tags=["challenge", "friction", "system-of-blocks"],
-    ),
-    # ══════════════════════════════════════
-    # COMPUTER SCIENCE — RECURSION
-    # ══════════════════════════════════════
-    _make_chunk(
-        "computer_science",
-        "recursion",
-        "beginner",
-        "concept",
-        "Recursion is when a function calls itself to solve a smaller version of the same problem. "
-        "Every recursive function needs: (1) a base case — the stopping condition, "
-        "and (2) a recursive case — the function calling itself with a simpler input.",
-        tags=["recursion", "base-case", "call-stack"],
-    ),
-    _make_chunk(
-        "computer_science",
-        "recursion",
-        "beginner",
-        "analogy",
-        "Think of Russian nesting dolls (Matryoshka). To find the smallest doll, "
-        "you open the current one and check if there's another inside — "
-        "you keep going until you find one that doesn't open (base case). "
-        "That's exactly how recursion works.",
-        tags=["analogy", "matryoshka", "intuition"],
-    ),
-    _make_chunk(
-        "computer_science",
-        "recursion",
-        "beginner",
-        "example",
-        "Factorial using recursion:\n\n"
-        "def factorial(n):\n"
-        "    if n == 0:          # base case\n"
-        "        return 1\n"
-        "    return n * factorial(n - 1)  # recursive case\n\n"
-        "factorial(4) → 4 × factorial(3) → 4 × 3 × factorial(2) → ... → 24",
-        tags=["factorial", "python", "worked-example"],
-    ),
-    _make_chunk(
-        "computer_science",
-        "recursion",
-        "beginner",
-        "quiz",
-        "What is the output of factorial(5)? Trace through the calls step by step to verify.",
-        tags=["quiz", "factorial", "trace"],
-    ),
-    _make_chunk(
-        "computer_science",
-        "recursion",
-        "beginner",
-        "hint",
-        "If your recursive function never stops, check: does your base case cover all "
-        "stopping conditions? Is the recursive call always moving toward the base case "
-        "(i.e., is n getting smaller)?",
-        tags=["hint", "infinite-recursion", "debugging"],
-    ),
-    _make_chunk(
-        "computer_science",
-        "recursion",
-        "intermediate",
-        "concept",
-        "The call stack stores each recursive call's local variables and return address. "
-        "Deep recursion can cause a stack overflow. "
-        "Tail recursion (last operation is the recursive call) can be optimized by "
-        "compilers to avoid stack growth. Python does NOT optimize tail calls by default.",
-        tags=["call-stack", "tail-recursion", "stack-overflow"],
-    ),
-    _make_chunk(
-        "computer_science",
-        "recursion",
-        "intermediate",
-        "example",
-        "Binary search using recursion:\n\n"
-        "def binary_search(arr, target, lo, hi):\n"
-        "    if lo > hi:\n"
-        "        return -1\n"
-        "    mid = (lo + hi) // 2\n"
-        "    if arr[mid] == target:\n"
-        "        return mid\n"
-        "    elif arr[mid] < target:\n"
-        "        return binary_search(arr, target, mid+1, hi)\n"
-        "    else:\n"
-        "        return binary_search(arr, target, lo, mid-1)",
-        tags=["binary-search", "divide-conquer", "python"],
-    ),
-    _make_chunk(
-        "computer_science",
-        "recursion",
-        "advanced",
-        "concept",
-        "Memoization caches recursive results to avoid redundant computation. "
-        "Dynamic programming (bottom-up) replaces recursion with iteration + a table. "
-        "Both reduce exponential time complexity (e.g., naive Fibonacci O(2^n)) "
-        "to polynomial (O(n)).",
-        tags=["memoization", "dynamic-programming", "optimization"],
-    ),
-    _make_chunk(
-        "computer_science",
-        "recursion",
-        "advanced",
-        "challenge",
-        "Challenge: Implement the Tower of Hanoi for n disks recursively. "
-        "Then prove that the minimum number of moves is 2ⁿ - 1. "
-        "Finally, convert your recursive solution to an iterative one.",
-        tags=["hanoi", "challenge", "proof", "iterative"],
-    ),
-    # ══════════════════════════════════════
-    # MATHEMATICS — LIMITS
-    # ══════════════════════════════════════
-    _make_chunk(
-        "mathematics",
-        "limits",
-        "beginner",
-        "concept",
-        "A limit describes what value a function approaches as the input gets "
-        "closer and closer to some value — even if the function never actually reaches it. "
-        "Written as: lim(x→a) f(x) = L means f(x) gets arbitrarily close to L as x→a.",
-        tags=["limits", "calculus", "approach"],
-    ),
-    _make_chunk(
-        "mathematics",
-        "limits",
-        "beginner",
-        "analogy",
-        "Imagine walking toward a wall. You can get closer and closer — "
-        "1 metre away, 10 cm, 1 mm — without ever touching it. "
-        "The wall is the limit: the value you're approaching, not necessarily reaching.",
-        tags=["analogy", "approach", "intuition"],
-    ),
-    _make_chunk(
-        "mathematics",
-        "limits",
-        "intermediate",
-        "concept",
-        "L'Hôpital's Rule: If lim f(x)/g(x) gives 0/0 or ∞/∞ (indeterminate form), "
-        "then lim f(x)/g(x) = lim f'(x)/g'(x), provided the latter limit exists. "
-        "Differentiate numerator and denominator separately — not as a quotient.",
-        tags=["lhopital", "indeterminate", "technique"],
-    ),
-]

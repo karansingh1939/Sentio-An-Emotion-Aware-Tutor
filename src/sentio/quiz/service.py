@@ -74,8 +74,14 @@ class QuizService:
             session = deepcopy(session)
         document_id = session.metadata.get("document_id")
         grounded = document_id not in (None, "none")
+        if not grounded:
+            raise ValueError("Choose notes for this session before making a quiz.")
         if grounded and document_id != "all":
-            selected = document_id if isinstance(document_id, list) else [document_id]
+            from sentio.repositories.courses import expand_source
+
+            with self.agent.sm.persister._engine.connect() as connection:
+                selected = expand_source(connection, student_id, document_id)
+            selected = selected if isinstance(selected, list) else [selected]
             owned = {d["id"] for d in self.agent.sm.list_documents(student_id=student_id)}
             if any(d not in owned for d in selected):
                 raise PermissionError("Access denied or document not found.")

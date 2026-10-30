@@ -567,8 +567,7 @@ html:not([data-emotion='on']) .emotion-only {
   .library-table tbody {
     display: block;
   }
-  .library-table thead,
-  .library-table td:nth-child(2) {
+  .library-table thead {
     display: none;
   }
   .library-table tr {

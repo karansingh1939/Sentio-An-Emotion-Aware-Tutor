@@ -67,14 +67,7 @@ export class QuizzesView {
           ${store.getState('activeSessionId') ? '<a href="#/tutor">Change what you are studying</a>' : '<a class="workspace-action" href="#/documents">Choose notes</a>'}
           <div style="display:flex;flex-direction:column;gap:14px;margin-top:10px;">
             <div>
-              <label class="form-label" for="quiz-subject">Subject</label>
-<select class="input" id="quiz-subject">
-                <option value="physics">Physics</option>
-                <option value="computer_science">Computer Science</option>
-                <option value="mathematics">Mathematics</option>
-                <option value="chemistry">Chemistry</option>
-                <option value="biology">Biology</option>
-              </select>
+              <input type="hidden" id="quiz-subject" value="My notes" />
             </div>
 
             <div>

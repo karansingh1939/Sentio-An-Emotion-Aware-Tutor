@@ -531,3 +531,15 @@ the session "×" now honestly ends (not deletes) active sessions; study streak c
 consecutive days; quiz summary is deterministic (no model call); short-answer Check
 answer waits 190 s; EMOTION.md and INTERVIEW_GUIDE.md corrected. Not done: the judge's
 removals and simplifications (adaptive difficulty, voice code, dead endpoints).
+
+## Phase 1: notes-first study - 30 October 2026
+
+Branch: feature/notes-first (stacked on fix/confirmed-bugs). Added courses (table
+`courses`, `documents.course_id`; API under /courses and PATCH /documents/{id}/course),
+PPTX ingestion (`python-pptx`, one page per slide), multi-file upload in Library, and
+course sessions (`course:<id>`, resolved by `expand_source` at question time). Removed the
+subject list and /subjects, the "General questions (without notes)" mode, and the
+built-in curriculum (knowledge_base.py 1,208 -> 516 lines); quizzes and flashcards now
+require notes, and old `none` sessions get a "choose notes" reply. The tutor prompt keeps
+its CURRICULUM REFERENCE header so saved evaluation prompt hashes stay reproducible.
+Next: Phase 2 (topic maps, per-topic mastery, weak parts).

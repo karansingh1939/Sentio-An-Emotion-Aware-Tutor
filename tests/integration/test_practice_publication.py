@@ -15,6 +15,18 @@ from tests.integration.test_study_planning import account
 def test_context_change_during_generation_does_not_save_practice(monkeypatch, kind, submission):
     with TestClient(app) as client:
         headers, owner = account(client, f"stale-{kind}-{submission}@example.com")
+        notes = client.post(
+            "/api/v1/documents/upload",
+            headers=headers,
+            files={
+                "file": (
+                    "newton.txt",
+                    b"Newton's First Law: inertia keeps an object at rest or in uniform motion "
+                    b"unless a net external force acts on it.",
+                    "text/plain",
+                )
+            },
+        ).json()["document_id"]
         session_id = client.post(
             "/api/v1/sessions",
             headers=headers,
@@ -23,6 +35,7 @@ def test_context_change_during_generation_does_not_save_practice(monkeypatch, ki
                 "subject": "physics",
                 "topic": "Inertia",
                 "difficulty": "beginner",
+                "metadata": {"document_id": notes},
             },
         ).json()["session_id"]
         payload = {

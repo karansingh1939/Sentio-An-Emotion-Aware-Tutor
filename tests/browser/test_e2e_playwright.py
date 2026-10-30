@@ -101,12 +101,9 @@ async def test_sentio_playwright_e2e():
             health_json = await api_resp.json()
             assert health_json.get("status") in ["ok", "healthy", "degraded"]
 
-            # 5. Verify Subjects Endpoint
+            # 5. The fixed subject list is gone: sessions are labelled by notes and courses
             subjects_url = f"{BASE_URL}{api_cfg.API_PREFIX}/subjects"
-            subj_resp = await page.request.get(subjects_url)
-            assert subj_resp.status == 200, (
-                f"Subjects endpoint failed with status {subj_resp.status}"
-            )
+            assert (await page.request.get(subjects_url)).status == 404
 
             await browser.close()
 

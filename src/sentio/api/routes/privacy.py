@@ -140,7 +140,6 @@ def delete_student_data(student_id: str, request: Request, user: dict = Depends(
             agent.sm._sessions.pop(sid, None)
             agent.sm._diagnostics.pop(sid, None)
             agent.detector.clear_session(sid)
-            agent.kb.reset_session(sid)
             if hasattr(agent.nlp, "clear_history"):
                 agent.nlp.clear_history(sid)
         return {

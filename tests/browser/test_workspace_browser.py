@@ -64,6 +64,7 @@ async def test_streaming_turn_is_readable_and_survives_refresh(monkeypatch):
                         "subject": "physics",
                         "topic": "Inertia",
                         "difficulty": "beginner",
+                        "metadata": {"document_id": "all"},
                     },
                 )
             ).json()

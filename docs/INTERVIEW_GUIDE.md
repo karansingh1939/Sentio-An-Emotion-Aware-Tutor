@@ -44,7 +44,7 @@ Every claim here links to code, a test or a measurement in this repository.
 
 ## Demo in five minutes
 
-1. `uv run sentio --port 8001`, sign up, upload a short notes file in Library.
+1. `uv run sentio --port 8001`, sign up, create a course in Library and upload two lecture decks at once.
 2. Ask a question the notes answer: point at the citation.
 3. Ask something the notes don't cover: show the refusal.
 4. Make a quiz, open **Edit this question**, show the provenance label.

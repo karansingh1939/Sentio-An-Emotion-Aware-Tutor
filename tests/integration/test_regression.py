@@ -65,26 +65,16 @@ class TestSentioRegression(unittest.TestCase):
         self.assertEqual(data["student_id"], "test_student")
         self.assertEqual(data["total_exchanges"], 1)
 
-    def test_curriculum_retrieval(self):
-        """Verify that the KnowledgeBase retrieves seeded curriculum content."""
+    def test_retrieval_without_notes_refuses_instead_of_inventing_content(self):
+        """Without selected notes, retrieval reports no source so the tutor refuses."""
         content = self.kb.retrieve(
-            subject="mathematics",
+            subject="My notes",
             topic="derivatives",
             difficulty="beginner",
             learning_state="neutral",
         )
-        self.assertTrue(content.has_content())
-        self.assertIsNotNone(content.example)
-        self.assertIsNotNone(content.quiz_question)
-
-        # Verify fallback logic on out-of-bounds difficulty works
-        content_fallback = self.kb.retrieve(
-            subject="mathematics",
-            topic="derivatives",
-            difficulty="advanced",
-            learning_state="neutral",
-        )
-        self.assertTrue(content_fallback.has_content())
+        self.assertFalse(content.has_content())
+        self.assertEqual(content.evidence_outcome, "no_source")
 
     def test_prompt_building_and_parsing(self):
         """Verify prompt templates and LLM response parsing logic."""
@@ -134,10 +124,8 @@ class TestSentioRegression(unittest.TestCase):
             self.assertEqual(resp_health.status_code, 200)
             self.assertIn("status", resp_health.json())
 
-            # Subjects list check
-            resp_subjects = client.get("/api/v1/subjects")
-            self.assertEqual(resp_subjects.status_code, 200)
-            self.assertIn("subjects", resp_subjects.json())
+            # The fixed subject list is gone: sessions take any label
+            self.assertEqual(client.get("/api/v1/subjects").status_code, 404)
 
             # Create session endpoint check
             resp_session = client.post(

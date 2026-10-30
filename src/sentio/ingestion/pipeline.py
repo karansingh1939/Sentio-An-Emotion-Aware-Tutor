@@ -22,7 +22,7 @@ _ingestion_lock = RLock()
 class DocumentIngestionPipeline:
     """
     Intelligent document ingestion pipeline for Sentio.
-    Supports PDF, DOCX, and TXT files. Handles incremental indexing,
+    Supports PDF, DOCX, PPTX, TXT and image files. Handles incremental indexing,
     duplicate checksum detection, chunking with metadata, and Qdrant indexing.
     """
 
@@ -96,6 +96,35 @@ class DocumentIngestionPipeline:
         parsed_blocks.append({"page_number": 1, "text": full_text})
 
         return parsed_blocks
+
+    def parse_pptx(self, filepath: Path) -> List[Dict[str, Any]]:
+        """One page per slide: title, text boxes and table cells in order, then speaker notes."""
+        from pptx import Presentation
+        from pptx.enum.shapes import MSO_SHAPE_TYPE
+
+        def shape_lines(shapes):
+            for shape in shapes:
+                if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
+                    yield from shape_lines(shape.shapes)
+                elif shape.has_text_frame:
+                    yield from (p.text.strip() for p in shape.text_frame.paragraphs)
+                elif getattr(shape, "has_table", False) and shape.has_table:
+                    for row in shape.table.rows:
+                        yield " | ".join(cell.text.strip() for cell in row.cells)
+
+        pages = []
+        for number, slide in enumerate(Presentation(filepath).slides, start=1):
+            title = slide.shapes.title
+            lines = [title.text.strip()] if title is not None and title.text.strip() else []
+            body = [
+                shape for shape in slide.shapes if title is None or shape.shape_id != title.shape_id
+            ]
+            lines += [line for line in shape_lines(body) if line]
+            if slide.has_notes_slide and slide.notes_slide.notes_text_frame.text.strip():
+                lines.append("Notes: " + slide.notes_slide.notes_text_frame.text.strip())
+            if lines:
+                pages.append({"page_number": number, "text": "\n".join(lines)})
+        return pages
 
     def chunk_text(self, text: str, chunk_size: int = 500, chunk_overlap: int = 100) -> List[str]:
         """Perform sliding character-window chunking on text."""
@@ -193,6 +222,8 @@ class DocumentIngestionPipeline:
                 pages = self.parse_pdf(filepath)
             elif suffix == ".docx":
                 pages = self.parse_docx(filepath)
+            elif suffix == ".pptx":
+                pages = self.parse_pptx(filepath)
             elif suffix in [".png", ".jpg", ".jpeg"]:
                 from sentio.ingestion.ocr import image_page
 

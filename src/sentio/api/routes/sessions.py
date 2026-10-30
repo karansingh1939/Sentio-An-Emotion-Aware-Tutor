@@ -15,6 +15,23 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def _owned_source(owner, source):
+    """Notes a session studies from: "all", a course, a document id or a list of them."""
+    from sentio.repositories.courses import COURSE_PREFIX, CourseRepository
+
+    if source in (None, "none", "all"):
+        return
+    if isinstance(source, str) and source.startswith(COURSE_PREFIX):
+        course = source[len(COURSE_PREFIX) :]
+        if not CourseRepository(agent.sm.persister._engine).get(owner, course):
+            raise HTTPException(status_code=403, detail="Access denied or course not found.")
+        return
+    selected = source if isinstance(source, list) else [source]
+    owned = {doc["id"] for doc in agent.sm.list_documents(student_id=owner)}
+    if any(not isinstance(doc_id, str) or doc_id not in owned for doc_id in selected):
+        raise HTTPException(status_code=403, detail="Access denied or document not found.")
+
+
 @router.post(PREFIX + "/sessions", tags=["Sessions"], status_code=201)
 def create_session(req: CreateSessionRequest, user: dict = Depends(get_current_user)):
     """
@@ -22,11 +39,6 @@ def create_session(req: CreateSessionRequest, user: dict = Depends(get_current_u
 
     Returns the session_id to use in all subsequent calls.
     """
-    if req.subject not in tutor_cfg.SUBJECTS:
-        raise HTTPException(
-            status_code=400,
-            detail="Unknown subject '%s'. Available: %s" % (req.subject, tutor_cfg.SUBJECTS),
-        )
     if req.difficulty not in tutor_cfg.DIFFICULTY_LEVELS:
         raise HTTPException(
             status_code=400,
@@ -36,12 +48,7 @@ def create_session(req: CreateSessionRequest, user: dict = Depends(get_current_u
 
     # Force student_id from authenticated token payload
     req.student_id = user["student_id"]
-    document_id = (req.metadata or {}).get("document_id")
-    if document_id not in (None, "none", "all"):
-        selected = document_id if isinstance(document_id, list) else [document_id]
-        owned = {doc["id"] for doc in agent.sm.list_documents(student_id=req.student_id)}
-        if any(not isinstance(doc_id, str) or doc_id not in owned for doc_id in selected):
-            raise HTTPException(status_code=403, detail="Access denied or document not found.")
+    _owned_source(req.student_id, (req.metadata or {}).get("document_id"))
     _owned_goal(req.student_id, (req.metadata or {}).get("goal_id"))
 
     session = agent.start_session(
@@ -115,10 +122,7 @@ def set_session_grounding(
 ):
     """Update active document grounding source mid-session."""
     session = _verify_session_owner(session_id, user)
-    if req.document_id not in ["none", "all"]:
-        docs = agent.sm.list_documents(student_id=user["student_id"])
-        if not any(d["id"] == req.document_id for d in docs):
-            raise HTTPException(status_code=403, detail="Access denied or document not found.")
+    _owned_source(user["student_id"], req.document_id)
     streams = getattr(request.app.state, "streams", None)
     if streams:
         streams.cancel_session(user["student_id"], session_id)
@@ -131,7 +135,6 @@ def set_session_grounding(
         logger.warning(f"Failed to persist updated session grounding state: {e}")
         raise HTTPException(503, "Source change could not be saved. Retry.") from e
     agent.nlp.clear_history(session_id)
-    agent.kb.reset_session(session_id)
     return {"success": True, "document_id": req.document_id}
 
 

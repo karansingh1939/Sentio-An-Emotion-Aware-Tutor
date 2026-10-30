@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from sentio.api.app import app
 from sentio.session.manager import Session, SessionManager
 from sentio.tutor.orchestrator import SentioOrchestrator
-from tests.helpers import login_student
+from tests.helpers import login_student, upload_notes
 
 
 class TestSentioPhaseB(unittest.TestCase):
@@ -226,12 +226,18 @@ class TestSentioPhaseB(unittest.TestCase):
             student_id = login_student(client, admin=True)
 
             # 1. Create session
+            notes = upload_notes(
+                client,
+                "A derivative is the slope of the curve at a point. Derivatives measure the rate of change.",
+                "calculus.txt",
+            )
             resp_session = client.post(
                 "/api/v1/sessions",
                 json={
                     "student_id": student_id,
                     "subject": "mathematics",
                     "topic": "derivatives",
+                    "metadata": {"document_id": notes},
                     "difficulty": "beginner",
                 },
             )

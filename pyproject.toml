@@ -29,6 +29,7 @@ dependencies = [
     "psutil>=5.9,<8",
     "portalocker>=2.8,<4",
     "pyjwt>=2.10,<3",
+    "python-pptx>=1.0,<2",
 ]
 
 [project.optional-dependencies]

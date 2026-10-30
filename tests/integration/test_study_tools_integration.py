@@ -25,7 +25,7 @@ from sentio.ai.structured_parser import metrics as parser_metrics
 from sentio.api.app import agent, app
 
 # Configure test database and backend before importing the app
-from tests.helpers import login_student
+from tests.helpers import login_student, upload_notes
 
 
 # Mock OllamaBackend side_effect helper
@@ -223,12 +223,18 @@ class TestPhaseDE2E(unittest.TestCase):
         with TestClient(app) as client:
             self.student_id = login_student(client, admin=True)
             # 1. Create a Student Session
+            notes = upload_notes(
+                client,
+                "Thermodynamics studies heat, work and energy. Entropy measures disorder. Heat transfer moves energy between bodies.",
+                "thermo.txt",
+            )
             resp_session = client.post(
                 "/api/v1/sessions",
                 json={
                     "student_id": self.student_id,
                     "subject": "physics",
                     "topic": "thermodynamics",
+                    "metadata": {"document_id": notes},
                     "difficulty": "intermediate",
                 },
             )

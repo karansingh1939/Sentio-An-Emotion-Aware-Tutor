@@ -4,11 +4,16 @@ Start with `python scripts/dev/dev_start.py --port 8001` from the project direct
 Open http://127.0.0.1:8001 and leave the terminal open. Stop with Ctrl+C.
 
 1. Create an account or sign in. Save the recovery key displayed after registration.
-2. On Today, choose **Add your first notes**. Upload a readable TXT, PDF or DOCX
-   in Library. Wait for **Ready to study**. Upload progress reports actual stages;
+2. On Today, choose **Add your first notes**. In Library, optionally pick or create a
+   **Course** (for example "Operating Systems"), then upload one or several files:
+   PowerPoint (PPTX), PDF, DOCX or TXT. Each slide of a deck becomes its own page, so
+   citations say "slide 4". Old `.ppt` files must be saved as `.pptx` first. Wait for
+   **Ready to study**. You can move a lecture to another course at any time; deleting a
+   course keeps its lectures. Upload progress reports actual stages;
    keyword retrieval can remain available when semantic retrieval is unavailable.
-3. Choose **Study** beside those notes. Studying starts at once; the topic comes from
-   the notes' opening line. Choose **Summarize these notes** for a short summary, key
+3. Choose **Study** beside a lecture, or **Study course** to ask about every lecture in
+   a course (lectures added later are included automatically). Studying starts at once;
+   the topic comes from the notes' opening line. Choose **Summarize these notes** for a short summary, key
    concepts and suggested questions; click a question to ask it. The overview is saved,
    so it appears instantly next time.
    Optionally pick a **Goal for this session** from the goals you added on Today.

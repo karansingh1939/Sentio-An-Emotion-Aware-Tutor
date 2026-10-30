@@ -3,7 +3,7 @@
 from fastapi.testclient import TestClient
 
 from sentio.api.app import PREFIX, agent, app
-from tests.helpers import login_student
+from tests.helpers import login_student, upload_notes
 
 SESSION = {"subject": "physics", "topic": "Mechanics", "difficulty": "beginner"}
 
@@ -14,8 +14,12 @@ def _goal(client, owner, text="Prepare for the mechanics exam"):
     return response.json()["goal_id"]
 
 
+MOTION = "Velocity is the rate of change of position. Projectile motion combines horizontal velocity with vertical acceleration."
+
+
 def _session(client, owner, **metadata):
-    body = {**SESSION, "student_id": owner, "metadata": {"document_id": "none", **metadata}}
+    notes = upload_notes(client, MOTION, "motion.txt")
+    body = {**SESSION, "student_id": owner, "metadata": {"document_id": notes, **metadata}}
     return client.post(PREFIX + "/sessions", json=body)
 
 

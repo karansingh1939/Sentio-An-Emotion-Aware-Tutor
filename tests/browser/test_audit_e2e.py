@@ -155,7 +155,6 @@ async def test_sentio_real_browser_e2e_and_tenant_isolation():
             # Navigate to Tutor View
             await page.click('a[href="#/tutor"]')
             await page.wait_for_selector("#start-btn")
-            await page.select_option("#f-subject", "physics")
             await page.fill("#f-topic", "kinematics")
             await page.wait_for_selector(
                 '#f-grounding option:has-text("kinematics_test.txt")', state="attached"
