@@ -18,6 +18,16 @@ export function pageLabel(filename, page) {
   return `${/\.pptx$/i.test(filename || '') ? 'Slide' : 'Page'} ${page}`;
 }
 
+export const MAX_PRACTICE_TOPICS = 5;
+
+// How well a practised topic is remembered, for its progress line.
+export function topicMemory(topic) {
+  if (topic.state === 'review_due') return `about ${Math.round(topic.recall * 100)}% remembered`;
+  if (topic.state !== 'ready') return '';
+  const date = new Date(topic.review_on * 1000);
+  return `review by ${date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`;
+}
+
 export function pageRange(topic) {
   const label = pageLabel(topic.filename, '').trim().toLowerCase();
   return topic.first_page === topic.last_page

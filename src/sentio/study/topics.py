@@ -1,12 +1,15 @@
 """Topics inside a lecture, and how well each one has been practised.
 
 A topic is a run of consecutive pages (slides for PowerPoint) that share a heading. Quiz
-questions are attributed to the page whose passage they best match, so a topic's state
-comes from the answers to questions on its pages. Everything here is deterministic.
+questions and flashcards are attributed to the page whose passage they best match, so a
+topic's state comes from the reviews of what is on its pages. A topic is also scheduled
+like a flashcard, so Ready fades as the student forgets. Everything here is deterministic.
 """
 
 import re
 from collections import Counter
+
+from sentio.flashcards import fsrs
 
 READY_MIN_ANSWERS = 3
 READY_RECENT = 3
@@ -156,6 +159,22 @@ def attribute(question, citations):
     return place(_best_overlap(question, citations))
 
 
+def turn(index, citations, focus):
+    """The passages of the chosen topic whose turn it is; None without chosen topics."""
+    if not focus:
+        return None
+    chosen = focus[index % len(focus)]["id"]
+    return [citation for citation in citations if citation["topic_id"] == chosen]
+
+
+def turns_rule(focus, count, noun):
+    """Prompt line asking for items on several chosen topics in turn."""
+    if len(focus) < 2:
+        return ""
+    turns = ", ".join(f"{noun} {i + 1} on '{focus[i % len(focus)]['title']}'" for i in range(count))
+    return f"\n- Cover the topics in turn: {turns}."
+
+
 def locate(question, citations, topic=None):
     """The passage a question came from, and how that was decided.
 
@@ -193,6 +212,46 @@ def topic_state(results):
         "recent_correct": correct,
         "recent_total": len(recent),
     }
+
+
+def _sittings(reviews):
+    """Reviews within a day of a sitting's first one count once, rated by the worst of them."""
+    sittings = []
+    for when, rating in reviews:
+        if sittings and when - sittings[-1]["first"] < fsrs.DAY:
+            sittings[-1]["last"] = when
+            sittings[-1]["rating"] = min(sittings[-1]["rating"], rating)
+        else:
+            sittings.append({"first": when, "last": when, "rating": rating})
+    return sittings
+
+
+def topic_memory(reviews, now):
+    """Recall chance now and the time it reaches 90%, from (time, rating) reviews in order."""
+    card = {}
+    for sitting in _sittings(reviews):
+        stability, difficulty = fsrs.review(card, sitting["rating"], sitting["last"])
+        card = {
+            "stability": stability,
+            "difficulty": difficulty,
+            "last_review_at": sitting["last"],
+        }
+    if not card:
+        return {"recall": None, "review_on": None}
+    return {
+        "recall": round(fsrs.recall_probability(card, now), 3),
+        "review_on": card["last_review_at"] + card["stability"] * fsrs.DAY,
+    }
+
+
+def topic_progress(reviews, now):
+    """A topic's state and memory. Ready needs the last answers right and recall still high;
+    with the answers right but recall faded, the topic is due for review."""
+    progress = topic_state([rating != fsrs.AGAIN for _, rating in reviews])
+    memory = topic_memory(reviews, now)
+    if progress["state"] == "ready" and now >= memory["review_on"]:
+        progress["state"] = "review_due"
+    return {**progress, **memory}
 
 
 def is_weak(topic):

@@ -1,4 +1,10 @@
-import { escapeHtml, pageLabel, pageRange } from '../core/html.js';
+import {
+  MAX_PRACTICE_TOPICS,
+  escapeHtml,
+  pageLabel,
+  pageRange,
+  topicMemory,
+} from '../core/html.js';
 // Documents View Controller for Sentio (ES Module)
 import { sentioAPI } from '../core/api.js';
 import { toast } from '../components/ui.js';
@@ -6,9 +12,9 @@ import { store } from '../core/store.js';
 import { pendingJobKey, runPracticeJob } from '../core/jobs.js';
 
 const NEW_COURSE = '__new__';
-const MAX_PRACTICE_TOPICS = 5;
 const STATE_LABEL = {
   ready: 'Ready',
+  review_due: 'Review due',
   practising: 'Practising',
   not_started: 'Not started',
   no_notes: 'Not in your notes yet',
@@ -23,7 +29,7 @@ function topicList(topics, { showLecture = false } = {}) {
       <li class="topic-row" data-topic="${escapeHtml(topic.id)}">
         <div class="topic-main">
           <strong>${escapeHtml(topic.title)}</strong>
-          <span class="muted">${showLecture ? escapeHtml(topic.filename) + ' · ' : ''}${escapeHtml(pageRange(topic))}${topic.answers ? ` · ${topic.recent_correct} of ${topic.recent_total} correct recently` : ''}</span>
+          <span class="muted">${showLecture ? escapeHtml(topic.filename) + ' · ' : ''}${escapeHtml(pageRange(topic))}${topic.answers ? ` · ${topic.recent_correct} of ${topic.recent_total} correct recently` : ''}${topicMemory(topic) ? ` · ${escapeHtml(topicMemory(topic))}` : ''}</span>
         </div>
         <span class="topic-state ${escapeHtml(topic.state)}">${STATE_LABEL[topic.state]}</span>
         <div class="topic-actions">
@@ -93,14 +99,15 @@ function syllabusView(syllabus, courseId) {
       </div>
     </div>
     <div class="syllabus-bar" role="img" aria-label="${summary.percent_ready}% of the syllabus ready"><span style="width:${summary.percent_ready}%"></span></div>
-    <p class="muted">${summary.ready} ready · ${summary.practising} practising · ${summary.not_started} not started · ${summary.no_notes} not in your notes yet</p>
+    <p class="muted">${summary.ready} ready · ${summary.review_due ? `${summary.review_due} due for review · ` : ''}${summary.practising} practising · ${summary.not_started} not started · ${summary.no_notes} not in your notes yet</p>
     <ul class="topic-list">${rows}</ul>
   </div>`;
 }
 
 function progressLine(summary) {
   if (!summary.total) return 'No topics yet.';
-  return `${summary.ready} of ${summary.total} topics ready · ${summary.practising} practising · ${summary.not_started} not started`;
+  const due = summary.review_due ? `${summary.review_due} due for review · ` : '';
+  return `${summary.ready} of ${summary.total} topics ready · ${due}${summary.practising} practising · ${summary.not_started} not started`;
 }
 
 export class DocumentsView {
@@ -585,10 +592,20 @@ export class DocumentsView {
         this.remember(topics);
         this.syllabi.set(course.id, syllabus);
         line.textContent = syllabus.items.length
-          ? `${syllabus.summary.percent_ready}% of the syllabus ready · ${progressLine(progress.summary)}. Practice estimate from your quiz answers.`
-          : `${progressLine(progress.summary)}. Practice estimate from your quiz answers.`;
+          ? `${syllabus.summary.percent_ready}% of the syllabus ready · ${progressLine(progress.summary)}. Practice estimate from your quizzes and flashcards.`
+          : `${progressLine(progress.summary)}. Practice estimate from your quizzes and flashcards.`;
         body.innerHTML = `
           ${syllabus.items.length ? syllabusView(syllabus, course.id) : syllabusForm(course.id)}
+          ${
+            progress.due.length
+              ? `<div class="due-topics stack">
+                  <div class="row-between"><h4>Due for review</h4>
+                    <button class="workspace-action primary practise-due-btn" data-course="${escapeHtml(course.id)}">Practise due topics</button>
+                  </div>
+                  ${topicList(progress.due, { showLecture: true })}
+                </div>`
+              : ''
+          }
           ${
             progress.weak.length
               ? `<div class="weak-topics stack">
@@ -605,10 +622,10 @@ export class DocumentsView {
                 `<div class="stack"><h4>${escapeHtml(lecture.filename)}</h4>${topicList(lecture.topics)}</div>`,
             )
             .join('')}`;
-        const weak = body.querySelector('.practise-weak-btn');
-        if (weak)
-          weak.onclick = () => {
-            const topics = progress.weak.slice(0, MAX_PRACTICE_TOPICS);
+        const practise = (button, chosen) => {
+          if (!button) return;
+          button.onclick = () => {
+            const topics = chosen.slice(0, MAX_PRACTICE_TOPICS);
             this.startStudy(
               {
                 subject: course.name,
@@ -622,6 +639,9 @@ export class DocumentsView {
               '#/quizzes',
             );
           };
+        };
+        practise(body.querySelector('.practise-weak-btn'), progress.weak);
+        practise(body.querySelector('.practise-due-btn'), progress.due);
       }),
     );
   }
@@ -697,7 +717,7 @@ export class DocumentsView {
       this.remember(lecture.topics);
       const modal = document.createElement('sentio-modal');
       modal.setAttribute('title', `Topics in ${lecture.filename}`);
-      modal.innerHTML = `<p class="muted">Practice estimate from your quiz answers: Ready means your last 3 answers on the topic were all correct.</p>${topicList(lecture.topics)}`;
+      modal.innerHTML = `<p class="muted">Practice estimate from your quizzes and flashcards: Ready means your last 3 answers on the topic were all correct and you probably still remember it. Review due means it is time to check again.</p>${topicList(lecture.topics)}`;
       modal.addEventListener('click', (event) => this.onTopicAction(event, modal));
       document.body.appendChild(modal);
     } catch (error) {

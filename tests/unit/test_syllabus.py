@@ -67,6 +67,7 @@ def test_status_and_percentage():
     assert item_status(["ready", "not_started"]) == "practising"
     assert summarise(["ready", "ready", "practising", "no_notes"]) == {
         "ready": 2,
+        "review_due": 0,
         "practising": 1,
         "not_started": 0,
         "no_notes": 1,
@@ -110,3 +111,9 @@ def test_acronyms_comparisons_and_passing_mentions():
     assert match("AI Router", topics) == []  # "AI" is not in any title
     assert match("Comparison with router", topics) == ["versus"]
     assert match("Static", topics) == []  # mentioned in passing on a slide only
+
+
+def test_a_fading_topic_is_due_rather_than_ready():
+    assert item_status(["ready", "review_due"]) == "review_due"
+    assert item_status(["review_due", "not_started"]) == "practising"
+    assert summarise(["ready", "review_due"])["percent_ready"] == 50

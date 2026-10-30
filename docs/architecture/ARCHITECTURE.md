@@ -123,7 +123,8 @@ syllabus is parsed deterministically into units and topics and stored in `syllab
 Matching to lecture topics is computed live by word overlap (title words count double over
 slide text; plurals normalised), so new lectures match automatically; only the learner's
 corrections are stored (`link_mode` auto/manual/none). A syllabus topic's status comes from
-the states of the lecture topics it matches, and the course percentage is the share Ready.
+the states of the lecture topics it matches, and the course percentage is the share Ready
+now: topics due for review are shown separately, so the number falls between reviews.
 
 Topic mastery (`study/topics.py`, `repositories/topics.py`): a lecture's topics are page
 ranges grouped by heading (slide titles; PDF page headings, skipping running headers),
@@ -145,6 +146,14 @@ check falls back to word overlap within its assigned topic and, failing that, to
 topic's first slide, so a topic quiz always counts toward the topics chosen. A topic that
 was merged away or whose lecture changed gives 409. Provenance records the topics and how
 each question was placed (`located`: model, overlap or topic).
+
+Topic memory: a topic is scheduled like a flashcard, with no stored schedule. Its quiz
+answers (right is Good, wrong is Again) and the ratings in `card_reviews` for cards on its
+pages (`flashcards.source_document_id`, `source_page`, set when cards are generated, the
+same way as quiz questions) are replayed through `fsrs.review` in time order. Reviews
+within a day of a sitting's first one count once, rated by the worst of them. A topic whose
+last 3 answers were right is Ready until recall reaches 90%, then `review_due`. Replay keeps
+renames and merges working: the state is always derived from page ranges and reviews.
 
 Flashcards are scheduled by `flashcards/fsrs.py`, a dependency-free FSRS-5 model: each
 card stores stability, difficulty and its last review time, and the next review is set

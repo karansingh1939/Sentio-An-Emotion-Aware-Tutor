@@ -1,5 +1,8 @@
 """Topics from slide/page headings, question attribution and topic states."""
 
+import pytest
+
+from sentio.flashcards import fsrs
 from sentio.study.topics import (
     attribute,
     build_topics,
@@ -7,6 +10,8 @@ from sentio.study.topics import (
     is_weak,
     locate,
     place,
+    topic_memory,
+    topic_progress,
     topic_state,
 )
 
@@ -156,3 +161,32 @@ def test_long_topics_are_sampled_evenly_within_the_budget():
     assert [(page, len(text)) for page, text in fit_pages([(1, "x" * 900)], 300)] == [(1, 300)]
     uneven = fit_pages([(1, "x" * 900), (2, "y" * 100)], 500)
     assert sum(len(text) for _, text in uneven) <= 500
+
+
+DAY = fsrs.DAY
+RIGHT, WRONG = fsrs.GOOD, fsrs.AGAIN
+
+
+def test_answers_within_a_day_count_as_one_review_rated_by_the_worst():
+    assert topic_memory([], DAY) == {"recall": None, "review_on": None}
+    once = topic_memory([(0, RIGHT)], 0)
+    assert once["recall"] == 1
+    assert topic_memory([(0, RIGHT), (60, RIGHT), (120, RIGHT)], 120)["review_on"] == pytest.approx(
+        120 + once["review_on"]
+    )
+    shaky = topic_memory([(0, WRONG), (60, RIGHT), (120, RIGHT)], 120)
+    assert shaky["review_on"] - 120 < 0.5 * DAY
+
+
+def test_ready_needs_recall_as_well_as_the_last_three_answers():
+    answers = [(0, RIGHT), (60, RIGHT), (120, RIGHT)]
+    assert topic_progress(answers, 3 * DAY)["state"] == "ready"
+    due = topic_progress(answers, 4 * DAY)
+    assert due["state"] == "review_due" and due["recall"] < fsrs.DESIRED_RETENTION
+    assert not is_weak(due)
+
+    again = topic_progress([*answers, (4 * DAY, RIGHT)], 4 * DAY)
+    assert again["state"] == "ready"
+    assert again["review_on"] - 4 * DAY > 3 * (due["review_on"] - 120)
+    assert topic_progress([*answers, (4 * DAY, WRONG)], 4 * DAY)["state"] == "practising"
+    assert topic_progress([(0, RIGHT)], 30 * DAY)["state"] == "practising"

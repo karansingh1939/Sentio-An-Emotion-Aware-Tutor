@@ -1,12 +1,14 @@
 """Owner-scoped topic maps of lectures, with each topic's practice state."""
 
+import time
 import uuid
 from pathlib import Path
 
 from sqlalchemy import text
 
+from sentio.flashcards import fsrs
 from sentio.jobs.control import WorkInputError
-from sentio.study.topics import build_topics, is_weak, topic_state
+from sentio.study.topics import build_topics, is_weak, topic_progress
 
 
 class TopicChanged(WorkInputError):
@@ -80,30 +82,46 @@ class TopicRepository:
         return rows
 
     def _results(self, connection, owner, document_ids):
-        """Answers to page-attributed questions: {document_id: [(page, correct), ...]} in time order."""
+        """Reviews of page-attributed quiz questions and flashcards, in time order:
+        {document_id: [(page, time, FSRS rating), ...]}."""
         if not document_ids:
             return {}
         placeholders = ",".join(f":d{i}" for i in range(len(document_ids)))
+        params = {"owner": owner, **{f"d{i}": d for i, d in enumerate(document_ids)}}
         results = {}
-        for document_id, page, correct in connection.execute(
+        for document_id, page, when, correct in connection.execute(
             text(
-                "SELECT q.source_document_id,q.source_page,a.correct FROM quiz_attempts a "
+                "SELECT q.source_document_id,q.source_page,a.timestamp,a.correct FROM quiz_attempts a "
                 "JOIN quiz_questions q ON q.question_id=a.question_id "
                 f"WHERE a.student_id=:owner AND q.source_document_id IN ({placeholders}) "
                 "ORDER BY a.timestamp,a.id"
             ),
-            {"owner": owner, **{f"d{i}": d for i, d in enumerate(document_ids)}},
+            params,
         ):
-            results.setdefault(document_id, []).append((page, bool(correct)))
+            rating = fsrs.GOOD if correct else fsrs.AGAIN
+            results.setdefault(document_id, []).append((page, when, rating))
+        for document_id, page, when, quality in connection.execute(
+            text(
+                "SELECT c.source_document_id,c.source_page,r.created_at,r.quality_score FROM card_reviews r "
+                "JOIN flashcards c ON c.card_id=r.card_id "
+                f"WHERE r.student_id=:owner AND c.source_document_id IN ({placeholders})"
+            ),
+            params,
+        ):
+            rating = fsrs.rating_from_quality(quality)
+            results.setdefault(document_id, []).append((page, when, rating))
+        for reviews in results.values():
+            reviews.sort(key=lambda review: review[1])
         return results
 
     def _lecture(self, connection, owner, document, results, with_text=False):
         pages = dict(self._pages(connection, document["id"])) if with_text else {}
+        now = time.time()
         topics = []
         for topic in self._topics(connection, owner, document):
-            answers = [
-                correct
-                for page, correct in results.get(document["id"], [])
+            reviews = [
+                (when, rating)
+                for page, when, rating in results.get(document["id"], [])
                 if page is not None and topic["first_page"] <= page <= topic["last_page"]
             ]
             topics.append(
@@ -114,7 +132,7 @@ class TopicRepository:
                     "last_page": topic["last_page"],
                     "document_id": document["id"],
                     "filename": document["filename"],
-                    **topic_state(answers),
+                    **topic_progress(reviews, now),
                     **(
                         {
                             "text": "\n".join(
@@ -164,7 +182,7 @@ class TopicRepository:
         topics = [topic for lecture in lectures for topic in lecture["topics"]]
         summary = {
             state: sum(topic["state"] == state for topic in topics)
-            for state in ("ready", "practising", "not_started")
+            for state in ("ready", "review_due", "practising", "not_started")
         }
         weak = sorted(
             (topic for topic in topics if is_weak(topic)),
@@ -175,7 +193,24 @@ class TopicRepository:
             "summary": {**summary, "total": len(topics)},
             "lectures": lectures,
             "weak": weak,
+            "due": _due(topics),
         }
+
+    def due_topics(self, owner):
+        """Topics due for review across all the student's notes, least remembered first."""
+        with self.engine.begin() as connection:
+            ids = list(
+                connection.execute(
+                    text("SELECT id FROM documents WHERE student_id=:owner AND status='indexed'"),
+                    {"owner": owner},
+                ).scalars()
+            )
+            results = self._results(connection, owner, ids)
+            lectures = [
+                self._lecture(connection, owner, self._document(connection, owner, i), results)
+                for i in results
+            ]
+        return _due(topic for lecture in lectures for topic in lecture["topics"])
 
     def passages(self, owner, topic_ids):
         """The chosen topics in order, each with its (page, text) pairs.
@@ -206,6 +241,16 @@ class TopicRepository:
                 if not pages:
                     return None
                 topics.append({**topic, "filename": document["filename"], "pages": pages})
+        return topics
+
+    def focus(self, session):
+        """The topics a session practises, with their slides; [] when it has none."""
+        topic_ids = session.metadata.get("topic_ids")
+        if not topic_ids:
+            return []
+        topics = self.passages(session.student_id, topic_ids)
+        if topics is None:
+            raise TopicChanged("This topic changed. Open the course and choose it again.")
         return topics
 
     def rename(self, owner, topic_id, title):
@@ -252,3 +297,7 @@ class TopicRepository:
             connection.execute(
                 text("DELETE FROM note_topics WHERE document_id=:id"), {"id": document_id}
             )
+
+
+def _due(topics):
+    return sorted((t for t in topics if t["state"] == "review_due"), key=lambda t: t["recall"])

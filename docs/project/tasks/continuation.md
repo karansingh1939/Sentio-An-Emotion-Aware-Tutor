@@ -586,3 +586,15 @@ if checked, then word overlap, then the assigned topic). Multi-topic quizzes tak
 "From: ...". Topic ids are now deterministic: two concurrent builds used to give the page
 ids that no longer existed. Fixed `npm test`, which had stopped at stale test stubs since
 Phase 2. Next: Ready fades with FSRS (`tmp/plans/improvements-topic-practice-memory-matching.md`).
+
+## Ready fades with FSRS - 30 October 2026
+
+Branch: feature/topic-memory (stacked on feature/topic-practice). `study/topics.py`
+`topic_memory` replays a topic's reviews through `fsrs.review` (sittings within a day count
+once, rated by the worst); `topic_progress` adds state `review_due`. Flashcards gained
+`source_document_id` and `source_page`, placed like quiz questions, and topic sessions make
+cards from the chosen slides. The existing `card_reviews` receipts serve as the review log,
+so no new table was needed. GET /topics/due; `due` on course progress; `review_due` in the
+syllabus summary, excluded from percent_ready; Today card with Practise due topics.
+Flashcard tags are capped at 5 in the schema: without it the model could repeat tags until
+its token limit and lose the deck to the fallback. Next: measured syllabus matching.

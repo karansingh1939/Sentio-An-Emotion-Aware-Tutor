@@ -1013,8 +1013,8 @@ class SessionManager:
                 conn.execute(
                     text("""
                         INSERT INTO flashcards 
-                        (card_id, student_id, topic_id, deck_id, front_text, back_text, created_at, interval_days, repetition_count, ease_factor, next_review_at, tags, provenance_json)
-                        VALUES (:cid, :sid, :tid, :did, :front, :back, :ts, 0, 0, 2.5, :next_ts, :tags, :provenance)
+                        (card_id, student_id, topic_id, deck_id, front_text, back_text, created_at, interval_days, repetition_count, ease_factor, next_review_at, tags, provenance_json, source_document_id, source_page)
+                        VALUES (:cid, :sid, :tid, :did, :front, :back, :ts, 0, 0, 2.5, :next_ts, :tags, :provenance, :source_document, :source_page)
                     """),
                     {
                         "cid": card_id,
@@ -1027,6 +1027,8 @@ class SessionManager:
                         "next_ts": time.time(),
                         "tags": json.dumps(c.get("tags", [])),
                         "provenance": json.dumps(provenance) if provenance else None,
+                        "source_document": c.get("source_document_id"),
+                        "source_page": c.get("source_page"),
                     },
                 )
             if connection is None:
