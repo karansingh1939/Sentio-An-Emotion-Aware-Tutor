@@ -248,7 +248,6 @@ class TutorAgent:
         self._require_loaded()
         analytics = self.sm.close_session(session_id)
         self.nlp.clear_history(session_id)
-        self.kb.reset_session(session_id)
         self.detector.clear_session(session_id)
         logger.info("Session ended: %s", session_id[:8])
         return analytics
@@ -442,7 +441,6 @@ class TutorAgent:
         if new_difficulty:
             session.update_difficulty(new_difficulty, reason="manual_topic_switch")
         self.nlp.clear_history(session_id)
-        self.kb.reset_session(session_id)
         logger.info(
             "Topic switched: %s -> %s [%s]",
             session_id[:8],

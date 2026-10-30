@@ -208,45 +208,21 @@ TEACHING STRATEGY INSTRUCTION
 Tone: {tone_instruction}
 """
 
-        # ── Curriculum grounding ──
+        # ── Grounding in the learner's notes ──
         if retrieved_content and retrieved_content.has_content():
             prompt += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            # Header wording kept so saved evaluation prompts stay reproducible.
             prompt += "CURRICULUM REFERENCE (use this as your knowledge base)\n"
             prompt += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-
-            if getattr(retrieved_content, "is_rag", False) and getattr(
-                retrieved_content, "rag_context", None
-            ):
-                prompt += GROUNDING_RULES + "\n"
-                prompt += "The following reference material is extracted from the student's study materials:\n\n"
-                prompt += retrieved_content.rag_context
-                prompt += (
-                    "\nInstruction: You MUST base your factual answers on the above references. "
-                    "For every fact you state that comes from a reference, you MUST cite the source document "
-                    "and page naturally in your text using brackets, e.g. '[calculus_notes.pdf Page 12]'. "
-                    "Ensure your citations match the document headers exactly.\n\n"
-                )
-            else:
-                if getattr(retrieved_content, "concept", None):
-                    prompt += f"CONCEPT:\n{retrieved_content.concept}\n\n"
-                if getattr(retrieved_content, "explanation", None):
-                    prompt += f"EXPLANATION:\n{retrieved_content.explanation}\n\n"
-                if getattr(retrieved_content, "analogy", None):
-                    prompt += f"ANALOGY TO USE:\n{retrieved_content.analogy}\n\n"
-                if getattr(retrieved_content, "example", None):
-                    prompt += f"WORKED EXAMPLE:\n{retrieved_content.example}\n\n"
-                if getattr(retrieved_content, "motivation", None):
-                    prompt += f"MOTIVATION / REAL-WORLD HOOK:\n{retrieved_content.motivation}\n\n"
-                if getattr(retrieved_content, "hints", None):
-                    prompt += (
-                        "HINTS AVAILABLE:\n"
-                        + "\n".join(f"  • {h}" for h in retrieved_content.hints)
-                        + "\n\n"
-                    )
-                if getattr(retrieved_content, "quiz_question", None):
-                    prompt += f"COMPREHENSION CHECK:\n{retrieved_content.quiz_question}\n\n"
-                if getattr(retrieved_content, "challenge", None):
-                    prompt += f"CHALLENGE PROBLEM:\n{retrieved_content.challenge}\n\n"
+            prompt += GROUNDING_RULES + "\n"
+            prompt += "The following reference material is extracted from the student's study materials:\n\n"
+            prompt += retrieved_content.rag_context
+            prompt += (
+                "\nInstruction: You MUST base your factual answers on the above references. "
+                "For every fact you state that comes from a reference, you MUST cite the source document "
+                "and page naturally in your text using brackets, e.g. '[calculus_notes.pdf Page 12]'. "
+                "Ensure your citations match the document headers exactly.\n\n"
+            )
 
         # ── Output format instructions ──
         prompt += """━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

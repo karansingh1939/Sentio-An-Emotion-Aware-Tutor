@@ -69,10 +69,12 @@ class FlashcardService:
             session = deepcopy(session)
             source_snapshot = PracticeRepository(self.agent.sm.persister._engine).snapshot(session)
         document_id = session.metadata.get("document_id") if session else None
+        if document_id in (None, "none"):
+            raise ValueError("Choose notes for this session before making flashcards.")
         checkpoint("retrieving sources")
-        # 1. Retrieve curriculum/RAG content
+        # 1. Retrieve passages from the selected notes
         retrieved = self.agent.kb.retrieve(
-            subject=session.subject if session else "computer_science",
+            subject=session.subject,
             topic=topic_id,
             difficulty="intermediate",
             learning_state="neutral",
@@ -82,9 +84,7 @@ class FlashcardService:
             document_id=document_id,
         )
         context = (getattr(retrieved, "rag_context", None) or "").strip()
-        if document_id not in (None, "none") and (
-            not getattr(retrieved, "is_rag", False) or not context
-        ):
+        if not getattr(retrieved, "is_rag", False) or not context:
             raise ValueError("No relevant material found in the selected document(s).")
 
         # 2. Build LLM prompt

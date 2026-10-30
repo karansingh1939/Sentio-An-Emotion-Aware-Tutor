@@ -21,9 +21,12 @@ class PracticeRepository:
     def snapshot(self, session, connection=None):
         from contextlib import nullcontext
 
+        from sentio.repositories.courses import COURSE_PREFIX, expand_source
+
         source = session.metadata.get("document_id")
-        selected = source if isinstance(source, list) else [source]
         with nullcontext(connection) if connection is not None else self.engine.connect() as conn:
+            selected = expand_source(conn, session.student_id, source)
+            selected = selected if isinstance(selected, list) else [selected]
             documents = [
                 list(row)
                 for row in conn.execute(
@@ -33,7 +36,12 @@ class PracticeRepository:
                 if source == "all" or row[0] in selected
             ]
             goal = active_goal(conn, session.student_id, session.metadata.get("goal_id"))
-        if source not in (None, "none", "all") and {r[0] for r in documents} != set(selected):
+        is_course = isinstance(source, str) and source.startswith(COURSE_PREFIX)
+        if (
+            source not in (None, "none", "all")
+            and not is_course
+            and {r[0] for r in documents} != set(selected)
+        ):
             raise WorkCancelled("Selected notes are no longer available. Choose sources and retry.")
         return {
             "subject": session.subject,

@@ -10,8 +10,9 @@
 
 ![Sentio journey: Today, Library, Study, Quiz, Flashcards, Progress](docs/images/journey.gif)
 
-Upload PDF, Word or text notes. Ask questions and get answers grounded in retrieved
-passages, with page citations. Turn the same notes into quizzes and spaced-repetition
+Upload lecture slides (PowerPoint), PDF, Word or text notes, several at once, and group
+them into courses. Ask questions about one lecture or a whole course and get answers
+grounded in retrieved passages, with slide and page citations. Turn the same notes into quizzes and spaced-repetition
 flashcards, and track what to review. Everything — the model, the database and your
 files — runs on your own machine.
 
@@ -31,7 +32,8 @@ flowchart LR
 1. **Retrieval-augmented generation.** Notes are chunked and indexed twice — BM25 for
    keywords and `all-MiniLM-L6-v2` embeddings in Qdrant — and fused with a hybrid score.
 2. **Evidence gate.** A LangGraph workflow retrieves before it generates. If the selected
-   notes have no relevant passage, it refuses without calling the model.
+   notes have no relevant passage, it refuses without calling the model. There is no
+   ungrounded mode: every answer comes from the learner's own notes.
 3. **Structured, validated output.** The local Ollama model must return JSON matching a
    schema; invalid replies are repaired or regenerated, and citations must name a
    retrieved passage. Otherwise Sentio shows the passages themselves, clearly labelled.

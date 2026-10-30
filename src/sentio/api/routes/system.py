@@ -6,7 +6,6 @@ from fastapi import APIRouter
 from fastapi.responses import FileResponse
 
 from sentio.api.dependencies import PREFIX, STATIC_DIR, agent
-from sentio.config import tutor_cfg
 from sentio.maintenance.readiness import readiness
 from sentio.shared.utils import system_health_check
 
@@ -39,13 +38,3 @@ def health_check():
         "agent_loaded": agent._loaded,
         "report": report,
     }
-
-
-@router.get(PREFIX + "/subjects", tags=["Curriculum"])
-def list_subjects():
-    """List all supported subjects and their available topics."""
-    result = {}
-    for subject in tutor_cfg.SUBJECTS:
-        topics = agent.kb.list_topics(subject)
-        result[subject] = topics
-    return {"subjects": result}

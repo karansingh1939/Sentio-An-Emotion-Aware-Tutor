@@ -21,6 +21,7 @@ from sentio.api.middleware import (
 from sentio.api.routes import (
     analytics,
     auth,
+    courses,
     documents,
     flashcards,
     intelligence,
@@ -155,6 +156,7 @@ app.include_router(privacy.router)
 app.include_router(intelligence.router)
 app.include_router(analytics.router)
 app.include_router(documents.router)
+app.include_router(courses.router)
 app.include_router(memory.router)
 app.include_router(planning.router)
 app.include_router(jobs.router)

@@ -7,7 +7,9 @@ from pydantic import BaseModel, Field
 
 class CreateSessionRequest(BaseModel):
     student_id: str = Field(..., description="Unique student identifier")
-    subject: str = Field(..., description="e.g. mathematics, physics, computer_science")
+    subject: str = Field(
+        "My notes", min_length=1, max_length=120, description="Session label, e.g. a course name"
+    )
     topic: str = Field(..., description="e.g. derivatives, recursion")
     difficulty: str = Field("beginner", description="beginner | intermediate | advanced")
     metadata: dict = Field(default_factory=dict, description="Optional extra fields")

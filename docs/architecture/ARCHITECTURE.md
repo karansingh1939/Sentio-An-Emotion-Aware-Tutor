@@ -93,6 +93,14 @@ hybrid keyword/dense search over the owner's active chunks and classifies eviden
 retrieved passages, and falls back to labelled source excerpts. Quizzes, flashcards and
 plans have their own endpoints and jobs rather than graph branches.
 
+A session studies from `all` notes, one document, a list, or `course:<id>`. Courses
+(`repositories/courses.py`) are optional folders; `expand_source` resolves a course to its
+current documents at question time, so retrieval, the stale-context fingerprint and
+practice snapshots include lectures added after the session started. Sessions saved
+without notes (`none`) get a fixed "choose notes" reply from the `refuse` node; there is no
+built-in curriculum or ungrounded tutor. PowerPoint decks are parsed with `python-pptx`,
+one page per slide (title, text, tables, speaker notes).
+
 When the stream is open, `retrieve` emits a `sources` event, so the browser shows the
 passages before the answer arrives.
 

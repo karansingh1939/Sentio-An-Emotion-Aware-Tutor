@@ -270,6 +270,14 @@ class SessionPersister:
                 )
             if "overview_json" not in document_columns:
                 conn.execute(text("ALTER TABLE documents ADD COLUMN overview_json TEXT"))
+            conn.execute(
+                text(
+                    "CREATE TABLE IF NOT EXISTS courses (id TEXT PRIMARY KEY, student_id TEXT NOT NULL, "
+                    "name TEXT NOT NULL, created_at REAL NOT NULL)"
+                )
+            )
+            if "course_id" not in document_columns:
+                conn.execute(text("ALTER TABLE documents ADD COLUMN course_id TEXT"))
 
             if "student_id" not in document_columns:
                 conn.execute(text("ALTER TABLE documents ADD COLUMN student_id TEXT"))
@@ -530,8 +538,9 @@ class SessionPersister:
                 conn.execute(
                     text("""
                     INSERT OR REPLACE INTO documents 
-                    (id, filename, file_type, category, subject, upload_date, last_modified, chunk_count, embedding_count, status, last_indexed, checksum, student_id, extraction_method)
-                    VALUES (:id, :filename, :file_type, :category, :subject, :upload_date, :last_modified, :chunk_count, :embedding_count, :status, :last_indexed, :checksum, :student_id, :extraction_method)
+                    (id, filename, file_type, category, subject, upload_date, last_modified, chunk_count, embedding_count, status, last_indexed, checksum, student_id, extraction_method, course_id)
+                    VALUES (:id, :filename, :file_type, :category, :subject, :upload_date, :last_modified, :chunk_count, :embedding_count, :status, :last_indexed, :checksum, :student_id, :extraction_method,
+                            (SELECT course_id FROM documents WHERE id = :id))
                 """),
                     doc_copy,
                 )
@@ -609,7 +618,7 @@ class SessionPersister:
         try:
             with self._engine.connect() as conn:
                 query = """
-                    SELECT id, filename, file_type, category, subject, upload_date, last_modified, chunk_count, embedding_count, status, last_indexed, checksum, student_id, extraction_method
+                    SELECT id, filename, file_type, category, subject, upload_date, last_modified, chunk_count, embedding_count, status, last_indexed, checksum, student_id, extraction_method, course_id
                     FROM documents
                 """
                 params = {}

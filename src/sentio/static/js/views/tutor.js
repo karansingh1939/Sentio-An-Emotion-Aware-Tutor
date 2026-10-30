@@ -5,6 +5,21 @@ import { store } from '../core/store.js';
 import { toast } from '../components/ui.js';
 import { runPracticeJob } from '../core/jobs.js';
 
+// Options for "study from": all notes, each course (with lectures added later) and each lecture.
+// An old session saved without notes keeps a disabled entry so its state is visible.
+function sourceOptions(docs, courses, selected) {
+  const option = (value, label) =>
+    `<option value="${escapeHtml(value)}" ${value === selected ? 'selected' : ''}>${escapeHtml(label)}</option>`;
+  return [
+    selected === 'none'
+      ? '<option value="none" disabled selected>Not linked to notes</option>'
+      : '',
+    option('all', 'Search all my notes'),
+    ...courses.map((course) => option(`course:${course.id}`, `Course: ${course.name}`)),
+    ...docs.map((doc) => option(doc.id, doc.filename)),
+  ].join('');
+}
+
 export class TutorView {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
@@ -50,7 +65,11 @@ export class TutorView {
     if (!panel) return;
     const revision = ++this.overviewRevision;
     const documentId = session?.metadata?.document_id;
-    if (typeof documentId !== 'string' || ['none', 'all'].includes(documentId)) {
+    if (
+      typeof documentId !== 'string' ||
+      ['none', 'all'].includes(documentId) ||
+      documentId.startsWith('course:')
+    ) {
       panel.hidden = true;
       panel.innerHTML = '';
       return;
@@ -281,7 +300,7 @@ export class TutorView {
       const barMeta = document.getElementById('active-bar-meta');
       if (barMeta) {
         const isGrounded = res.metadata?.document_id && res.metadata.document_id !== 'none';
-        barMeta.textContent = `${res.difficulty || 'intermediate'} · ${isGrounded ? 'Document Grounded' : 'General Tutor'}`;
+        barMeta.textContent = `${res.difficulty || 'intermediate'} · ${isGrounded ? 'From your notes' : 'Not linked to notes'}`;
       }
 
       const welcome = document.getElementById('welcome');
@@ -363,10 +382,15 @@ export class TutorView {
       owner === store.getState('currentUser')?.id &&
       store.getState('activeRoute') === '#/tutor';
     let docs = [];
+    let courses = [];
     try {
-      const res = await sentioAPI.get('/documents');
+      const [res, courseList] = await Promise.all([
+        sentioAPI.get('/documents'),
+        sentioAPI.get('/courses'),
+      ]);
       if (!current()) return [];
       docs = res.documents || [];
+      courses = courseList.courses || [];
     } catch (e) {
       if (current()) toast('Notes could not load. Retry from the Library.', true);
       return [];
@@ -376,11 +400,7 @@ export class TutorView {
     const leftSelect = document.getElementById('f-grounding');
     if (leftSelect) {
       const currentVal = store.getState('activeSession')?.metadata?.document_id || leftSelect.value;
-      leftSelect.innerHTML = `
-        <option value="none">General questions (without notes)</option>
-        <option value="all">Search all my notes</option>
-        ${docs.map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.filename)}</option>`).join('')}
-      `;
+      leftSelect.innerHTML = sourceOptions(docs, courses, currentVal);
       if ([...leftSelect.options].some((o) => o.value === currentVal)) {
         leftSelect.value = currentVal;
       }
@@ -422,8 +442,14 @@ export class TutorView {
     const owner = store.getState('currentUser')?.id;
     const route = store.getState('activeRoute');
     let docs;
+    let courses;
     try {
-      docs = (await sentioAPI.get('/documents')).documents || [];
+      const [res, courseList] = await Promise.all([
+        sentioAPI.get('/documents'),
+        sentioAPI.get('/courses'),
+      ]);
+      docs = res.documents || [];
+      courses = courseList.courses || [];
     } catch (error) {
       toast('Notes could not load: ' + error.message, true);
       return;
@@ -435,16 +461,11 @@ export class TutorView {
     modal.innerHTML = `
       <div class="stack">
         <p>Choose what you want to understand.</p>
+        ${docs.length ? '' : '<p class="notice">Add your notes in the Library first: every answer comes from them.</p>'}
         <div>
-          <label class="form-label" for="new-sess-subject">Subject</label>
-<select class="input" id="new-sess-subject">
-            <option value="mathematics">Mathematics</option>
-            <option value="physics">Physics</option>
-            <option value="computer_science">Computer Science</option>
-            <option value="chemistry">Chemistry</option>
-            <option value="biology">Biology</option>
-            <option value="history">History</option>
-            <option value="literature">Literature</option>
+          <label class="form-label" for="new-sess-grounding">Study from</label>
+<select class="input" id="new-sess-grounding" ${docs.length ? '' : 'disabled'}>
+            ${sourceOptions(docs, courses, 'all')}
           </select>
         </div>
         <div>
@@ -459,26 +480,23 @@ export class TutorView {
             <option value="advanced">Advanced</option>
           </select>
         </div>
-        <div>
-          <label class="form-label" for="new-sess-grounding">Grounding Source</label>
-<select class="input" id="new-sess-grounding">
-            ${docs.length ? '<option value="all" selected>Search all my notes</option>' : ''}
-            ${docs.map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.filename)}</option>`).join('')}
-            <option value="none">General questions (without notes)</option>
-          </select>
-        </div>
         <p id="new-sess-error" role="alert"></p>
-        <button class="workspace-action primary" id="new-sess-submit-btn">Start studying</button>
+        <button class="workspace-action primary" id="new-sess-submit-btn" ${docs.length ? '' : 'disabled'}>Start studying</button>
       </div>
     `;
 
     document.body.appendChild(modal);
 
     modal.querySelector('#new-sess-submit-btn').onclick = async () => {
-      const subject = modal.querySelector('#new-sess-subject').value;
+      const source = modal.querySelector('#new-sess-grounding');
+      const grounding = source.value;
+      // The session label is what the learner studies from: a course, a lecture or all notes.
+      const subject =
+        grounding === 'all'
+          ? 'My notes'
+          : source.selectedOptions[0].textContent.replace(/^Course: /, '').trim();
       const topic = modal.querySelector('#new-sess-topic').value.trim();
       const difficulty = modal.querySelector('#new-sess-difficulty').value;
-      const grounding = modal.querySelector('#new-sess-grounding').value;
       if (owner !== store.getState('currentUser')?.id || route !== store.getState('activeRoute'))
         return;
 

@@ -55,6 +55,12 @@ async def test_goal_selection_and_quiz_question_edit(monkeypatch):
             goal_id = await page.evaluate(
                 """async () => {
                     const owner = window.store.getState('currentUser').id;
+                    const form = new FormData();
+                    form.append('file', new File(
+                        ['Inertia resists a change in velocity. A net force changes velocity.'],
+                        'inertia.txt', { type: 'text/plain' },
+                    ));
+                    await window.sentioAPI.request('/documents/upload', { method: 'POST', body: form });
                     const goal = await window.sentioAPI.post(`/students/${owner}/goals`, {
                         goal_text: 'Pass the mechanics exam',
                     });
@@ -64,7 +70,6 @@ async def test_goal_selection_and_quiz_question_edit(monkeypatch):
 
             await page.goto(url + "/#/tutor")
             await page.wait_for_selector(f'#f-goal option[value="{goal_id}"]', state="attached")
-            await page.select_option("#f-subject", "physics")
             await page.fill("#f-topic", "Inertia")
             await page.select_option("#f-goal", goal_id)
             await page.click("#start-btn")

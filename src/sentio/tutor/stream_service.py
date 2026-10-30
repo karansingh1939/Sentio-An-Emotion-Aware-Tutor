@@ -12,6 +12,7 @@ from threading import RLock
 from sqlalchemy import text
 
 from sentio.jobs.control import WorkCancelled
+from sentio.repositories.courses import expand_source
 from sentio.repositories.planning import active_goal
 
 logger = logging.getLogger(__name__)
@@ -255,6 +256,10 @@ class StreamService:
                     .mappings()
                     .all()
                 )
+            with (
+                nullcontext(connection) if connection is not None else self.engine.connect() as conn
+            ):
+                selected = expand_source(conn, session.student_id, selected)
             ids = selected if isinstance(selected, list) else [selected]
             versions = sorted(
                 (d["id"], d["checksum"]) for d in documents if selected == "all" or d["id"] in ids

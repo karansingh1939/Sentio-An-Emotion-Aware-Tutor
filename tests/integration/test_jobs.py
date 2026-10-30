@@ -52,6 +52,12 @@ def test_cancel_cannot_undo_published_artifact(tmp_path):
     engine.dispose()
 
 
+NEWTON = (
+    b"Newton's First Law: an object stays at rest or moves at constant velocity unless a net "
+    b"external force acts on it. Inertia is resistance to a change in velocity."
+)
+
+
 def test_practice_jobs_api_persists_results_and_hides_other_owners():
     import time
 
@@ -73,6 +79,11 @@ def test_practice_jobs_api_persists_results_and_hides_other_owners():
 
         owner = account("job-owner@example.com")
         other = account("job-other@example.com")
+        notes = client.post(
+            "/api/v1/documents/upload",
+            headers=owner,
+            files={"file": ("newton.txt", NEWTON, "text/plain")},
+        ).json()["document_id"]
         response = client.post(
             "/api/v1/sessions",
             headers=owner,
@@ -81,6 +92,7 @@ def test_practice_jobs_api_persists_results_and_hides_other_owners():
                 "subject": "physics",
                 "topic": "Newton's First Law",
                 "difficulty": "beginner",
+                "metadata": {"document_id": notes},
             },
         )
         assert response.status_code in (200, 201), response.text

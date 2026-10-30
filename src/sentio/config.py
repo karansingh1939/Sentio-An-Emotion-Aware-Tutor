@@ -137,18 +137,6 @@ class NLPConfig:
 # TUTORING & PEDAGOGY
 # ─────────────────────────────────────────────
 class TutorConfig:
-    # Supported subjects
-    SUBJECTS = [
-        "general",
-        "mathematics",
-        "physics",
-        "chemistry",
-        "biology",
-        "computer_science",
-        "history",
-        "literature",
-    ]
-
     # Difficulty levels
     DIFFICULTY_LEVELS = ["beginner", "intermediate", "advanced"]
 

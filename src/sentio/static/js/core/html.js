@@ -13,11 +13,16 @@ export function escapeHtml(value) {
   );
 }
 
+// Slides for PowerPoint lectures, pages for everything else.
+export function pageLabel(filename, page) {
+  return `${/\.pptx$/i.test(filename || '') ? 'Slide' : 'Page'} ${page}`;
+}
+
 // Plain-text account of how saved practice was made. Callers escape the result.
 export function describeProvenance(provenance) {
   if (!provenance) return '';
   const pages = (provenance.sources || [])
-    .map((source) => `${source.filename} p.${source.page}`)
+    .map((source) => `${source.filename} ${pageLabel(source.filename, source.page).toLowerCase()}`)
     .join(', ');
   const from = pages ? ` from ${pages}` : '';
   const made =

@@ -338,7 +338,7 @@ class SentioOrchestrator:
 
     def route_after_retrieval(self, state: OrchestratorState) -> str:
         outcome = getattr(state.get("retrieved_content"), "evidence_outcome", "general")
-        return "refuse" if outcome == "insufficient" else "generate"
+        return "refuse" if outcome in ("insufficient", "no_source") else "generate"
 
     def retrieve_node(self, state: OrchestratorState) -> OrchestratorState:
         t0 = time.perf_counter()
@@ -382,12 +382,13 @@ class SentioOrchestrator:
 
     def refuse_node(self, state: OrchestratorState) -> OrchestratorState:
         """The selected notes do not support the question: answer without the model."""
-        from sentio.ai.grounding import MISSING_EVIDENCE
+        from sentio.ai.grounding import MISSING_EVIDENCE, NO_SOURCE
         from sentio.ai.models import TutorResponse
 
         checkpoint("insufficient selected evidence")
+        outcome = getattr(state.get("retrieved_content"), "evidence_outcome", "")
         response = TutorResponse(
-            text=MISSING_EVIDENCE,
+            text=NO_SOURCE if outcome == "no_source" else MISSING_EVIDENCE,
             strategy_used=state["strategy"],
             learning_state=state["learning_state"],
             backend_used="evidence_gate",
