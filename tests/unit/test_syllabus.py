@@ -1,6 +1,14 @@
 """Syllabus parsing, matching to lecture topics, and status rules."""
 
-from sentio.study.syllabus import item_status, match, parse_syllabus, summarise
+from sentio.study.syllabus import (
+    item_status,
+    item_weights,
+    match,
+    parse_syllabus,
+    repair_title,
+    summarise,
+    vocabulary,
+)
 
 UNIVERSITY = """
 CS301 Operating Systems        L T P C: 3 0 2 4
@@ -117,3 +125,44 @@ def test_a_fading_topic_is_due_rather_than_ready():
     assert item_status(["ready", "review_due"]) == "review_due"
     assert item_status(["review_due", "not_started"]) == "practising"
     assert summarise(["ready", "review_due"])["percent_ready"] == 50
+
+
+def test_words_split_by_a_pdf_are_rejoined_only_when_the_whole_word_is_known():
+    words = vocabulary(["Associative mapping of cache problem in an input device."])
+    assert repair_title("Overview of architecture a nd contrast", words) == (
+        "Overview of architecture and contrast"
+    )
+    assert repair_title("As sociative", words) == "Associative"
+    assert repair_title("Topics i n research", words) == "Topics in research"
+    assert repair_title("related probl ems", words) == "related problems"
+    assert repair_title("a set of cache in device", words) == "a set of cache in device"
+    assert repair_title("LEDs toggle -switches", words) == "LEDs toggle-switches"
+    assert repair_title("Booth\ufffds algorithm", words) == "Booth's algorithm"
+    assert repair_title("a nd") == "a nd"  # Without a vocabulary nothing is guessed.
+
+
+WEIGHTED = """Module I (10 lecture hours):
+Paging, Segmentation
+Module II (30 lectures):
+Deadlocks, Semaphores
+"""
+
+
+def test_unit_hours_are_kept_and_weight_the_percentage():
+    items = parse_syllabus(WEIGHTED)
+    assert [(i["title"], i["hours"]) for i in items] == [
+        ("Paging", 10),
+        ("Segmentation", 10),
+        ("Deadlocks", 30),
+        ("Semaphores", 30),
+    ]
+    stored = [{"unit": i["unit"], "unit_hours": i["hours"]} for i in items]
+    assert item_weights(stored) == [5, 5, 15, 15]
+    statuses = ["ready", "ready", "no_notes", "no_notes"]
+    assert summarise(statuses, item_weights(stored))["percent_ready"] == 25
+    assert summarise(statuses)["percent_ready"] == 50
+
+    assert item_weights([{"unit": "a", "unit_hours": 10}, {"unit": "b", "unit_hours": None}]) == [
+        1,
+        1,
+    ]

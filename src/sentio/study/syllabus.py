@@ -6,6 +6,7 @@ syllabus topic comes from the practice state of the lecture topics it matches.
 """
 
 import re
+from collections import Counter
 
 MAX_ITEM = 120
 MAX_LINKS = 3
@@ -45,6 +46,37 @@ _STOP = {
 }  # fmt: skip
 
 
+_COMMON = {"and", "as", "at", "by", "for", "from", "in", "is", "of", "on", "or", "the", "to"}
+
+
+def vocabulary(texts):
+    """Words a syllabus title may be repaired towards: the course's own, plus common ones."""
+    return _COMMON | {
+        word.casefold() for text in texts for word in _WORD.findall(text or "") if len(word) >= 3
+    }
+
+
+def _known(word, words):
+    return word in words or (word.endswith("s") and word[:-1] in words)
+
+
+def repair_title(title, words=frozenset()):
+    """Undo PDF damage: "a nd", "probl ems", "toggle -switches" and "Booth�s"."""
+    title = re.sub(r"(\w)\ufffds\b", r"\1's", title)
+    title = re.sub(r"(\w) -(\w)", r"\1-\2", title)
+    parts = title.split(" ")
+    repaired = []
+    for part in parts:
+        before = repaired[-1] if repaired else ""
+        joined = (before + part).casefold()
+        fragment = not (before.casefold() in words and part.casefold() in words)
+        if before.isalpha() and part.isalpha() and fragment and _known(joined, words):
+            repaired[-1] = before + part
+        else:
+            repaired.append(part)
+    return " ".join(repaired)
+
+
 def _clean(text):
     text = _HOURS.sub("", " ".join(text.split())).strip(" .;:,-–—")
     return _BULLET.sub("", text).strip(" .;:,-–—")
@@ -77,12 +109,16 @@ def _body_items(unit, lines):
     return items
 
 
-def parse_syllabus(text):
-    """[{"unit": label or None, "title": topic}] in syllabus order."""
+def parse_syllabus(text, words=frozenset()):
+    """[{"unit": label or None, "title": topic, "hours": unit hours or None}] in syllabus order.
+
+    `words` is the vocabulary used to repair words a PDF split in two.
+    """
     lines = [" ".join(line.split()) for line in (text or "").splitlines()]
     lines = [line for line in lines if line]
     has_units = any(_UNIT.match(line) for line in lines)
     items, unit, unit_name, body, skipping = [], None, None, [], False
+    hours = {}
 
     def close():
         items.extend(_body_items(unit, body))
@@ -94,6 +130,7 @@ def parse_syllabus(text):
             close()
             skipping, unit_name, body = False, None, []
             label = f"{header[1].title()} {header[2].upper()}"
+            stated = _HOURS.search(header[3])
             rest = _clean(_HOURS.sub("", header[3]))
             # "Memory Management – Paging, Segmentation": a unit name, then its topics.
             parts = re.split(r"\s+[–—-]\s+|:\s*", rest, maxsplit=1)
@@ -106,6 +143,8 @@ def parse_syllabus(text):
             else:
                 unit = f"{label}: {rest}" if rest else label
                 unit_name = rest
+            if stated:
+                hours[unit] = int(re.search(r"\d+", stated[0])[0])
             continue
         if _SKIP_SECTION.match(line):
             skipping = True
@@ -113,7 +152,10 @@ def parse_syllabus(text):
         if not skipping and not (has_units and unit is None):
             body.append(line)
     close()
-    return items
+    return [
+        {**item, "title": repair_title(item["title"], words), "hours": hours.get(item["unit"])}
+        for item in items
+    ]
 
 
 def _close_unit(items, unit, name):
@@ -176,12 +218,21 @@ def item_status(states):
     return "practising"
 
 
-def summarise(statuses):
+def item_weights(items):
+    """Each item's share of its unit's teaching hours; equal unless every unit states hours."""
+    sizes = Counter(item["unit"] for item in items)
+    if not all(item.get("unit_hours") for item in items):
+        return [1] * len(items)
+    return [item["unit_hours"] / sizes[item["unit"]] for item in items]
+
+
+def summarise(statuses, weights=None):
     names = ("ready", "review_due", "practising", "not_started", "no_notes")
     counts = {status: statuses.count(status) for status in names}
-    total = len(statuses)
+    weights = weights or [1] * len(statuses)
+    ready = sum(weight for status, weight in zip(statuses, weights) if status == "ready")
     return {
         **counts,
-        "total": total,
-        "percent_ready": round(100 * counts["ready"] / total) if total else 0,
+        "total": len(statuses),
+        "percent_ready": round(100 * ready / sum(weights)) if statuses else 0,
     }

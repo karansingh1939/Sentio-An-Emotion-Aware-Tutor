@@ -363,6 +363,11 @@ class SessionPersister:
                     "link_mode TEXT NOT NULL DEFAULT 'auto', linked_topic_id TEXT)"
                 )
             )
+            syllabus_columns = {
+                row[1] for row in conn.execute(text("PRAGMA table_info(syllabus_items)"))
+            }
+            if "unit_hours" not in syllabus_columns:
+                conn.execute(text("ALTER TABLE syllabus_items ADD COLUMN unit_hours INTEGER"))
             conn.execute(
                 text("""
                 CREATE TABLE IF NOT EXISTS flashcard_decks (

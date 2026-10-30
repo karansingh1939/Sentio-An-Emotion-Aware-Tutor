@@ -62,7 +62,8 @@ async def save_syllabus(
 ):
     """Replace the course syllabus with pasted text or an uploaded file."""
     content = await _file_text(file) if file is not None else (text or "")
-    items = parse_syllabus(content[:MAX_SYLLABUS_CHARS])
+    words = repository().course_words(user["student_id"], course_id)
+    items = parse_syllabus(content[:MAX_SYLLABUS_CHARS], words)
     if not items:
         raise HTTPException(422, "No syllabus topics were found. Paste one topic per line.")
     if not repository().replace(user["student_id"], course_id, items):
