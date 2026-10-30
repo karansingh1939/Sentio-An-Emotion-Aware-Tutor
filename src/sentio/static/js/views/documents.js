@@ -699,7 +699,7 @@ export class DocumentsView {
       this.remember(lecture.topics);
       const modal = document.createElement('sentio-modal');
       modal.setAttribute('title', `Topics in ${lecture.filename}`);
-      modal.innerHTML = `<p class="muted">Practice estimate from your quiz answers: Ready means at least 4 of your last 5 answers on the topic were correct.</p>${topicList(lecture.topics)}`;
+      modal.innerHTML = `<p class="muted">Practice estimate from your quiz answers: Ready means your last 3 answers on the topic were all correct.</p>${topicList(lecture.topics)}`;
       modal.addEventListener('click', (event) => this.onTopicAction(event, modal));
       document.body.appendChild(modal);
     } catch (error) {

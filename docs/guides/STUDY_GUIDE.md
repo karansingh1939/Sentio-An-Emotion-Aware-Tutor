@@ -45,7 +45,7 @@ Open http://127.0.0.1:8001 and leave the terminal open. Stop with Ctrl+C.
 7. See how each lecture is going: open **Progress by topic** under a course, or
    **Topics** beside a lecture. Topics follow slide titles (PDF page headings; Word and
    text files form one topic). Each topic is **Not started**, **Practising** or
-   **Ready** (at least 5 answers, and 4 of the last 5 correct). **Weak topics** lists
+   **Ready** (your last 3 answers on it were all correct). **Weak topics** lists
    practised topics below that bar with their slides; **Review** opens the tutor on the
    topic and **Practise** prepares a quiz on it. **Practise weak topics** covers all of
    them at once. You can rename a topic or merge it into the one above. Only quizzes
