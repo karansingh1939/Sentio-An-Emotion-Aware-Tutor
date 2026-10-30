@@ -39,6 +39,14 @@ Every claim here links to code, a test or a measurement in this repository.
 - **Why FSRS instead of SM-2?** SM-2 uses fixed rules and an ease factor; FSRS is a
   model of memory with parameters fitted on large public review logs, and it gives a
   recall probability I can reuse. Next step: fit the parameters on my own review history.
+- **Why not use embeddings for syllabus matching?** I expected them to help and measured
+  it. On a real 72-item syllabus, word overlap reached F1 0.86 on "is this in the notes"
+  with no false claims. Adding MiniLM similarity dropped that to 0.80, because a gap such
+  as cache mapping sits very close to a slide about cache memory without being taught by
+  it: embeddings measure relatedness, not coverage. Filling gaps and pruning weak links
+  did not beat word overlap either, so I kept the simpler method. Choices were made inside
+  nested cross-validation. The sample is one syllabus, and the labels came from the AI
+  assistant, not from students, so it is a sanity check rather than a study.
 - **What would you improve next?** A trained evidence classifier once labels are
   reviewed, a larger held-out evaluation set, and a cross-encoder re-ranker comparison.
 - **What was hard?** Making generation reliable on small local models: they break JSON,

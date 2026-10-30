@@ -7,6 +7,7 @@ syllabus topic comes from the practice state of the lecture topics it matches.
 
 import re
 from collections import Counter
+from functools import lru_cache
 
 MAX_ITEM = 120
 MAX_LINKS = 3
@@ -60,8 +61,12 @@ def _known(word, words):
     return word in words or (word.endswith("s") and word[:-1] in words)
 
 
-def repair_title(title, words=frozenset()):
-    """Undo PDF damage: "a nd", "probl ems", "toggle -switches" and "Booth�s"."""
+def repair_title(title, words=frozenset(), known=None):
+    """Undo PDF damage: "a nd", "probl ems", "toggle -switches" and "Booth�s".
+
+    Two pieces are joined when the whole word is `known` and they are not both real `words`.
+    """
+    known = words if known is None else known
     title = re.sub(r"(\w)\ufffds\b", r"\1's", title)
     title = re.sub(r"(\w) -(\w)", r"\1-\2", title)
     parts = title.split(" ")
@@ -70,7 +75,7 @@ def repair_title(title, words=frozenset()):
         before = repaired[-1] if repaired else ""
         joined = (before + part).casefold()
         fragment = not (before.casefold() in words and part.casefold() in words)
-        if before.isalpha() and part.isalpha() and fragment and _known(joined, words):
+        if before.isalpha() and part.isalpha() and fragment and _known(joined, known):
             repaired[-1] = before + part
         else:
             repaired.append(part)
@@ -112,8 +117,10 @@ def _body_items(unit, lines):
 def parse_syllabus(text, words=frozenset()):
     """[{"unit": label or None, "title": topic, "hours": unit hours or None}] in syllabus order.
 
-    `words` is the vocabulary used to repair words a PDF split in two.
+    `words` is the vocabulary used to repair words a PDF split in two; the syllabus's own
+    words also count as known.
     """
+    known = words | vocabulary([text])
     lines = [" ".join(line.split()) for line in (text or "").splitlines()]
     lines = [line for line in lines if line]
     has_units = any(_UNIT.match(line) for line in lines)
@@ -153,7 +160,11 @@ def parse_syllabus(text, words=frozenset()):
             body.append(line)
     close()
     return [
-        {**item, "title": repair_title(item["title"], words), "hours": hours.get(item["unit"])}
+        {
+            **item,
+            "title": repair_title(item["title"], words, known),
+            "hours": hours.get(item["unit"]),
+        }
         for item in items
     ]
 
@@ -164,6 +175,7 @@ def _close_unit(items, unit, name):
         items.append({"unit": unit, "title": name[:MAX_ITEM]})
 
 
+@lru_cache(maxsize=4096)
 def _words(text):
     """Comparable words: lower case, singular, with "vs"/"comparison" treated as one word.
     Two-letter words count only as acronyms ("AI", "IO")."""

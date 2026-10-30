@@ -60,8 +60,9 @@ Open http://127.0.0.1:8001 and leave the terminal open. Stop with Ctrl+C.
    PowerPoint or text file. Sentio splits it into units and topics (skipping textbooks,
    references and outcomes) and matches each topic to your lecture topics. The course
    then shows "62% of the syllabus ready", and topics with no matching notes are marked
-   **Not in your notes yet**, so you know what to collect before the exam. If a match is
-   wrong, pick the right lecture topic or "Not in my notes" from its list.
+   **Not in your notes yet**, so you know what to collect before the exam. When the
+   syllabus states hours per unit, each unit counts for its hours in that percentage. If a
+   match is wrong, pick the right lecture topic or "Not in my notes" from its list.
 
 To change notes, return to Library and choose Study on the new document. Saved
 practice remains accessible. Settings contains diagnostics, data export and account

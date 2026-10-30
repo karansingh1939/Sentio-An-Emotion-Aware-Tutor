@@ -149,3 +149,26 @@ def test_syllabus_files_are_read_and_unreadable_ones_explained():
         ]
         assert client.delete(f"/api/v1/courses/{course}/syllabus").json() == {"deleted": True}
         assert client.get(f"/api/v1/courses/{course}/syllabus").json()["items"] == []
+
+
+def test_titles_are_repaired_and_module_hours_weight_the_percentage(monkeypatch):
+    text = """Module I (30 lecture hours):
+Paging, Page tables
+Module II (10 lecture hours):
+Deadlocks, Dead locks
+"""
+    with TestClient(app) as client:
+        owner, course, _, session = _study(client)
+        saved = client.put(f"/api/v1/courses/{course}/syllabus", data={"text": text}).json()
+        assert [i["title"] for i in saved["items"]] == [
+            "Paging",
+            "Page tables",
+            "Deadlocks",
+            "Deadlocks",
+        ]
+        assert [i["unit_hours"] for i in saved["items"]] == [30, 30, 10, 10]
+
+        _quiz(client, monkeypatch, owner, session, "deadlock", "Circular wait")
+        summary = client.get(f"/api/v1/courses/{course}/syllabus").json()["summary"]
+        assert (summary["ready"], summary["total"]) == (2, 4)
+        assert summary["percent_ready"] == 25  # 10 of 40 hours, not 2 items in 4.
