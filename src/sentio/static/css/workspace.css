@@ -924,3 +924,34 @@ form label,
   font-size: 13px;
   color: var(--text-dim);
 }
+.topic-state.no_notes {
+  color: var(--red);
+  border-color: var(--red);
+}
+.syllabus-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.syllabus-bar span {
+  display: block;
+  height: 100%;
+  background: var(--green);
+}
+.syllabus-unit {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+.syllabus-match {
+  max-width: 320px;
+}
+
+.syllabus-unit {
+  font-weight: 600;
+}
+.link-quiet + .link-quiet {
+  margin-left: 10px;
+}

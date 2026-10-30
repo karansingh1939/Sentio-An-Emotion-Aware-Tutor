@@ -50,6 +50,12 @@ Open http://127.0.0.1:8001 and leave the terminal open. Stop with Ctrl+C.
    topic and **Practise** prepares a quiz on it. **Practise weak topics** covers all of
    them at once. You can rename a topic or merge it into the one above. Only quizzes
    taken after this update count, and the result is a practice estimate.
+8. Add the course **Syllabus** in the same panel: paste it, or choose its PDF, Word,
+   PowerPoint or text file. Sentio splits it into units and topics (skipping textbooks,
+   references and outcomes) and matches each topic to your lecture topics. The course
+   then shows "62% of the syllabus ready", and topics with no matching notes are marked
+   **Not in your notes yet**, so you know what to collect before the exam. If a match is
+   wrong, pick the right lecture topic or "Not in my notes" from its list.
 
 To change notes, return to Library and choose Study on the new document. Saved
 practice remains accessible. Settings contains diagnostics, data export and account

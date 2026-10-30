@@ -86,7 +86,8 @@ class TopicRepository:
             results.setdefault(document_id, []).append((page, bool(correct)))
         return results
 
-    def _lecture(self, connection, owner, document, results):
+    def _lecture(self, connection, owner, document, results, with_text=False):
+        pages = dict(self._pages(connection, document["id"])) if with_text else {}
         topics = []
         for topic in self._topics(connection, owner, document):
             answers = [
@@ -103,6 +104,17 @@ class TopicRepository:
                     "document_id": document["id"],
                     "filename": document["filename"],
                     **topic_state(answers),
+                    **(
+                        {
+                            "text": "\n".join(
+                                content
+                                for page, content in pages.items()
+                                if topic["first_page"] <= page <= topic["last_page"]
+                            )
+                        }
+                        if with_text
+                        else {}
+                    ),
                 }
             )
         return {"document_id": document["id"], "filename": document["filename"], "topics": topics}
@@ -116,7 +128,7 @@ class TopicRepository:
                 connection, owner, document, self._results(connection, owner, [document_id])
             )
 
-    def course_progress(self, owner, course_id):
+    def course_progress(self, owner, course_id, with_text=False):
         with self.engine.begin() as connection:
             if not connection.execute(
                 text("SELECT 1 FROM courses WHERE id=:id AND student_id=:owner"),
@@ -133,7 +145,9 @@ class TopicRepository:
             )
             results = self._results(connection, owner, ids)
             lectures = [
-                self._lecture(connection, owner, self._document(connection, owner, i), results)
+                self._lecture(
+                    connection, owner, self._document(connection, owner, i), results, with_text
+                )
                 for i in ids
             ]
         topics = [topic for lecture in lectures for topic in lecture["topics"]]

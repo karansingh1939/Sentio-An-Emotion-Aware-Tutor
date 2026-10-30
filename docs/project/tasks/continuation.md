@@ -563,3 +563,14 @@ quiz streaks only; learner-model override and emotion-driven changes removed;
 ContentAdapter.adapt_difficulty deleted. Pinning via POST /sessions/{id}/difficulty;
 `difficulty_change` on stream and quiz results; tutor and quiz pages show the change with
 Undo. EMOTION.md is "tone only" again, now true.
+
+## Phase 3: syllabus progress - 30 October 2026
+
+Branch: feature/syllabus-progress (stacked on feature/fair-difficulty). Syllabus per course
+(`syllabus_items`; PUT/GET/DELETE /courses/{id}/syllabus with text or a PDF/DOCX/PPTX/TXT
+file; PATCH /syllabus/{item} with mode auto/manual/none). Deterministic parsing (units,
+comma lists, bullets, hours, skipped textbook/reference/outcome sections; a named unit
+without a list is one topic). Live word-overlap matching to lecture topics (title x2, slide
+text x1, threshold 0.5, up to 3). Status from topic states; percent ready. Library course
+panel shows the syllabus, gaps ("Not in your notes yet"), match correction and Practise.
+Next: Phase 4 (camera mode switch on the study page).
