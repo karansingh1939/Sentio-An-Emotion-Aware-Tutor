@@ -33,6 +33,33 @@ def _owned_source(owner, source):
         raise HTTPException(status_code=403, detail="Access denied or document not found.")
 
 
+def _owned_topics(owner, metadata):
+    """Topics a session practises: the student's own, inside the session's notes."""
+    from sentio.repositories.courses import expand_source
+    from sentio.repositories.topics import TopicRepository
+    from sentio.study.topics import MAX_PRACTICE_TOPICS
+
+    topic_ids = metadata.get("topic_ids")
+    if topic_ids is None:
+        return
+    if (
+        not isinstance(topic_ids, list)
+        or not 1 <= len(topic_ids) <= MAX_PRACTICE_TOPICS
+        or not all(isinstance(topic_id, str) for topic_id in topic_ids)
+        or len(set(topic_ids)) != len(topic_ids)
+    ):
+        raise HTTPException(422, f"Choose 1 to {MAX_PRACTICE_TOPICS} different topics.")
+    engine = agent.sm.persister._engine
+    topics = TopicRepository(engine).passages(owner, topic_ids)
+    with engine.connect() as connection:
+        source = expand_source(connection, owner, metadata.get("document_id"))
+    selected = source if isinstance(source, list) else [source]
+    if topics is None or (
+        source != "all" and any(topic["document_id"] not in selected for topic in topics)
+    ):
+        raise HTTPException(404, "Topic not found in these notes.")
+
+
 @router.post(PREFIX + "/sessions", tags=["Sessions"], status_code=201)
 def create_session(req: CreateSessionRequest, user: dict = Depends(get_current_user)):
     """
@@ -50,6 +77,7 @@ def create_session(req: CreateSessionRequest, user: dict = Depends(get_current_u
     # Force student_id from authenticated token payload
     req.student_id = user["student_id"]
     _owned_source(req.student_id, (req.metadata or {}).get("document_id"))
+    _owned_topics(req.student_id, req.metadata or {})
     _owned_goal(req.student_id, (req.metadata or {}).get("goal_id"))
 
     session = agent.start_session(
@@ -128,11 +156,14 @@ def set_session_grounding(
     if streams:
         streams.cancel_session(user["student_id"], session_id)
     previous = session.metadata.get("document_id")
+    topics = session.metadata.pop("topic_ids", None)  # Chosen from the previous notes.
     session.metadata["document_id"] = req.document_id
     try:
         agent.sm.persister.save_session(session)
     except Exception as e:
         session.metadata["document_id"] = previous
+        if topics:
+            session.metadata["topic_ids"] = topics
         logger.warning(f"Failed to persist updated session grounding state: {e}")
         raise HTTPException(503, "Source change could not be saved. Retry.") from e
     agent.nlp.clear_history(session_id)

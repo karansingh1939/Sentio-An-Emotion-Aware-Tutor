@@ -47,8 +47,9 @@ Open http://127.0.0.1:8001 and leave the terminal open. Stop with Ctrl+C.
    text files form one topic). Each topic is **Not started**, **Practising** or
    **Ready** (your last 3 answers on it were all correct). **Weak topics** lists
    practised topics below that bar with their slides; **Review** opens the tutor on the
-   topic and **Practise** prepares a quiz on it. **Practise weak topics** covers all of
-   them at once. You can rename a topic or merge it into the one above. Only quizzes
+   topic and **Practise** prepares a quiz on exactly that topic's slides, and the quiz
+   shows which slides it covers. **Practise weak topics** spreads questions across your
+   5 weakest topics. You can rename a topic or merge it into the one above. Only quizzes
    taken after this update count, and the result is a practice estimate.
 8. Add the course **Syllabus** in the same panel: paste it, or choose its PDF, Word,
    PowerPoint or text file. Sentio splits it into units and topics (skipping textbooks,

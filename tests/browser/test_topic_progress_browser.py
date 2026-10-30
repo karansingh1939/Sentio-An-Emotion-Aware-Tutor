@@ -67,6 +67,9 @@ async def test_practise_a_topic_and_find_it_among_weak_topics(monkeypatch):
             await page.wait_for_selector("#generate-quiz-btn:enabled")
             assert "Practising Paging" in await page.locator("#quiz-context").inner_text()
             await page.click("#generate-quiz-btn")
+            focus = page.locator(".practice-focus")
+            await focus.wait_for()
+            assert await focus.inner_text() == "From: Paging (slides 1–2)"
             for index in range(3):
                 await page.check('input[name="quiz-opt"][value="B"]')  # "Threads": wrong
                 await page.click("#next-question-btn" if index < 2 else "#submit-quiz-btn")

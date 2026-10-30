@@ -127,11 +127,24 @@ the states of the lecture topics it matches, and the course percentage is the sh
 
 Topic mastery (`study/topics.py`, `repositories/topics.py`): a lecture's topics are page
 ranges grouped by heading (slide titles; PDF page headings, skipping running headers),
-stored in `note_topics` with the document checksum and rebuilt when it changes. After a
-quiz is generated, each question is attributed to the retrieved passage it overlaps most
-(`quiz_questions.source_document_id`, `source_page`), and each submitted answer records its
-`question_id`. A topic's state comes from the answers whose question page falls in its
-range, so renaming or merging topics regroups past answers without re-grading.
+stored in `note_topics` with the document checksum and rebuilt when it changes. Topic ids
+are derived from the owner, document, checksum and first page, so concurrent rebuilds agree.
+A generated question names the passage it came from by Citation Index. The server keeps
+that when the passage exists and shares at least half as many words with the question as
+the best match does; otherwise the best match is used (`quiz_questions.source_document_id`,
+`source_page`). Each submitted answer records its `question_id`. A topic's state comes from
+the answers whose question page falls in its range, so renaming or merging topics regroups
+past answers without re-grading.
+
+Topic practice: a session may carry up to 5 `topic_ids`, checked at creation to be the
+student's own and inside the session's notes, and frozen in the study snapshot. Quizzes on
+such a session skip retrieval: `KnowledgeBase.topic_content` reads the topics' pages from
+`document_chunks`, within 3,000 characters shared between topics, sampling evenly across
+long topics. Questions are assigned to topics in turn. A question that fails the passage
+check falls back to word overlap within its assigned topic and, failing that, to that
+topic's first slide, so a topic quiz always counts toward the topics chosen. A topic that
+was merged away or whose lecture changed gives 409. Provenance records the topics and how
+each question was placed (`located`: model, overlap or topic).
 
 Flashcards are scheduled by `flashcards/fsrs.py`, a dependency-free FSRS-5 model: each
 card stores stability, difficulty and its last review time, and the next review is set

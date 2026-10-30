@@ -18,6 +18,21 @@ export function pageLabel(filename, page) {
   return `${/\.pptx$/i.test(filename || '') ? 'Slide' : 'Page'} ${page}`;
 }
 
+export function pageRange(topic) {
+  const label = pageLabel(topic.filename, '').trim().toLowerCase();
+  return topic.first_page === topic.last_page
+    ? `${label} ${topic.first_page}`
+    : `${label}s ${topic.first_page}–${topic.last_page}`;
+}
+
+// Which topics a quiz was built from. Callers escape the result.
+export function describeFocus(provenance) {
+  const topics = provenance?.topics || [];
+  return topics.length
+    ? `From: ${topics.map((topic) => `${topic.title} (${pageRange(topic)})`).join(', ')}`
+    : '';
+}
+
 // Plain-text account of how saved practice was made. Callers escape the result.
 export function describeProvenance(provenance) {
   if (!provenance) return '';

@@ -48,6 +48,7 @@ class PracticeRepository:
             "topic": session.topic,
             "difficulty": session.difficulty,
             "source": source,
+            "topics": session.metadata.get("topic_ids") or [],
             "documents": documents,
             "goal": goal,
         }

@@ -108,7 +108,11 @@ async function startSession(options = {}) {
     options.documentId ??
     (document.getElementById('f-grounding') ? document.getElementById('f-grounding').value : 'all');
   const goalId = options.goalId ?? (document.getElementById('f-goal')?.value || '');
-  const metadata = { document_id: grounding, ...(goalId ? { goal_id: goalId } : {}) };
+  const metadata = {
+    document_id: grounding,
+    ...(goalId ? { goal_id: goalId } : {}),
+    ...(options.topicIds?.length ? { topic_ids: options.topicIds } : {}),
+  };
 
   sessionStartingFor = studentId;
   document.getElementById('start-btn').disabled = true;

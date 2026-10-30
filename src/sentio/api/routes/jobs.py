@@ -19,6 +19,7 @@ from sentio.auth.middleware import get_current_user
 from sentio.jobs.control import WorkCancelled
 from sentio.repositories.jobs import JobConflict, JobExpired
 from sentio.repositories.practice import PracticeRepository
+from sentio.repositories.topics import TopicChanged
 
 router = APIRouter()
 
@@ -116,6 +117,10 @@ def quiz_job(
     session = deepcopy(_verify_session_owner(req.session_id, user))
     # Freeze context at submission; mutable frontend fields are not a second authority.
     snapshot = study_snapshot(quiz_service, session)
+    try:
+        quiz_service.topic_focus(session)
+    except TopicChanged as exc:
+        raise HTTPException(409, str(exc)) from exc
     return submit(
         jobs,
         user["student_id"],

@@ -5,7 +5,12 @@ from pathlib import Path
 
 from sqlalchemy import text
 
+from sentio.jobs.control import WorkInputError
 from sentio.study.topics import build_topics, is_weak, topic_state
+
+
+class TopicChanged(WorkInputError):
+    """A topic chosen for practice was merged away, or its lecture was replaced."""
 
 
 class TopicRepository:
@@ -58,7 +63,13 @@ class TopicRepository:
         )
         rows = []
         for position, topic in enumerate(built):
-            row = {"id": str(uuid.uuid4()), **topic, "checksum": document["checksum"]}
+            # Two requests can build the same map at once, and both answers must stay usable.
+            identity = f"{owner}/{document['id']}/{document['checksum']}/{topic['first_page']}"
+            row = {
+                "id": str(uuid.uuid5(uuid.NAMESPACE_URL, identity)),
+                **topic,
+                "checksum": document["checksum"],
+            }
             connection.execute(
                 text(
                     "INSERT INTO note_topics VALUES (:id,:owner,:document,:title,:first_page,:last_page,:position,:checksum)"
@@ -165,6 +176,37 @@ class TopicRepository:
             "lectures": lectures,
             "weak": weak,
         }
+
+    def passages(self, owner, topic_ids):
+        """The chosen topics in order, each with its (page, text) pairs.
+
+        None when any of them has gone: merged away, or its lecture replaced or removed.
+        """
+        topics = []
+        with self.engine.connect() as connection:
+            for topic_id in topic_ids:
+                topic = (
+                    connection.execute(
+                        text(
+                            "SELECT id,document_id,title,first_page,last_page,checksum FROM note_topics WHERE id=:id AND student_id=:owner"
+                        ),
+                        {"id": topic_id, "owner": owner},
+                    )
+                    .mappings()
+                    .first()
+                )
+                document = topic and self._document(connection, owner, topic["document_id"])
+                if not document or document["checksum"] != topic["checksum"]:
+                    return None
+                pages = [
+                    (page, content)
+                    for page, content in self._pages(connection, document["id"])
+                    if topic["first_page"] <= page <= topic["last_page"]
+                ]
+                if not pages:
+                    return None
+                topics.append({**topic, "filename": document["filename"], "pages": pages})
+        return topics
 
     def rename(self, owner, topic_id, title):
         with self.engine.begin() as connection:

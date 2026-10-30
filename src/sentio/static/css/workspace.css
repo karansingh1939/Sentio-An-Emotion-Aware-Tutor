@@ -690,6 +690,10 @@ form label,
   font-size: 14px;
   padding: 6px 8px;
 }
+.practice-focus {
+  margin: 6px 0 0;
+  font-weight: 500;
+}
 .practice-provenance {
   display: inline-flex;
   align-items: center;

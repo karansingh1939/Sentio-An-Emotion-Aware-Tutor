@@ -10,6 +10,7 @@ import json
 import logging
 import re
 import uuid
+from collections import Counter
 from copy import deepcopy
 from fractions import Fraction
 from typing import Any, Dict, Optional, Tuple
@@ -24,6 +25,7 @@ from sentio.ai.structured_parser import (
 from sentio.jobs.control import checkpoint, publish
 from sentio.repositories.practice import PracticeRepository
 from sentio.repositories.quizzes import QuizRepository
+from sentio.repositories.topics import TopicChanged, TopicRepository
 from sentio.shared.exceptions import LLMServiceUnavailableError
 from sentio.tutor.difficulty import describe
 
@@ -51,6 +53,17 @@ class QuizService:
     def __init__(self, agent, grader_fn: Optional[Any] = None):
         self.agent = agent
         self.grader_fn = grader_fn
+
+    def topic_focus(self, session):
+        """The topics a session practises, with their slides; [] when it has none."""
+        topic_ids = session.metadata.get("topic_ids")
+        if not topic_ids:
+            return []
+        engine = self.agent.sm.persister._engine
+        topics = TopicRepository(engine).passages(session.student_id, topic_ids)
+        if topics is None:
+            raise TopicChanged("This topic changed. Open the course and choose it again.")
+        return topics
 
     def generate_quiz(
         self,
@@ -90,16 +103,21 @@ class QuizService:
             source_snapshot = PracticeRepository(self.agent.sm.persister._engine).snapshot(session)
 
         checkpoint("retrieving sources")
-        # 1. Retrieve RAG context
-        retrieved = self.agent.kb.retrieve(
-            subject=subject,
-            topic=topic,
-            difficulty=difficulty,
-            learning_state="neutral",
-            query=topic,
-            session_id=session_id,
-            student_id=student_id,
-            document_id=document_id,
+        # 1. Use the chosen topics' slides, or retrieve RAG context
+        focus = self.topic_focus(session)
+        retrieved = (
+            self.agent.kb.topic_content(subject, topic, difficulty, focus)
+            if focus
+            else self.agent.kb.retrieve(
+                subject=subject,
+                topic=topic,
+                difficulty=difficulty,
+                learning_state="neutral",
+                query=topic,
+                session_id=session_id,
+                student_id=student_id,
+                document_id=document_id,
+            )
         )
         context = (getattr(retrieved, "rag_context", None) or "").strip()
         if grounded and (not getattr(retrieved, "is_rag", False) or not context):
@@ -116,6 +134,16 @@ class QuizService:
             if grounded
             else "Use the topic and available context."
         )
+        turns = (
+            "\n- Cover the topics in turn: "
+            + ", ".join(
+                f"question {i + 1} on '{focus[i % len(focus)]['title']}'"
+                for i in range(num_questions)
+            )
+            + "."
+            if len(focus) > 1
+            else ""
+        )
 
         # 3. Build prompts
         system_prompt = f"""Generate a quiz with exactly {num_questions} questions on '{topic}' ({difficulty}) in '{subject}'.
@@ -123,7 +151,8 @@ Context: {context}
 Student History: {student_memory}
 
 Requirements:
-- {grounding_rule}
+- {grounding_rule}{turns}
+- Each passage in Context has a Citation Index. Set 'source' to the Citation Index of the passage each question is based on.
 - Mix of: 'multiple_choice' (MCQ, 4 options), 'true_false' (TF, options: ["True", "False"]), 'short_answer' (exemplar response), 'fill_in_the_blank' (one-word answer).
 - For MCQ and TF, 'correct_answer' MUST be the exact option text, not an option letter.
 - For 'short_answer', 'correct_answer' MUST be a brief exemplar response (NOT null).
@@ -141,7 +170,8 @@ JSON Template:
       "correct_answer": "<answer>",
       "explanation": "<explanation>",
       "difficulty": "{difficulty}",
-      "topic": "{topic}"
+      "topic": "{topic}",
+      "source": <citation index>
     }}
   ]
 }}"""
@@ -186,12 +216,26 @@ JSON Template:
         # 6. Generate quiz_id and save to database
         quiz_id = str(uuid.uuid4())
         provenance = practice_provenance(mode, retrieved, self.agent.nlp._backend, source_snapshot)
-        from sentio.study.topics import attribute
+        from sentio.study.topics import locate, place
 
         citations = getattr(retrieved, "source_citations", [])
+        pools = [[c for c in citations if c["topic_id"] == chosen["id"]] for chosen in focus]
+        located = Counter()
         for index, question in enumerate(quiz_dict["questions"]):
             question["question_id"] = f"{quiz_id}_q{index}"
-            question["source_document_id"], question["source_page"] = attribute(question, citations)
+            pool = pools[index % len(pools)] if pools else None
+            citation, how = locate(question, citations, pool)
+            question["source_document_id"], question["source_page"] = place(citation)
+            question["topic"] = (citation or {}).get("topic", question["topic"])
+            del question["source"]
+            located[how] += 1
+        if mode == "generated":
+            provenance["located"] = dict(located)
+        if focus:
+            provenance["topics"] = [
+                {key: chosen[key] for key in ("title", "filename", "first_page", "last_page")}
+                for chosen in focus
+            ]
 
         def save(connection=None):
             self.agent.sm.save_quiz(

@@ -1,4 +1,4 @@
-import { describeProvenance, escapeHtml } from '../core/html.js';
+import { describeFocus, describeProvenance, escapeHtml } from '../core/html.js';
 // Quizzes View Controller for Sentio (ES Module)
 import { sentioAPI } from '../core/api.js';
 import { store } from '../core/store.js';
@@ -234,6 +234,7 @@ export class QuizzesView {
         <div>
           <h2 class="page-title">${escapeHtml(this.quiz.title || 'Dynamic Assessment')}</h2>
           <p class="muted">Select your answer and navigate using the controls below.</p>
+          ${describeFocus(this.quiz.provenance) ? `<p class="practice-focus">${escapeHtml(describeFocus(this.quiz.provenance))}</p>` : ''}
           ${this.quiz.provenance ? `<p class="practice-provenance"><small>${escapeHtml(describeProvenance(this.quiz.provenance))}</small></p>` : ''}
         </div>
         <span class="badge">
