@@ -76,6 +76,9 @@ flowchart LR
   quiz question is attributed to the slide it best matches, so each topic shows Not
   started, Practising or Ready, and weak topics link back to their slides with one-click
   review or practice.
+- **Syllabus progress** — paste or upload the course syllabus; each syllabus topic is
+  matched to lecture topics, so the course shows a percentage ready and lists the topics
+  your notes don't cover yet. Matches can be corrected.
 - **Optional emotion-aware tone** — my earlier facial-emotion CNN (FER2013) and browser
   attention tracking, now an opt-in, consented side feature
   ([details](docs/guides/EMOTION.md)).

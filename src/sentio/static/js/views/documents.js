@@ -6,7 +6,12 @@ import { store } from '../core/store.js';
 import { pendingJobKey, runPracticeJob } from '../core/jobs.js';
 
 const NEW_COURSE = '__new__';
-const STATE_LABEL = { ready: 'Ready', practising: 'Practising', not_started: 'Not started' };
+const STATE_LABEL = {
+  ready: 'Ready',
+  practising: 'Practising',
+  not_started: 'Not started',
+  no_notes: 'Not in your notes yet',
+};
 
 function pageRange(topic) {
   const label = pageLabel(topic.filename, '').trim().toLowerCase();
@@ -38,6 +43,67 @@ function topicList(topics, { showLecture = false } = {}) {
     .join('')}</ul>`;
 }
 
+function syllabusForm(courseId) {
+  return `<div class="syllabus-form stack" data-course="${escapeHtml(courseId)}">
+    <h4>Syllabus</h4>
+    <p class="muted">Add the course syllabus to see how much of it you are ready for and which topics your notes don't cover yet.</p>
+    <textarea class="input syllabus-text" rows="6" aria-label="Syllabus text" placeholder="Paste the syllabus here, one topic per line or units with topics separated by commas"></textarea>
+    <label class="muted">Or choose its file (PDF, Word, PowerPoint or text): <input type="file" class="syllabus-file" accept=".pdf,.docx,.pptx,.txt" /></label>
+    <button class="workspace-action primary" data-syllabus-action="save" data-course="${escapeHtml(courseId)}">Save syllabus</button>
+  </div>`;
+}
+
+// The syllabus by unit: each topic's status, the lecture topic it matches, and a way to fix it.
+function syllabusView(syllabus, courseId) {
+  const { summary } = syllabus;
+  const choices = (item) =>
+    [
+      `<option value="auto" ${item.link_mode === 'auto' ? 'selected' : ''}>Match automatically</option>`,
+      ...syllabus.topics.map(
+        (topic) =>
+          `<option value="manual:${escapeHtml(topic.id)}" ${item.link_mode === 'manual' && item.linked_topic_id === topic.id ? 'selected' : ''}>${escapeHtml(topic.filename)} · ${escapeHtml(topic.title)}</option>`,
+      ),
+      `<option value="none" ${item.link_mode === 'none' ? 'selected' : ''}>Not in my notes</option>`,
+    ].join('');
+  let unit = null;
+  const rows = syllabus.items
+    .map((item) => {
+      const heading =
+        item.unit !== unit
+          ? `<li class="syllabus-unit">${escapeHtml(item.unit || 'Topics')}</li>`
+          : '';
+      unit = item.unit;
+      const matched = item.topics
+        .map((topic) => `${topic.filename} · ${topic.title} (${pageRange(topic)})`)
+        .join('; ');
+      return `${heading}
+        <li class="topic-row syllabus-item" data-item="${escapeHtml(item.id)}">
+          <div class="topic-main">
+            <strong>${escapeHtml(item.title)}</strong>
+            <span class="muted">${matched ? escapeHtml(matched) : 'No matching lecture topic'}</span>
+          </div>
+          <span class="topic-state ${escapeHtml(item.status)}">${STATE_LABEL[item.status]}</span>
+          <div class="topic-actions">
+            ${item.topics.length ? `<button class="workspace-action primary" data-syllabus-action="practise" data-item="${escapeHtml(item.id)}" data-course="${escapeHtml(courseId)}">Practise</button>` : ''}
+            <select class="input syllabus-match" data-item="${escapeHtml(item.id)}" aria-label="Lecture topic for ${escapeHtml(item.title)}">${choices(item)}</select>
+          </div>
+        </li>`;
+    })
+    .join('');
+  return `<div class="syllabus stack" data-course="${escapeHtml(courseId)}">
+    <div class="row-between">
+      <h4>Syllabus · ${summary.percent_ready}% ready</h4>
+      <div>
+        <button class="link-quiet" data-syllabus-action="replace" data-course="${escapeHtml(courseId)}">Replace</button>
+        <button class="link-quiet" data-syllabus-action="remove" data-course="${escapeHtml(courseId)}">Remove</button>
+      </div>
+    </div>
+    <div class="syllabus-bar" role="img" aria-label="${summary.percent_ready}% of the syllabus ready"><span style="width:${summary.percent_ready}%"></span></div>
+    <p class="muted">${summary.ready} ready · ${summary.practising} practising · ${summary.not_started} not started · ${summary.no_notes} not in your notes yet</p>
+    <ul class="topic-list">${rows}</ul>
+  </div>`;
+}
+
 function progressLine(summary) {
   if (!summary.total) return 'No topics yet.';
   return `${summary.ready} of ${summary.total} topics ready · ${summary.practising} practising · ${summary.not_started} not started`;
@@ -56,7 +122,10 @@ export class DocumentsView {
     this.uploadInProgress = false;
     this.justUploadedId = null;
     this.topics = new Map();
+    this.syllabi = new Map();
     this.container.addEventListener('click', (event) => this.onTopicAction(event));
+    this.container.addEventListener('click', (event) => this.onSyllabusAction(event));
+    this.container.addEventListener('change', (event) => this.onSyllabusMatch(event));
   }
 
   async init() {
@@ -503,9 +572,12 @@ export class DocumentsView {
   async loadCourseProgress(current) {
     await Promise.all(
       this.courses.map(async (course) => {
-        let progress;
+        let progress, syllabus;
         try {
-          progress = await sentioAPI.get(`/courses/${encodeURIComponent(course.id)}/progress`);
+          [progress, syllabus] = await Promise.all([
+            sentioAPI.get(`/courses/${encodeURIComponent(course.id)}/progress`),
+            sentioAPI.get(`/courses/${encodeURIComponent(course.id)}/syllabus`),
+          ]);
         } catch {
           return;
         }
@@ -517,8 +589,12 @@ export class DocumentsView {
         if (!line || !body) return;
         const topics = progress.lectures.flatMap((lecture) => lecture.topics);
         this.remember(topics);
-        line.textContent = `${progressLine(progress.summary)}. Practice estimate from your quiz answers.`;
+        this.syllabi.set(course.id, syllabus);
+        line.textContent = syllabus.items.length
+          ? `${syllabus.summary.percent_ready}% of the syllabus ready · ${progressLine(progress.summary)}. Practice estimate from your quiz answers.`
+          : `${progressLine(progress.summary)}. Practice estimate from your quiz answers.`;
         body.innerHTML = `
+          ${syllabus.items.length ? syllabusView(syllabus, course.id) : syllabusForm(course.id)}
           ${
             progress.weak.length
               ? `<div class="weak-topics stack">
@@ -551,6 +627,68 @@ export class DocumentsView {
             );
       }),
     );
+  }
+
+  async onSyllabusAction(event) {
+    const button = event.target.closest('[data-syllabus-action]');
+    if (!button) return;
+    const courseId = button.dataset.course;
+    const course = this.courses.find((item) => item.id === courseId);
+    const path = `/courses/${encodeURIComponent(courseId)}/syllabus`;
+    const action = button.dataset.syllabusAction;
+    if (action === 'practise') {
+      const item = this.syllabi.get(courseId)?.items.find((i) => i.id === button.dataset.item);
+      if (!item) return;
+      const documents = [...new Set(item.topics.map((topic) => topic.document_id))];
+      await this.startStudy(
+        {
+          subject: course?.name || 'My notes',
+          topic: item.title,
+          documentId: documents.length === 1 ? documents[0] : `course:${courseId}`,
+        },
+        '#/quizzes',
+      );
+      return;
+    }
+    if (action === 'replace') {
+      button.closest('.syllabus').outerHTML = syllabusForm(courseId);
+      return;
+    }
+    try {
+      if (action === 'remove') {
+        if (!confirm('Remove this syllabus? Your notes and practice stay.')) return;
+        await sentioAPI.delete(path);
+      } else if (action === 'save') {
+        const form = button.closest('.syllabus-form');
+        const body = new FormData();
+        const file = form.querySelector('.syllabus-file').files[0];
+        if (file) body.append('file', file);
+        else body.append('text', form.querySelector('.syllabus-text').value);
+        button.disabled = true;
+        await sentioAPI.request(path, { method: 'PUT', body });
+        toast('Syllabus saved and matched to your lectures.');
+      }
+    } catch (error) {
+      toast('Syllabus not saved: ' + error.message, true);
+      button.disabled = false;
+      return;
+    }
+    this.loadDocuments();
+  }
+
+  async onSyllabusMatch(event) {
+    const select = event.target.closest('.syllabus-match');
+    if (!select) return;
+    const [mode, topicId] = select.value.split(':');
+    try {
+      await sentioAPI.request(`/syllabus/${encodeURIComponent(select.dataset.item)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ mode, topic_id: topicId || null }),
+      });
+    } catch (error) {
+      toast('Match not changed: ' + error.message, true);
+    }
+    this.loadDocuments();
   }
 
   async showDocumentTopics(documentId) {

@@ -357,6 +357,13 @@ class SessionPersister:
                 )
             )
             conn.execute(
+                text(
+                    "CREATE TABLE IF NOT EXISTS syllabus_items (id TEXT PRIMARY KEY, student_id TEXT NOT NULL, "
+                    "course_id TEXT NOT NULL, unit TEXT, title TEXT NOT NULL, position INTEGER NOT NULL, "
+                    "link_mode TEXT NOT NULL DEFAULT 'auto', linked_topic_id TEXT)"
+                )
+            )
+            conn.execute(
                 text("""
                 CREATE TABLE IF NOT EXISTS flashcard_decks (
                     deck_id      TEXT PRIMARY KEY,

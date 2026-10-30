@@ -118,6 +118,13 @@ learner asks for a change. Changes are returned as `difficulty_change` (from, to
 on the stream `complete` event and on quiz results. Emotion and the learner model only
 shape tone and depth.
 
+Syllabus progress (`study/syllabus.py`, `repositories/syllabus.py`): a pasted or uploaded
+syllabus is parsed deterministically into units and topics and stored in `syllabus_items`.
+Matching to lecture topics is computed live by word overlap (title words count double over
+slide text; plurals normalised), so new lectures match automatically; only the learner's
+corrections are stored (`link_mode` auto/manual/none). A syllabus topic's status comes from
+the states of the lecture topics it matches, and the course percentage is the share Ready.
+
 Topic mastery (`study/topics.py`, `repositories/topics.py`): a lecture's topics are page
 ranges grouped by heading (slide titles; PDF page headings, skipping running headers),
 stored in `note_topics` with the document checksum and rebuilt when it changes. After a

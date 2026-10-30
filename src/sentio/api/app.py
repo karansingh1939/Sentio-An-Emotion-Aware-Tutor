@@ -32,6 +32,7 @@ from sentio.api.routes import (
     quizzes,
     sessions,
     streaming,
+    syllabus,
     system,
     topics,
     tutoring,
@@ -159,6 +160,7 @@ app.include_router(analytics.router)
 app.include_router(documents.router)
 app.include_router(courses.router)
 app.include_router(topics.router)
+app.include_router(syllabus.router)
 app.include_router(memory.router)
 app.include_router(planning.router)
 app.include_router(jobs.router)

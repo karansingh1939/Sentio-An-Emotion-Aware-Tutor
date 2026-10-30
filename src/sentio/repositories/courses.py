@@ -79,6 +79,10 @@ class CourseRepository:
                 {"id": course_id, "owner": owner},
             )
             connection.execute(
+                text("DELETE FROM syllabus_items WHERE course_id=:id AND student_id=:owner"),
+                {"id": course_id, "owner": owner},
+            )
+            connection.execute(
                 text("DELETE FROM courses WHERE id=:id AND student_id=:owner"),
                 {"id": course_id, "owner": owner},
             )
