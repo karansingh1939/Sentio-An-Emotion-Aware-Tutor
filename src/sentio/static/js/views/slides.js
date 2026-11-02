@@ -11,9 +11,11 @@ const NUDGE_QUIET_MS = 2 * 60 * 1000;
 const BREAK_MS = 2 * 60 * 1000;
 const STREAM_TIMEOUT_MS = 200000;
 const EXPLAIN = 'Explain this slide.';
-const EXPLAIN_SIMPLY = 'Explain this slide more simply.';
+// Not "more simply": the tutor reads that as a request for easier work and lowers difficulty.
+const EXPLAIN_DIFFERENTLY = 'Explain this slide in a different way.';
+const CONSENT_NEEDED = 'Camera mood needs camera consent in Settings.';
 const NUDGES = {
-  simpler: { text: 'Want a simpler explanation?', accept: 'Yes, explain it more simply' },
+  simpler: { text: 'Want a simpler explanation?', accept: 'Yes, explain it differently' },
   break: { text: 'Take a short break?', accept: 'Take a 2-minute break' },
 };
 
@@ -27,6 +29,12 @@ export function slideDocumentId(session) {
 
 export function moodText(label) {
   return `Camera guess: ${label}`;
+}
+
+// The word for the chip, or '' when there is no fresh reading to show.
+export function moodLabel(mood) {
+  if (mood?.fresh === false) return '';
+  return typeof mood?.label === 'string' ? mood.label.trim() : '';
 }
 
 export function formatCountdown(seconds) {
@@ -516,17 +524,28 @@ export class SlidesView {
       });
       if (revision !== this.revision || !this.cameraOn) return;
       this.applyMood(mood);
-    } catch {
-      if (revision === this.revision) this.hideMood();
+    } catch (error) {
+      if (revision !== this.revision) return;
+      this.hideMood();
+      // Consent is saved in Settings. Without it the camera is switched off once, not retried.
+      if (error.status === 403 && this.cameraOn) {
+        window.disableCamera?.();
+        toast(CONSENT_NEEDED, true);
+        this.syncCamera();
+      }
     }
   }
 
   applyMood(mood) {
-    const label = typeof mood?.label === 'string' ? mood.label.trim() : '';
+    const label = moodLabel(mood);
     const chip = this.container.querySelector('#slide-mood');
     if (chip) {
       chip.textContent = label ? moodText(label) : '';
       chip.hidden = !label;
+    }
+    if (!label) {
+      if (!this.breakUntil) this.hideNudge();
+      return;
     }
     if (mood?.nudge === 'simpler' || mood?.nudge === 'break') this.offerNudge(mood.nudge);
     else if (!this.breakUntil) this.hideNudge();
@@ -575,7 +594,7 @@ export class SlidesView {
     const kind = this.nudgeKind;
     if (kind === 'simpler') {
       this.hideNudge();
-      this.ask(EXPLAIN_SIMPLY);
+      this.ask(EXPLAIN_DIFFERENTLY);
     } else if (kind === 'break') {
       this.startBreak();
     }

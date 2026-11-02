@@ -54,7 +54,7 @@ async def test_the_camera_runs_on_the_slides_page_and_stops_when_leaving(monkeyp
             await page.get_by_role("button", name="Allow camera").click()
 
             # The synthetic camera shows no face, so the learner reads as looking away.
-            mood = page.locator("#slide-mood").filter(has_text="distracted")
+            mood = page.locator("#slide-mood").filter(has_text="looking away")
             await mood.wait_for(timeout=60000)
             assert await page.evaluate("!document.getElementById('cam-video').paused")
             # The access token, then live frames: a paused video would repeat one picture.

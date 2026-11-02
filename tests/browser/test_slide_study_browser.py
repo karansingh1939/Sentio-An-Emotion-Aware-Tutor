@@ -16,7 +16,7 @@ from tests.browser.test_audit_e2e import UvicornServer, wait_for_server
 from tests.browser.test_courses_browser import PPTX
 from tests.integration.test_topic_mastery import _deck
 
-SIMPLER = "Explain this slide more simply."
+SIMPLER = "Explain this slide in a different way."
 
 
 def _fake_model(monkeypatch, messages):
