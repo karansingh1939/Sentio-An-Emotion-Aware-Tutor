@@ -16,14 +16,15 @@ from sentio.session.models import EmotionTimeline
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Slides"])
 
-# Plain words for the mood chip; any other learning state reads as calm.
+# Plain words for the mood chip; a fresh reading of any other state reads as calm, and no fresh
+# reading has no label.
 MOOD_LABELS = {
     "engaged": "focused",
     "curious": "focused",
     "struggling": "unsure",
     "frustrated": "unsure",
     "anxious": "unsure",
-    "disengaged": "distracted",
+    "disengaged": "looking away",
 }
 
 
@@ -78,4 +79,5 @@ def session_mood(session_id: str, user: dict = Depends(get_current_user)):
     require_emotion_access(agent.sm.persister, user["student_id"])
     events = session.emotion_timeline.recent(EmotionTimeline.MAX_EVENTS)
     mood = policy.study_mood(events, time.time())
-    return {**mood, "label": MOOD_LABELS.get(mood["learning_state"], "calm")}
+    label = MOOD_LABELS.get(mood["learning_state"], "calm") if mood["fresh"] else None
+    return {**mood, "label": label}

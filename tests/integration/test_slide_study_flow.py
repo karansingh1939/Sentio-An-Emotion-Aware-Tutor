@@ -221,7 +221,7 @@ def test_mood_needs_consent_and_is_scoped_to_the_owner(prompts):
         assert client.get(path).status_code in (403, 404)
 
 
-def test_without_camera_readings_the_mood_is_calm_and_has_no_nudge(prompts):
+def test_without_camera_readings_the_mood_has_no_label_and_no_nudge(prompts):
     with patch.object(emotion_cfg, "ENABLED", True), TestClient(app) as client:
         owner, _, session = _study_slides(client)
         _consent(client, owner)
@@ -229,7 +229,7 @@ def test_without_camera_readings_the_mood_is_calm_and_has_no_nudge(prompts):
         assert mood["fresh"] is False
         assert mood["learning_state"] == "neutral"
         assert mood["nudge"] is None
-        assert mood["label"] in ("calm", "focused")  # ASSUMPTION: no reading is shown as calm
+        assert mood["label"] is None  # No fresh reading: the chip has nothing to say.
 
 
 def test_sustained_confusion_offers_a_simpler_explanation_and_only_changes_the_tone(prompts):
@@ -280,7 +280,38 @@ def test_a_stale_reading_is_not_shown_as_the_current_mood(prompts):
         assert mood["fresh"] is False
         assert mood["learning_state"] == "neutral"
         assert mood["nudge"] is None
-        assert mood["label"] != "unsure"
+        assert mood["label"] is None
         # Slide study still works with only stale readings.
         _ask(client, session, "Explain this slide.")
         assert _passages(prompts[0])[0]["page"] == 2
+
+
+def _tone(session):
+    return agent.orchestrator._tone_state({"session_id": session, "learning_state": "neutral"})
+
+
+def test_the_camera_sets_the_tone_only_while_the_feature_is_on_and_consent_is_current(prompts):
+    with TestClient(app) as client:
+        owner, _, session = _study_slides(client)
+        _consent(client, owner, True)
+        _struggle(session)
+        assert _tone(session) == "neutral"  # The feature is off: readings are ignored.
+
+        with patch.object(emotion_cfg, "ENABLED", True):
+            assert _tone(session) == "struggling"
+            _consent(client, owner, False)
+            # Withdrawing consent clears what the camera had seen, and later readings are
+            # ignored too.
+            assert len(agent.sm.get_or_raise(session).emotion_timeline) == 0
+            assert _tone(session) == "neutral"
+            _struggle(session)
+            assert _tone(session) == "neutral"
+            _consent(client, owner, True)
+            assert _tone(session) == "struggling"
+
+
+def test_a_student_who_never_consented_gets_no_camera_tone(prompts):
+    with patch.object(emotion_cfg, "ENABLED", True), TestClient(app) as client:
+        _, _, session = _study_slides(client)
+        _struggle(session)
+        assert _tone(session) == "neutral"

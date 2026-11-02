@@ -235,7 +235,7 @@ def test_mood_needs_consent_and_a_session_of_your_own():
         ("struggling", "unsure"),
         ("frustrated", "unsure"),
         ("anxious", "unsure"),
-        ("disengaged", "distracted"),
+        ("disengaged", "looking away"),
         ("neutral", "calm"),
     ],
 )
@@ -272,3 +272,22 @@ def test_mood_gets_a_plain_label_from_the_study_mood(monkeypatch, state, label):
         events, now = calls[0]
         assert [e.timestamp for e in events] == [10.0, 20.0]  # Oldest first.
         assert now > 1_000_000_000
+
+
+def test_mood_has_no_label_without_a_fresh_reading(monkeypatch):
+    monkeypatch.setattr(
+        "sentio.emotion.policy.study_mood",
+        lambda events, now: {
+            "learning_state": "neutral",
+            "confidence": 0.0,
+            "since": None,
+            "nudge": None,
+            "fresh": False,
+        },
+    )
+    with patch.object(emotion_cfg, "ENABLED", True), TestClient(app) as client:
+        owner, _, session = _study(client)
+        _consent(client, owner, True)
+        mood = client.get(PREFIX + f"/sessions/{session}/mood").json()
+        assert mood["label"] is None
+        assert mood["fresh"] is False
