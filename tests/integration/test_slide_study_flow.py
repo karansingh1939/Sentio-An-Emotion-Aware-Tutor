@@ -238,6 +238,8 @@ def test_sustained_confusion_offers_a_simpler_explanation_and_only_changes_the_t
         owner, _, session = _study_slides(client)
         _consent(client, owner)
         client.put(PREFIX + f"/sessions/{session}/slide", json={"number": 2})
+        # Above the lowest level, so a request read as "easier" would show as a change.
+        agent.sm.get_or_raise(session).difficulty = "intermediate"
         difficulty = agent.sm.get_or_raise(session).difficulty
 
         _ask(client, session, "Explain this slide.")
@@ -256,7 +258,7 @@ def test_sustained_confusion_offers_a_simpler_explanation_and_only_changes_the_t
         assert 0 < mood["confidence"] <= 1
         assert mood["since"] is not None
 
-        result = _ask(client, session, "Explain this slide more simply.")
+        result = _ask(client, session, "Explain this slide in a different way.")  # The nudge.
 
         # Tone follows the camera's reading, and nothing else changes.
         assert _has(prompts[1], struggling) and not _has(prompts[1], calm)
