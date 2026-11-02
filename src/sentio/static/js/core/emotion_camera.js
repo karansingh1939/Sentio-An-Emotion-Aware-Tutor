@@ -223,7 +223,9 @@ async function startWebcam() {
     window.store.getState('telemetryActive') &&
     window.store.getState('currentUser')?.id === owner &&
     getActiveSessionId() === activeSession &&
-    ['#/tutor', '#/quizzes', '#/flashcards'].includes(window.store.getState('activeRoute'));
+    ['#/tutor', '#/quizzes', '#/flashcards', '#/slides'].includes(
+      window.store.getState('activeRoute'),
+    );
   try {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       throw new Error('MediaDevices API not supported');
