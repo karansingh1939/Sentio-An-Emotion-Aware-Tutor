@@ -91,3 +91,6 @@ reports/evidence/mlruns/
 reports/evidence/*/model.joblib
 reports/evidence/annotations-*.json
 reports/usability/
+
+# Optional MediaPipe browser assets (downloaded locally, never committed)
+src/sentio/static/vendor/mediapipe/
