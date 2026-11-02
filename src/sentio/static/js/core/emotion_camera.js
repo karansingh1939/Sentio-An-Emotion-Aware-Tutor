@@ -210,6 +210,69 @@ function disableAllTracking() {
   addLog('All tracking disabled', 'var(--red)');
 }
 
+// ── LIVE EMOTION FRAMES ───────────────────────
+// While the camera is on, a small JPEG goes to the server's emotion model every few seconds
+// over a WebSocket. Frames are drawn, sent and dropped: none is kept in the browser.
+const FRAME_INTERVAL_MS = 3000;
+let frameTimer = null;
+let frameCanvas = null;
+let framePending = false;
+
+function startFrameStream() {
+  stopFrameStream();
+  const sessionId = getActiveSessionId();
+  if (!sessionId || !window.store?.getState('authToken')) return;
+  const scheme = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const socket = new WebSocket(
+    `${scheme}//${window.location.host}/api/v1/ws/${encodeURIComponent(sessionId)}`,
+  );
+  wsEmotion = socket;
+  socket.onopen = () => {
+    if (wsEmotion !== socket) return;
+    // The token travels in the first message, never in the URL.
+    socket.send(JSON.stringify({ access_token: window.store.getState('authToken') }));
+    frameTimer = setInterval(() => sendFrame(socket, sessionId), FRAME_INTERVAL_MS);
+  };
+  // One reply per frame: send the next frame only after it, so frames never queue up.
+  socket.onmessage = () => {
+    if (wsEmotion === socket) framePending = false;
+  };
+  // A refusal (code 1008) or any other close ends the stream; it is never reopened.
+  socket.onclose = (event) => {
+    if (wsEmotion !== socket) return;
+    stopFrameStream();
+    if (event.code === 1008) addLog('Camera mood updates were refused', 'var(--yellow)');
+  };
+}
+
+function sendFrame(socket, sessionId) {
+  if (wsEmotion !== socket || getActiveSessionId() !== sessionId || !camStream) {
+    stopFrameStream();
+    return;
+  }
+  const video = document.getElementById('cam-video');
+  if (framePending || socket.readyState !== WebSocket.OPEN || !video?.videoWidth) return;
+  const scale = Math.min(1, 320 / video.videoWidth, 240 / video.videoHeight);
+  frameCanvas = frameCanvas || document.createElement('canvas');
+  frameCanvas.width = Math.round(video.videoWidth * scale);
+  frameCanvas.height = Math.round(video.videoHeight * scale);
+  frameCanvas.getContext('2d').drawImage(video, 0, 0, frameCanvas.width, frameCanvas.height);
+  framePending = true;
+  socket.send(
+    JSON.stringify({ frame_b64: frameCanvas.toDataURL('image/jpeg', 0.7).split(',')[1] }),
+  );
+}
+
+function stopFrameStream() {
+  clearInterval(frameTimer);
+  frameTimer = null;
+  framePending = false;
+  frameCanvas = null;
+  const socket = wsEmotion;
+  wsEmotion = null;
+  if (socket && socket.readyState < WebSocket.CLOSING) socket.close();
+}
+
 async function startWebcam() {
   if (camStream || cameraStarting || !window.store?.getState('telemetryActive')) return;
   const owner = window.store.getState('currentUser')?.id;
@@ -251,6 +314,7 @@ async function startWebcam() {
     if (faceLandmarker) startAttentionTrackingLoop();
     addLog('Camera started', 'var(--green)');
     camActive = true;
+    startFrameStream();
     const camActInd = document.getElementById('cam-active-indicator');
     if (camActInd) camActInd.style.display = 'flex';
     const btn = document.getElementById('cam-toggle-btn');
@@ -304,6 +368,7 @@ function stopWebcam() {
   if (telemetryTimer) clearInterval(telemetryTimer);
   telemetryTimer = null;
   resetTelemetryBuffer();
+  stopFrameStream();
   stopAttentionTrackingLoop();
   camActive = false;
   window.camStream = null;
