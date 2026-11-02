@@ -232,6 +232,7 @@ export class DocumentsView {
           </td>
           <td style="padding:10px;text-align:right;">
             <button class="workspace-action primary study-doc-btn" data-id="${escapeHtml(d.id)}" ${d.status === 'indexed' ? '' : 'disabled'}>Study</button>
+            ${d.status === 'indexed' ? `<button class="workspace-action" data-action="study-slides" data-id="${escapeHtml(d.id)}">Study slides</button>` : ''}
             <button class="workspace-action preview-doc-btn" data-id="${escapeHtml(d.id)}">Preview</button>
             <button class="workspace-action topics-doc-btn" data-id="${escapeHtml(d.id)}" ${d.status === 'indexed' ? '' : 'disabled'}>Topics</button>
             <button class="link-danger delete-doc-btn" data-id="${escapeHtml(d.id)}">Delete</button>
@@ -382,6 +383,10 @@ export class DocumentsView {
     this.container.querySelectorAll('.study-doc-btn').forEach((button) => {
       button.onclick = () =>
         this.studyDocument(this.documents.find((item) => item.id === button.dataset.id));
+    });
+    this.container.querySelectorAll('[data-action="study-slides"]').forEach((button) => {
+      button.onclick = () =>
+        this.studySlides(this.documents.find((item) => item.id === button.dataset.id));
     });
     this.container.querySelectorAll('.study-course-btn').forEach((button) => {
       button.onclick = () =>
@@ -967,6 +972,20 @@ export class DocumentsView {
       topic,
       documentId: doc.id,
     });
+  }
+
+  // Read one lecture slide by slide with the tutor beside it.
+  async studySlides(doc) {
+    if (!doc) return;
+    await this.startStudy(
+      {
+        subject: this.courseName(doc.course_id) || 'My notes',
+        topic: doc.filename.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' '),
+        documentId: doc.id,
+        mode: 'slides',
+      },
+      '#/slides',
+    );
   }
 
   // Study every lecture in a course, including lectures added later.

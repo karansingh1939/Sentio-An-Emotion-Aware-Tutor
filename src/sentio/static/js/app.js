@@ -11,6 +11,7 @@ import { FlashcardsView } from './views/flashcards.js';
 import { AnalyticsView } from './views/analytics.js';
 import { HistoryView } from './views/history.js';
 import { TutorView } from './views/tutor.js';
+import { SlidesView } from './views/slides.js';
 import { AuthView } from './views/auth.js';
 import { initWorkspace } from './core/workspace.js';
 
@@ -24,6 +25,7 @@ const viewControllers = {
   flashcards: new FlashcardsView('view-flashcards'),
   analytics: new AnalyticsView('view-analytics'),
   history: new HistoryView('view-history'),
+  slides: new SlidesView('view-slides'),
 };
 
 // Global App Initialization
