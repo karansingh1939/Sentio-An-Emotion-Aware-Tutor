@@ -70,6 +70,8 @@ const cameraContext = vm.createContext({
   faceLandmarker: null,
   telemetryTimer: null,
   resetTelemetryBuffer: () => {},
+  startFrameStream: () => {},
+  stopFrameStream: () => {},
   clearInterval: () => {},
   window: { store: { getState: (key) => state[key] } },
   navigator: {
@@ -114,3 +116,71 @@ state.telemetryActive = false;
 await cameraContext.startWebcam();
 assert.equal(cameraContext.camStream, null);
 console.log('Late camera grants and unavailable optional models stop media tracks.');
+
+// Live frames: one authenticated socket, bare base64 JPEG, one frame in flight, closed on stop.
+const frameSource = cameraSource.slice(
+  cameraSource.indexOf('const FRAME_INTERVAL_MS'),
+  cameraSource.indexOf('async function startWebcam()'),
+);
+const sockets = [];
+class FakeSocket {
+  static OPEN = 1;
+  static CLOSING = 2;
+  constructor(url) {
+    this.url = url;
+    this.sent = [];
+    this.readyState = 1;
+    sockets.push(this);
+  }
+  send(data) {
+    this.sent.push(JSON.parse(data));
+  }
+  close() {
+    this.readyState = 3;
+  }
+}
+const timers = [];
+const frameContext = vm.createContext({
+  WebSocket: FakeSocket,
+  wsEmotion: null,
+  camStream: {},
+  getActiveSessionId: () => 'session 1',
+  addLog: () => {},
+  setInterval: (callback) => timers.push(callback) && timers.length,
+  clearInterval: () => {},
+  window: {
+    location: { protocol: 'http:', host: 'localhost:8000' },
+    store: { getState: (key) => (key === 'authToken' ? 'secret-token' : null) },
+  },
+  document: {
+    getElementById: () => ({ videoWidth: 640, videoHeight: 480 }),
+    createElement: () => {
+      const canvas = {
+        getContext: () => ({ drawImage: () => {} }),
+        toDataURL: () => 'data:image/jpeg;base64,QUJD',
+      };
+      return canvas;
+    },
+  },
+});
+vm.runInContext(frameSource, frameContext);
+vm.runInContext('startFrameStream()', frameContext);
+const [socket] = sockets;
+assert.equal(socket.url, 'ws://localhost:8000/api/v1/ws/session%201');
+assert.ok(!socket.url.includes('secret-token'), 'The token is never in the URL');
+socket.onopen();
+assert.deepEqual(socket.sent, [{ access_token: 'secret-token' }]);
+timers[0]();
+timers[0]();
+assert.deepEqual(socket.sent.slice(1), [{ frame_b64: 'QUJD' }], 'One frame awaits its reply');
+socket.onmessage();
+timers[0]();
+assert.equal(socket.sent.length, 3);
+vm.runInContext('stopFrameStream()', frameContext);
+assert.equal(socket.readyState, 3);
+assert.equal(frameContext.wsEmotion, null);
+vm.runInContext('startFrameStream()', frameContext);
+sockets[1].onclose({ code: 1008 });
+assert.equal(sockets.length, 2, 'A refused stream is not reopened');
+assert.equal(frameContext.wsEmotion, null);
+console.log('Camera frames go over one authenticated socket and stop with the camera.');
