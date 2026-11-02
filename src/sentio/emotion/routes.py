@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import time
+from types import SimpleNamespace
 
 from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket, WebSocketDisconnect
 
@@ -22,7 +23,7 @@ async def receive_telemetry(
     payload: TelemetryRequest,
     user: dict = Depends(get_current_user),
 ):
-    _verify_session_owner(session_id, user)
+    session = _verify_session_owner(session_id, user)
     require_emotion_access(agent.sm.persister, user["student_id"])
 
     content_length = request.headers.get("content-length")
@@ -53,6 +54,18 @@ async def receive_telemetry(
         head_pose_yaw=payload.head_pose_yaw,
         emotion=payload.emotion,
     )
+    if not payload.focused:
+        # Looking away is a reading of its own, as confident as the attention score is low.
+        # Looking at the screen records nothing, so the server model's readings decide.
+        agent.sm.record_emotion(
+            session_id,
+            SimpleNamespace(
+                emotion="looking_away",
+                learning_state="disengaged",
+                confidence=min(1.0, max(0.0, round(1 - payload.attention_score, 2))),
+            ),
+            strategy_active=session.current_strategy,
+        )
     return {"status": "success", "message": "Telemetry accepted, validated, and persisted"}
 
 
