@@ -610,3 +610,16 @@ nested cross-validation, so no embedding code went into the app. Labels were wri
 Claude at the user's request, not by a student; they live in git-ignored
 tmp/real-samples/syllabus-labels.json. The user can correct them with
 tmp/real-samples/syllabus-checklist.html. Next: the user's hands-on check, then Phase 4.
+
+## Phase 4: slide study with optional camera - 2 November 2026
+
+Branch: feature/slide-study (stacked on feature/syllabus-matching). Built by a team of
+agents against `docs/project/phase-4-slide-study.md`: backend (slides, slide position,
+mood endpoints), ML (`study_mood`, `slide_content`, orchestrator slide branch and tone),
+frontend (`#/slides`, camera switch, mood chip and nudges, live frames over the existing
+WebSocket, reconnect on token renewal), QA (flow and browser tests, manual test plan in
+`docs/project/phase-4-test-plan.md`). Integration found that the browser never sent
+frames to the CNN and that the hidden camera video stayed paused on the slides page;
+both are fixed and covered by `tests/browser/test_slide_camera_browser.py` (runs only
+with MediaPipe assets). TensorFlow 2.21 and MediaPipe 0.10.35 are installed locally.
+Next: the user's hands-on check of all phases, including the real camera.

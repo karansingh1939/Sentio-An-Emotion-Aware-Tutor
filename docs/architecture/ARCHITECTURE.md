@@ -159,6 +159,16 @@ topic's first slide, so a topic quiz always counts toward the topics chosen. A t
 was merged away or whose lecture changed gives 409. Provenance records the topics and how
 each question was placed (`located`: model, overlap or topic).
 
+Slide study (Phase 4, contract in `docs/project/phase-4-slide-study.md`): sessions may
+carry `mode: "slides"` with one document and a current `slide`
+(`PUT /sessions/{id}/slide`). `repositories/slides.py` lists a lecture's pages with
+their topics. In slide mode the retrieve step builds context with `tutor/slides.py`: the
+slide as Citation Index 1, then up to three nearby passages from the same lecture, and
+`SLIDE_INSTRUCTION` joins the system prompt. The camera mood (`emotion/policy.py`)
+replaces the tone's learning state while fresh, unless the student made an explicit
+request this turn; difficulty, sources and the evidence gate never see it.
+`GET /sessions/{id}/mood` exposes it, guarded by the feature flag and consent.
+
 Topic memory: a topic is scheduled like a flashcard, with no stored schedule. Its quiz
 answers (right is Good, wrong is Again) and the ratings in `card_reviews` for cards on its
 pages (`flashcards.source_document_id`, `source_page`, set when cards are generated, the
