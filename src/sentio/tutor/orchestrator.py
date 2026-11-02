@@ -26,6 +26,7 @@ class OrchestratorState(TypedDict):
     strategy: str
     user_message: str
     document_id: Optional[str]
+    slide: Optional[int]  # The slide explained this turn, in slide study.
 
     # Context
     student_memory: str
@@ -283,10 +284,28 @@ class SentioOrchestrator:
         outcome = getattr(state.get("retrieved_content"), "evidence_outcome", "general")
         return "refuse" if outcome in ("insufficient", "no_source") else "generate"
 
-    def retrieve_node(self, state: OrchestratorState) -> OrchestratorState:
-        t0 = time.perf_counter()
+    def _session(self, session_id):
+        sm = getattr(self.tutor_agent, "sm", None)
+        # Lightweight managers without sessions have no slide or camera context.
+        return sm.get_session(session_id) if hasattr(sm, "get_session") else None
 
-        content = self.tutor_agent.kb.retrieve(
+    def _study_slide(self, state):
+        """The slide being studied in slide mode, or None to retrieve as usual."""
+        from sentio.repositories.slides import SlideRepository
+
+        session = self._session(state["session_id"])
+        metadata = getattr(session, "metadata", None) or {}
+        number, document_id = metadata.get("slide"), state.get("document_id")
+        # Slide study needs one lecture; booleans are not slide numbers.
+        if metadata.get("mode") != "slides" or type(number) is not int:
+            return None
+        if not isinstance(document_id, str):
+            return None
+        engine = self.tutor_agent.sm.persister._engine
+        return SlideRepository(engine).slide(state["student_id"], document_id, number)
+
+    def _retrieve(self, state, document_id):
+        return self.tutor_agent.kb.retrieve(
             subject=state["subject"],
             topic=state["topic"],
             difficulty=state["difficulty"],
@@ -294,14 +313,45 @@ class SentioOrchestrator:
             query=state["user_message"],
             session_id=state["session_id"],
             student_id=state.get("student_id"),
-            document_id=state.get("document_id"),
+            document_id=document_id,
         )
+
+    def _tone_state(self, state):
+        """The camera's study mood sets the tone while fresh; it never changes anything else."""
+        from sentio.emotion.policy import study_mood
+
+        timeline = getattr(self._session(state["session_id"]), "emotion_timeline", None)
+        if timeline is not None:
+            mood = study_mood(timeline.recent(len(timeline)), time.time())
+            if mood["fresh"]:
+                return mood["learning_state"]
+        return state["learning_state"]
+
+    def retrieve_node(self, state: OrchestratorState) -> OrchestratorState:
+        t0 = time.perf_counter()
+
+        slide = self._study_slide(state)
+        if slide:
+            from sentio.tutor.slides import slide_content
+
+            # The slide leads; passages from the same lecture answer follow-up questions.
+            nearby = self._retrieve(state, slide["document_id"])
+            content = slide_content(
+                self.tutor_agent.kb,
+                state["subject"],
+                state["topic"],
+                state["difficulty"],
+                slide,
+                getattr(nearby, "source_citations", None) or [],
+            )
+        else:
+            content = self._retrieve(state, state.get("document_id"))
         control = current_control()
         citations = getattr(content, "source_citations", None) or []
         if control and control.emit and citations:
             # Streaming clients show the passages while the model is still writing.
             control.emit("sources", {"sources": citations[:5]})
-        tone = self.tutor_agent.kb.get_tone_instruction(state["learning_state"])
+        tone = self.tutor_agent.kb.get_tone_instruction(self._tone_state(state))
 
         t1 = time.perf_counter()
         latency = (t1 - t0) * 1000
@@ -317,6 +367,7 @@ class SentioOrchestrator:
         return {
             **state,
             "retrieved_content": content,
+            "slide": slide["number"] if slide else None,
             "tone_instruction": tone,
             "agent_timeline": timeline,
             "selected_route": route,
@@ -362,6 +413,10 @@ class SentioOrchestrator:
             retrieved_content=state["retrieved_content"],
             student_memory=state["student_memory"],
         )
+        if state.get("slide") is not None:
+            from sentio.tutor.slides import SLIDE_INSTRUCTION
+
+            system_prompt += SLIDE_INSTRUCTION
 
         from sentio.ai.source_practice import source_excerpt
         from sentio.shared.exceptions import LLMServiceUnavailableError
