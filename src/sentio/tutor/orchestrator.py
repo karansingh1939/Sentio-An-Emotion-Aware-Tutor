@@ -321,12 +321,19 @@ class SentioOrchestrator:
     def _tone_state(self, state):
         """The camera's study mood sets the tone while fresh; it never changes anything else.
         What the student asks for this turn ("make it harder") wins over the camera's guess."""
+        from sentio.emotion.access import camera_consented, emotion_enabled
         from sentio.emotion.policy import study_mood
 
-        if state.get("student_request"):
+        if state.get("student_request") or not emotion_enabled():
             return state["learning_state"]
-        timeline = getattr(self._session(state["session_id"]), "emotion_timeline", None)
-        if timeline is not None:
+        session = self._session(state["session_id"])
+        timeline = getattr(session, "emotion_timeline", None)
+        try:
+            # Withdrawn consent ends the camera's say in the tone at once.
+            consented = camera_consented(self.tutor_agent.sm.persister, session.student_id)
+        except Exception:
+            consented = False
+        if timeline is not None and consented:
             mood = study_mood(timeline.recent(len(timeline)), time.time())
             if mood["fresh"]:
                 return mood["learning_state"]
