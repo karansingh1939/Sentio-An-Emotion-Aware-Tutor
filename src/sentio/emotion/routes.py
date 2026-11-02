@@ -16,6 +16,8 @@ from sentio.emotion.access import decode_frame, require_emotion_access
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+FRAME_INTERVAL_SEC = 1.0  # The shortest time between frames the server will analyse.
+
 
 @router.post(PREFIX + "/sessions/{session_id}/telemetry", tags=["Emotion"])
 async def receive_telemetry(
@@ -100,9 +102,16 @@ async def websocket_emotion_stream(websocket: WebSocket, session_id: str):
         await websocket.accept()
     logger.info("WebSocket connected: session=%s", session_id[:8])
 
+    last_frame = None
     try:
         while True:
             data = await websocket.receive_json()
+            # The model runs at most once a second per connection, whatever the client sends.
+            now = time.monotonic()
+            if last_frame is not None and now - last_frame < FRAME_INTERVAL_SEC:
+                await websocket.send_json({"error": "Too many frames"})
+                continue
+            last_frame = now
             # Long-lived connections must not outlive account deletion, token expiry
             # or withdrawn consent.
             try:
