@@ -17,6 +17,11 @@ const groups = {
     ['#/analytics', 'Progress'],
     ['#/history', 'History'],
   ],
+  '#/slides': [
+    ['#/documents', 'Library'],
+    ['#/tutor', 'Study'],
+    ['#/slides', 'Study slides'],
+  ],
 };
 
 export function initWorkspace() {
@@ -39,7 +44,8 @@ export function initWorkspace() {
       )
       .join('');
     tools.hidden = !links.length;
-    const parent = route === '#/flashcards' ? '#/quizzes' : route;
+    const parent =
+      route === '#/flashcards' ? '#/quizzes' : route === '#/slides' ? '#/documents' : route;
     document.querySelectorAll('.nav-link').forEach((link) => {
       const active = link.getAttribute('href') === parent;
       link.classList.toggle('active', active);
