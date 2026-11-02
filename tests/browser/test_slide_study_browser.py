@@ -157,16 +157,16 @@ async def test_study_slides_one_by_one_and_accept_a_simpler_explanation(monkeypa
             assert first.strip()
             await page.click("#slide-next")
             await page.wait_for_function(
-                "first => document.getElementById('slide-title').innerText !== first", first
+                "first => document.getElementById('slide-title').innerText !== first", arg=first
             )
             second = await page.locator("#slide-title").inner_text()
             await page.click("#slide-prev")
             await page.wait_for_function(
-                "first => document.getElementById('slide-title').innerText === first", first
+                "first => document.getElementById('slide-title').innerText === first", arg=first
             )
             await page.click("#slide-next")
             await page.wait_for_function(
-                "second => document.getElementById('slide-title').innerText === second", second
+                "second => document.getElementById('slide-title').innerText === second", arg=second
             )
 
             answer = await _explain_and_read(page)
@@ -176,9 +176,10 @@ async def test_study_slides_one_by_one_and_accept_a_simpler_explanation(monkeypa
             assert "paging" in (await answer.inner_text()).lower()
             assert messages[-1] == "Explain this slide."
 
-            # Mood: ASSUMPTION the chip is driven by GET /mood whenever the feature is on and the
-            # learner has consented, without the camera switch being clicked in this test.
+            # Mood shows only while the camera runs. A real one needs a webcam and MediaPipe, so a
+            # trackless stream stands in for it; the readings are recorded server-side below.
             _consent_for(email)
+            await page.evaluate("window.camStream = new MediaStream()")
             session = _slides_session()
             assert session is not None
             mood_task = asyncio.create_task(_keep_struggling(session, stop))

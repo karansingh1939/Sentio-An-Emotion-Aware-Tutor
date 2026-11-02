@@ -511,7 +511,9 @@ export class SlidesView {
     const sessionId = this.sessionId;
     if (!sessionId) return;
     try {
-      const mood = await sentioAPI.get(`/sessions/${encodeURIComponent(sessionId)}/mood`);
+      const mood = await sentioAPI.get(`/sessions/${encodeURIComponent(sessionId)}/mood`, {
+        background: true,
+      });
       if (revision !== this.revision || !this.cameraOn) return;
       this.applyMood(mood);
     } catch {

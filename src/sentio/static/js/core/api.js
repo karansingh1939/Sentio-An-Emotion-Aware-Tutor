@@ -88,8 +88,12 @@ class SentioAPIClient {
       signal: controller.signal,
     };
 
-    this.pending++;
-    store.setState('loading', true);
+    // Background polls (such as the camera mood) do not show the loading overlay.
+    const quiet = options.background;
+    if (!quiet) {
+      this.pending++;
+      store.setState('loading', true);
+    }
 
     try {
       const response = await fetch(url, fetchOptions);
@@ -151,8 +155,10 @@ class SentioAPIClient {
     } finally {
       clearTimeout(id);
       if (!options.stream) options.signal?.removeEventListener('abort', cancel);
-      this.pending--;
-      store.setState('loading', this.pending > 0);
+      if (!quiet) {
+        this.pending--;
+        store.setState('loading', this.pending > 0);
+      }
     }
   }
 

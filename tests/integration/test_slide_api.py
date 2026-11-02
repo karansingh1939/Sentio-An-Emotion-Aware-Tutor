@@ -173,14 +173,15 @@ def test_session_mode_is_validated_when_it_is_created():
             {"document_id": "all", "mode": "slides"},
             {"document_id": f"course:{course['id']}", "mode": "slides"},
             {"document_id": [document], "mode": "slides"},
-            {"document_id": "not-my-document", "mode": "slides"},
         ):
             response = _session(client, owner, metadata)
             assert response.status_code == 422, metadata
+        missing = _session(client, owner, {"document_id": "not-my-document", "mode": "slides"})
+        assert missing.status_code == 403
         client.headers.pop("Authorization")
         other = login_student(client)
         assert (
-            _session(client, other, {"document_id": document, "mode": "slides"}).status_code == 422
+            _session(client, other, {"document_id": document, "mode": "slides"}).status_code == 403
         )
 
 

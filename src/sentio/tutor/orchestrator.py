@@ -27,6 +27,7 @@ class OrchestratorState(TypedDict):
     user_message: str
     document_id: Optional[str]
     slide: Optional[int]  # The slide explained this turn, in slide study.
+    student_request: bool  # The student asked for a change of level or explanation this turn.
 
     # Context
     student_memory: str
@@ -201,6 +202,7 @@ class SentioOrchestrator:
             "difficulty": new_difficulty,
             "difficulty_reason": difficulty_reason,
             "learning_state": new_learning_state,
+            "student_request": bool(text_directive),
             "student_memory": memory_context,
             "agent_timeline": timeline,
             "selected_route": route,
@@ -317,9 +319,12 @@ class SentioOrchestrator:
         )
 
     def _tone_state(self, state):
-        """The camera's study mood sets the tone while fresh; it never changes anything else."""
+        """The camera's study mood sets the tone while fresh; it never changes anything else.
+        What the student asks for this turn ("make it harder") wins over the camera's guess."""
         from sentio.emotion.policy import study_mood
 
+        if state.get("student_request"):
+            return state["learning_state"]
         timeline = getattr(self._session(state["session_id"]), "emotion_timeline", None)
         if timeline is not None:
             mood = study_mood(timeline.recent(len(timeline)), time.time())
