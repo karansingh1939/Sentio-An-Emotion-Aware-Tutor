@@ -108,3 +108,56 @@ const { AnalyticsView } = await loadView('analytics');
 new AnalyticsView('view').render({ topic_mastery: { [malicious]: 0.7 }, overall_mastery: 0.7 });
 assert.ok(!container.innerHTML.includes(malicious));
 assert.ok(container.innerHTML.includes('70%'));
+
+const { SlidesView, answerHtml, nudgeAllowed, moodText, slideDocumentId } =
+  await loadView('slides');
+const slides = new SlidesView('view');
+slides.deck = {
+  document_id: 'doc',
+  filename: malicious,
+  slides: [
+    {
+      number: 1,
+      title: malicious,
+      text: `${malicious}
+second line`,
+    },
+    { number: 2, title: 'Safe', text: 'Safe' },
+  ],
+};
+slides.bindEvents = () => {};
+slides.render();
+assert.ok(!container.innerHTML.includes(malicious), 'Slide titles and text render as HTML');
+assert.ok(container.innerHTML.includes('&lt;img'));
+assert.ok(container.innerHTML.includes('id="slides-view"'));
+assert.ok(container.innerHTML.includes('id="slide-text"'));
+slides.deck.slides = [];
+slides.render();
+assert.ok(!container.innerHTML.includes(malicious), 'Slide file names render as HTML');
+for (const renderer of [null, (text) => text.replace(/</g, '&lt;')]) {
+  const answer = answerHtml(
+    {
+      text: `${malicious}
+
+second`,
+      source_citations: [{ filename: malicious, page: 3 }],
+    },
+    renderer,
+  );
+  assert.ok(!answer.includes(malicious), 'Tutor answers and citations render as HTML');
+  assert.ok(answer.includes('&lt;img'));
+  assert.ok(answer.includes('Slide 3'), 'Citation chips name the slide');
+}
+assert.equal(moodText('unsure'), 'Camera guess: unsure');
+assert.equal(slideDocumentId({ metadata: { document_id: 'd1', mode: 'slides' } }), 'd1');
+for (const metadata of [
+  { document_id: 'd1' },
+  { document_id: 'all', mode: 'slides' },
+  { document_id: 'course:c', mode: 'slides' },
+  { document_id: 'a,b', mode: 'slides' },
+])
+  assert.equal(slideDocumentId({ metadata }), null);
+assert.ok(nudgeAllowed({}, 'simpler', 1000));
+assert.ok(!nudgeAllowed({ simpler: 1000 }, 'simpler', 1000 + 119999));
+assert.ok(nudgeAllowed({ simpler: 1000 }, 'simpler', 1000 + 120000));
+assert.ok(nudgeAllowed({ simpler: 1000 }, 'break', 2000));

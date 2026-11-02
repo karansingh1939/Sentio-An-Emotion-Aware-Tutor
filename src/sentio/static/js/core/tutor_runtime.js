@@ -112,6 +112,7 @@ async function startSession(options = {}) {
     document_id: grounding,
     ...(goalId ? { goal_id: goalId } : {}),
     ...(options.topicIds?.length ? { topic_ids: options.topicIds } : {}),
+    ...(options.mode ? { mode: options.mode } : {}),
   };
 
   sessionStartingFor = studentId;

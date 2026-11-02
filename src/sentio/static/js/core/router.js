@@ -11,6 +11,7 @@ class SentioRouter {
       '#/flashcards',
       '#/analytics',
       '#/history',
+      '#/slides',
       '#/settings',
     ];
     this.defaultRoute = '#/dashboard';

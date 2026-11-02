@@ -963,3 +963,128 @@ form label,
 .link-quiet + .link-quiet {
   margin-left: 10px;
 }
+
+/* ── Slide study (#/slides) ───────────────── */
+.slides-layout {
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.slide-list ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.slide-item {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  width: 100%;
+  min-height: 0;
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.slide-item.current {
+  border-color: var(--accent);
+  background: var(--bg3);
+  font-weight: 650;
+}
+.slide-item-number {
+  flex: none;
+  min-width: 1.5em;
+  color: var(--text-dim);
+}
+.slide-item-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.slide-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.slide-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  min-width: 0;
+}
+.slide-card h3 {
+  font-size: 22px;
+  line-height: 1.3;
+  margin: 4px 0 12px;
+  overflow-wrap: anywhere;
+}
+.slide-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+  font-size: 16px;
+}
+.slide-nudge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 0;
+}
+.slides-view [hidden] {
+  display: none !important;
+}
+.slide-ask {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.slide-ask .btn-row {
+  flex-wrap: nowrap;
+}
+.slide-question {
+  flex: 1;
+  min-width: 0;
+}
+.slide-answer {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+.slide-answer:empty {
+  display: none;
+}
+.slide-draft {
+  white-space: pre-wrap;
+}
+@media (max-width: 768px) {
+  .slides-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .slide-main {
+    order: -1;
+  }
+  .slide-list ol {
+    max-height: 200px;
+  }
+  .slide-card {
+    padding: 16px;
+  }
+  .slide-controls .workspace-action {
+    flex: 1 1 auto;
+  }
+}
