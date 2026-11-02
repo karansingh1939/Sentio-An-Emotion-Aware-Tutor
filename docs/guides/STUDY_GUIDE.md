@@ -67,9 +67,11 @@ Open http://127.0.0.1:8001 and leave the terminal open. Stop with Ctrl+C.
    Next or the arrow keys, press **Explain this slide**, and ask follow-up questions
    underneath. Answers start from the slide on screen and cite it. If your installation
    enables the camera, a **Camera** switch appears. With it on, a small chip shows the
-   camera's guess ("focused", "unsure", "distracted" or "calm"). After a while of looking
-   unsure it offers a simpler explanation; after a minute away it suggests a short break.
-   The guess only changes the tutor's tone, and what you ask for always wins.
+   camera's guess ("focused", "unsure", "looking away" or "calm"), and nothing until it
+   has a reading. After a while of looking unsure it offers to explain the slide in a
+   different way; after a minute looking away it suggests a short break. The guess only
+   changes the tutor's tone, never your level, and what you ask for always wins. Camera
+   consent is saved in Settings, where **Delete camera data** removes the readings.
 
 To change notes, return to Library and choose Study on the new document. Saved
 practice remains accessible. Settings contains diagnostics, data export and account
