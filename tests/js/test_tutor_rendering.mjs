@@ -140,17 +140,26 @@ class FakeSocket {
   }
 }
 const timers = [];
+let authToken = 'secret-token';
+const subscriptions = [];
 const frameContext = vm.createContext({
   WebSocket: FakeSocket,
   wsEmotion: null,
   camStream: {},
+  camActive: true,
   getActiveSessionId: () => 'session 1',
   addLog: () => {},
   setInterval: (callback) => timers.push(callback) && timers.length,
   clearInterval: () => {},
   window: {
     location: { protocol: 'http:', host: 'localhost:8000' },
-    store: { getState: (key) => (key === 'authToken' ? 'secret-token' : null) },
+    store: {
+      getState: (key) => (key === 'authToken' ? authToken : null),
+      subscribe: (key, callback) => {
+        subscriptions.push(callback);
+        callback(authToken);
+      },
+    },
   },
   document: {
     getElementById: () => ({ videoWidth: 640, videoHeight: 480 }),
@@ -184,3 +193,27 @@ sockets[1].onclose({ code: 1008 });
 assert.equal(sockets.length, 2, 'A refused stream is not reopened');
 assert.equal(frameContext.wsEmotion, null);
 console.log('Camera frames go over one authenticated socket and stop with the camera.');
+
+// A renewed token reopens the stream once; an inactive camera or a cleared token opens nothing.
+vm.runInContext('startFrameStream()', frameContext);
+vm.runInContext('startFrameStream()', frameContext);
+assert.equal(subscriptions.length, 1, 'Only one token subscription exists');
+const open = sockets.length;
+const current = sockets.at(-1);
+authToken = 'renewed-token';
+subscriptions[0](authToken);
+assert.equal(sockets.length, open + 1, 'A new token reopens exactly one socket');
+assert.equal(current.readyState, 3);
+sockets.at(-1).onopen();
+assert.deepEqual(sockets.at(-1).sent, [{ access_token: 'renewed-token' }]);
+subscriptions[0](authToken);
+assert.equal(sockets.length, open + 1, 'The same token does not reconnect');
+authToken = '';
+subscriptions[0](authToken);
+assert.equal(frameContext.wsEmotion, null, 'A cleared token only stops the stream');
+assert.equal(sockets.length, open + 1);
+frameContext.camActive = false;
+authToken = 'later-token';
+subscriptions[0](authToken);
+assert.equal(sockets.length, open + 1, 'A token change while the camera is off opens nothing');
+console.log('A renewed login token reopens the camera frame stream once.');
