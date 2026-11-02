@@ -43,7 +43,6 @@ async function sendAggregatedTelemetry() {
   };
 
   resetTelemetryBuffer();
-  console.log('Dispatching aggregated telemetry:', payload);
   dispatchTelemetryWithRetry(payload, 3, 1000);
 }
 
@@ -258,12 +257,28 @@ function startFrameStream() {
   socket.onmessage = () => {
     if (wsEmotion === socket) framePending = false;
   };
-  // A refusal (code 1008) or any other close ends the stream; it is never reopened.
+  // Any close ends the stream; it is never reopened by a timer.
   socket.onclose = (event) => {
     if (wsEmotion !== socket) return;
     stopFrameStream();
-    if (event.code === 1008) addLog('Camera mood updates were refused', 'var(--yellow)');
+    if (event.code === 1008) settleRefusal(sessionId);
   };
+}
+
+// Code 1008 means refused: consent was not saved, or the access token expired. One mood request
+// settles which: it renews an expired token (the token watch then reopens the stream) and fails
+// with 403 without consent, which switches the camera off with an explanation.
+async function settleRefusal(sessionId) {
+  addLog('Camera mood updates were refused', 'var(--yellow)');
+  try {
+    await window.sentioAPI.get(`/sessions/${encodeURIComponent(sessionId)}/mood`, {
+      background: true,
+    });
+  } catch (error) {
+    if (error.status !== 403 || !camStream || getActiveSessionId() !== sessionId) return;
+    disableCamera();
+    toast('Camera mood needs camera consent in Settings.', true);
+  }
 }
 
 function sendFrame(socket, sessionId) {
