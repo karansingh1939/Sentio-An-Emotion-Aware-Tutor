@@ -140,6 +140,9 @@ class FakeSocket {
   }
 }
 const timers = [];
+let disabled = 0;
+const toasts = [];
+let moodError = null;
 let authToken = 'secret-token';
 const subscriptions = [];
 const frameContext = vm.createContext({
@@ -149,9 +152,16 @@ const frameContext = vm.createContext({
   camActive: true,
   getActiveSessionId: () => 'session 1',
   addLog: () => {},
+  disableCamera: () => disabled++,
+  toast: (message) => toasts.push(message),
   setInterval: (callback) => timers.push(callback) && timers.length,
   clearInterval: () => {},
   window: {
+    sentioAPI: {
+      get: async () => {
+        if (moodError) throw moodError;
+      },
+    },
     location: { protocol: 'http:', host: 'localhost:8000' },
     store: {
       getState: (key) => (key === 'authToken' ? authToken : null),
@@ -189,9 +199,21 @@ vm.runInContext('stopFrameStream()', frameContext);
 assert.equal(socket.readyState, 3);
 assert.equal(frameContext.wsEmotion, null);
 vm.runInContext('startFrameStream()', frameContext);
+// A refusal is settled by one mood request: a renewed token needs nothing more here,
+// a 403 means consent is missing, so the camera goes off once with an explanation.
 sockets[1].onclose({ code: 1008 });
+await new Promise((resolve) => setTimeout(resolve));
 assert.equal(sockets.length, 2, 'A refused stream is not reopened');
 assert.equal(frameContext.wsEmotion, null);
+assert.equal(disabled, 0, 'A refusal with consent in place leaves the camera alone');
+moodError = Object.assign(new Error('consent'), { status: 403 });
+vm.runInContext('startFrameStream()', frameContext);
+sockets[2].onclose({ code: 1008 });
+await new Promise((resolve) => setTimeout(resolve));
+assert.equal(disabled, 1);
+assert.deepEqual(toasts, ['Camera mood needs camera consent in Settings.']);
+assert.equal(sockets.length, 3);
+moodError = null;
 console.log('Camera frames go over one authenticated socket and stop with the camera.');
 
 // A renewed token reopens the stream once; an inactive camera or a cleared token opens nothing.
