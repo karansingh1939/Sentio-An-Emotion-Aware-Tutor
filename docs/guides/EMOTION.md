@@ -43,8 +43,11 @@ On **Study slides** the camera feeds two signals, both turned into a mood by
 The mood uses only confident readings from the last 30 seconds, needs a state to last
 5 seconds before it counts, and offers a simpler explanation after 20 seconds of
 struggling, frustration or anxiety, or a break after 60 seconds of disengagement. A
-fresh mood sets the tutor's tone; an explicit request in the student's message wins.
-The connection reopens once each time the login token is renewed.
+fresh mood sets the tutor's tone, and only while the feature is on and the learner
+consents; an explicit request in the student's message wins, and accepting a nudge asks
+for a re-explanation, never an easier level. The connection reopens once each time the
+login token is renewed, and the server analyses at most one frame per second per
+connection. With no confident reading the page shows no guess at all.
 
 ## Privacy and safety
 
@@ -56,7 +59,9 @@ The connection reopens once each time the login token is renewed.
 - Frames are limited to 512 KB and 1280×720 pixels; dimensions are read before the
   image is decoded.
 - Navigation, logout, session changes and consent revocation stop the camera.
-- Settings can delete stored attention and emotion telemetry.
+- Settings can delete stored attention and emotion telemetry (**Delete camera data**),
+  and withdrawing consent also clears the readings of active sessions.
+- The data export includes the camera readings kept for each session.
 
 ## Limits
 

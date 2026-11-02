@@ -48,7 +48,8 @@ tone of explanations, never difficulty, sources or the evidence check.
   - `fresh` is false when there is no confident reading in the last `MOOD_WINDOW_SEC`, in
     which case the state is "neutral".
 - `GET /api/v1/sessions/{session_id}/mood` returns `study_mood(session's emotion timeline)`
-  plus `"label"`, a plain word for the chip: "focused", "unsure", "distracted" or "calm".
+  plus `"label"`, a plain word for the chip: "focused", "unsure", "looking away" or "calm",
+  and `None` when the mood is not fresh (no reading yet), so no guess is shown.
   It is guarded like the other camera routes: 404 when the feature is off, and the
   learner's consent is required (`require_emotion_access`).
 
@@ -59,8 +60,10 @@ tone of explanations, never difficulty, sources or the evidence check.
   `nearby` passages (retrieved from the same lecture for the question). `SLIDE_INSTRUCTION`
   is the prompt rule for explaining one slide to a student.
 - In a session with `metadata["mode"] == "slides"` and a `slide`, the retrieve step uses
-  `slide_content` instead of plain retrieval. The evidence gate, citations and streaming
-  are unchanged.
+  `slide_content` instead of plain retrieval. Citations and streaming are unchanged. The
+  slide always counts as evidence, so the evidence gate never refuses in slide mode; for a
+  question the slide and nearby passages do not cover, `SLIDE_INSTRUCTION` tells the model
+  to say so.
 - The tone uses `study_mood(...)["learning_state"]` when it is `fresh`, and otherwise the
   current learning state. It is tone only.
 
@@ -74,8 +77,10 @@ Element ids the QA tests use:
 - `#slide-camera-toggle`, `#slide-mood`, `#slide-nudge`, `#slide-nudge-accept`;
 - `[data-action="study-slides"]` on the Library lecture row.
 
-Accepting the "simpler" nudge asks "Explain this slide more simply." Accepting "break"
-pauses for 2 minutes with a countdown.
+Accepting the "simpler" nudge asks "Explain this slide in a different way." (a
+re-explanation, which never changes difficulty; "more simply" would count as asking for an
+easier level). Accepting "break" pauses for 2 minutes with a countdown. The camera stops,
+with a pointer to Settings, when the server refuses camera data for lack of consent.
 
 ## Rules for every engineer
 
