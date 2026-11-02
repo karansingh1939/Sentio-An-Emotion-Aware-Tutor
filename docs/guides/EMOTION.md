@@ -17,14 +17,34 @@ refuses an answer.
 
 ## Turning it on
 
-1. Install the optional TensorFlow extra: `uv sync --locked --extra camera`.
+1. Install the optional TensorFlow extra: `uv sync --locked --extra camera`, and start
+   Sentio with `uv run --extra camera sentio` (a plain `uv sync` removes the extra).
 2. Provide the trained model at `models/emotion_model.h5` (train it with
    `python scripts/emotion/train.py`, see the script for dataset layout).
 3. For browser attention tracking, supply the MediaPipe assets locally:
    `src/sentio/static/vendor/mediapipe/vision_bundle.mjs`, its `wasm/` folder and
-   `face_landmarker.task`. Nothing is downloaded automatically.
+   `face_landmarker.task`. Nothing is downloaded automatically. Tested with
+   `@mediapipe/tasks-vision` 0.10.35 from npm and the float16 face landmarker model from
+   Google's MediaPipe model storage; the folder is git-ignored.
 4. Start Sentio with `ENABLE_EMOTION=true`.
 5. Each learner must turn on camera consent in **Settings**.
+
+## Studying slides with the camera
+
+On **Study slides** the camera feeds two signals, both turned into a mood by
+`src/sentio/emotion/policy.py` (`study_mood`):
+
+- every 3 seconds the browser sends one frame, scaled to at most 320×240 JPEG, over the
+  authenticated live-frame connection to the CNN; only the resulting emotion reading is
+  kept on the session, never the frame;
+- every 10 seconds MediaPipe attention arrives as telemetry; clearly looking away (low
+  attention, not focused) counts as a "disengaged" reading.
+
+The mood uses only confident readings from the last 30 seconds, needs a state to last
+5 seconds before it counts, and offers a simpler explanation after 20 seconds of
+struggling, frustration or anxiety, or a break after 60 seconds of disengagement. A
+fresh mood sets the tutor's tone; an explicit request in the student's message wins.
+The connection reopens once each time the login token is renewed.
 
 ## Privacy and safety
 

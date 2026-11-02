@@ -63,6 +63,13 @@ Open http://127.0.0.1:8001 and leave the terminal open. Stop with Ctrl+C.
    **Not in your notes yet**, so you know what to collect before the exam. When the
    syllabus states hours per unit, each unit counts for its hours in that percentage. If a
    match is wrong, pick the right lecture topic or "Not in my notes" from its list.
+9. Study a lecture slide by slide: choose **Study slides** beside it. Move with Previous,
+   Next or the arrow keys, press **Explain this slide**, and ask follow-up questions
+   underneath. Answers start from the slide on screen and cite it. If your installation
+   enables the camera, a **Camera** switch appears. With it on, a small chip shows the
+   camera's guess ("focused", "unsure", "distracted" or "calm"). After a while of looking
+   unsure it offers a simpler explanation; after a minute away it suggests a short break.
+   The guess only changes the tutor's tone, and what you ask for always wins.
 
 To change notes, return to Library and choose Study on the new document. Saved
 practice remains accessible. Settings contains diagnostics, data export and account
