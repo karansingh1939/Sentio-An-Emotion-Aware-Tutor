@@ -31,6 +31,7 @@ from sentio.api.routes import (
     privacy,
     quizzes,
     sessions,
+    slides,
     streaming,
     syllabus,
     system,
@@ -160,6 +161,7 @@ app.include_router(analytics.router)
 app.include_router(documents.router)
 app.include_router(courses.router)
 app.include_router(topics.router)
+app.include_router(slides.router)
 app.include_router(syllabus.router)
 app.include_router(memory.router)
 app.include_router(planning.router)

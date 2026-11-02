@@ -60,6 +60,19 @@ def _owned_topics(owner, metadata):
         raise HTTPException(404, "Topic not found in these notes.")
 
 
+def _owned_mode(owner, metadata):
+    """How a session studies: the default, or "slides" on one lecture the student owns."""
+    mode = metadata.get("mode")
+    if mode is None:
+        return
+    document_id = metadata.get("document_id")
+    owned = {doc["id"] for doc in agent.sm.list_documents(student_id=owner)}
+    if mode != "slides" or not isinstance(document_id, str) or document_id not in owned:
+        raise HTTPException(
+            422, "Studying slides needs the mode 'slides' and one of your lectures."
+        )
+
+
 @router.post(PREFIX + "/sessions", tags=["Sessions"], status_code=201)
 def create_session(req: CreateSessionRequest, user: dict = Depends(get_current_user)):
     """
@@ -76,6 +89,7 @@ def create_session(req: CreateSessionRequest, user: dict = Depends(get_current_u
 
     # Force student_id from authenticated token payload
     req.student_id = user["student_id"]
+    _owned_mode(req.student_id, req.metadata or {})
     _owned_source(req.student_id, (req.metadata or {}).get("document_id"))
     _owned_topics(req.student_id, req.metadata or {})
     _owned_goal(req.student_id, (req.metadata or {}).get("goal_id"))
@@ -157,6 +171,8 @@ def set_session_grounding(
         streams.cancel_session(user["student_id"], session_id)
     previous = session.metadata.get("document_id")
     topics = session.metadata.pop("topic_ids", None)  # Chosen from the previous notes.
+    slide = session.metadata.pop("slide", None)  # So is the slide, and studying by slides.
+    mode = session.metadata.pop("mode", None)
     session.metadata["document_id"] = req.document_id
     try:
         agent.sm.persister.save_session(session)
@@ -164,6 +180,10 @@ def set_session_grounding(
         session.metadata["document_id"] = previous
         if topics:
             session.metadata["topic_ids"] = topics
+        if slide is not None:
+            session.metadata["slide"] = slide
+        if mode is not None:
+            session.metadata["mode"] = mode
         logger.warning(f"Failed to persist updated session grounding state: {e}")
         raise HTTPException(503, "Source change could not be saved. Retry.") from e
     agent.nlp.clear_history(session_id)
