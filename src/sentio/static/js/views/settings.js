@@ -36,6 +36,7 @@ export class SettingsView {
 
         <sentio-card title="Camera (optional emotion feature)" class="emotion-only">
           <label><input id="consent-cb" type="checkbox"> Allow the camera to estimate attention and emotion during study. Off by default; you can turn it off at any time.</label>
+          <div class="btn-row"><button id="delete-camera-data-btn" class="workspace-action" type="button">Delete camera data</button></div>
         </sentio-card>
 
         <sentio-card title="Password recovery">
@@ -94,6 +95,29 @@ export class SettingsView {
         }
         store.setState('telemetryActive', allowed);
         toast(`Camera consent ${allowed ? 'enabled' : 'disabled'}.`);
+      };
+    }
+
+    const cameraData = this.container.querySelector('#delete-camera-data-btn');
+    if (cameraData) {
+      cameraData.onclick = async () => {
+        const owner = store.getState('currentUser')?.id;
+        if (!owner || cameraData.disabled) return;
+        if (
+          !confirm(
+            'Delete all camera data? This removes your saved attention and emotion readings. Your notes, quizzes and flashcards stay.',
+          )
+        )
+          return;
+        cameraData.disabled = true;
+        try {
+          await sentioAPI.delete(`/student/${encodeURIComponent(owner)}/telemetry`);
+          toast('Your camera data has been deleted.');
+        } catch (error) {
+          toast('Camera data was not deleted: ' + error.message, true);
+        } finally {
+          cameraData.disabled = false;
+        }
       };
     }
 

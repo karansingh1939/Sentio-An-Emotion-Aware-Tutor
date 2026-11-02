@@ -67,7 +67,7 @@ Open http://127.0.0.1:8001 and leave the terminal open. Stop with Ctrl+C.
    Next or the arrow keys, press **Explain this slide**, and ask follow-up questions
    underneath. Answers start from the slide on screen and cite it. If your installation
    enables the camera, a **Camera** switch appears. With it on, a small chip shows the
-   camera's guess ("focused", "unsure", "distracted" or "calm"). After a while of looking
+   camera's guess ("focused", "unsure", "looking away" or "calm"). After a while of looking
    unsure it offers a simpler explanation; after a minute away it suggests a short break.
    The guess only changes the tutor's tone, and what you ask for always wins.
 

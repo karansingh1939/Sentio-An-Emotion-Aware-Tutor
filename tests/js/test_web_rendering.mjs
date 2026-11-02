@@ -109,7 +109,7 @@ new AnalyticsView('view').render({ topic_mastery: { [malicious]: 0.7 }, overall_
 assert.ok(!container.innerHTML.includes(malicious));
 assert.ok(container.innerHTML.includes('70%'));
 
-const { SlidesView, answerHtml, nudgeAllowed, moodText, slideDocumentId } =
+const { SlidesView, answerHtml, nudgeAllowed, moodText, moodLabel, slideDocumentId } =
   await loadView('slides');
 const slides = new SlidesView('view');
 slides.deck = {
@@ -161,3 +161,7 @@ assert.ok(nudgeAllowed({}, 'simpler', 1000));
 assert.ok(!nudgeAllowed({ simpler: 1000 }, 'simpler', 1000 + 119999));
 assert.ok(nudgeAllowed({ simpler: 1000 }, 'simpler', 1000 + 120000));
 assert.ok(nudgeAllowed({ simpler: 1000 }, 'break', 2000));
+assert.equal(moodLabel({ label: 'unsure', fresh: true }), 'unsure');
+assert.equal(moodLabel({ label: 'unsure' }), 'unsure');
+assert.equal(moodLabel({ label: 'calm', fresh: false }), '', 'A stale reading shows no chip');
+assert.equal(moodLabel({ label: null, fresh: true }), '', 'No label shows no chip');
