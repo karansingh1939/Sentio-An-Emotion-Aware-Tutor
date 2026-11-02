@@ -71,11 +71,11 @@ def test_only_clear_inattention_is_confident_enough_to_count():
             assert (
                 client.post(path, json={**TELEMETRY, "attention_score": score}).status_code == 200
             )
-        assert [e.confidence for e in _events(session_id)] == [1.0, 0.7, 0.3]
-        counted = [
-            e for e in _events(session_id) if e.confidence >= tutor_cfg.EMOTION_CONFIDENCE_THRESHOLD
-        ]
-        assert [e.confidence for e in counted] == [1.0, 0.7]
+        # 0.7 attention gives 0.3 confidence: below the bar, so it is not recorded at all.
+        assert [e.confidence for e in _events(session_id)] == [1.0, 0.7]
+        assert all(
+            e.confidence >= tutor_cfg.EMOTION_CONFIDENCE_THRESHOLD for e in _events(session_id)
+        )
 
 
 def test_looking_at_the_screen_records_nothing():
