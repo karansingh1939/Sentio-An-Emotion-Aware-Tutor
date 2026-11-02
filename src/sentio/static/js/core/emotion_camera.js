@@ -218,8 +218,29 @@ let frameTimer = null;
 let frameCanvas = null;
 let framePending = false;
 
+// The server checks the access token on every frame, and it expires after 15 minutes. When the
+// app renews it, reopen the stream once with the new token; clearing it (logout) just stops.
+let tokenWatched = false;
+let watchedToken = null;
+
+function watchAuthToken() {
+  if (tokenWatched || !window.store) return;
+  tokenWatched = true;
+  watchedToken = window.store.getState('authToken');
+  window.store.subscribe('authToken', (token) => {
+    if (token === watchedToken) return;
+    watchedToken = token;
+    if (!token) stopFrameStream();
+    else if (camActive && camStream && getActiveSessionId()) {
+      stopFrameStream();
+      startFrameStream();
+    }
+  });
+}
+
 function startFrameStream() {
   stopFrameStream();
+  watchAuthToken();
   const sessionId = getActiveSessionId();
   if (!sessionId || !window.store?.getState('authToken')) return;
   const scheme = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
