@@ -2,11 +2,13 @@
 
 import json
 import time
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
 from sentio.ai.providers import OllamaBackend
 from sentio.api.app import agent, app
+from sentio.config import emotion_cfg
 from sentio.rag.knowledge_base import ContentAdapter
 from sentio.repositories.slides import SlideRepository
 from sentio.session.models import EmotionEvent
@@ -61,6 +63,14 @@ def _ask(client, session, request_id, message=QUESTION):
 
 def _slide_mode(session, number=1):
     agent.sm.get_session(session).metadata.update(mode="slides", slide=number)
+
+
+def _consent(client, owner):
+    response = client.post(
+        f"/api/v1/student/{owner}/consent",
+        json={"consent_version": "camera-v1", "preferences": {"telemetry": True}},
+    )
+    assert response.status_code == 200
 
 
 def _camera(session, state, seconds_ago):
@@ -123,8 +133,10 @@ def test_normal_sessions_are_unchanged(monkeypatch):
 
 
 def _camera_turns(client, monkeypatch, seconds_ago):
-    """A turn without the camera, then camera readings, then the same question again."""
-    _, _, _, session = _study(client)
+    """A turn without the camera, then camera readings, then the same question again.
+    The camera feature is on and the student has consented."""
+    owner, _, _, session = _study(client)
+    _consent(client, owner)
     prompts = []
     _model(monkeypatch, prompts)
     _ask(client, session, "before-camera")
@@ -134,7 +146,7 @@ def _camera_turns(client, monkeypatch, seconds_ago):
 
 
 def test_a_fresh_camera_mood_changes_only_the_tone(monkeypatch):
-    with TestClient(app) as client:
+    with patch.object(emotion_cfg, "ENABLED", True), TestClient(app) as client:
         session, before, after = _camera_turns(client, monkeypatch, 0)
 
         assert before["session"]["tone"] == STANDARD_TONE
@@ -145,8 +157,9 @@ def test_a_fresh_camera_mood_changes_only_the_tone(monkeypatch):
 
 
 def test_what_the_student_asks_for_beats_the_cameras_guess(monkeypatch):
-    with TestClient(app) as client:
-        _, _, _, session = _study(client)
+    with patch.object(emotion_cfg, "ENABLED", True), TestClient(app) as client:
+        owner, _, _, session = _study(client)
+        _consent(client, owner)
         prompts = []
         _model(monkeypatch, prompts)
         _camera(session, "struggling", 0)
@@ -156,7 +169,7 @@ def test_what_the_student_asks_for_beats_the_cameras_guess(monkeypatch):
 
 
 def test_a_stale_camera_mood_keeps_todays_tone(monkeypatch):
-    with TestClient(app) as client:
+    with patch.object(emotion_cfg, "ENABLED", True), TestClient(app) as client:
         _, before, after = _camera_turns(client, monkeypatch, 120)
 
         assert after["session"] == before["session"]
