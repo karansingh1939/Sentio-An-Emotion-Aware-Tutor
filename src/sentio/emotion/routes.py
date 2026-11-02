@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket, WebSo
 from sentio.api.dependencies import PREFIX, _verify_session_owner, agent
 from sentio.api.schemas import TelemetryRequest
 from sentio.auth.middleware import authenticate_access_token, get_current_user
+from sentio.config import tutor_cfg
 from sentio.emotion.access import decode_frame, require_emotion_access
 
 logger = logging.getLogger(__name__)
@@ -54,15 +55,15 @@ async def receive_telemetry(
         head_pose_yaw=payload.head_pose_yaw,
         emotion=payload.emotion,
     )
-    if not payload.focused:
-        # Looking away is a reading of its own, as confident as the attention score is low.
+    confidence = min(1.0, max(0.0, round(1 - payload.attention_score, 2)))
+    if not payload.focused and confidence >= tutor_cfg.EMOTION_CONFIDENCE_THRESHOLD:
+        # Clearly looking away is a reading of its own, as confident as attention is low.
+        # Weaker signs are not recorded: the latest reading also sets the session strategy.
         # Looking at the screen records nothing, so the server model's readings decide.
         agent.sm.record_emotion(
             session_id,
             SimpleNamespace(
-                emotion="looking_away",
-                learning_state="disengaged",
-                confidence=min(1.0, max(0.0, round(1 - payload.attention_score, 2))),
+                emotion="looking_away", learning_state="disengaged", confidence=confidence
             ),
             strategy_active=session.current_strategy,
         )

@@ -325,7 +325,11 @@ async function startWebcam() {
     camStream = acquired;
     window.camStream = camStream;
     const video = document.getElementById('cam-video');
-    if (video) video.srcObject = camStream;
+    if (video) {
+      video.srcObject = camStream;
+      // Autoplay does not start while the tutor page is hidden, as in slide study.
+      video.play().catch(() => {});
+    }
     if (!faceLandmarker) await initMediaPipe();
     if (!stillCurrent()) {
       acquired.getTracks().forEach((track) => track.stop());
