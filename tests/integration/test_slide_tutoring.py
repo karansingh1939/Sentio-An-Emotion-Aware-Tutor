@@ -144,6 +144,17 @@ def test_a_fresh_camera_mood_changes_only_the_tone(monkeypatch):
         assert session.metadata["learning_state"] == "neutral"
 
 
+def test_what_the_student_asks_for_beats_the_cameras_guess(monkeypatch):
+    with TestClient(app) as client:
+        _, _, _, session = _study(client)
+        prompts = []
+        _model(monkeypatch, prompts)
+        _camera(session, "struggling", 0)
+        _ask(client, session, "asks-harder", "Can you make it harder? " + QUESTION)
+
+        assert prompts[0][1]["session"]["tone"] == ContentAdapter.STRATEGY_TONE["challenge"]
+
+
 def test_a_stale_camera_mood_keeps_todays_tone(monkeypatch):
     with TestClient(app) as client:
         _, before, after = _camera_turns(client, monkeypatch, 120)

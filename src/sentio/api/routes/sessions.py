@@ -89,8 +89,9 @@ def create_session(req: CreateSessionRequest, user: dict = Depends(get_current_u
 
     # Force student_id from authenticated token payload
     req.student_id = user["student_id"]
-    _owned_mode(req.student_id, req.metadata or {})
+    # Ownership first, so another student's notes are refused the same way in every mode.
     _owned_source(req.student_id, (req.metadata or {}).get("document_id"))
+    _owned_mode(req.student_id, req.metadata or {})
     _owned_topics(req.student_id, req.metadata or {})
     _owned_goal(req.student_id, (req.metadata or {}).get("goal_id"))
 
