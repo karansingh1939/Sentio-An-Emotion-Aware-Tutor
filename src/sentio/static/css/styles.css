@@ -96,8 +96,8 @@ body {
   font-weight: 500;
   border-radius: var(--radius);
   transition:
-    background 0.2s,
-    color 0.2s;
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
 }
 
 .nav-link:hover {
@@ -188,7 +188,7 @@ header {
   height: 7px;
   border-radius: 50%;
   background: var(--text-muted);
-  transition: background 0.4s;
+  transition: background-color var(--dur-slow) var(--ease);
 }
 
 .dot.live {
@@ -261,7 +261,7 @@ header {
   font-size: 11px;
   padding: 7px 10px;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color var(--dur) var(--ease);
 }
 
 .field input:focus,
@@ -282,7 +282,7 @@ header {
   font-size: 14px;
   font-weight: 650;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background-color var(--dur) var(--ease);
 }
 
 .btn-primary {
@@ -354,8 +354,8 @@ header {
   background: rgba(0, 0, 0, 0.6);
   border: 1px solid currentColor;
   transition:
-    color 0.4s,
-    border-color 0.4s;
+    color var(--dur-slow) var(--ease),
+    border-color var(--dur-slow) var(--ease);
 }
 
 #cam-no-session {
@@ -401,7 +401,7 @@ header {
   height: 100%;
   border-radius: 3px;
   background: var(--accent2);
-  transition: width 0.4s ease;
+  transition: width var(--dur-slow) var(--ease);
 }
 
 .ebar-pct {
@@ -497,7 +497,7 @@ header {
   flex-wrap: wrap;
   gap: 12px;
   z-index: 10;
-  animation: msg-in 0.25s ease;
+  animation: msg-in var(--dur-slow) var(--ease);
 }
 
 .active-bar-info {
@@ -553,7 +553,10 @@ header {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: all 0.2s;
+  transition:
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
 }
 
 .hud-pill-btn:hover {
@@ -654,7 +657,7 @@ header {
   display: flex;
   gap: 10px;
   margin-bottom: 18px;
-  animation: msg-in 0.25s ease;
+  animation: msg-in var(--dur-slow) var(--ease);
 }
 
 @keyframes msg-in {
@@ -784,7 +787,7 @@ header {
   align-items: center;
   gap: 10px;
   margin-bottom: 16px;
-  animation: msg-in 0.2s ease;
+  animation: msg-in var(--dur-slow) var(--ease);
 }
 
 #typing-indicator.show {
@@ -802,7 +805,7 @@ header {
   border-radius: 50%;
   background: var(--accent2);
   display: block;
-  animation: bounce 1.2s infinite;
+  animation: typing-fade 1.2s var(--ease) infinite;
 }
 
 .typing-dots span:nth-child(2) {
@@ -813,15 +816,14 @@ header {
   animation-delay: 0.3s;
 }
 
-@keyframes bounce {
+@keyframes typing-fade {
   0%,
-  60%,
   100% {
-    transform: translateY(0);
+    opacity: 0.25;
   }
 
-  30% {
-    transform: translateY(-6px);
+  40% {
+    opacity: 1;
   }
 }
 
@@ -858,9 +860,7 @@ header {
   max-height: 120px;
   min-height: 44px;
   line-height: 1.5;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
+  transition: border-color var(--dur) var(--ease);
 }
 
 #msg-input:focus {
@@ -891,7 +891,7 @@ header {
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
-  transition: background 0.2s;
+  transition: background-color var(--dur) var(--ease);
 }
 
 #send-btn:hover:not(:disabled) {
@@ -918,7 +918,7 @@ header {
   overflow-y: auto;
   flex-shrink: 0;
   z-index: 20;
-  animation: msg-in 0.2s ease;
+  animation: msg-in var(--dur-slow) var(--ease);
 }
 
 .hud-drawer.open {
@@ -973,7 +973,10 @@ header {
   border-bottom: 2px solid transparent;
   cursor: pointer;
   text-align: center;
-  transition: all 0.2s;
+  transition:
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
 }
 
 .drawer-tab:hover {
@@ -1024,7 +1027,10 @@ header {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: all 0.2s;
+  transition:
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
 }
 
 #mic-btn:hover:not(:disabled),
@@ -1082,7 +1088,7 @@ header {
   flex-shrink: 0;
   background: var(--bg3);
   border: 1px solid var(--border);
-  transition: background 0.4s;
+  transition: background-color var(--dur-slow) var(--ease);
 }
 
 .state-emotion-name {
@@ -1090,7 +1096,7 @@ header {
   font-size: 16px;
   font-weight: 700;
   text-transform: capitalize;
-  transition: color 0.4s;
+  transition: color var(--dur-slow) var(--ease);
 }
 
 .state-emotion-sub {
@@ -1150,7 +1156,7 @@ header {
   height: 100%;
   border-radius: 2px;
   background: var(--accent);
-  transition: width 0.6s ease;
+  transition: width var(--dur-slow) var(--ease);
 }
 
 /* Topics covered */
@@ -1193,7 +1199,7 @@ header {
   margin-bottom: 8px;
   font-size: 10px;
   color: var(--text-dim);
-  animation: msg-in 0.2s ease;
+  animation: msg-in var(--dur-slow) var(--ease);
 }
 
 .log-time {
@@ -1229,7 +1235,10 @@ header {
   border-radius: 10px;
   border: 1px solid var(--border);
   color: var(--text-muted);
-  transition: all 0.3s;
+  transition:
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
 }
 
 .strat-chip.active {
@@ -1251,7 +1260,7 @@ header {
   padding: 8px 16px;
   border-radius: 20px;
   opacity: 0;
-  transition: opacity 0.3s;
+  transition: opacity var(--dur-slow) var(--ease);
   pointer-events: none;
   z-index: 1000;
   white-space: nowrap;
@@ -1272,7 +1281,7 @@ header {
 
 /* ── FLASHCARD INTERACTIVE FLIP ANIMATIONS ── */
 .flashcard-inner {
-  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: transform var(--dur-slow) var(--ease);
   transform-style: preserve-3d;
   position: relative;
   width: 100%;

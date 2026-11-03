@@ -54,13 +54,13 @@ const STATE_COLOR = {
   disengaged: 'var(--disengaged)',
 };
 const STRATEGY_LABEL = {
-  challenge: '🚀 Challenge',
-  standard: '📖 Standard',
-  explore: '🔭 Explore',
-  simplify: '🧩 Simplify',
-  reassure: '💚 Reassure',
-  reframe: '🔄 Reframe',
-  motivate: '⚡ Motivate',
+  challenge: 'Challenge',
+  standard: 'Standard',
+  explore: 'Explore',
+  simplify: 'Simplify',
+  reassure: 'Reassure',
+  reframe: 'Reframe',
+  motivate: 'Motivate',
 };
 
 // ── INIT BARS ────────────────────────────────
@@ -226,7 +226,7 @@ async function startSession(options = {}) {
       camNoSess.textContent = 'Camera is off. Turn it on to start attention tracking.';
     }
 
-    toast('Session started! Ask your first question.');
+    toast('Session started. Ask your first question.');
     return data;
   } catch (e) {
     if (current()) toast('Could not start studying: ' + e.message, true);
@@ -339,7 +339,7 @@ function cleanupSession() {
     const qText = document.getElementById('cam-quick-text');
     if (qText) qText.textContent = 'Enable Camera';
     const qIcon = document.getElementById('cam-quick-icon');
-    if (qIcon) qIcon.textContent = '📷';
+    if (qIcon) qIcon.innerHTML = window.sentioIcon('camera', 16);
   }
 
   // E7: Disable privacy control buttons and reset active indicators
@@ -628,7 +628,7 @@ function appendMessage(role, text) {
   const div = document.createElement('div');
   div.className = 'msg ' + role;
   div.innerHTML = `
-    <div class="msg-avatar">${role === 'tutor' ? '🧠' : '🎓'}</div>
+    <div class="msg-avatar">${role === 'tutor' ? window.sentioSymbol(18) : ''}</div>
     <div class="msg-body">
       <div class="msg-meta">${role === 'tutor' ? 'Tutor' : 'You'} · ${timeNow()}</div>
       <div class="msg-bubble">${escHtml(text)}</div>
@@ -654,10 +654,10 @@ function appendTutorMessage(data) {
   if (answerLabel) extra += `<div class="msg-encouragement">${answerLabel}</div>`;
   if (data.encouragement)
     extra += `<div class="msg-encouragement">${escHtml(data.encouragement)}</div>`;
-  if (data.follow_up) extra += `<div class="msg-followup">🤔 ${escHtml(data.follow_up)}</div>`;
+  if (data.follow_up) extra += `<div class="msg-followup">${escHtml(data.follow_up)}</div>`;
 
   div.innerHTML = `
-    <div class="msg-avatar">🧠</div>
+    <div class="msg-avatar">${window.sentioSymbol(18)}</div>
     <div class="msg-body">
       <div class="msg-meta">
         Tutor · ${timeNow()}
@@ -1062,7 +1062,7 @@ function restartVoiceCapture() {
 function toggleVoice() {
   if (!hasSpeechRec || !hasSpeechSynth) return;
   if (!sessionId) {
-    toast('Start a session first!', true);
+    toast('Start a session first.', true);
     return;
   }
   voiceModeActive = !voiceModeActive;

@@ -9,7 +9,10 @@ const container = {
   querySelector: () => null,
   querySelectorAll: () => [],
 };
-const context = vm.createContext({ document: { getElementById: () => container } });
+const context = vm.createContext({
+  window: { sentioIcon: () => '', sentioSymbol: () => '' },
+  document: { getElementById: () => container },
+});
 async function loadView(name) {
   const module = new vm.SourceTextModule(
     await readFile(new URL(`../../src/sentio/static/js/views/${name}.js`, import.meta.url), 'utf8'),

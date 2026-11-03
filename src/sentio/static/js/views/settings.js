@@ -28,8 +28,8 @@ export class SettingsView {
           <div class="stack">
             <p class="muted">Download your saved study data, or delete your local account and its records.</p>
             <div style="display:flex;gap:12px;margin-top:8px;">
-              <button id="export-data-btn" style="background:var(--accent);color:var(--bg);border:none;padding:8px 16px;border-radius:var(--radius);font-family:var(--mono);cursor:pointer;font-size:14px;font-weight:bold;">📥 Export My Data</button>
-              <button id="purge-data-btn" style="background:none;color:var(--red);border:1px solid var(--red);padding:8px 16px;border-radius:var(--radius);font-family:var(--mono);cursor:pointer;font-size:14px;font-weight:bold;">🗑️ Purge My Account Data</button>
+              <button id="export-data-btn" class="workspace-action primary">${window.sentioIcon('download', 16)} Export my data</button>
+              <button id="purge-data-btn" class="workspace-action danger">${window.sentioIcon('trash', 16)} Delete my account data</button>
             </div>
           </div>
         </sentio-card>
@@ -46,10 +46,10 @@ export class SettingsView {
           <button id="make-recovery-key" class="workspace-action" type="button">Generate recovery key</button>
           <p id="recovery-error" role="alert"></p><div id="recovery-key-result"></div>
         </sentio-card>
-        <sentio-card title="Account Actions">
+        <sentio-card title="Account">
           <div class="stack">
             <p class="muted">Sign out of your active student session on this machine.</p>
-            <button id="signout-btn" style="background:none;border:1px solid var(--red);color:var(--red);padding:8px 16px;border-radius:var(--radius);font-family:var(--mono);cursor:pointer;font-size:14px;font-weight:bold;align-self:flex-start;transition:background 0.2s;">🚪 Sign Out of Sentio</button>
+            <button id="signout-btn" class="workspace-action" style="align-self:flex-start;">${window.sentioIcon('logout', 16)} Sign out</button>
           </div>
         </sentio-card>
       </div>
@@ -136,7 +136,7 @@ export class SettingsView {
           document.body.appendChild(dlAnchor);
           dlAnchor.click();
           dlAnchor.remove();
-          toast('GDPR export download started!');
+          toast('Your data export has started');
         } catch (e) {
           toast('Export failed: ' + e.message, true);
         }

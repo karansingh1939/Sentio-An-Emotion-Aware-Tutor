@@ -244,7 +244,7 @@ export class QuizzesView {
 
       <div style="max-width:650px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:20px;">
         ${q.question_id ? '<div class="card-toolbar"><span></span><button class="workspace-action" type="button" id="edit-question-btn">Edit this question</button></div>' : ''}
-        <sentio-card title="Concept Check">
+        <sentio-card title="Concept check">
           <p style="font-size:13px;line-height:1.5;color:var(--text);margin-bottom:16px;font-weight:500;">
             ${escapeHtml(q.question_text)}
           </p>
@@ -421,13 +421,13 @@ export class QuizzesView {
 
     this.container.innerHTML = `
       <div class="view-header view-header">
-        <h2 class="page-title">Assessment Results</h2>
+        <h2 class="page-title">Quiz results</h2>
         <p class="muted">Review explanations and pedagogical feedback to improve retention.</p>
       </div>
 
       <div style="max-width:700px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:20px;">
         <!-- Summary Scorecard -->
-        <sentio-card title="Grading Summary">
+        <sentio-card title="Summary">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
             <div>
               <div style="font-size:32px;font-weight:bold;color:${passed ? 'var(--green)' : 'var(--red)'};">${scorePct}%</div>
@@ -443,7 +443,7 @@ export class QuizzesView {
         </sentio-card>
 
         <!-- Detailed Feedback -->
-        <sentio-card title="Detailed Questions Review">
+        <sentio-card title="Question by question">
           <div class="stack stack-lg">
             ${this.results.feedback
               .map((f, idx) => {
@@ -453,7 +453,7 @@ export class QuizzesView {
                   <div class="row-between">
                     <span style="font-weight:bold;font-size:14px;color:var(--text);">Question ${idx + 1}</span>
                     <span style="color:${f.is_correct ? 'var(--green)' : 'var(--red)'};font-weight:bold;font-size:14px;">
-                      ${f.is_correct ? '✅ CORRECT' : '❌ INCORRECT'}
+                      ${window.sentioIcon(f.is_correct ? 'check' : 'x', 16)} ${f.is_correct ? 'Correct' : 'Incorrect'}
                     </span>
                   </div>
                   <p style="font-size:14px;color:var(--text);line-height:1.4;margin:4px 0;">${escapeHtml(qOriginal.question_text)}</p>

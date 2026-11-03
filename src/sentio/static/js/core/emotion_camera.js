@@ -125,7 +125,7 @@ function declinePrivacyConsent() {
     const qText = document.getElementById('cam-quick-text');
     if (qText) qText.textContent = 'Enable Camera';
     const qIcon = document.getElementById('cam-quick-icon');
-    if (qIcon) qIcon.textContent = '📷';
+    if (qIcon) qIcon.innerHTML = window.sentioIcon('camera', 16);
   }
   pendingConsentFeature = null;
   pendingConsentCallback = null;
@@ -146,7 +146,7 @@ function disableCamera() {
     const qText = document.getElementById('cam-quick-text');
     if (qText) qText.textContent = 'Enable Camera';
     const qIcon = document.getElementById('cam-quick-icon');
-    if (qIcon) qIcon.textContent = '📷';
+    if (qIcon) qIcon.innerHTML = window.sentioIcon('camera', 16);
   }
 
   const camNoSess = document.getElementById('cam-no-session');
@@ -369,7 +369,7 @@ async function startWebcam() {
       const qText = document.getElementById('cam-quick-text');
       if (qText) qText.textContent = 'Camera Active';
       const qIcon = document.getElementById('cam-quick-icon');
-      if (qIcon) qIcon.textContent = '🟢';
+      if (qIcon) qIcon.innerHTML = '<span class="live-dot" aria-hidden="true"></span>';
     }
   } catch (e) {
     if (acquired) acquired.getTracks().forEach((track) => track.stop());
@@ -395,7 +395,7 @@ async function startWebcam() {
       const qText = document.getElementById('cam-quick-text');
       if (qText) qText.textContent = 'Enable Camera';
       const qIcon = document.getElementById('cam-quick-icon');
-      if (qIcon) qIcon.textContent = '📷';
+      if (qIcon) qIcon.innerHTML = window.sentioIcon('camera', 16);
     }
   } finally {
     if (epoch === cameraEpoch) cameraStarting = false;

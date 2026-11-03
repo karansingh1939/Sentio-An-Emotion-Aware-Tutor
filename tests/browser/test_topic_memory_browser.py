@@ -68,7 +68,7 @@ async def test_a_faded_topic_can_be_practised_from_today(monkeypatch):
             for index in range(3):
                 await page.check('input[name="quiz-opt"][value="A"]')  # "Frames": correct
                 await page.click("#next-question-btn" if index < 2 else "#submit-quiz-btn")
-            await page.wait_for_selector("text=Assessment Results")
+            await page.wait_for_selector("text=Quiz results")
 
             await page.goto(url + "/#/documents")
             await line.filter(has_text="1 of 2 topics ready").wait_for()

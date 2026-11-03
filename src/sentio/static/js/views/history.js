@@ -39,7 +39,7 @@ export class HistoryView {
   }
   render(sessions) {
     this.container.innerHTML = `
-      <div class="view-header"><h2>Study History</h2><p>Your recent learning sessions.</p></div>
+      <div class="view-header"><h2>Study history</h2><p>Your recent learning sessions.</p></div>
       ${
         sessions.length
           ? `<div style="overflow-x:auto"><table style="width:100%;text-align:left;border-spacing:0 16px">

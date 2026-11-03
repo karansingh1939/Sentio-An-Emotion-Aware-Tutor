@@ -73,7 +73,7 @@ async def test_practise_a_topic_and_find_it_among_weak_topics(monkeypatch):
             for index in range(3):
                 await page.check('input[name="quiz-opt"][value="B"]')  # "Threads": wrong
                 await page.click("#next-question-btn" if index < 2 else "#submit-quiz-btn")
-            await page.wait_for_selector("text=Assessment Results")
+            await page.wait_for_selector("text=Quiz results")
 
             await page.goto(url + "/#/documents")
             await line.filter(has_text="0 of 2 topics ready · 1 practising").wait_for()
