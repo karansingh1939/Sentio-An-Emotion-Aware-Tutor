@@ -68,3 +68,31 @@ Directions for a designer to explore:
 > Minimal logo for a study app called "SENTIO". Wordmark: all capitals, custom extended geometric letterforms, thin uniform stroke, very wide letter spacing, letters reduced to essential strokes (the E as horizontal bars, the O as a rounded rectangle), flat graphite colour on white, no gradients, no effects. Separately, a single solid symbol: a simple filled page silhouette with one folded corner, recognisable at 16px, flat, one colour. Clean vector style, centred on a white background. Do not reproduce any existing brand's letterforms.
 
 Treat anything an image tool generates as a draft. Have the final logo redrawn as clean vectors (SVG) before using it in the app.
+
+## Drafts round 1 (2026-11-03)
+
+- **Made with:** Figma's image tool (`gpt-image-2.5-flare`), in the Figma file [Sentio logo drafts](https://www.figma.com/design/3l32SdeF4ZIYRLF2WqSAS0). Two images; this used Figma AI credits.
+- **Copies:** saved in `logo-drafts/`, because Figma's download links expire after 7 days.
+
+### Wordmark: [wordmark-draft-1.png](logo-drafts/wordmark-draft-1.png). Keep this direction.
+
+**What works:**
+
+- It reads clearly as SENTIO.
+- Thin, even stroke and very wide spacing; it feels engineered and calm, as the brief asked.
+- The letters are its own, not Tesla's:
+  - the S is squared;
+  - the E keeps its upright and has a shorter middle bar;
+  - the O is a rounded rectangle.
+
+**What to fix in the vector redraw:**
+
+- The gaps between letters are uneven: E–N and I–O look wider than S–E. Space by eye, not by measurement.
+- The corners don't match. The S and E are sharp-cornered, while the O's corners are noticeably round. Pick one radius and use it everywhere, or keep sharp corners and give the O only a small radius.
+- The stroke weight wobbles slightly, as is normal for a generated image. Redraw on a grid with one fixed stroke width.
+
+### Symbol: [symbol-draft-1.png](logo-drafts/symbol-draft-1.png). Don't use as is.
+
+- It reads as a generic "file" icon, the same one every operating system already has, so nobody would recognise it as Sentio. That is the opposite of what makes Apple's symbol work.
+- The notch at the foot looks like a door or a charging port, not a citation.
+- **Next direction:** build the symbol from the wordmark's own O (the rounded rectangle), filled solid, with a single cut that reads as a page corner or a citation mark. The symbol and the wordmark then share one shape language, as in the strongest brand systems.
