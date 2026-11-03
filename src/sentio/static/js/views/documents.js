@@ -539,7 +539,7 @@ export class DocumentsView {
       dropZone.ondragover = (e) => {
         e.preventDefault();
         dropZone.style.borderColor = 'var(--accent)';
-        dropZone.style.background = 'rgba(0, 200, 255, 0.05)';
+        dropZone.style.background = 'var(--bg3)';
       };
 
       dropZone.ondragleave = () => {

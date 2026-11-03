@@ -207,8 +207,8 @@ export class TutorView {
         return `
         <div class="session-item-row ${activeClass}" data-id="${escapeHtml(s.session_id)}" style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:var(--radius);border:1px solid ${s.session_id === currentSessionId ? 'var(--border-glow)' : 'transparent'};background:${s.session_id === currentSessionId ? 'var(--bg3)' : 'transparent'};cursor:pointer;transition:background 0.2s;">
           <div class="select-session-btn" data-id="${escapeHtml(s.session_id)}" style="display:flex;flex-direction:column;gap:2px;flex:1;">
-            <div style="font-weight:bold;font-size:14px;color:${s.session_id === currentSessionId ? 'var(--accent)' : 'var(--text)'};text-transform:capitalize;">${escapeHtml(topicName)}</div>
-            <div style="font-size:14px;color:var(--text-dim);text-transform:capitalize;">${escapeHtml(s.subject)} · ${escapeHtml(difficulty)}</div>
+            <div style="font-weight:bold;font-size:14px;color:${s.session_id === currentSessionId ? 'var(--accent)' : 'var(--text)'};">${escapeHtml(topicName)}</div>
+            <div style="font-size:14px;color:var(--text-dim);">${escapeHtml(s.subject)} · ${escapeHtml(difficulty.charAt(0).toUpperCase() + difficulty.slice(1))}</div>
           </div>
           ${s.status === 'active' ? `<button class="delete-session-btn" data-id="${escapeHtml(s.session_id)}" title="End session" aria-label="End session" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:4px;">&times;</button>` : ''}
         </div>
@@ -308,7 +308,7 @@ export class TutorView {
       const startBtn = document.getElementById('start-btn');
       if (startBtn) startBtn.style.display = 'none';
       const endBtn = document.getElementById('end-btn');
-      if (endBtn) endBtn.style.display = 'inline-block';
+      if (endBtn) endBtn.style.display = 'inline-flex';
       const msgInput = document.getElementById('msg-input');
       if (msgInput) {
         msgInput.disabled = false;

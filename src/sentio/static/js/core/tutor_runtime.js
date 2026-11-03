@@ -163,14 +163,14 @@ async function startSession(options = {}) {
     if (barTopic) barTopic.textContent = `${subject} · ${topic}`;
     const barMeta = document.getElementById('active-bar-meta');
     if (barMeta)
-      barMeta.textContent = `${difficulty} · ${grounding === 'none' ? 'Not linked to notes' : 'From your notes'}`;
+      barMeta.textContent = `${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} · ${grounding === 'none' ? 'Not linked to notes' : 'From your notes'}`;
 
     const welcome = document.getElementById('welcome');
     if (welcome) welcome.style.display = 'none';
     const startBtn = document.getElementById('start-btn');
     if (startBtn) startBtn.style.display = 'none';
     const endBtn = document.getElementById('end-btn');
-    if (endBtn) endBtn.style.display = 'inline-block';
+    if (endBtn) endBtn.style.display = 'inline-flex';
     const msgInput = document.getElementById('msg-input');
     if (msgInput) {
       msgInput.disabled = false;
@@ -223,7 +223,7 @@ async function startSession(options = {}) {
 
     if (camNoSess) {
       camNoSess.style.display = 'flex';
-      camNoSess.textContent = 'Camera is off. Click CAM ON to start attention tracking.';
+      camNoSess.textContent = 'Camera is off. Turn it on to start attention tracking.';
     }
 
     toast('Session started! Ask your first question.');
@@ -329,7 +329,7 @@ function cleanupSession() {
   const camBtn = document.getElementById('cam-toggle-btn');
   if (camBtn) {
     camBtn.disabled = true;
-    camBtn.textContent = 'CAM ON';
+    camBtn.textContent = 'Camera on';
     camBtn.classList.remove('active');
   }
   const camQuick = document.getElementById('cam-quick-toggle-btn');

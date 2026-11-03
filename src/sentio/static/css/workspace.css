@@ -43,10 +43,6 @@ body {
   font-size: 16px;
   line-height: 1.65;
 }
-body::before,
-header::after {
-  display: none;
-}
 #app {
   grid-template-columns: 220px minmax(0, 1fr);
   grid-template-rows: 64px minmax(0, 1fr);
@@ -235,6 +231,12 @@ sentio-empty-state {
   text-decoration: none;
   font-size: 14px;
   cursor: pointer;
+}
+.workspace-action:hover {
+  background: var(--bg3);
+}
+.workspace-action.danger {
+  color: var(--red);
 }
 .workspace-action.primary {
   background: var(--accent);

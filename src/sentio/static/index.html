@@ -218,13 +218,8 @@
                   Notes &amp; sessions
                 </button>
                 <!-- End Session Button -->
-                <button
-                  class="btn btn-danger"
-                  id="end-btn"
-                  onclick="endSession()"
-                  style="width: auto; padding: 6px 14px; margin: 0; display: inline-block"
-                >
-                  ■ End Session
+                <button class="workspace-action danger" id="end-btn" onclick="endSession()">
+                  End session
                 </button>
               </div>
             </div>
@@ -340,7 +335,7 @@
                     margin-bottom: 8px;
                   "
                 >
-                  <div class="panel-label" style="margin: 0">Live Focus & Attention Feed</div>
+                  <div class="panel-label" style="margin: 0">Live focus and attention</div>
                   <button
                     id="cam-toggle-btn"
                     class="strat-chip"
@@ -348,7 +343,7 @@
                     style="margin: 0; font-size: 14px; cursor: pointer"
                     disabled
                   >
-                    CAM ON
+                    Camera on
                   </button>
                 </div>
                 <div id="cam-wrap">
@@ -416,7 +411,7 @@
 
               <!-- Learning State Card -->
               <div class="drawer-section">
-                <div class="panel-label">Learning State</div>
+                <div class="panel-label">Learning state</div>
                 <div id="state-card" style="padding: 10px 0 0 0; border: none">
                   <div class="state-emotion-display">
                     <div class="state-emotion-icon" id="state-icon">😐</div>
@@ -455,7 +450,7 @@
 
               <!-- Attention Telemetry Card -->
               <div class="drawer-section">
-                <div class="panel-label">Attention Telemetry</div>
+                <div class="panel-label">Attention telemetry</div>
                 <div
                   id="attention-card"
                   style="
@@ -490,7 +485,7 @@
 
               <!-- Emotion Bars -->
               <div class="drawer-section">
-                <div class="panel-label" style="padding: 0 0 6px 0">Emotion Distribution</div>
+                <div class="panel-label" style="padding: 0 0 6px 0">Emotion distribution</div>
                 <div id="emotion-bars" style="padding: 0">
                   <div id="bars-container"></div>
                 </div>
@@ -498,28 +493,28 @@
 
               <!-- Strategy Chips -->
               <div class="drawer-section">
-                <div class="panel-label" style="margin-bottom: 8px">Active Strategy</div>
+                <div class="panel-label" style="margin-bottom: 8px">Active strategy</div>
                 <div class="strategy-chips" id="strategy-chips">
-                  <div class="strat-chip" data-s="challenge">challenge</div>
-                  <div class="strat-chip" data-s="standard">standard</div>
-                  <div class="strat-chip" data-s="explore">explore</div>
-                  <div class="strat-chip" data-s="simplify">simplify</div>
-                  <div class="strat-chip" data-s="reassure">reassure</div>
-                  <div class="strat-chip" data-s="reframe">reframe</div>
-                  <div class="strat-chip active" data-s="motivate">motivate</div>
+                  <div class="strat-chip" data-s="challenge">Challenge</div>
+                  <div class="strat-chip" data-s="standard">Standard</div>
+                  <div class="strat-chip" data-s="explore">Explore</div>
+                  <div class="strat-chip" data-s="simplify">Simplify</div>
+                  <div class="strat-chip" data-s="reassure">Reassure</div>
+                  <div class="strat-chip" data-s="reframe">Reframe</div>
+                  <div class="strat-chip active" data-s="motivate">Motivate</div>
                 </div>
               </div>
 
               <!-- Topics List & Session Log -->
               <div class="drawer-section">
                 <div id="topics-list">
-                  <div class="panel-label">Topics Covered</div>
+                  <div class="panel-label">Topics covered</div>
                   <div id="topics-chips">
                     <span style="font-size: 14px; color: var(--text-muted)">None yet</span>
                   </div>
                 </div>
                 <div id="session-log" style="margin-top: 12px">
-                  <div class="panel-label">Session Log</div>
+                  <div class="panel-label">Session log</div>
                   <div id="log-entries">
                     <div class="log-entry">
                       <span class="log-time">--:--</span>
@@ -541,7 +536,7 @@
                     margin-bottom: 10px;
                   "
                 >
-                  <span class="panel-label" style="margin: 0">Recent Sessions</span>
+                  <span class="panel-label" style="margin: 0">Recent sessions</span>
                   <button
                     id="tutor-new-session-btn"
                     style="
