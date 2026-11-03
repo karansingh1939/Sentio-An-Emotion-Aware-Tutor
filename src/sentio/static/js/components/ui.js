@@ -24,7 +24,7 @@ export class SentioToast extends HTMLElement {
     this.style.borderRadius = 'var(--radius)';
     this.style.background = 'var(--bg2)';
     this.style.border = `1px solid ${this.isError ? 'var(--red)' : 'var(--border)'}`;
-    this.style.boxShadow = '0 8px 30px rgba(0,0,0,0.5)';
+    this.style.boxShadow = '0 4px 16px #0001';
     this.style.color = this.isError ? 'var(--red)' : 'var(--accent)';
     this.style.fontFamily = 'var(--mono)';
     this.style.fontSize = '12px';
@@ -67,7 +67,7 @@ export class SentioLoader extends HTMLElement {
     this.style.display = 'inline-block';
     this.style.width = this.getAttribute('size') || '18px';
     this.style.height = this.getAttribute('size') || '18px';
-    this.style.border = '2px solid rgba(0, 200, 255, 0.1)';
+    this.style.border = '2px solid var(--border)';
     this.style.borderTop = '2px solid var(--accent)';
     this.style.borderRadius = '50%';
     this.style.animation = 'spin 0.8s linear infinite';
@@ -123,13 +123,13 @@ export class SentioModal extends HTMLElement {
     this.style.display = 'flex';
     this.style.alignItems = 'center';
     this.style.justifyContent = 'center';
-    this.style.background = 'rgba(8, 12, 16, 0.85)';
+    this.style.background = 'rgb(22 27 36 / 0.45)';
     this.style.backdropFilter = 'blur(4px)';
 
     const bodyContent = this.innerHTML;
     this.innerHTML = `
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);width:90%;max-width:500px;box-shadow:0 20px 50px rgba(0,0,0,0.6);display:flex;flex-direction:column;overflow:hidden;">
-        <div style="display:flex;align-items:center;justify-content:between;padding:16px 20px;border-bottom:1px solid var(--border);background:var(--bg3);">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);width:90%;max-width:500px;box-shadow:0 12px 32px rgb(0 0 0 / 0.12);display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);background:var(--bg3);">
           <span style="font-family:var(--display);font-weight:700;font-size:16px;">${escapeHtml(this.title)}</span>
           <button id="modal-close-btn" aria-label="Close dialog" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;">&times;</button>
         </div>

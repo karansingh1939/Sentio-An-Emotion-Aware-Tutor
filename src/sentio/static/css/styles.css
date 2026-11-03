@@ -50,22 +50,6 @@ body {
   overflow: hidden;
 }
 
-/* ── SCAN-LINE OVERLAY ────────────────────── */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.08) 2px,
-    rgba(0, 0, 0, 0.08) 4px
-  );
-}
-
 /* ── LAYOUT ───────────────────────────────── */
 #app {
   display: grid;
@@ -169,17 +153,6 @@ header {
   overflow: hidden;
 }
 
-header::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  opacity: 0.4;
-}
-
 .logo {
   display: flex;
   align-items: center;
@@ -194,7 +167,7 @@ header::after {
 .logo-icon {
   width: 28px;
   height: 28px;
-  background: linear-gradient(135deg, var(--accent), var(--green));
+  background: var(--accent);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -220,7 +193,6 @@ header::after {
 
 .dot.live {
   background: var(--green);
-  box-shadow: 0 0 8px var(--green);
   animation: pulse-dot 2s infinite;
 }
 
@@ -260,11 +232,9 @@ header::after {
 }
 
 .panel-label {
-  font-size: 9px;
-  letter-spacing: 0.12em;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
+  color: var(--text-dim);
   margin-bottom: 10px;
 }
 
@@ -309,28 +279,24 @@ header::after {
   border: none;
   border-radius: var(--radius);
   font-family: var(--display);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 14px;
+  font-weight: 650;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.2s;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent2), var(--accent));
-  color: var(--bg);
+  background: var(--accent);
+  color: var(--bg2);
 }
 
 .btn-primary:hover {
-  opacity: 0.85;
-  transform: translateY(-1px);
+  background: var(--accent2);
 }
 
 .btn-primary:disabled {
-  opacity: 0.3;
+  opacity: 0.55;
   cursor: not-allowed;
-  transform: none;
 }
 
 .btn-danger {
@@ -342,7 +308,7 @@ header::after {
 
 .btn-danger:hover {
   border-color: var(--red);
-  background: rgba(255, 80, 96, 0.08);
+  background: var(--bg3);
 }
 
 /* ── WEBCAM ───────────────────────────────── */
@@ -381,14 +347,12 @@ header::after {
 }
 
 .cam-emotion-badge {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.08em;
   padding: 3px 8px;
   border-radius: 20px;
   background: rgba(0, 0, 0, 0.6);
   border: 1px solid currentColor;
-  text-transform: uppercase;
   transition:
     color 0.4s,
     border-color 0.4s;
@@ -455,7 +419,6 @@ header::after {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
   z-index: 10;
 }
 
@@ -476,7 +439,7 @@ header::after {
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: rgba(0, 200, 255, 0.1);
+  background: var(--bg3);
   border: 1px solid var(--border-glow);
   display: flex;
   align-items: center;
@@ -488,7 +451,7 @@ header::after {
   font-size: 15px;
   font-weight: 700;
   color: var(--text);
-  letter-spacing: 0.03em;
+  letter-spacing: -0.025em;
 }
 
 .session-card-title p {
@@ -520,9 +483,7 @@ header::after {
   min-width: 180px;
   padding: 10px 24px;
   font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  box-shadow: 0 0 14px rgba(0, 200, 255, 0.35);
+  font-weight: 650;
 }
 
 /* Active Session Bar */
@@ -550,7 +511,6 @@ header::after {
   height: 8px;
   border-radius: 50%;
   background: var(--green);
-  box-shadow: 0 0 10px var(--green);
   display: inline-block;
   animation: pulse-dot 2s infinite;
 }
@@ -566,14 +526,12 @@ header::after {
   font-size: 13px;
   font-weight: 700;
   color: var(--text);
-  letter-spacing: 0.02em;
 }
 
 .active-sub-meta {
   font-size: 10px;
   color: var(--text-dim);
   font-family: var(--mono);
-  text-transform: capitalize;
 }
 
 .active-bar-actions {
@@ -583,14 +541,14 @@ header::after {
 }
 
 .hud-pill-btn {
-  padding: 6px 12px;
-  background: var(--bg3);
+  padding: 8px 16px;
+  background: var(--bg2);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  color: var(--text-dim);
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 500;
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -599,14 +557,12 @@ header::after {
 }
 
 .hud-pill-btn:hover {
-  border-color: var(--accent);
-  color: var(--text);
+  background: var(--bg3);
 }
 
 .hud-pill-btn.active {
-  border-color: var(--green);
-  color: var(--green);
-  box-shadow: 0 0 10px rgba(0, 229, 160, 0.25);
+  background: var(--bg3);
+  font-weight: 650;
 }
 
 /* ── MAIN CHAT AREA ───────────────────────── */
@@ -726,7 +682,7 @@ header::after {
 }
 
 .msg.tutor .msg-avatar {
-  background: linear-gradient(135deg, var(--accent2), var(--accent));
+  background: var(--accent);
 }
 
 .msg.student .msg-avatar {
@@ -750,9 +706,8 @@ header::after {
 }
 
 .msg-meta {
-  font-size: 9px;
-  color: var(--text-muted);
-  letter-spacing: 0.04em;
+  font-size: 12px;
+  color: var(--text-dim);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -761,11 +716,9 @@ header::after {
 .msg-strategy-badge {
   padding: 1px 6px;
   border-radius: 10px;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  background: rgba(0, 200, 255, 0.1);
+  background: var(--bg3);
   color: var(--accent);
   border: 1px solid var(--accent2);
 }
@@ -791,7 +744,7 @@ header::after {
   color: var(--green);
   padding: 5px 10px;
   border-left: 2px solid var(--green);
-  background: rgba(0, 229, 160, 0.05);
+  background: var(--bg3);
   border-radius: 0 6px 6px 0;
 }
 
@@ -800,7 +753,7 @@ header::after {
   color: var(--yellow);
   padding: 5px 10px;
   border-left: 2px solid var(--yellow);
-  background: rgba(255, 208, 96, 0.05);
+  background: var(--bg3);
   border-radius: 0 6px 6px 0;
 }
 
@@ -912,7 +865,6 @@ header::after {
 
 #msg-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 8px rgba(0, 200, 255, 0.25);
 }
 
 #msg-input::placeholder {
@@ -927,36 +879,32 @@ header::after {
 #send-btn {
   height: 44px;
   padding: 0 18px;
-  background: linear-gradient(135deg, var(--accent2), var(--accent));
+  background: var(--accent);
   border: none;
   border-radius: var(--radius);
-  color: var(--bg);
+  color: var(--bg2);
   font-family: var(--display);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-size: 14px;
+  font-weight: 650;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
-  transition: all 0.2s;
+  transition: background 0.2s;
 }
 
 #send-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 0 12px rgba(0, 200, 255, 0.4);
+  background: var(--accent2);
 }
 
 #send-btn:disabled {
-  opacity: 0.35;
+  opacity: 0.55;
   cursor: not-allowed;
-  transform: none;
 }
 
 .send-text {
-  font-size: 12px;
-  font-family: var(--mono);
+  font-size: 14px;
 }
 
 /* ── COLLAPSIBLE HUD DRAWER ───────────────── */
@@ -991,8 +939,6 @@ header::after {
   font-size: 12px;
   font-weight: 700;
   color: var(--text);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
 }
 
 .drawer-close-btn {
@@ -1090,10 +1036,9 @@ header::after {
 }
 
 #mic-btn.active {
-  background: rgba(255, 80, 96, 0.15);
+  background: var(--bg3);
   border-color: var(--red);
   color: var(--red);
-  box-shadow: 0 0 10px rgba(255, 80, 96, 0.2);
 }
 
 #mic-btn:disabled,
@@ -1151,8 +1096,6 @@ header::after {
 .state-emotion-sub {
   font-size: 9px;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
 }
 
 /* Stat rows */
@@ -1206,7 +1149,7 @@ header::after {
 .engage-fill {
   height: 100%;
   border-radius: 2px;
-  background: linear-gradient(90deg, var(--accent2), var(--green));
+  background: var(--accent);
   transition: width 0.6s ease;
 }
 
@@ -1223,10 +1166,9 @@ header::after {
   padding: 3px 8px;
   border-radius: 10px;
   margin: 2px 3px 2px 0;
-  background: rgba(0, 200, 255, 0.08);
+  background: var(--bg3);
   border: 1px solid var(--accent2);
   color: var(--accent);
-  text-transform: capitalize;
 }
 
 /* Session log */
@@ -1287,16 +1229,13 @@ header::after {
   border-radius: 10px;
   border: 1px solid var(--border);
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   transition: all 0.3s;
 }
 
 .strat-chip.active {
   border-color: var(--accent);
   color: var(--accent);
-  background: rgba(0, 200, 255, 0.08);
-  box-shadow: 0 0 10px rgba(0, 200, 255, 0.15);
+  background: var(--bg3);
 }
 
 /* ── TOAST ────────────────────────────────── */

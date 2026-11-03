@@ -137,7 +137,7 @@ function disableCamera() {
 
   const btn = document.getElementById('cam-toggle-btn');
   if (btn) {
-    btn.textContent = 'CAM OFF';
+    btn.textContent = 'Camera off';
     btn.classList.remove('active');
   }
   const camQuick = document.getElementById('cam-quick-toggle-btn');
@@ -360,7 +360,7 @@ async function startWebcam() {
     const btn = document.getElementById('cam-toggle-btn');
     if (btn) {
       btn.disabled = false;
-      btn.textContent = 'CAM ON';
+      btn.textContent = 'Camera on';
       btn.classList.add('active');
     }
     const camQuick = document.getElementById('cam-quick-toggle-btn');
@@ -386,7 +386,7 @@ async function startWebcam() {
     const btn = document.getElementById('cam-toggle-btn');
     if (btn) {
       btn.disabled = false;
-      btn.textContent = 'CAM OFF';
+      btn.textContent = 'Camera off';
       btn.classList.remove('active');
     }
     const camQuick = document.getElementById('cam-quick-toggle-btn');
@@ -441,7 +441,7 @@ async function toggleWebcamDirect() {
         camActive = true;
         const btn = document.getElementById('cam-toggle-btn');
         if (btn) {
-          btn.textContent = 'CAM ON';
+          btn.textContent = 'Camera on';
           btn.classList.add('active');
         }
         startAttentionTrackingLoop();

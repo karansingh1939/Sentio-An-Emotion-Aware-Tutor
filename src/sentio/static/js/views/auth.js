@@ -47,7 +47,7 @@ export class AuthView {
 
   render() {
     this.container.innerHTML = `
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:30px;width:100%;max-width:400px;box-shadow:0 10px 30px rgba(0,0,0,0.3);display:flex;flex-direction:column;gap:16px;">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:30px;width:100%;max-width:400px;display:flex;flex-direction:column;gap:16px;">
         <div style="text-align:center;">
           <span style="font-size:36px;">🧠</span>
           <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-top:10px;">

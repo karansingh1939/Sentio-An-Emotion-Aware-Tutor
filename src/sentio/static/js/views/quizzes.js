@@ -257,7 +257,7 @@ export class QuizzesView {
                       const char = String.fromCharCode(65 + idx); // A, B, C...
                       const isChecked = selectedAns === opt;
                       return `
-                <label style="border:1px solid ${isChecked ? 'var(--accent)' : 'var(--border)'};background:${isChecked ? 'rgba(0,200,255,0.05)' : 'var(--bg3)'};border-radius:var(--radius);padding:12px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color 0.2s, background 0.2s;">
+                <label style="border:1px solid ${isChecked ? 'var(--accent)' : 'var(--border)'};background:${isChecked ? 'var(--bg2)' : 'var(--bg3)'};border-radius:var(--radius);padding:12px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color 0.2s, background 0.2s;">
                   <input type="radio" name="quiz-opt" value="${char}" ${isChecked ? 'checked' : ''} style="accent-color:var(--accent);" />
                   <span style="font-family:var(--mono);font-size:14px;font-weight:bold;color:var(--accent);">${char}.</span>
                   <span style="font-size:14px;color:var(--text);">${escapeHtml(opt)}</span>
@@ -433,7 +433,7 @@ export class QuizzesView {
               <div style="font-size:32px;font-weight:bold;color:${passed ? 'var(--green)' : 'var(--red)'};">${scorePct}%</div>
               <div style="font-size:14px;color:var(--text-dim);margin-top:4px;">Correct answers: <strong>${correctCount} of ${totalQ}</strong></div>
             </div>
-            <span style="background:${passed ? 'rgba(78,205,196,0.1)' : 'rgba(255,80,96,0.1)'};color:${passed ? 'var(--green)' : 'var(--red)'};border:1px solid ${passed ? 'rgba(78,205,196,0.2)' : 'rgba(255,80,96,0.2)'};padding:6px 12px;border-radius:20px;font-size:14px;font-weight:bold;font-family:var(--mono);">
+            <span style="background:var(--bg3);color:${passed ? 'var(--green)' : 'var(--red)'};border:1px solid ${passed ? 'var(--green)' : 'var(--red)'};padding:6px 12px;border-radius:20px;font-size:14px;font-weight:bold;font-family:var(--mono);">
               ${passed ? 'PASSED' : 'RETRY ADVISED'}
             </span>
           </div>

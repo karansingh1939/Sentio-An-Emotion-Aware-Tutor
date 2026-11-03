@@ -134,7 +134,7 @@ export class FlashcardsView {
                   .map(
                     (d) => `
                   <div class="deck-item-card" data-id="${escapeHtml(d.deck_id)}" style="border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;background:var(--bg3);cursor:pointer;position:relative;transition:border-color 0.2s, box-shadow 0.2s;">
-                    <h3 style="font-size:13px;font-weight:bold;margin-bottom:6px;text-transform:capitalize;color:var(--text);">${escapeHtml(d.deck_name)}</h3>
+                    <h3 style="font-size:13px;font-weight:bold;margin-bottom:6px;color:var(--text);">${escapeHtml(d.deck_name)}</h3>
                     <div style="font-size:14px;color:var(--text-dim);margin-bottom:12px;">Created: ${new Date(d.created_at * 1000).toLocaleDateString()}</div>
                     
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
@@ -386,7 +386,7 @@ export class FlashcardsView {
         <div id="flashcard-flip-trigger" role="button" tabindex="0" aria-label="Show or hide the answer" aria-expanded="${this.isFlipped}" style="perspective:1000px;cursor:pointer;width:100%;">
           <div class="flashcard-inner ${this.isFlipped ? 'flipped' : ''}">
             <!-- Front -->
-            <div class="flashcard-front" ${this.isFlipped ? 'hidden' : ''} style="border:1px solid var(--border);background:var(--bg2);box-shadow:0 6px 20px rgba(0,0,0,0.2);">
+            <div class="flashcard-front" ${this.isFlipped ? 'hidden' : ''} style="border:1px solid var(--border);background:var(--bg2);">
               <span style="font-size:14px;color:var(--accent);font-family:var(--mono);margin-bottom:12px;font-weight:bold;">QUESTION / TERM</span>
               <p style="font-size:14px;color:var(--text);text-align:center;line-height:1.5;font-weight:500;">
                 ${escapeHtml(card.front_text)}
@@ -395,7 +395,7 @@ export class FlashcardsView {
             </div>
             
             <!-- Back -->
-            <div class="flashcard-back" ${this.isFlipped ? '' : 'hidden'} style="border:1px solid var(--accent);box-shadow:0 6px 25px rgba(0,200,255,0.15);">
+            <div class="flashcard-back" ${this.isFlipped ? '' : 'hidden'} style="border:1px solid var(--accent);">
               <span style="font-size:14px;color:var(--green);font-family:var(--mono);margin-bottom:12px;font-weight:bold;">EXPLANATION / ANSWER</span>
               <p style="font-size:13px;color:var(--text);text-align:center;line-height:1.5;">
                 ${escapeHtml(card.back_text)}
