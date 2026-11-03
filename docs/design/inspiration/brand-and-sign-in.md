@@ -1,7 +1,7 @@
 # A more premium name, logo and sign-in page
 
 - **Date:** 2026-11-03.
-- **Status:** ideas only. Nothing is renamed, and PRODUCT.md still says Sentio.
+- **Status:** decided on 2026-11-03: **the name stays Sentio**. The other names below are kept for the record. Logo direction: [logo-brief.md](logo-brief.md).
 - **Name checks:** quick web searches for clashes with study and AI apps. This was not a trademark search and not a domain-availability check; do both before choosing.
 
 ## Why rename at all

@@ -2,12 +2,13 @@
 
 Notes on designs Karan likes, gathered to improve Sentio. **We take inspiration from what works in them; we don't copy them.** Each reference is broken down into what is good, how it differs from Sentio, and what (if anything) Sentio should take. Nothing here overrides [DESIGN.md](../../../DESIGN.md) until it is adopted there.
 
-| Reference                               | What we liked                                                                                                 | Note                                           |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| Watermelon hero-13 (dark spectrum hero) | Cinematic first impression, large light headline                                                              | [watermelon-hero-13.md](watermelon-hero-13.md) |
-| Name, logo and sign-in ideas            | A name about pages and citations (Recto, Folio, Ibid, Lectern); a drawn mark; a split sign-in screen          | [brand-and-sign-in.md](brand-and-sign-in.md)   |
-| ChatGPT, adding files and waiting       | Attach files right where you ask; one chip per file; drop anywhere                                            | [chatgpt-uploads.md](chatgpt-uploads.md)       |
-| Apple, MacBook Air page                 | Premium, calm feel; one accent; footnoted claims; every element responds to the cursor with consistent timing | [apple-comparison.md](apple-comparison.md)     |
+| Reference                                             | What we liked                                                                                                 | Note                                           |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| Watermelon hero-13 (dark spectrum hero)               | Cinematic first impression, large light headline                                                              | [watermelon-hero-13.md](watermelon-hero-13.md) |
+| Name, logo and sign-in ideas                          | A name about pages and citations (Recto, Folio, Ibid, Lectern); a drawn mark; a split sign-in screen          | [brand-and-sign-in.md](brand-and-sign-in.md)   |
+| Logo brief (Tesla-style wordmark, Apple-style symbol) | Sentio stays; wide geometric capitals and one solid stand-alone symbol                                        | [logo-brief.md](logo-brief.md)                 |
+| ChatGPT, adding files and waiting                     | Attach files right where you ask; one chip per file; drop anywhere                                            | [chatgpt-uploads.md](chatgpt-uploads.md)       |
+| Apple, MacBook Air page                               | Premium, calm feel; one accent; footnoted claims; every element responds to the cursor with consistent timing | [apple-comparison.md](apple-comparison.md)     |
 
 ## Ideas worth taking so far
 
