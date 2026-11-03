@@ -5,6 +5,7 @@ Notes on designs Karan likes, gathered to improve Sentio. **We take inspiration 
 | Reference                               | What we liked                                                                                                 | Note                                           |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
 | Watermelon hero-13 (dark spectrum hero) | Cinematic first impression, large light headline                                                              | [watermelon-hero-13.md](watermelon-hero-13.md) |
+| Name, logo and sign-in ideas            | A name about pages and citations (Recto, Folio, Ibid, Lectern); a drawn mark; a split sign-in screen          | [brand-and-sign-in.md](brand-and-sign-in.md)   |
 | ChatGPT, adding files and waiting       | Attach files right where you ask; one chip per file; drop anywhere                                            | [chatgpt-uploads.md](chatgpt-uploads.md)       |
 | Apple, MacBook Air page                 | Premium, calm feel; one accent; footnoted claims; every element responds to the cursor with consistent timing | [apple-comparison.md](apple-comparison.md)     |
 
