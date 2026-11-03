@@ -96,3 +96,13 @@ Treat anything an image tool generates as a draft. Have the final logo redrawn a
 - It reads as a generic "file" icon, the same one every operating system already has, so nobody would recognise it as Sentio. That is the opposite of what makes Apple's symbol work.
 - The notch at the foot looks like a door or a charging port, not a citation.
 - **Next direction:** build the symbol from the wordmark's own O (the rounded rectangle), filled solid, with a single cut that reads as a page corner or a citation mark. The symbol and the wordmark then share one shape language, as in the strongest brand systems.
+
+### Symbol, round 2: [symbol-draft-2.png](logo-drafts/symbol-draft-2.png). Right idea, needs a redraw.
+
+- **Made with:** Figma's image tool. The first attempt failed on Figma's side (debug ID `917d1804-0b25-4386-8bac-b0927d21cd90`); the retry worked.
+- **What works:** it's built from the wordmark's O, as one solid shape with one cut, so the symbol and wordmark now share a shape language. It is simple enough to work at 16px.
+- **What to fix in Figma, by hand:**
+  - **Bigger cut.** It's too small to read as a turned page corner; at small sizes it looks like a SIM card or a chat bubble. Make the cut about 30–35% of the shape's height.
+  - **Matching corners.** The corners are much rounder than the wordmark's O. Use the O's exact radius.
+  - **Clean join.** Where the cut meets the right-hand side there's a small curved bump left over. The cut should meet the side in one straight, crisp line.
+- **Next step:** stop generating. Draw the final symbol and wordmark as vectors in the Figma file, on one grid with one stroke width and one corner radius, then export SVGs for the app.
