@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 854 100" role="img" aria-label="Sentio">
+  <defs><clipPath id="band"><rect width="854" height="100"/></clipPath></defs>
+  <g clip-path="url(#band)" fill="none" stroke="#202938" stroke-width="8" stroke-linejoin="miter" stroke-linecap="butt">
+    <path d="M110 4H4V50H106V96H0"/>
+    <path d="M270 4H178V96H270M178 50H249"/>
+    <path d="M338 100V4L440 96V0"/>
+    <path d="M500 4H610M555 4V100"/>
+    <path d="M666 0V100"/>
+    <rect x="738" y="4" width="112" height="92" rx="10"/>
+  </g>
+</svg>

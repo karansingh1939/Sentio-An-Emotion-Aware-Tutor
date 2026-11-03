@@ -117,6 +117,8 @@ export class DocumentsView {
     this.courses = [];
     this.uploadCourse = '';
     this.batchStatus = '';
+    this.batchItems = [];
+    this.failedFiles = [];
     this.filterQuery = '';
     this.ocrReady = false;
     this.revision = 0;
@@ -179,10 +181,10 @@ export class DocumentsView {
       if (!current()) return;
       this.container.innerHTML = `
         <div style="padding:40px;text-align:center;">
-          <div style="font-size:24px;margin-bottom:12px;">⚠️</div>
-          <div style="color:var(--red);font-weight:bold;">Failed to load Document Library</div>
+          <div style="margin-bottom:12px;color:var(--red);">${window.sentioIcon('alert', 28)}</div>
+          <div style="color:var(--red);font-weight:bold;">Couldn’t load your library</div>
           <div style="color:var(--text-dim);font-size:14px;margin-top:8px;">${escapeHtml(e.message)}</div>
-          <button id="retry-docs-btn" style="margin-top:16px;background:var(--accent);color:var(--bg);border:none;padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);">Retry</button>
+          <button id="retry-docs-btn" class="workspace-action primary" style="margin-top:16px;">Try again</button>
         </div>
       `;
       const btn = this.container.querySelector('#retry-docs-btn');
@@ -208,22 +210,15 @@ export class DocumentsView {
   renderRows(docs) {
     return docs
       .map((d) => {
-        const statusColor =
-          d.status === 'indexed'
-            ? 'var(--green)'
-            : d.status === 'failed'
-              ? 'var(--red)'
-              : 'var(--yellow)';
-        const statusIcon = d.status === 'indexed' ? '✅' : d.status === 'failed' ? '❌' : '⏳';
+        const state =
+          d.status === 'indexed' ? 'ready' : d.status === 'failed' ? 'failed' : 'working';
         return `
         <tr class="document-row" data-search="${escapeHtml((d.filename + ' ' + this.courseName(d.course_id)).toLowerCase())}" style="border-bottom:1px solid var(--border);color:var(--text);">
           <td style="padding:10px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(d.filename)}">
             ${escapeHtml(d.filename)}
           </td>
           <td style="padding:10px;">
-            <span style="color:${statusColor};font-weight:bold;font-size:14px;">
-              ${statusIcon} ${escapeHtml(d.status === 'indexed' ? 'Ready to study' : d.status === 'failed' ? 'Needs retry' : 'Processing')}
-            </span>
+            <span class="doc-state ${state}">${escapeHtml(state === 'ready' ? 'Ready to study' : state === 'failed' ? 'Needs retry' : 'Processing')}</span>
           </td>
           <td style="padding:10px;">
             <select class="input move-course" data-id="${escapeHtml(d.id)}" aria-label="Course for ${escapeHtml(d.filename)}">
@@ -310,11 +305,11 @@ export class DocumentsView {
     this.container.innerHTML = `
       <div class="view-header view-header row-between">
         <div>
-          <h2 class="page-title">Document Library</h2>
+          <h2 class="page-title">Library</h2>
           <p class="muted">Upload your lecture notes and slides, group them into courses, then choose Study to ask questions about them.</p>
         </div>
-        <button ${store.getState('currentUser')?.role === 'admin' ? '' : 'hidden'} id="sync-library-btn" style="background:none;color:var(--accent);border:1px solid var(--accent);padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;transition:background 0.2s;">
-          🔄 Sync Disk Folder
+        <button ${store.getState('currentUser')?.role === 'admin' ? '' : 'hidden'} id="sync-library-btn" class="workspace-action">
+          ${window.sentioIcon('refresh', 16)} Sync disk folder
         </button>
       </div>
 
@@ -331,7 +326,7 @@ export class DocumentsView {
             ${
               this.documents.length === 0 && this.courses.length === 0
                 ? `
-              <sentio-empty-state message="Your library is empty. Add lecture slides (PowerPoint), a PDF, a Word document or a text file to begin." icon="📂"></sentio-empty-state>
+              <sentio-empty-state message="Your library is empty. Add lecture slides (PowerPoint), a PDF, a Word document or a text file to begin." icon="folder"></sentio-empty-state>
             `
                 : `<p id="doc-search-status" role="status"></p><div class="stack stack-lg">${groups}</div>`
             }
@@ -340,22 +335,23 @@ export class DocumentsView {
 
         <!-- Right: Upload Panel -->
         <div style="display:flex;flex-direction:column;gap:20px;">
-          <sentio-card title="1. Add your notes">
+          <sentio-card title="Add your notes">
             <div style="margin-bottom:16px;">
               <label class="form-label" for="upload-course">Course</label>
               <select class="input" id="upload-course">
                 ${this.courseOptions(this.uploadCourse, { none: 'Not in a course', create: true })}
               </select>
             </div>
-            <div id="drop-zone" role="button" tabindex="0" aria-label="Choose study material files" style="border:2px dashed var(--border);border-radius:var(--radius-lg);padding:24px 16px;text-align:center;background:var(--bg3);cursor:pointer;transition:border-color 0.2s, background 0.2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
-              <span style="font-size:32px;">📄</span>
-              <span style="font-size:14px;font-weight:bold;color:var(--text);">Drag & Drop your files here</span>
+            <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Choose study material files">
+              <span class="drop-zone-icon">${window.sentioIcon('upload', 24)}</span>
+              <span class="drop-zone-title">Drop files anywhere on this page</span>
               <span class="muted">or choose files. Several at once is fine.</span>
               <input type="file" id="file-uploader" multiple style="display:none;" accept="${accept}" />
             </div>
 
             <p class="muted">PowerPoint, PDF, Word or text. 20 MiB per file. ${this.ocrReady ? 'English OCR enabled; up to 20 scanned pages.' : 'Scans and images require the optional OCR tools.'}</p>
             <p id="upload-batch" role="status" class="muted">${escapeHtml(this.batchStatus)}</p>
+            <div id="upload-list">${this.renderUploadList()}</div>
             <div id="library-job" role="region" aria-label="Upload progress"></div>
 
           </sentio-card>
@@ -535,22 +531,21 @@ export class DocumentsView {
         }
       };
 
-      // Drag events
-      dropZone.ondragover = (e) => {
+      // Files can be dropped anywhere on the Library page.
+      const carriesFiles = (e) => [...(e.dataTransfer?.types || [])].includes('Files');
+      this.container.ondragover = (e) => {
+        if (!carriesFiles(e)) return;
         e.preventDefault();
-        dropZone.style.borderColor = 'var(--accent)';
-        dropZone.style.background = 'var(--bg3)';
+        this.container.classList.add('is-dropping');
       };
-
-      dropZone.ondragleave = () => {
-        dropZone.style.borderColor = 'var(--border)';
-        dropZone.style.background = 'var(--bg3)';
+      this.container.ondragleave = (e) => {
+        if (!this.container.contains(e.relatedTarget))
+          this.container.classList.remove('is-dropping');
       };
-
-      dropZone.ondrop = (e) => {
+      this.container.ondrop = (e) => {
+        if (!carriesFiles(e)) return;
         e.preventDefault();
-        dropZone.style.borderColor = 'var(--border)';
-        dropZone.style.background = 'var(--bg3)';
+        this.container.classList.remove('is-dropping');
         this.uploadFiles([...e.dataTransfer.files]);
       };
 
@@ -558,6 +553,7 @@ export class DocumentsView {
         this.uploadFiles([...e.target.files]);
       };
     }
+    this.bindUploadList();
   }
 
   applyFilter() {
@@ -813,6 +809,46 @@ export class DocumentsView {
     }
   }
 
+  // One row per file in the current batch, with its own state.
+  renderUploadList() {
+    if (!this.batchItems.length) return '';
+    const label = {
+      waiting: 'Waiting',
+      working: 'Processing',
+      done: 'Ready to study',
+      failed: 'Not added',
+    };
+    const pill = { waiting: '', working: 'working', done: 'ready', failed: 'failed' };
+    const rows = this.batchItems
+      .map(
+        (item) => `<li class="upload-item">
+          <span class="upload-name">${window.sentioIcon('file', 16)}<span>${escapeHtml(item.name)}</span></span>
+          <span class="doc-state ${pill[item.state]}">${label[item.state]}</span>
+        </li>`,
+      )
+      .join('');
+    const retry =
+      this.failedFiles.length && !this.uploadInProgress
+        ? `<button type="button" class="workspace-action" id="retry-failed-btn">${window.sentioIcon('refresh', 16)} Try ${this.failedFiles.length === 1 ? 'it' : 'them'} again</button>`
+        : '';
+    return `<ul class="upload-list">${rows}</ul>${retry}`;
+  }
+
+  updateUploadList() {
+    const list = this.container.querySelector('#upload-list');
+    if (!list) return;
+    list.innerHTML = this.renderUploadList();
+    this.bindUploadList();
+  }
+
+  bindUploadList() {
+    this.container.querySelector('#retry-failed-btn')?.addEventListener('click', () => {
+      const files = this.failedFiles;
+      this.failedFiles = [];
+      this.uploadFiles(files);
+    });
+  }
+
   // Several files upload one after another; a failure is reported and the rest continue.
   async uploadFiles(files) {
     if (!files.length) return;
@@ -823,13 +859,24 @@ export class DocumentsView {
     const owner = store.getState('currentUser')?.id;
     const courseId = this.uploadCourse;
     const failed = [];
+    this.failedFiles = [];
+    this.batchItems = files.map((file) => ({ name: file.name, state: 'waiting' }));
+    this.updateUploadList();
     for (const [index, file] of files.entries()) {
       if (owner !== store.getState('currentUser')?.id) return;
       this.batchStatus =
         files.length > 1 ? `Uploading ${index + 1} of ${files.length}: ${file.name}` : '';
       const status = this.container.querySelector('#upload-batch');
       if (status) status.textContent = this.batchStatus;
-      if (!(await this.uploadFile(file, courseId))) failed.push(file.name);
+      this.batchItems[index].state = 'working';
+      this.updateUploadList();
+      const ok = await this.uploadFile(file, courseId);
+      this.batchItems[index].state = ok ? 'done' : 'failed';
+      if (!ok) {
+        failed.push(file.name);
+        this.failedFiles.push(file);
+      }
+      this.updateUploadList();
     }
     this.batchStatus =
       files.length > 1
@@ -918,7 +965,8 @@ export class DocumentsView {
     } catch (error) {
       if (owner === store.getState('currentUser')?.id && revision === this.revision) {
         this.container.querySelector('#library-job').textContent =
-          `${file ? file.name + ': ' : ''}${error.message} Choose the file again to retry.`;
+          `${file ? file.name + ': ' : ''}${error.message}` +
+          (file ? ' Use Try again below.' : ' Choose the file again to retry.');
         toast('Upload did not finish: ' + error.message, true);
       }
     } finally {

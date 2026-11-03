@@ -142,7 +142,7 @@ async def test_first_time_notes_to_study_to_practice_without_hidden_setup(monkey
             for index in range(3):
                 await page.check('input[name="quiz-opt"][value="A"]')
                 await page.click("#next-question-btn" if index < 2 else "#submit-quiz-btn")
-            await page.wait_for_selector("text=Assessment Results")
+            await page.wait_for_selector("text=Quiz results")
             await page.goto(url + "/#/tutor")
             await (
                 page.locator("#session-active-bar")

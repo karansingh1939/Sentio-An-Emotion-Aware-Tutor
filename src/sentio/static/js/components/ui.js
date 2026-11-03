@@ -25,15 +25,14 @@ export class SentioToast extends HTMLElement {
     this.style.background = 'var(--bg2)';
     this.style.border = `1px solid ${this.isError ? 'var(--red)' : 'var(--border)'}`;
     this.style.boxShadow = '0 4px 16px #0001';
-    this.style.color = this.isError ? 'var(--red)' : 'var(--accent)';
-    this.style.fontFamily = 'var(--mono)';
-    this.style.fontSize = '12px';
+    this.style.color = this.isError ? 'var(--red)' : 'var(--text)';
+    this.style.fontSize = '14px';
     this.style.transition = 'opacity 0.3s, transform 0.3s';
     this.style.transform = 'translateY(10px)';
     this.style.opacity = '0';
 
     this.innerHTML = `
-      <span>${this.isError ? '🛑' : '⚡'}</span>
+      ${window.sentioIcon(this.isError ? 'alert' : 'check', 16)}
       <span>${escapeHtml(this.message)}</span>
     `;
 
@@ -181,7 +180,7 @@ customElements.define('sentio-modal', SentioModal);
 export class SentioEmptyState extends HTMLElement {
   connectedCallback() {
     const message = this.getAttribute('message') || 'No records found';
-    const icon = this.getAttribute('icon') || '📂';
+    const icon = this.getAttribute('icon') || 'folder';
     this.style.display = 'flex';
     this.style.flexDirection = 'column';
     this.style.alignItems = 'center';
@@ -191,7 +190,7 @@ export class SentioEmptyState extends HTMLElement {
     this.style.fontFamily = 'var(--mono)';
 
     this.innerHTML = `
-      <div style="font-size:32px;margin-bottom:12px;">${escapeHtml(icon)}</div>
+      <div style="margin-bottom:12px;color:var(--text-dim);">${window.sentioIcon(icon, 28)}</div>
       <div style="font-size:14px;text-align:center;">${escapeHtml(message)}</div>
     `;
   }

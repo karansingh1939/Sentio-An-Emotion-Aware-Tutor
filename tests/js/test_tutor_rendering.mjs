@@ -33,7 +33,7 @@ context.document = {
   }),
 };
 context.STRATEGY_LABEL = {};
-context.window = {};
+context.window = { sentioSymbol: () => '<svg></svg>' };
 context.timeNow = () => '';
 vm.runInContext(
   source.slice(

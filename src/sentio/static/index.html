@@ -4,8 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sentio · Your study workspace</title>
+    <link rel="icon" href="static/img/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="static/css/styles.css" />
     <link rel="stylesheet" href="static/css/workspace.css" />
+    <script src="static/js/core/icons.js"></script>
     <script type="module" src="static/js/app.js"></script>
     <script src="static/js/core/tutor_runtime.js" defer></script>
     <script src="static/js/core/emotion_camera.js" defer></script>
@@ -33,10 +35,30 @@
       <!-- SIDEBAR NAV -->
       <div id="sidebar">
         <div class="sidebar-brand">
-          <div class="logo">
-            <div class="logo-icon" aria-hidden="true">S</div>
-            Sentio
-          </div>
+          <a class="logo brand-lockup" href="#/dashboard" aria-label="Sentio, go to Today">
+            <svg
+              class="sentio-symbol"
+              width="28"
+              height="20"
+              viewBox="0 0 140 100"
+              aria-hidden="true"
+            >
+              <path
+                fill="currentColor"
+                d="M14 0H106L140 34V86A14 14 0 0 1 126 100H14A14 14 0 0 1 0 86V14A14 14 0 0 1 14 0Z"
+              />
+            </svg>
+            <svg class="sentio-wordmark" viewBox="0 0 854 100" role="img" aria-label="Sentio">
+              <g fill="none" stroke="currentColor" stroke-linejoin="miter" stroke-linecap="butt">
+                <path d="M110 4H4V50H106V96H0" />
+                <path d="M270 4H178V96H270M178 50H249" />
+                <path d="M338 100V4L440 96V0" />
+                <path d="M500 4H610M555 4V100" />
+                <path d="M666 0V100" />
+                <rect x="738" y="4" width="112" height="92" rx="10" />
+              </g>
+            </svg>
+          </a>
         </div>
         <div class="nav-links">
           <a href="#/dashboard" class="nav-link active">Today</a>
@@ -130,7 +152,23 @@
             <div id="session-setup-card" class="session-card">
               <div class="session-card-header">
                 <div class="session-card-title">
-                  <span class="session-icon">🎓</span>
+                  <span class="session-icon"
+                    ><svg
+                      class="icon"
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.75"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"
+                      /></svg
+                  ></span>
                   <div>
                     <h3>What would you like to understand?</h3>
                     <p>Choose a topic here, or open Library and select Study beside your notes.</p>
@@ -205,8 +243,24 @@
                   onclick="toggleWebcamDirect()"
                   title="Enable or disable emotion tracking via camera"
                 >
-                  <span id="cam-quick-icon">📷</span>
-                  <span id="cam-quick-text">Enable Camera</span>
+                  <span id="cam-quick-icon"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.75"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M4 8h3l1.5-2h7L17 8h3v11H4zM15.5 13.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 1 1 7 0"
+                      /></svg
+                  ></span>
+                  <span id="cam-quick-text">Enable camera</span>
                 </button>
                 <!-- Secondary HUD Toggle -->
                 <button
@@ -230,7 +284,20 @@
             <!-- Chat Messages Scroll Container -->
             <div id="chat-messages">
               <div id="welcome">
-                <div class="welcome-icon">🎓</div>
+                <div class="welcome-icon">
+                  <svg
+                    class="sentio-symbol"
+                    width="44"
+                    height="31"
+                    viewBox="0 0 140 100"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M14 0H106L140 34V86A14 14 0 0 1 126 100H14A14 14 0 0 1 0 86V14A14 14 0 0 1 14 0Z"
+                    />
+                  </svg>
+                </div>
                 <div class="welcome-title">Understand your notes</div>
                 <div class="welcome-sub">
                   Start studying, then ask about one concept at a time. The tutor can use your
@@ -243,12 +310,20 @@
                 </div>
               </div>
               <div id="typing-indicator" role="status" aria-live="polite">
-                <span>Generating response...</span>
-                <div
-                  class="msg-avatar"
-                  style="background: linear-gradient(135deg, var(--accent2), var(--accent))"
-                >
-                  🧠
+                <span>Writing an answer…</span>
+                <div class="msg-avatar">
+                  <svg
+                    class="sentio-symbol"
+                    width="18"
+                    height="13"
+                    viewBox="0 0 140 100"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M14 0H106L140 34V86A14 14 0 0 1 126 100H14A14 14 0 0 1 0 86V14A14 14 0 0 1 14 0Z"
+                    />
+                  </svg>
                 </div>
                 <div class="typing-dots"><span></span><span></span><span></span></div>
               </div>
@@ -295,7 +370,20 @@
                 Stop
               </button>
               <button id="send-btn" onclick="sendMessage()" disabled title="Send message (Enter)">
-                <span>➤</span>
+                <svg
+                  class="icon"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M5 12h13M13 6l6 6-6 6" />
+                </svg>
                 <span class="send-text">Send</span>
               </button>
             </div>
@@ -630,7 +718,23 @@
         "
       >
         <div style="display: flex; align-items: center; gap: 10px">
-          <span style="font-size: 24px">📷</span>
+          <span class="consent-icon"
+            ><svg
+              class="icon"
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M4 8h3l1.5-2h7L17 8h3v11H4zM15.5 13.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 1 1 7 0"
+              /></svg
+          ></span>
           <h3
             style="
               font-family: var(--display);

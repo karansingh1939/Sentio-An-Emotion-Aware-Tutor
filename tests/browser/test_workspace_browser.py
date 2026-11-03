@@ -146,7 +146,7 @@ async def test_streaming_turn_is_readable_and_survives_refresh(monkeypatch):
             await page.click(".saved-quiz")
             await page.check('input[name="quiz-opt"][value="B"]')
             await page.click("#submit-quiz-btn")
-            await page.wait_for_selector("text=Assessment Results")
+            await page.wait_for_selector("text=Quiz results")
             await page.goto(url + "/#/documents")
             await page.goto(url + "/#/quizzes")
             await page.wait_for_selector('#saved-practice:has-text("Your answer: Color")')

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-03T11:10:00Z",
+  "generatedAt": "2026-11-04T10:00:00Z",
   "title": "Design System: Sentio",
   "extensions": {
     "colorMeta": {
@@ -190,6 +190,20 @@
           "#ffc9d2",
           "#ffecef"
         ]
+      },
+      "hover-tint": {
+        "role": "neutral",
+        "displayName": "Hover tint",
+        "canonical": "#e8ecf3",
+        "cssVar": "--hover",
+        "dark": "dark-hover-tint"
+      },
+      "press-tint": {
+        "role": "neutral",
+        "displayName": "Press tint",
+        "canonical": "#dde3ed",
+        "cssVar": "--press",
+        "dark": "dark-press-tint"
       }
     },
     "typographyMeta": {
@@ -246,6 +260,21 @@
       }
     ],
     "motion": [
+      {
+        "name": "dur",
+        "value": "180ms",
+        "purpose": "Hover, press and focus changes on controls."
+      },
+      {
+        "name": "dur-slow",
+        "value": "320ms",
+        "purpose": "Arrivals: messages, toasts and status changes."
+      },
+      {
+        "name": "ease",
+        "value": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+        "purpose": "The one easing curve, an exponential ease-out."
+      },
       {
         "name": "reduced-motion",
         "value": "animation-duration: 0.01ms; transition-duration: 0.01ms",
@@ -390,7 +419,9 @@
       "Do keep every interactive element's 3px Ink Indigo focus outline at a 3px offset.",
       "Do define and check each colour in both the light and the dark theme.",
       "Do keep text inputs at 15px or larger and nav targets at least 44px tall.",
-      "Do respect `prefers-reduced-motion`; the workspace already disables animations and transitions under it."
+      "Do respect `prefers-reduced-motion`; the workspace already disables animations and transitions under it.",
+      "Do give every control a hover state (`--hover`) and a press state (`--press`). The primary action darkens to Ink Indigo Deep instead.",
+      "Do animate only colour, background, border and opacity, with the shared timing: `--dur` (180ms) for controls, `--dur-slow` (320ms) for arrivals, and `--ease` (`cubic-bezier(0.2, 0.8, 0.2, 1)`) for both."
     ],
     "donts": [
       "Don't add drop shadows or glows to cards, buttons or bubbles; only toasts and dialogs float.",
@@ -398,7 +429,9 @@
       "Don't set buttons or labels in uppercase with letter-spacing.",
       "Don't use green, amber or red as decoration or brand colour; they mean learning status or error.",
       "Don't use pill shapes for primary buttons or large containers; pills are for small metadata.",
-      "Don't let the optional camera / emotion UI bring its own visual language into the main study flow."
+      "Don't let the optional camera / emotion UI bring its own visual language into the main study flow.",
+      "Don't use `transition: all`, bounce or overshoot curves, or a different duration per element.",
+      "Don't end interface copy with exclamation marks, or write \"successfully\"."
     ]
   }
 }

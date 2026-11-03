@@ -368,7 +368,7 @@ export class TutorView {
       }
 
       this.loadSessions();
-      toast('Session loaded successfully!');
+      toast('Session loaded');
     } catch (e) {
       toast('Failed to resume session: ' + e.message, true);
     }

@@ -26,7 +26,10 @@ const session = {
   status: 'active',
 };
 let submission;
-const context = vm.createContext({ document: { getElementById: () => container } });
+const context = vm.createContext({
+  window: { sentioIcon: () => '', sentioSymbol: () => '' },
+  document: { getElementById: () => container },
+});
 const api = {
   get: async (path) => {
     assert.equal(path, '/sessions/session-a');
