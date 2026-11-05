@@ -64,6 +64,7 @@ async def _sign_in_and_open_slides(page, url):
         .filter(has_text="0 of 2 topics ready")
         .wait_for(timeout=60000)
     )
+    await page.locator(".document-row .row-menu summary").first.click()
     await page.locator('[data-action="study-slides"]').first.click()
     await page.wait_for_selector("#slides-view")
     await page.locator(".slide-item").nth(2).wait_for()

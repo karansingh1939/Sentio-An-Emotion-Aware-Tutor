@@ -234,8 +234,13 @@
                 </div>
               </div>
               <div class="active-bar-actions">
-                <a class="workspace-action" href="#/quizzes">Try a quiz</a>
-                <a class="workspace-action" href="#/flashcards">Make flashcards</a>
+                <details class="row-menu practise-menu">
+                  <summary class="workspace-action primary">Practise</summary>
+                  <div class="row-menu-list">
+                    <a class="row-menu-item" href="#/quizzes">Try a quiz</a>
+                    <a class="row-menu-item" href="#/flashcards">Make flashcards</a>
+                  </div>
+                </details>
                 <!-- Optional Camera Toggle Button -->
                 <button
                   id="cam-quick-toggle-btn"
@@ -272,9 +277,7 @@
                   Notes &amp; sessions
                 </button>
                 <!-- End Session Button -->
-                <button class="workspace-action danger" id="end-btn" onclick="endSession()">
-                  End session
-                </button>
+                <button class="link-danger" id="end-btn" onclick="endSession()">End session</button>
               </div>
             </div>
 

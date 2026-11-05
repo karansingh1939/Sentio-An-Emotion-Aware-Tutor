@@ -1516,3 +1516,116 @@ html[data-theme='dark'] .auth-aside {
 .auth-heading {
   text-wrap: balance;
 }
+
+/* ── Menus: secondary actions stay one click away ──────────────── */
+.row-menu {
+  position: relative;
+  display: inline-block;
+}
+.row-menu > summary {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+.row-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.row-menu > summary::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  margin-left: 4px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform var(--dur) var(--ease);
+}
+.row-menu[open] > summary::after {
+  transform: translateY(1px) rotate(225deg);
+}
+.row-menu-list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 30;
+  min-width: 180px;
+  display: grid;
+  padding: 6px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 16px #0001;
+}
+.practise-menu .row-menu-list {
+  left: 0;
+  right: auto;
+}
+.row-menu-item {
+  display: block;
+  width: 100%;
+  min-height: 36px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.row-menu-item:hover:not(:disabled) {
+  background: var(--hover);
+}
+.row-menu-item:active:not(:disabled) {
+  background: var(--press);
+}
+.row-menu-item:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.row-menu-item.danger {
+  color: var(--red);
+}
+.document-row td:last-child {
+  white-space: nowrap;
+}
+#end-btn {
+  min-height: 36px;
+  padding: 6px 4px;
+}
+.active-bar-actions {
+  align-items: center;
+}
+
+/* ── Empty library: one next step and a preview of the result ──── */
+.library-empty {
+  padding: 24px 4px 8px;
+}
+.library-empty-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.ghost-rows {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0 0;
+  opacity: 0.45;
+}
+.ghost-rows li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 14px;
+  color: var(--text-dim);
+}
+/* The table fits its card (and stacks on phones), so its menus may overflow it. */
+.library-table-wrap {
+  overflow: visible;
+}

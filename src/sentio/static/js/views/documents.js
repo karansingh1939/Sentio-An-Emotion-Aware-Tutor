@@ -227,10 +227,15 @@ export class DocumentsView {
           </td>
           <td style="padding:10px;text-align:right;">
             <button class="workspace-action primary study-doc-btn" data-id="${escapeHtml(d.id)}" ${d.status === 'indexed' ? '' : 'disabled'}>Study</button>
-            ${d.status === 'indexed' ? `<button class="workspace-action" data-action="study-slides" data-id="${escapeHtml(d.id)}">Study slides</button>` : ''}
-            <button class="workspace-action preview-doc-btn" data-id="${escapeHtml(d.id)}">Preview</button>
-            <button class="workspace-action topics-doc-btn" data-id="${escapeHtml(d.id)}" ${d.status === 'indexed' ? '' : 'disabled'}>Topics</button>
-            <button class="link-danger delete-doc-btn" data-id="${escapeHtml(d.id)}">Delete</button>
+            <details class="row-menu">
+              <summary class="workspace-action" aria-label="More actions for ${escapeHtml(d.filename)}">More</summary>
+              <div class="row-menu-list">
+                ${d.status === 'indexed' ? `<button class="row-menu-item" data-action="study-slides" data-id="${escapeHtml(d.id)}">Study slides</button>` : ''}
+                <button class="row-menu-item preview-doc-btn" data-id="${escapeHtml(d.id)}">Preview</button>
+                <button class="row-menu-item topics-doc-btn" data-id="${escapeHtml(d.id)}" ${d.status === 'indexed' ? '' : 'disabled'}>Topics</button>
+                <button class="row-menu-item danger delete-doc-btn" data-id="${escapeHtml(d.id)}">Delete</button>
+              </div>
+            </details>
           </td>
         </tr>
       `;
@@ -265,7 +270,7 @@ export class DocumentsView {
         }
         ${
           docs.length
-            ? `<div style="overflow-x:auto;">
+            ? `<div class="library-table-wrap">
                 <table class="library-table" style="width:100%;border-collapse:collapse;font-size:14px;text-align:left;">
                   <thead>
                     <tr style="border-bottom:1px solid var(--border);color:var(--text-dim);">
@@ -326,7 +331,14 @@ export class DocumentsView {
             ${
               this.documents.length === 0 && this.courses.length === 0
                 ? `
-              <sentio-empty-state message="Your library is empty. Add lecture slides (PowerPoint), a PDF, a Word document or a text file to begin." icon="folder"></sentio-empty-state>
+              <div class="library-empty">
+                <p class="library-empty-title">Add your first lecture</p>
+                <p class="muted">Drop slides, a PDF, a Word document or a text file on the right. Each one shows up here, ready to study.</p>
+                <ul class="ghost-rows" aria-hidden="true">
+                  <li><span class="ghost-name">Lecture 1 · Introduction.pptx</span><span class="doc-state ready">Ready to study</span></li>
+                  <li><span class="ghost-name">Week 2 notes.pdf</span><span class="doc-state ready">Ready to study</span></li>
+                </ul>
+              </div>
             `
                 : `<p id="doc-search-status" role="status"></p><div class="stack stack-lg">${groups}</div>`
             }
