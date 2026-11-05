@@ -167,7 +167,10 @@ export class SentioModal extends HTMLElement {
 
   disconnectedCallback() {
     document.removeEventListener('keydown', this.onKey);
-    if (this.previousFocus?.isConnected) this.previousFocus.focus();
+    // A choice made inside a closed menu returns focus to that menu's button.
+    const closedMenu = this.previousFocus?.closest?.('details:not([open])');
+    const target = closedMenu ? closedMenu.querySelector('summary') : this.previousFocus;
+    if (target?.isConnected) target.focus();
   }
 
   close() {

@@ -109,3 +109,21 @@ function handleWebcamStateForRoute(route) {
 
 // Start application on DOM content ready
 document.addEventListener('DOMContentLoaded', initApp);
+
+// Menus built from <details class="row-menu"> close after a choice, on an
+// outside click, and on Escape (focus returns to the menu button).
+document.addEventListener('click', (event) => {
+  document.querySelectorAll('details.row-menu[open]').forEach((menu) => {
+    const chose = menu.contains(event.target) && event.target.closest('.row-menu-item');
+    if (chose || !menu.contains(event.target)) menu.open = false;
+    // Keep keyboard focus on the menu button rather than losing it to the page.
+    if (chose) menu.querySelector('summary').focus();
+  });
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+  const menu = event.target.closest?.('details.row-menu[open]');
+  if (!menu) return;
+  menu.open = false;
+  menu.querySelector('summary').focus();
+});

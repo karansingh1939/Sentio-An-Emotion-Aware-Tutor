@@ -81,6 +81,7 @@ async def test_goal_selection_and_quiz_question_edit(monkeypatch):
             await page.wait_for_selector('#toast.show:has-text("Session goal cleared")')
             assert agent.sm.get_session(session_id).metadata["goal_id"] is None
 
+            await page.locator("#session-active-bar .practise-menu summary").click()
             await page.locator("#session-active-bar").get_by_role("link", name="Try a quiz").click()
             await page.wait_for_selector("#generate-quiz-btn:enabled")
             await page.click("#generate-quiz-btn")
