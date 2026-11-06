@@ -205,6 +205,9 @@ export class AuthView {
         this.isRegisterMode = false;
         this.isRecoverMode = false;
         this.render();
+        // Keep the email so signing in needs only the password.
+        this.container.querySelector('#auth-email').value = email;
+        this.container.querySelector('#auth-password')?.focus();
       } else {
         const res = await sentioAPI.post('/auth/login', { email, password });
         this.recoveryKey = null;

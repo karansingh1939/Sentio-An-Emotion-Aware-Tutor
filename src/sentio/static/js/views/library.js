@@ -167,6 +167,22 @@ function progressLine(summary) {
   return `${summary.ready} of ${summary.total} topic${summary.total === 1 ? '' : 's'} ready · ${due}${summary.practising} practising · ${summary.not_started} not started`;
 }
 
+// A title that wraps onto a second line ("Microprocessor &" / "Computer Architecture")
+// continues while a line ends mid-phrase; the title stops at the first sentence mark.
+const CONTINUES = /(?:[&,+/–-]|\b(?:and|or|of|the|to|for|in|on|with|a|an))$/i;
+export function openingTitle(text) {
+  const lines = String(text || '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+  let title = lines.shift() || '';
+  while (CONTINUES.test(title) && lines.length) title = `${title} ${lines.shift()}`;
+  return title
+    .split(/[.:!?]/)[0]
+    .trim()
+    .slice(0, 80);
+}
+
 export class LibraryView {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
@@ -1134,8 +1150,8 @@ export class LibraryView {
       const preview = await sentioAPI.get(
         `/documents/${encodeURIComponent(doc.id)}/preview?limit=1`,
       );
-      const opening = preview.chunks[0]?.text_content.split(/[\n.:!?]/)[0].trim();
-      if (opening) topic = opening.slice(0, 80);
+      const opening = openingTitle(preview.chunks[0]?.text_content);
+      if (opening) topic = opening;
     } catch {
       // The filename remains a usable topic.
     }

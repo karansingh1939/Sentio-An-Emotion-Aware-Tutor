@@ -1,4 +1,6 @@
+import json
 import logging
+import re
 import time
 from typing import Dict, List, Optional
 
@@ -204,4 +206,22 @@ class NLPEngine:
             f"Focus on: what was covered, where the student struggled, and next steps.\n\n"
             f"Session transcript:\n{history_text}"
         )
-        return self.quick_ask(prompt, session_id=f"{session_id}_summary")
+        return summary_bullets(self.quick_ask(prompt, session_id=f"{session_id}_summary"))
+
+
+def summary_bullets(text: str) -> str:
+    """Return plain bullet points even when the model wraps its summary in JSON."""
+    raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", (text or "").strip())
+    try:
+        data = json.loads(raw)
+    except ValueError:
+        return text
+    if isinstance(data, dict):
+        data = list(data.values())
+    if not isinstance(data, list):
+        return text
+    items = []
+    for value in data:
+        items.extend(value if isinstance(value, list) else [value])
+    lines = [f"- {str(item).strip()}" for item in items if str(item).strip()]
+    return "\n".join(lines) or text

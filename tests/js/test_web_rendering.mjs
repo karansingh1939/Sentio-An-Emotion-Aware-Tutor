@@ -93,7 +93,15 @@ cards.bindDeckEvents = () => {};
 cards.renderDeckBrowser();
 assert.ok(!container.innerHTML.includes(malicious), 'Deck names render as executable HTML');
 
-const { LibraryView } = await loadView('library');
+const { LibraryView, openingTitle } = await loadView('library');
+assert.equal(
+  openingTitle(' Microprocessor &\nComputer Architecture \nCourse code: X\nWeek 1'),
+  'Microprocessor & Computer Architecture',
+  'A slide title that wraps onto two lines is kept whole',
+);
+assert.equal(openingTitle('Stacks\nPush and pop'), 'Stacks', 'A one-line title stops at its line');
+assert.equal(openingTitle('Recursion: base cases'), 'Recursion', 'A title stops at a colon');
+assert.equal(openingTitle(''), '', 'Empty notes give no title');
 const documents = new LibraryView('view');
 documents.documents = [{ filename: malicious, id: 'doc', category: 'notes', status: 'indexed' }];
 documents.bindEvents = () => {};

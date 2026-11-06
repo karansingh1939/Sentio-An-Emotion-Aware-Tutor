@@ -25,7 +25,7 @@ def root():
     index = STATIC_DIR / "index.html"
     if not index.exists():
         return {"message": "Frontend not found. Place index.html in the static/ folder."}
-    return FileResponse(str(index))
+    return FileResponse(str(index), headers={"Cache-Control": "no-cache"})
 
 
 @router.get(PREFIX + "/health", tags=["System"])
