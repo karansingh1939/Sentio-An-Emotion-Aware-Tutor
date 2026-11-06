@@ -117,7 +117,6 @@ header .logo {
 }
 .dot.live {
   box-shadow: none;
-  animation: none;
 }
 #main-content {
   min-width: 0;
@@ -188,6 +187,7 @@ textarea {
 }
 button:focus-visible,
 a:focus-visible,
+[role='button']:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
@@ -239,8 +239,10 @@ sentio-empty-state {
   font-size: 14px;
   cursor: pointer;
 }
-.workspace-action:hover {
-  background: var(--bg3);
+@media (hover: hover) and (pointer: fine) {
+  .workspace-action:hover {
+    background: var(--bg3);
+  }
 }
 .workspace-action.danger {
   color: var(--red);
@@ -345,9 +347,13 @@ sentio-empty-state {
 .welcome-sub {
   font-size: 15px;
 }
+/* A small corner indicator: it never blurs the page, and it waits 300ms so quick
+   requests don't flash it. */
 #global-spinner {
   pointer-events: none;
   background: transparent !important;
+  backdrop-filter: none !important;
+  animation: fade-in var(--dur) var(--ease) 300ms both;
   align-items: flex-start !important;
   justify-content: flex-end !important;
   padding: 16px;
@@ -1178,18 +1184,22 @@ textarea {
     color var(--dur) var(--ease),
     opacity var(--dur) var(--ease);
 }
-.nav-link:hover:not(.active) {
-  background: var(--hover);
-  color: var(--text);
+@media (hover: hover) and (pointer: fine) {
+  .nav-link:hover:not(.active) {
+    background: var(--hover);
+    color: var(--text);
+  }
 }
 .nav-link:active {
   background: var(--press);
 }
-.workspace-action:hover:not(:disabled),
-.hud-pill-btn:hover:not(:disabled),
-button:not([class]):not([id^='cam-']):not([id^='theme']):hover:not(:disabled),
-#theme-toggle:hover {
-  background: var(--hover);
+@media (hover: hover) and (pointer: fine) {
+  .workspace-action:hover:not(:disabled),
+  .hud-pill-btn:hover:not(:disabled),
+  button:not([class]):not([id^='cam-']):not([id^='theme']):hover:not(:disabled),
+  #theme-toggle:hover {
+    background: var(--hover);
+  }
 }
 .workspace-action:active:not(:disabled),
 .hud-pill-btn:active:not(:disabled),
@@ -1197,40 +1207,54 @@ button:not([class]):not([id^='cam-']):not([id^='theme']):active:not(:disabled),
 #theme-toggle:active {
   background: var(--press);
 }
-.workspace-action.primary:hover:not(:disabled),
-#send-btn:hover:not(:disabled) {
-  background: var(--accent2);
-  border-color: var(--accent2);
+@media (hover: hover) and (pointer: fine) {
+  .workspace-action.primary:hover:not(:disabled),
+  #send-btn:hover:not(:disabled) {
+    background: var(--accent2);
+    border-color: var(--accent2);
+  }
 }
 .workspace-action.primary:active:not(:disabled),
 #send-btn:active:not(:disabled) {
   opacity: 0.88;
 }
-.workspace-action.danger:hover:not(:disabled) {
-  border-color: var(--red);
+@media (hover: hover) and (pointer: fine) {
+  .workspace-action.danger:hover:not(:disabled) {
+    border-color: var(--red);
+  }
 }
-.cite-chip:hover {
-  border-color: var(--accent);
-  background: var(--hover);
+@media (hover: hover) and (pointer: fine) {
+  .cite-chip:hover {
+    border-color: var(--accent);
+    background: var(--hover);
+  }
 }
 .cite-chip:active {
   background: var(--press);
 }
-.study-list a:hover,
-.link-quiet:hover {
-  color: var(--accent);
+@media (hover: hover) and (pointer: fine) {
+  .study-list a:hover,
+  .link-quiet:hover {
+    color: var(--accent);
+  }
 }
-.link-danger:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
+@media (hover: hover) and (pointer: fine) {
+  .link-danger:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
 }
-.topic-row:hover {
-  border-color: var(--text-muted);
+@media (hover: hover) and (pointer: fine) {
+  .topic-row:hover {
+    border-color: var(--text-muted);
+  }
 }
-input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):hover,
-select:hover,
-textarea:hover {
-  border-color: var(--text-muted);
+@media (hover: hover) and (pointer: fine) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):hover,
+  select:hover,
+  textarea:hover {
+    border-color: var(--text-muted);
+  }
 }
 a {
   text-underline-offset: 3px;
@@ -1378,9 +1402,11 @@ a {
   padding: 0;
   cursor: pointer;
 }
-.auth-switch-row .accent-strong:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
+@media (hover: hover) and (pointer: fine) {
+  .auth-switch-row .accent-strong:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
 }
 .auth-switch {
   margin-top: 16px;
@@ -1477,10 +1503,15 @@ html[data-theme='dark'] .auth-aside {
     border-color var(--dur) var(--ease),
     background-color var(--dur) var(--ease);
 }
-.drop-zone:hover,
 .is-dropping .drop-zone {
   border-color: var(--accent);
   background: var(--hover);
+}
+@media (hover: hover) and (pointer: fine) {
+  .drop-zone:hover {
+    border-color: var(--accent);
+    background: var(--hover);
+  }
 }
 .drop-zone-icon {
   color: var(--accent);
@@ -1557,7 +1588,6 @@ html[data-theme='dark'] .auth-aside {
   border-right: 1.5px solid currentColor;
   border-bottom: 1.5px solid currentColor;
   transform: translateY(-2px) rotate(45deg);
-  transition: transform var(--dur) var(--ease);
 }
 .row-menu[open] > summary::after {
   transform: translateY(1px) rotate(225deg);
@@ -1594,8 +1624,10 @@ html[data-theme='dark'] .auth-aside {
   text-decoration: none;
   cursor: pointer;
 }
-.row-menu-item:hover:not(:disabled) {
-  background: var(--hover);
+@media (hover: hover) and (pointer: fine) {
+  .row-menu-item:hover:not(:disabled) {
+    background: var(--hover);
+  }
 }
 .row-menu-item:active:not(:disabled) {
   background: var(--press);
@@ -1648,7 +1680,7 @@ html[data-theme='dark'] .auth-aside {
 .library-table-wrap {
   overflow: visible;
 }
-/* ── Flashcard reveal: the arriving face and the rating panel fade in ── */
+/* Used by the global loading indicator's delayed appearance. */
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -1657,8 +1689,189 @@ html[data-theme='dark'] .auth-aside {
     opacity: 1;
   }
 }
-.flashcard-front,
-.flashcard-back,
-.flashcard-reveal {
-  animation: fade-in var(--dur) var(--ease);
+
+/* ── Touch: no double-tap zoom wait on controls; the card shows its own press ── */
+button,
+a,
+summary,
+[role='button'] {
+  touch-action: manipulation;
+}
+#flashcard-flip-trigger {
+  -webkit-tap-highlight-color: transparent;
+}
+#flashcard-flip-trigger .flashcard-front,
+#flashcard-flip-trigger .flashcard-back {
+  transition:
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+@media (hover: hover) and (pointer: fine) {
+  #flashcard-flip-trigger:hover .flashcard-front {
+    border-color: var(--text-muted) !important;
+  }
+}
+#flashcard-flip-trigger:active .flashcard-front {
+  background: var(--hover) !important;
+}
+#flashcard-flip-trigger:active .flashcard-back {
+  background: var(--press) !important;
+}
+
+/* ── Materials: dialogs drop their blur when people ask for less transparency ── */
+@media (prefers-reduced-transparency: reduce) {
+  sentio-modal,
+  #privacy-consent-modal {
+    backdrop-filter: none !important;
+  }
+  sentio-modal {
+    background: rgb(22 27 36 / 0.72) !important;
+  }
+}
+
+/* ── Higher contrast: hairlines become clearly visible borders in both themes ── */
+@media (prefers-contrast: more) {
+  :root,
+  html[data-theme='dark'] {
+    --border: var(--text-muted);
+  }
+}
+
+/* ── Phone platform layer ─────────────────────────────────────── */
+html {
+  -webkit-tap-highlight-color: transparent; /* controls show their own :active state */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+html,
+body {
+  overscroll-behavior: none; /* no pull-to-refresh reload in the middle of a session */
+}
+/* iOS zooms into any field under 16px; desktop keeps the 15px design size. */
+@media (pointer: coarse) {
+  input:not([type='checkbox']):not([type='range']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+/* Long-press shouldn't select a control's label; card text stays selectable. */
+button,
+[role='button'],
+summary,
+.nav-link {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+#flashcard-flip-trigger {
+  -webkit-user-select: text;
+  user-select: text;
+}
+.study-list a:active,
+.link-quiet:active,
+.auth-switch-row .accent-strong:active {
+  color: var(--accent2);
+}
+/* Safe areas: the page paints under the notch, content stays clear of it. */
+#app {
+  padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px)
+    env(safe-area-inset-left, 0px);
+}
+.auth-main {
+  padding-top: calc(40px + env(safe-area-inset-top, 0px));
+}
+@media (max-width: 860px) {
+  .auth-main {
+    padding-top: calc(24px + env(safe-area-inset-top, 0px));
+  }
+}
+@media (max-width: 600px) {
+  #sidebar {
+    padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  }
+}
+sentio-toast {
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+  right: calc(20px + env(safe-area-inset-right, 0px)) !important;
+}
+#toast {
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+}
+#global-spinner {
+  padding: calc(16px + env(safe-area-inset-top, 0px)) calc(16px + env(safe-area-inset-right, 0px))
+    16px 16px;
+}
+
+/* ── Long and unusual data (stress-tested with ?data=worst) ───── */
+/* Library: the list column may shrink; below 1200px the upload card stacks on top. */
+.library-layout {
+  grid-template-columns: minmax(0, 1fr) 340px;
+}
+@media (max-width: 1200px) {
+  .library-layout {
+    display: flex !important;
+    flex-direction: column-reverse;
+  }
+}
+/* Titles and headings built from data can hold one very long word. */
+.topic-main strong,
+.course-title,
+.course-progress-body h4,
+.syllabus-unit,
+.notes-overview .badge {
+  overflow-wrap: anywhere;
+}
+.notes-overview .badge {
+  max-width: 100%;
+  white-space: normal;
+}
+/* A long URL, identifier or compound word in a chat message wraps inside its bubble. */
+.msg-bubble {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 420px) {
+  .topic-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .topic-row .topic-state {
+    justify-self: start;
+  }
+}
+/* Citation chips wrap inside the message instead of running past it. */
+.cite-chip {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+/* The session bar keeps a long course label to two lines; the full text is its tooltip. */
+.active-bar-info,
+.active-bar-info > :not(.active-pulse-dot) {
+  min-width: 0;
+}
+.active-bar-info {
+  flex: 1 1 16rem;
+}
+.active-topic-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+/* Phones: the study column scrolls, the conversation keeps most of the screen,
+   and the message box stays pinned to the bottom. */
+@media (max-width: 600px) {
+  #chat-area {
+    overflow-y: auto;
+  }
+  #chat-messages {
+    flex: 0 0 auto;
+    height: 60dvh;
+  }
+  #input-bar {
+    position: sticky;
+    bottom: 0;
+  }
 }

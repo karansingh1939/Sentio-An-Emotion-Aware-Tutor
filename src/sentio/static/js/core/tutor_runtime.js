@@ -160,7 +160,10 @@ async function startSession(options = {}) {
     const activeBar = document.getElementById('session-active-bar');
     if (activeBar) activeBar.style.display = 'flex';
     const barTopic = document.getElementById('active-bar-topic');
-    if (barTopic) barTopic.textContent = `${subject} · ${topic}`;
+    if (barTopic) {
+      barTopic.textContent = `${subject} · ${topic.replace(/_/g, ' ')}`;
+      barTopic.title = barTopic.textContent;
+    }
     const barMeta = document.getElementById('active-bar-meta');
     if (barMeta)
       barMeta.textContent = `${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} · ${grounding === 'none' ? 'Not linked to notes' : 'From your notes'}`;
@@ -640,7 +643,7 @@ function appendMessage(role, text) {
 
 function appendTutorMessage(data) {
   const container = document.getElementById('chat-messages');
-  const strategy = STRATEGY_LABEL[data.strategy] || data.strategy || '';
+  const strategy = STRATEGY_LABEL[data.strategy] || '';
   const div = document.createElement('div');
   div.className = 'msg tutor';
 
@@ -661,7 +664,7 @@ function appendTutorMessage(data) {
     <div class="msg-body">
       <div class="msg-meta">
         Tutor · ${timeNow()}
-        <span class="msg-strategy-badge">${strategy}</span>
+        ${strategy ? `<span class="msg-strategy-badge">${escHtml(strategy)}</span>` : ''}
       </div>
       <div class="msg-bubble">${linkCitations(renderMarkdown(data.text), data.source_citations)}</div>
       ${sourceChips(data.source_citations)}
@@ -710,14 +713,23 @@ function slideOrPage(citation) {
   return /\.pptx$/i.test(citation.filename || '') ? `slide ${citation.page}` : `p.${citation.page}`;
 }
 
+// One chip per distinct passage; past the first few, the rest wait behind "+N more".
+const VISIBLE_CHIPS = 4;
 function sourceChips(citations) {
   if (!citations?.length) return '';
-  return `<div class="source-row">${citations
+  const seen = new Set();
+  const chips = citations
+    .map((c, i) => ({ c, i, key: `${c.filename} ${c.page}` }))
+    .filter(({ key }) => !seen.has(key) && seen.add(key));
+  const extra = chips.length - VISIBLE_CHIPS;
+  return `<div class="source-row">${chips
     .map(
-      (c, i) =>
-        `<button type="button" class="cite-chip" data-cite="${i}">${escHtml(c.filename)} · ${escHtml(slideOrPage(c))}</button>`,
+      ({ c, i }, n) =>
+        `<button type="button" class="cite-chip" data-cite="${i}"${n >= VISIBLE_CHIPS && extra > 1 ? ' hidden' : ''}>${escHtml(c.filename)} · ${escHtml(slideOrPage(c))}</button>`,
     )
-    .join('')}</div>`;
+    .join(
+      '',
+    )}${extra > 1 ? `<button type="button" class="cite-chip cite-more">+${extra} more</button>` : ''}</div>`;
 }
 
 function linkCitations(html, citations) {
@@ -737,6 +749,7 @@ function appendSourcesPreview(citations) {
   const div = document.createElement('div');
   div.className = 'msg tutor sources-preview';
   div.innerHTML = `<div class="msg-body"><div class="msg-meta">Found in your notes · writing the answer…</div>${sourceChips(citations)}</div>`;
+  div.onclick = openCitation;
   div.citations = citations || [];
   div.onclick = openCitation;
   container.insertBefore(div, document.getElementById('typing-indicator'));
@@ -755,6 +768,12 @@ function showCitation(citation) {
 }
 
 function openCitation(event) {
+  const more = event.target.closest('.cite-more');
+  if (more) {
+    more.parentElement.querySelectorAll('.cite-chip[hidden]').forEach((c) => (c.hidden = false));
+    more.remove();
+    return;
+  }
   const chip = event.target.closest('.cite-chip');
   const citation = chip && this.citations?.[Number(chip.dataset.cite)];
   if (citation) showCitation(citation);

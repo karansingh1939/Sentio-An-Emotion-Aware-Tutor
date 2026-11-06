@@ -100,9 +100,11 @@ body {
     color var(--dur) var(--ease);
 }
 
-.nav-link:hover {
-  background: var(--bg3);
-  color: var(--text);
+@media (hover: hover) and (pointer: fine) {
+  .nav-link:hover {
+    background: var(--bg3);
+    color: var(--text);
+  }
 }
 
 .nav-link.active {
@@ -193,22 +195,10 @@ header {
 
 .dot.live {
   background: var(--green);
-  animation: pulse-dot 2s infinite;
 }
 
 .dot.error {
   background: var(--red);
-}
-
-@keyframes pulse-dot {
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.4;
-  }
 }
 
 .header-session {
@@ -290,8 +280,10 @@ header {
   color: var(--bg2);
 }
 
-.btn-primary:hover {
-  background: var(--accent2);
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover {
+    background: var(--accent2);
+  }
 }
 
 .btn-primary:disabled {
@@ -306,9 +298,11 @@ header {
   margin-top: 6px;
 }
 
-.btn-danger:hover {
-  border-color: var(--red);
-  background: var(--bg3);
+@media (hover: hover) and (pointer: fine) {
+  .btn-danger:hover {
+    border-color: var(--red);
+    background: var(--bg3);
+  }
 }
 
 /* ── WEBCAM ───────────────────────────────── */
@@ -514,7 +508,6 @@ header {
   border-radius: 50%;
   background: var(--green);
   display: inline-block;
-  animation: pulse-dot 2s infinite;
 }
 
 .active-details {
@@ -561,8 +554,10 @@ header {
     color var(--dur) var(--ease);
 }
 
-.hud-pill-btn:hover {
-  background: var(--bg3);
+@media (hover: hover) and (pointer: fine) {
+  .hud-pill-btn:hover {
+    background: var(--bg3);
+  }
 }
 
 .hud-pill-btn.active {
@@ -587,7 +582,6 @@ header {
   min-height: 0;
   overflow-y: auto;
   padding: 20px 24px;
-  scroll-behavior: smooth;
 }
 
 #chat-messages::-webkit-scrollbar {
@@ -896,8 +890,10 @@ header {
   transition: background-color var(--dur) var(--ease);
 }
 
-#send-btn:hover:not(:disabled) {
-  background: var(--accent2);
+@media (hover: hover) and (pointer: fine) {
+  #send-btn:hover:not(:disabled) {
+    background: var(--accent2);
+  }
 }
 
 #send-btn:disabled {
@@ -962,9 +958,11 @@ header {
   border-radius: 4px;
 }
 
-.drawer-close-btn:hover {
-  color: var(--text);
-  background: var(--bg2);
+@media (hover: hover) and (pointer: fine) {
+  .drawer-close-btn:hover {
+    color: var(--text);
+    background: var(--bg2);
+  }
 }
 
 .drawer-tabs {
@@ -990,8 +988,10 @@ header {
     color var(--dur) var(--ease);
 }
 
-.drawer-tab:hover {
-  color: var(--text);
+@media (hover: hover) and (pointer: fine) {
+  .drawer-tab:hover {
+    color: var(--text);
+  }
 }
 
 .drawer-tab.active {
@@ -1044,12 +1044,14 @@ header {
     color var(--dur) var(--ease);
 }
 
-#mic-btn:hover:not(:disabled),
-#play-speech-btn:hover:not(:disabled),
-#stop-speech-btn:hover:not(:disabled),
-#speaker-btn:hover:not(:disabled) {
-  border-color: var(--accent2);
-  color: var(--text);
+@media (hover: hover) and (pointer: fine) {
+  #mic-btn:hover:not(:disabled),
+  #play-speech-btn:hover:not(:disabled),
+  #stop-speech-btn:hover:not(:disabled),
+  #speaker-btn:hover:not(:disabled) {
+    border-color: var(--accent2);
+    color: var(--text);
+  }
 }
 
 #mic-btn.active {
@@ -1285,8 +1287,10 @@ header {
 }
 
 /* ── SESSION SELECTION HUD ────────────────── */
-.session-item-row:hover {
-  background: var(--bg3) !important;
+@media (hover: hover) and (pointer: fine) {
+  .session-item-row:hover {
+    background: var(--bg3) !important;
+  }
 }
 .session-item-row.active {
   background: var(--bg3) !important;

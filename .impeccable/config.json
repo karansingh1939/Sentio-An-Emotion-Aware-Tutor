@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "src/sentio/static/css/theme.css"
+        ],
+        "createdAt": "2026-11-06T09:44:08.509Z",
+        "reason": "Board cards' 3px status left rule is in the mockup Karan approved on 2026-11-06 and is documented in DESIGN.md (Cards / Containers, Board column)"
+      }
+    ]
+  }
+}

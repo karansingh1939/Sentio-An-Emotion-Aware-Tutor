@@ -38,7 +38,8 @@ export class AuthView {
       // Show main app shell
       if (appShell) appShell.style.display = 'flex';
       if (headerShell) headerShell.style.display = 'flex';
-      if (mainShell) mainShell.style.display = 'block';
+      // Clear the inline value so the stylesheet's flex layout (and scrolling) applies.
+      if (mainShell) mainShell.style.display = '';
 
       // Hide auth screen
       this.container.style.display = 'none';
@@ -76,13 +77,13 @@ export class AuthView {
             <form id="auth-form" class="auth-form">
               <div class="auth-field">
                 <label class="form-label" for="auth-email">Email address</label>
-                <input class="input" type="email" id="auth-email" autocomplete="username" required placeholder="you@university.edu" />
+                <input class="input" type="email" id="auth-email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required placeholder="you@university.edu" />
               </div>
               ${
                 mode === 'recover'
                   ? `<div class="auth-field">
                 <label class="form-label" for="auth-recovery-key">Recovery key</label>
-                <input class="input" id="auth-recovery-key" autocomplete="off" type="password" />
+                <input class="input" id="auth-recovery-key" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" type="password" />
                 <details class="auth-help"><summary>I don’t have a recovery key</summary><p>If you can still sign in, create a key in Settings. Otherwise this local app can’t verify ownership, and it can’t send reset emails. Failed attempts never delete your saved notes.</p></details>
               </div>`
                   : ''

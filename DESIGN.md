@@ -2,80 +2,77 @@
 name: Sentio
 description: A local AI study tutor that answers only from your own notes.
 colors:
-  ink-indigo: '#465bb2'
-  ink-indigo-deep: '#34478f'
-  paper-grey: '#f5f6f8'
-  sheet-white: '#ffffff'
-  tray-grey: '#edf0f5'
-  hairline: '#d8dde6'
-  graphite: '#202938'
-  pencil-grey: '#556174'
-  ready-green: '#16704e'
-  practising-amber: '#8a6007'
-  correction-red: '#b32c40'
-  dark-ink-indigo: '#a9baff'
-  dark-ink-indigo-soft: '#c3ceff'
-  dark-desk: '#161b24'
-  dark-sheet: '#1d2430'
-  dark-tray: '#293242'
-  dark-hairline: '#3c475a'
-  dark-chalk: '#edf0f7'
-  dark-pencil: '#b8c2d3'
-  dark-ready-green: '#75d6ac'
-  dark-practising-amber: '#eac476'
-  dark-correction-red: '#ff9aab'
-  hover-tint: '#e8ecf3'
-  press-tint: '#dde3ed'
-  dark-hover-tint: '#303a4c'
-  dark-press-tint: '#384459'
+  accent: '#4d80ff'
+  accent-fill: '#3b6aeb'
+  night-page: '#0d0f0f'
+  night-card: '#141517'
+  night-raised: '#1b1c1e'
+  night-hairline: '#222428'
+  night-text: '#f4f6f8'
+  night-text-dim: '#b3b6bc'
+  night-muted: '#8e9095'
+  night-hover: '#1f2124'
+  night-press: '#26282c'
+  night-green: '#5fc79a'
+  night-amber: '#f19c22'
+  night-coral: '#f17e62'
+  night-teal: '#27bfa9'
+  day-page: '#f3f4f6'
+  day-card: '#ffffff'
+  day-raised: '#f0f2f5'
+  day-hairline: '#e2e5ea'
+  day-text: '#15171a'
+  day-text-dim: '#4f5560'
+  day-muted: '#626975'
+  day-accent: '#2f5fe0'
+  day-hover: '#eceef2'
+  day-press: '#e3e6eb'
+  day-green: '#1f8a5b'
+  day-amber: '#a0620a'
+  day-red: '#c4314a'
+  white-pill: '#f8fafa'
 typography:
   display:
-    fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif"
-    fontSize: '28px'
-    fontWeight: 700
-    lineHeight: 1.3
-    letterSpacing: '-0.025em'
-  headline:
-    fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif"
-    fontSize: '24px'
-    fontWeight: 700
-    lineHeight: 1.3
-    letterSpacing: '-0.025em'
+    fontFamily: "Outfit, system-ui, -apple-system, 'Segoe UI', sans-serif"
+    fontSize: '38px'
+    fontWeight: 500
+    lineHeight: 1.15
+    letterSpacing: '-0.01em'
+  figure:
+    fontFamily: 'Outfit, system-ui, sans-serif'
+    fontSize: '40px'
+    fontWeight: 500
+    lineHeight: 1.1
   title:
-    fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif"
+    fontFamily: 'Outfit, system-ui, sans-serif'
     fontSize: '16px'
-    fontWeight: 700
+    fontWeight: 500
     lineHeight: 1.4
   body:
-    fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif"
+    fontFamily: 'Outfit, system-ui, sans-serif'
     fontSize: '16px'
     fontWeight: 400
     lineHeight: 1.65
   body-small:
-    fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif"
+    fontFamily: 'Outfit, system-ui, sans-serif'
     fontSize: '14px'
     fontWeight: 400
     lineHeight: 1.6
   label:
-    fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif"
+    fontFamily: 'Outfit, system-ui, sans-serif'
     fontSize: '13px'
-    fontWeight: 600
+    fontWeight: 400
     lineHeight: 1.4
-    letterSpacing: '0em'
-  stat:
-    fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif"
-    fontSize: '26px'
-    fontWeight: 800
-    lineHeight: 1.2
   code:
     fontFamily: 'ui-monospace, Consolas, monospace'
     fontSize: '14px'
     fontWeight: 400
     lineHeight: 1.6
 rounded:
-  sm: '6px'
-  md: '8px'
-  lg: '12px'
+  sm: '7px'
+  md: '10px'
+  block: '12px'
+  card: '16px'
   pill: '999px'
 spacing:
   xs: '4px'
@@ -86,276 +83,267 @@ spacing:
   xxl: '32px'
 components:
   button-primary:
-    backgroundColor: '{colors.ink-indigo}'
-    textColor: '{colors.sheet-white}'
+    backgroundColor: '{colors.accent-fill}'
+    textColor: '#ffffff'
     rounded: '{rounded.md}'
-    padding: '8px 16px'
-    height: '36px'
+    padding: '0 16px'
+    height: '38px'
   button-secondary:
-    backgroundColor: '{colors.sheet-white}'
-    textColor: '{colors.graphite}'
+    backgroundColor: '{colors.night-card}'
+    textColor: '{colors.night-text}'
     rounded: '{rounded.md}'
-    padding: '8px 16px'
-    height: '36px'
-  button-quiet:
-    textColor: '{colors.pencil-grey}'
-    padding: '6px 8px'
-  button-danger-link:
-    textColor: '{colors.correction-red}'
-    padding: '6px 8px'
+    padding: '0 16px'
+    height: '38px'
+  button-row-pill:
+    backgroundColor: '{colors.white-pill}'
+    textColor: '#111214'
+    rounded: '{rounded.pill}'
+    height: '30px'
   input:
-    backgroundColor: '{colors.tray-grey}'
-    textColor: '{colors.graphite}'
+    backgroundColor: '{colors.night-raised}'
+    textColor: '{colors.night-text}'
     rounded: '{rounded.md}'
     padding: '8px 12px'
   card:
-    backgroundColor: '{colors.sheet-white}'
-    rounded: '{rounded.lg}'
-    padding: '16px 20px'
-  nav-link:
-    textColor: '{colors.graphite}'
-    rounded: '{rounded.md}'
-    padding: '10px 16px'
-    height: '44px'
-  nav-link-active:
-    backgroundColor: '{colors.tray-grey}'
-    textColor: '{colors.graphite}'
-    rounded: '{rounded.md}'
-  chip-citation:
-    backgroundColor: '{colors.tray-grey}'
-    textColor: '{colors.ink-indigo}'
+    backgroundColor: '{colors.night-card}'
+    rounded: '{rounded.card}'
+    padding: '22px 24px'
+  tab-track:
+    backgroundColor: '{colors.night-card}'
     rounded: '{rounded.pill}'
-    padding: '3px 10px'
-  badge:
-    backgroundColor: '{colors.tray-grey}'
-    textColor: '{colors.ink-indigo}'
+    padding: '4px'
+  tab-active:
+    backgroundColor: '{colors.accent-fill}'
+    textColor: '#ffffff'
     rounded: '{rounded.pill}'
-    padding: '4px 10px'
-  topic-state-ready:
-    textColor: '{colors.ready-green}'
-    rounded: '{rounded.pill}'
-    padding: '3px 10px'
-  topic-state-practising:
-    textColor: '{colors.practising-amber}'
-    rounded: '{rounded.pill}'
-    padding: '3px 10px'
-  topic-state-review-due:
-    textColor: '{colors.ink-indigo}'
+    height: '34px'
+  status-pill:
     rounded: '{rounded.pill}'
     padding: '3px 10px'
   cited-passage:
-    backgroundColor: '{colors.tray-grey}'
-    textColor: '{colors.graphite}'
+    backgroundColor: '{colors.night-raised}'
+    textColor: '{colors.night-text}'
     rounded: '{rounded.md}'
     padding: '12px 16px'
-  notice:
-    backgroundColor: '{colors.tray-grey}'
-    textColor: '{colors.graphite}'
-    rounded: '{rounded.md}'
-    padding: '16px'
 ---
 
 # Design System: Sentio
 
 ## Overview
 
-**Creative North Star: "The Quiet Study Desk"**
+**Creative North Star: "The Night Desk"**
 
-Sentio looks like a tidy desk for long study sessions. The student's notes and the tutor's cited answers are the only things that should hold attention. The interface stays flat, bordered and plain, using the operating system's own font. Ink Indigo, the single accent, marks only what the student can act on or check: links, citations, the primary action and topics due for review. Everything else is graphite text on pale grey and white sheets separated by hairline borders.
+Sentio is a calm, dark study dashboard. A near-black page holds a few dark cards; your notes, your cited answers and your real progress are the only things that ask for attention. One blue accent marks what you can act on. Green, amber and coral mean learning status, nothing else. Big figures and simple charts show progress at a glance, and each figure is real data from your own practice.
 
-The density suits reading, not a dashboard. Body text is 16px at a generous 1.65 line height, chat answers are wider at 1.8, and the conversation column stays at most 800px wide. Layout is a fixed left sidebar and one working column. Cards are outlined rather than lifted, and status shows as coloured outlines and left rules rather than filled blocks, so a page full of topics stays calm.
-
-The older neon theme still in `styles.css` is retired: near-black backgrounds, cyan glows, scan-line overlays, Syne and JetBrains Mono, uppercase letter-spaced buttons and gradient fills. Its glows, gradients, uppercase labels and scan-lines have been removed. The base layer it left behind in `styles.css` now follows this system, and `workspace.css` refines it. If any of it resurfaces, treat it as a bug, not a pattern to follow.
+The look and the motion follow the Amplo dashboard reference (`docs/design/inspiration/amplo-dashboard.md`), adapted to Sentio's purpose. The light theme ("The Day Desk") uses the same layout and components on pale grey and white, and every colour has a tuned counterpart in each theme.
 
 **Key Characteristics:**
 
-- Flat surfaces separated by 1px hairlines; no shadows at rest.
-- One accent (Ink Indigo) for action and evidence; green, amber and red only for learning status and errors.
-- System font throughout; hierarchy comes from size and weight, never from case or letter-spacing.
-- Pill shapes are reserved for small metadata: citations, badges and topic states.
-- Light and dark themes are equal: every colour has a tuned counterpart, not an inversion.
+- Three dark tones (page, card, raised block) separated by 1px hairlines; no shadows at rest.
+- One accent: `#4d80ff` for lines, dots and links, and the slightly deeper `#3b6aeb` for filled controls, so white text on them passes 4.5:1.
+- Outfit, a geometric sans, self-hosted from `src/sentio/static/fonts/` (SIL Open Font License). No font requests leave the machine.
+- A top bar with round pill tabs; the active tab is a blue pill that stretches to the next tab.
+- Big tabular figures, rings and area charts that draw in when a page opens.
 
 ## Colors
 
-A cool, low-saturation grey family with one ink-blue accent and three muted status colours, tuned separately for light and dark themes.
+### Accent
 
-### Primary
-
-- **Ink Indigo** (`ink-indigo`; dark: `dark-ink-indigo`): links, citation chips, inline citations, badges, the primary action button, the focus ring, checkbox and progress accents, the "Review due" topic state and the left rule on cited passages. In dark mode it lightens to a soft periwinkle so it stays readable on the dark desk.
-- **Ink Indigo Deep** (`ink-indigo-deep`; dark: `dark-ink-indigo-soft`): the pressed or stronger variant of the accent. Use it rarely.
+- **Accent** (`--accent`, dark `#4d80ff`, light `#2f5fe0`): links, chart lines, focus rings, dots on tabs with something waiting, the Practising state.
+- **Accent fill** (`--accent-fill`, `#3b6aeb` in both themes): primary buttons, the active tab pill, the brand mark. Hover uses `--accent2`.
 
 ### Neutral
 
-- **Paper Grey** (`paper-grey`; dark: `dark-desk`): the app background, the desk the sheets lie on.
-- **Sheet White** (`sheet-white`; dark: `dark-sheet`): cards, the sidebar, toolbars, chat bubbles, secondary buttons. Also the text colour on the primary button.
-- **Tray Grey** (`tray-grey`; dark: `dark-tray`): recessed surfaces: inputs, the active nav item, chips, notices, cited passages, topic rows.
-- **Hairline** (`hairline`; dark: `dark-hairline`): every border and divider.
-- **Graphite** (`graphite`; dark: `dark-chalk`): primary text.
-- **Pencil Grey** (`pencil-grey`; dark: `dark-pencil`): secondary text: subtitles, metadata, helper copy, form labels, quiet links.
-- **Hover and Press tints** (`hover-tint`, `press-tint`; dark: `dark-hover-tint`, `dark-press-tint`; CSS `--hover`, `--press`): the one step every control takes when pointed at, and the deeper step when pressed.
+- **Page** (`--bg`): night `#0d0f0f`, day `#f3f4f6`.
+- **Card** (`--bg2`): night `#141517`, day `#ffffff`. Also secondary buttons and the tab track.
+- **Raised** (`--bg3`): night `#1b1c1e`, day `#f0f2f5`. Inputs, the next-step tip, countdown tiles, board cards, topic rows.
+- **Hairline** (`--border`): night `#222428`, day `#e2e5ea`. Every border and divider.
+- **Text** (`--text`), **Text dim** (`--text-dim`), **Muted** (`--text-muted`): headings and body, secondary body, labels and table headers.
+- **Hover and Press** (`--hover`, `--press`): the one step every control takes when pointed at, and the deeper step when pressed.
+- **White pill** (`--white-pill`): the near-white row action (Review) in dark; it inverts to near-black in light.
 
 ### Status
 
-- **Ready Green** (`ready-green`; dark: `dark-ready-green`): the "Ready" topic state, correct-answer feedback, syllabus progress fill, the live-session dot.
-- **Practising Amber** (`practising-amber`; dark: `dark-practising-amber`): the "Practising" topic state only.
-- **Correction Red** (`correction-red`; dark: `dark-correction-red`): errors, incorrect-answer feedback, destructive links, the "No notes" syllabus state.
+- **Green** (`--green`): Ready, correct answers, positive change.
+- **Amber** (`--yellow`): Review due, needs review, a falling figure.
+- **Coral / red** (`--red`): errors, incorrect answers, Needs retry, Not in your notes.
+- **Blue** (`--accent`): Practising.
+- **Muted grey**: Not started.
+
+Each status pill is a tinted background (`--green-soft`, `--amber-soft`, `--red-soft`, `--accent-soft`) with the status colour for its text and dot.
 
 ### Named Rules
 
-**The Ink Means Evidence Rule.** Ink Indigo is for things the student can act on or check against their notes. Never use it for decoration, headings or large backgrounds.
+**The Accent Means Action Rule.** The accent marks what you can act on or check. Never use it for decoration or large backgrounds; the only filled blue areas are buttons, the active tab and the brand mark.
 
-**The Status Is Learning Rule.** Green, amber and red describe the student's learning or an error. They never stand in for brand colour or emphasis.
+**The Status Is Learning Rule.** Green, amber and coral describe learning or an error. They never stand in for brand colour or emphasis. Board columns, rings, pills and bars all use the same mapping.
 
-**The Two Desks Rule.** Every colour change ships with its dark-theme counterpart. Both themes are checked; neither is derived by inverting the other.
+**The Two Desks Rule.** Every colour change ships with its light and dark counterpart. Both themes are checked; neither is made by inverting the other. A first visit follows the system setting; the choice made in the app is remembered.
+
+**The Real Data Rule.** Every figure, chart and count comes from the student's own data. Never show sample numbers, invented trends or filler content outside the dev-only sample data toggle (`?data=…`).
 
 ## Typography
 
-**Display Font:** system-ui (with -apple-system, Segoe UI, sans-serif)
-**Body Font:** system-ui (same stack)
-**Label/Mono Font:** ui-monospace (with Consolas, monospace) for code and recovery keys only
-
-**Character:** The platform's own font, so Sentio reads like a native study tool rather than a branded product. Hierarchy comes from size steps and weights between 500 and 800, plus slightly tight tracking on large headings.
+**Typeface:** Outfit (variable, 100–900), with `system-ui` as the fallback. Code and recovery keys use `ui-monospace`.
 
 ### Hierarchy
 
-- **Display** (700, 28px, 1.3, −0.025em): the page title in each view header ("Your progress").
-- **Headline** (700, 24–26px, 1.3, −0.025em): session-card and welcome titles; 21px at phone width.
-- **Title** (700, 16px): card and panel titles, such as "Topic mastery" and "Overview of these notes".
-- **Body** (400, 16px, 1.65): default reading text. Tutor answers use 1.8 line height inside a column of at most 800px.
-- **Body small** (400, 14px, 1.6): metadata, notices, table cells, helper text, secondary buttons.
-- **Label** (600, 13–14px, no extra tracking, sentence case): form labels, topic states, badges, stat labels.
-- **Stat** (800, 26px): the single number on a progress stat card.
+- **Display** (500, 38px, 1.15, −0.01em): the page title ("Good afternoon", "Library"). 30px below 860px.
+- **Figure** (500, 40px, tabular numbers): the one big number on a card ("68% mastery"). Stat tiles use 36px.
+- **Title** (500, 16px): card titles.
+- **Body** (400, 16px, 1.65). Tutor answers use 1.8 line height in a column of at most 800px.
+- **Body small** (400, 13–14px): card subtitles, table cells, metadata.
+- **Label** (400, 12–13px, Muted): field labels, table headers, small figure captions. Countdown units are the only uppercase text (11px, 0.08em).
 
 ### Named Rules
 
-**The Sentence Case Rule.** Labels, buttons and headings use sentence case with normal letter-spacing. Uppercase, letter-spaced text belongs to the retired theme.
+**The Sentence Case Rule.** Labels, buttons and headings use sentence case with normal letter spacing.
 
-**The 15px Floor Rule.** Text inputs, selects and textareas render at 15px or larger (the chat input at 16px) so they stay comfortable to type in and don't trigger mobile zoom.
+**The 15px Floor Rule.** Text inputs, selects and textareas render at 15px or larger so they stay comfortable to type in. On touch screens they render at 16px, because iOS zooms the page into any field smaller than that.
 
 ## Layout
 
-The app is a two-column grid: a 220px sidebar and a flexible main column, with a 64px header row. The main column holds an optional sub-navigation strip (12px × 32px padding, hairline below), then the view at 32px padding. Each view opens with a view header (display title plus a 15px Pencil Grey subtitle, 24px below).
+A top bar over one scrolling column.
 
-- **Spacing rhythm:** 4 / 8 / 12 / 16 / 24 / 32px. Use 8px between related buttons, 16px between list items and cards, 24px between sections and grid columns, and 32px for page gutters.
-- **Reading width:** the chat column is capped at 800px and centred. Single-purpose states, such as a running study job, cap at 35rem.
-- **Grids:** stat cards use `auto-fit, minmax(200px, 1fr)` with a 16px gap. Today uses two columns (1.45fr / at least 280px) with a 24px gap.
-- **Lists over cards:** study lists and metric rows are hairline-divided rows (16px or 12px vertical padding), not stacks of boxes.
-- **≤1000px:** the sidebar narrows to 180px, view padding drops to 24px, and Today becomes one column.
-- **≤768px:** the study guide and library become a single column; library tables turn into stacked rows with their actions wrapped underneath.
-- **≤600px:** the sidebar becomes a top bar with the nav laid out in a row, the brand and the local-only note are hidden, the header moves to a 48px row, page padding is 20px × 16px, and every form grid becomes one column.
+- **Top bar:** brand at the left; the pill tab track (Today, Library, Study, Review, Progress); then, on the right, the session status pill, the theme button, "+ Add notes" and the account menu (Study history, Settings, "Your notes. Your machine."). Below 860px the tabs move to their own full-width row.
+- **Page:** 32px gutters (16px below 860px). Each page opens with the display title, a one-line muted subtitle or status line, and its main actions at the right.
+- **Grids:** cards sit 16px apart. Today uses a two-column top row (progress, sessions), a 1.6 : 1 middle row (topics due, goals and plan) and a three-column bottom row; all collapse to one column below 1100px.
+- **Library:** List or Board. The Board has four columns (Not started, Practising, Review due, Ready), two below 1100px and one below 600px.
+- **Scrolling:** the top bar stays put and each page scrolls inside the main column. Study keeps its own full-height chat layout.
 
 Layouts must work at 390px, 768px and desktop widths in both themes.
 
 ## Elevation & Depth
 
-Sentio is flat. Depth comes from tone: Paper Grey desk, Sheet White cards, Tray Grey recesses, separated by 1px Hairline borders. `workspace.css` explicitly removes shadows from cards, session cards, chat bubbles and the send button.
+Flat. Depth comes from tone: page, card, raised block, separated by hairlines.
 
 ### Shadow Vocabulary
 
-- **Toast float** (`box-shadow: 0 4px 16px #0001`): on transient toasts that sit above content.
-- **Dialog float** (`box-shadow: 0 12px 32px rgb(0 0 0 / 0.12)`): dialogs, over a light scrim (`rgb(22 27 36 / 0.45)`) with a 4px backdrop blur.
+- **Toast float** (`0 4px 16px #0001`): on transient toasts.
+- **Dialog float** (`0 12px 32px rgb(0 0 0 / 0.12)`): dialogs, over a scrim (`rgb(22 27 36 / 0.45)`) with a 4px backdrop blur.
 
 ### Named Rules
 
-**The Flat Desk Rule.** Surfaces never cast shadows at rest or on hover. To separate something, use a hairline border or a step in tone. Floating, transient UI (toasts, dialogs) is the only exception, and its shadow stays faint.
+**The Flat Desk Rule.** Cards, buttons and bubbles never cast shadows. Floating, transient UI (toasts, dialogs) is the only exception.
 
 ## Shapes
 
-Gentle corners with a clear split by size. Small controls and recessed surfaces use 8px (`rounded.md`); larger containers such as stat cards, the notes overview and the study guide use 12px (`rounded.lg`); sub-navigation tabs use 6px (`rounded.sm`). Pills (`rounded.pill`) are only for small inline metadata: citation chips, badges, topic states, provenance tags and the difficulty notice (dashed border).
-
-Left rules carry meaning: a 3px Ink Indigo rule marks a quoted passage from the notes, and a 4px green or red rule marks answer feedback or an error notice. Borders are always 1px Hairline unless they carry status.
+- **Cards and board columns:** 16px.
+- **Raised blocks inside cards** (tip, countdown tiles, board cards, topic rows, notices): 12px.
+- **Buttons, inputs, icon buttons:** 10px. Segmented options: 7px inside a 10px track.
+- **Round:** the tab track, the tab pill, status pills, the white row pill, avatars and badges.
 
 ## Components
 
 ### Buttons
 
-Plain and quiet; the primary action is the one solid block of colour in its area.
+- **Primary:** accent fill, white text, weight 500, 38px tall, 10px radius. One per area.
+- **Secondary:** card fill, hairline border, text colour.
+- **Row pill:** the white pill ("Review") at the end of a table row or board card, 30px tall.
+- **Icon button:** 38px square, hairline border, muted icon that brightens on hover (theme toggle).
+- **Hover:** secondary buttons take `--hover` and a muted border; primary takes `--accent2`; the row pill dims slightly. Hover styles apply only with a mouse (`hover: hover` and `pointer: fine`).
+- **Press:** `--press` fill, or 88% opacity for primary.
+- **Focus:** a 3px accent outline offset by 3px on every interactive element. Never remove it.
+- **Disabled:** 45% opacity and a not-allowed cursor.
 
-- **Shape:** gently rounded (8px), at least 36px tall; nav items at least 44px.
-- **Primary:** Ink Indigo fill and border, Sheet White text, weight 650, 8px × 16px padding.
-- **Secondary:** Sheet White fill, Hairline border, Graphite text, 14px. This is the default look of any unstyled button.
-- **Quiet / link:** no border or fill. Pencil Grey underlined for low-priority actions; Correction Red for destructive actions.
-- **Focus:** a 3px Ink Indigo outline offset by 3px on every interactive element. Never remove it.
-- **Disabled:** 55% opacity and a not-allowed cursor.
+### Segmented control
 
-### Chips
+A hairline-bordered track with options inside. The chosen option gets the `--press` fill and text colour; others are muted and brighten on hover. Used for chart ranges, the Library List/Board switch and report sorting. Options are buttons with `aria-pressed`.
 
-- **Citation chip:** Tray Grey pill, Ink Indigo text, 12.5px at weight 600, Hairline border. Clicking opens the exact cited passage. The inline variant sits within a sentence at the surrounding text size and weight 500.
-- **Badge:** Tray Grey pill, Ink Indigo 13px at weight 650; used for metadata such as answer mode.
-- **Topic state:** an outlined pill with no fill. The border and text colour show the state: Pencil Grey for Not started, amber for Practising, green for Ready, Ink Indigo for Review due, red for No notes.
+### Chips and pills
+
+- **Citation chip:** raised pill, accent text, 12.5px. Clicking opens the exact cited passage. Duplicates merge; after four, the rest wait behind "+N more".
+- **Badge:** accent-soft pill with accent text, for counts and metadata.
+- **Status pill:** tinted background with a coloured dot (see Status).
 
 ### Cards / Containers
 
-- **Corner Style:** 8px for generic cards, 12px for stat cards and overview panels.
-- **Background:** Sheet White on the Paper Grey desk.
-- **Shadow Strategy:** none (see the Flat Desk Rule).
-- **Border:** 1px Hairline, always.
-- **Internal Padding:** 16px; stat cards use 16px × 20px.
+- **Card:** card fill, 1px hairline, 16px radius, 22px × 24px padding, a 16px weight-500 title and an optional 13px muted subtitle.
+- **Stat tile:** a card with a 13px muted label above a 36px figure.
+- **Board column:** page-colour fill with a hairline, a status pill and a count at the top; board cards are raised blocks with a 3px status-coloured left rule, the lecture tile and name, the topic, a progress bar, and Review / Practise actions.
+
+### Data display
+
+- **Big figure:** 40px tabular numbers; it counts up when the page opens.
+- **Ring:** topics split into Strong (≥80%, green), Building (40–79%, blue) and Needs review (under 40%, amber), with the count in the middle and a legend below. It draws clockwise on entry.
+- **Area chart:** a 2.5px accent line over an accent fade, with the previous period as a dashed muted line. It draws left to right on entry.
+- **Meter:** a 6px round track with a status-coloured fill that grows from the left.
+- **Table:** muted 12.5px headers, hairline rows, a raised row on hover, the row action at the right.
+- **Lecture tile:** a 30px rounded square with the lecture's two initials, tinted one of four accent colours chosen from the file name.
 
 ### Inputs / Fields
 
-- **Style:** Tray Grey fill, 1px Hairline border, 8px radius, 8px × 12px padding, at least 15px text.
-- **Labels:** above the field, 14px at weight 600, Pencil Grey, sentence case.
-- **Focus:** the shared 3px Ink Indigo outline.
-- **Checkboxes / radios:** native, 18px, tinted Ink Indigo.
+Raised fill, 1px hairline, 10px radius, 8px × 12px padding, at least 15px text (16px on touch). Labels sit above the field in 13px muted text. Checkboxes and radios are native, tinted with the accent fill.
 
 ### Navigation
 
-- **Sidebar:** the Sentio lockup (Ink Indigo symbol plus the graphite wordmark, linking to Today) above the nav links (15px, 10px × 16px, 8px radius). The active item gets a Tray Grey fill and weight 650, without changing colour. Study history, Settings, the theme toggle and "Your notes. Your machine." sit at the bottom.
-- **Sub-navigation:** 14px text tabs; the current tab gets a Tray Grey fill, Graphite text and weight 650.
-- **Mobile:** the nav becomes an equal-width row of 13px links in a top bar.
+- **Tabs:** a round track on the card fill; labels are 14px muted text that brightens on hover. The active tab is a blue pill with white text. A small accent dot follows a tab label when something is waiting there (Review while topics are due).
+- **Sub-navigation** (Quizzes / Flashcards, Progress / History): round text tabs under the top bar; the current one gets a card fill and hairline.
+- **Account menu:** the initials button opens a menu with Study history, Settings and the local-data note.
 
 ### Brand
 
-- **Wordmark:** `SENTIO` in custom wide geometric capitals with one thin, even stroke and generous spacing: a squared S, an E with a shorter middle bar, and an O drawn as a rounded rectangle. Source: `src/sentio/static/img/sentio-wordmark.svg`. Inline copies use `currentColor`, with the stroke thickened to 10 units when shown at 12px tall so it stays crisp.
-- **Symbol:** the wordmark's O, filled, with its top-right page corner cut off at about a third of its height. One solid Ink Indigo shape. Sources: `img/sentio-symbol.svg`, `img/favicon.svg` (lightens in dark mode), and `window.sentioSymbol()` for inline use.
-- **Placement:** the lockup in the sidebar and on sign-in; the symbol alone as the tab icon and inside the tutor's message avatar.
+- **Wordmark:** `SENTIO` in custom wide geometric capitals with one thin, even stroke. Source: `src/sentio/static/img/sentio-wordmark.svg`; inline copies use `currentColor`.
+- **Symbol:** the wordmark's O, filled, with its top-right page corner cut off. In the top bar it sits white inside a 34px accent-fill rounded square. Sources: `img/sentio-symbol.svg`, `img/favicon.svg`, and `window.sentioSymbol()`.
 
 ### Icons
 
-Drawn line icons from `src/sentio/static/js/core/icons.js`, on a 24px grid with a 1.75 stroke and round caps and joins, inheriting the text colour. Never use emoji as icons. The only exception is the optional camera feature's emotion faces, which describe detected emotions.
+Drawn line icons from `src/sentio/static/js/core/icons.js`, on a 24px grid with a 1.75 stroke and round caps and joins, inheriting the text colour. Never use emoji as icons; the optional camera feature's emotion faces are the only exception.
 
 ### Sign In
 
-A split screen. On one side, the form: the lockup, a 34px "Welcome back" heading, sentence-case labels, "Forgot password?" as a quiet link beside the password label, a full-width primary button, and "Your account and notes stay on this computer." On the other side, a full-height Ink Indigo panel (an indigo tint in dark mode) states the promise, "Answers only from your notes.", above a real-style example: a question, a cited answer and a cited passage. Below 860px the panel stacks under the form.
-
-### Status Pills and Uploads
-
-- **Library status:** outlined pills: green for Ready to study, red for Needs retry, and a pulsing dot for Processing.
-- **Uploads:**
-  - Files can be dropped anywhere on the Library page; the page gets a dashed Ink Indigo outline while a file is held over it.
-  - Each file in a batch gets its own row with its state.
-  - Failed files can be retried with one click, without choosing them again.
+A split screen: the form with the lockup, a 34px "Welcome back" heading, sentence-case labels, "Forgot password?" as a quiet link, a full-width primary button and "Your account and notes stay on this computer."; beside it, a full-height accent panel with the promise "Answers only from your notes." above an example question, cited answer and cited passage. Below 860px the panel stacks under the form.
 
 ### Cited Passage (signature)
 
-A quoted excerpt from the student's notes: Tray Grey block, 3px Ink Indigo left rule, 8px radius, 12px × 16px padding, whitespace preserved. This is where the product's central promise, evidence before answers, shows up visually. Use it whenever source text is shown.
+A quoted excerpt from the student's notes: a raised block with a 3px accent left rule, 10px radius, 12px × 16px padding, whitespace preserved. Use it whenever source text is shown.
 
 ### Answer Feedback and Notices
 
-A Tray Grey block with a 4px left rule: green for correct, red for incorrect or error, none for a neutral notice. The explanation follows in Pencil Grey. Fallbacks and refusals use the same honest, plain treatment and are never made to look like a success.
+A raised block with a 4px left rule: green for correct, coral for incorrect or error, none for a neutral notice. Fallbacks and refusals use the same plain treatment and never look like a success.
+
+## Motion
+
+All motion lives in `src/sentio/static/js/core/motion.js` (behaviour) and the end of `src/sentio/static/css/theme.css` (keyframes). Shared easing: `--ease` (`cubic-bezier(0.2, 0.8, 0.2, 1)`) for colour changes and `--ease-out` (`cubic-bezier(0.23, 1, 0.32, 1)`) for movement. Durations: `--dur` (180ms) for controls, `--dur-slow` (320ms) for arrivals.
+
+| What          | When                                                                         | How                                                                           |
+| ------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Tab pill      | Every page change                                                            | Stretches from the old tab to cover both, then settles on the new one; 360ms. |
+| Page fade     | Every page change                                                            | The new page fades in over 160ms.                                             |
+| Typed title   | First visit to a page in a session                                           | The title types itself in, at most about 420ms in all.                        |
+| Panel stagger | First visit to a page in a session                                           | Cards rise 8px and fade in, 50ms apart, 260ms each, up to 14 panels.          |
+| Count-up      | When a page opens                                                            | Big figures count from 0 over 700ms.                                          |
+| Draw-in       | When a page opens                                                            | Rings draw clockwise and chart lines left to right over 700ms.                |
+| Bars          | When they render                                                             | Meters grow from the left over 520ms.                                         |
+| Board columns | When the board loads                                                         | Columns rise in, 50ms apart.                                                  |
+| Feed items    | New chat messages, log entries, the active-session bar, the typing indicator | Rise 8px and fade in (`msg-in`).                                              |
+
+Everything else changes colour, background, border or opacity only. No bounce or overshoot.
 
 ## Do's and Don'ts
 
 ### Do:
 
-- **Do** separate surfaces with 1px Hairline borders and tonal steps (Paper Grey → Sheet White → Tray Grey).
-- **Do** use Ink Indigo only for actions, links, citations, focus and the Review due state.
-- **Do** show sources as citation chips and cited passages with the 3px Ink Indigo left rule.
-- **Do** keep every interactive element's 3px Ink Indigo focus outline at a 3px offset.
-- **Do** define and check each colour in both the light and the dark theme.
-- **Do** keep text inputs at 15px or larger and nav targets at least 44px tall.
-- **Do** respect `prefers-reduced-motion`; the workspace already disables animations and transitions under it, except opacity-only loading pulses (typing dots, the document "working" dot, and the spinner, which pulses instead of spinning) so progress stays visible.
-- **Do** give every control a hover state (`--hover`) and a press state (`--press`). The primary action darkens to Ink Indigo Deep instead.
-- **Do** animate only colour, background, border and opacity, with the shared timing: `--dur` (180ms) for controls, `--dur-slow` (320ms) for arrivals, and `--ease` (`cubic-bezier(0.2, 0.8, 0.2, 1)`) for both. The one exception is new items arriving in a vertical feed (chat messages, session log entries, the active-session bar, the typing indicator), which also rise 8px (`msg-in`).
+- **Do** separate surfaces with 1px hairlines and tonal steps (page → card → raised).
+- **Do** use the accent only for actions, links, chart lines, focus and the Practising state.
+- **Do** show sources as citation chips and cited passages with the 3px accent left rule.
+- **Do** keep every interactive element's 3px accent focus outline at a 3px offset.
+- **Do** define and check each colour in both themes.
+- **Do** keep text inputs at 15px or larger (16px on touch) and tap targets at least 34px tall.
+- **Do** respect `prefers-reduced-motion`: the tab pill moves instantly, titles appear at once, panels only fade, figures appear at their value, and the workspace disables other animations and transitions, except opacity-only loading pulses (typing dots, the document "working" dot, and the spinner, which pulses instead of spinning) so progress stays visible.
+- **Do** respect `prefers-reduced-transparency` (dialog scrims drop their blur and get more opaque) and `prefers-contrast: more` (hairlines take the muted text colour in both themes).
+- **Do** keep the global loading indicator a small corner spinner: it never blurs the page, and it appears only after 300ms so quick requests don't flash it.
+- **Do** give every control a hover state (`--hover`, mouse only) and a press state (`--press`).
+- **Do** keep a page's full entrance to its first visit in a session; repeat visits get the pill and a quick fade only.
 
 ### Don't:
 
 - **Don't** add drop shadows or glows to cards, buttons or bubbles; only toasts and dialogs float.
 - **Don't** reuse the retired neon theme: cyan-on-black, scan-line overlays, glows, gradient buttons, Syne or JetBrains Mono.
-- **Don't** set buttons or labels in uppercase with letter-spacing.
-- **Don't** use green, amber or red as decoration or brand colour; they mean learning status or error.
-- **Don't** use pill shapes for primary buttons or large containers; pills are for small metadata.
+- **Don't** set buttons or labels in uppercase with letter spacing (countdown units are the one exception).
+- **Don't** use green, amber or coral as decoration or brand colour; they mean learning status or error.
+- **Don't** put white text on `#4d80ff`; filled controls use `--accent-fill`.
+- **Don't** show figures, charts or trends that aren't the student's real data.
 - **Don't** let the optional camera / emotion UI bring its own visual language into the main study flow.
-- **Don't** use `transition: all`, bounce or overshoot curves, or a different duration per element.
+- **Don't** use `transition: all`, bounce or overshoot curves.
 - **Don't** end interface copy with exclamation marks, or write "successfully".

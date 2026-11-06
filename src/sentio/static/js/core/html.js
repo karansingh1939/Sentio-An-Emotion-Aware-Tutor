@@ -25,7 +25,8 @@ export function topicMemory(topic) {
   if (topic.state === 'review_due') return `about ${Math.round(topic.recall * 100)}% remembered`;
   if (topic.state !== 'ready') return '';
   const date = new Date(topic.review_on * 1000);
-  return `review by ${date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`;
+  const year = date.getFullYear() === new Date().getFullYear() ? undefined : 'numeric';
+  return `review by ${date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year })}`;
 }
 
 export function pageRange(topic) {

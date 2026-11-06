@@ -49,6 +49,17 @@ class SentioAPIClient {
   // Common request handler. With `stream: true` the Response is returned unread and the
   // caller's signal stays connected, so a streamed body can still be cancelled.
   async request(endpoint, options = {}) {
+    // Dev-only sample data (?data=…): GETs may come from fixtures, and writes are refused.
+    const sample = globalThis.sentioFixtures;
+    if (sample?.active()) {
+      const method = (options.method || 'GET').toUpperCase();
+      if (method === 'GET') {
+        const data = sample.fixtureFor(endpoint);
+        if (data !== undefined) return structuredClone(data);
+      } else if (!endpoint.startsWith('/auth/')) {
+        throw new Error('Saving is off while sample data is shown. Switch to Demo data first.');
+      }
+    }
     const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
 
     // Setup AbortController for timeouts/cancellations

@@ -108,7 +108,11 @@ function handleWebcamStateForRoute(route) {
 }
 
 // Start application on DOM content ready
-document.addEventListener('DOMContentLoaded', initApp);
+// Dev-only sample data for stress tests loads first, and only when the URL carries ?data=….
+const samples = new URLSearchParams(window.location.search).has('data')
+  ? import('./dev/data_fixtures.js')
+  : Promise.resolve();
+document.addEventListener('DOMContentLoaded', () => samples.then(initApp));
 
 // Menus built from <details class="row-menu"> close after a choice, on an
 // outside click, and on Escape (focus returns to the menu button).
