@@ -472,6 +472,25 @@ th {
     transition-duration: 0.01ms !important;
   }
 }
+@media (prefers-reduced-motion: reduce) {
+  /* Opacity-only status pulses don't move anything, so they stay on. */
+  .typing-dots span,
+  .doc-state.working::before {
+    animation-duration: 1.2s !important;
+  }
+  sentio-loader {
+    animation: loader-pulse 1.2s var(--ease) infinite !important;
+  }
+}
+@keyframes loader-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
 /* Native hidden controls must remain hidden despite shared button rules. */
 [hidden] {
   display: none !important;

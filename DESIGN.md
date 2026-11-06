@@ -345,7 +345,7 @@ A Tray Grey block with a 4px left rule: green for correct, red for incorrect or 
 - **Do** keep every interactive element's 3px Ink Indigo focus outline at a 3px offset.
 - **Do** define and check each colour in both the light and the dark theme.
 - **Do** keep text inputs at 15px or larger and nav targets at least 44px tall.
-- **Do** respect `prefers-reduced-motion`; the workspace already disables animations and transitions under it.
+- **Do** respect `prefers-reduced-motion`; the workspace already disables animations and transitions under it, except opacity-only loading pulses (typing dots, the document "working" dot, and the spinner, which pulses instead of spinning) so progress stays visible.
 - **Do** give every control a hover state (`--hover`) and a press state (`--press`). The primary action darkens to Ink Indigo Deep instead.
 - **Do** animate only colour, background, border and opacity, with the shared timing: `--dur` (180ms) for controls, `--dur-slow` (320ms) for arrivals, and `--ease` (`cubic-bezier(0.2, 0.8, 0.2, 1)`) for both.
 
