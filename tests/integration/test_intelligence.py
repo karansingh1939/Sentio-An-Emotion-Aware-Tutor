@@ -179,4 +179,4 @@ class TestLearningIntelligencePlatform(unittest.TestCase):
             # Get learning path
             resp_path = client.get(f"{PREFIX}/student/{student_id}/learning_path")
             self.assertEqual(resp_path.status_code, 200)
-            self.assertIn("path", resp_path.json())
+            self.assertEqual(resp_path.json()["steps"], [])
