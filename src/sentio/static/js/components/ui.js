@@ -27,8 +27,7 @@ export class SentioToast extends HTMLElement {
     this.style.boxShadow = '0 4px 16px #0001';
     this.style.color = this.isError ? 'var(--red)' : 'var(--text)';
     this.style.fontSize = '14px';
-    this.style.transition = 'opacity 0.3s, transform 0.3s';
-    this.style.transform = 'translateY(10px)';
+    this.style.transition = 'opacity var(--dur-slow) var(--ease)';
     this.style.opacity = '0';
 
     this.innerHTML = `
@@ -38,22 +37,26 @@ export class SentioToast extends HTMLElement {
 
     // Trigger animate-in
     requestAnimationFrame(() => {
-      this.style.transform = 'translateY(0)';
       this.style.opacity = '1';
     });
   }
 
   dismiss() {
-    this.style.transform = 'translateY(-10px)';
+    if (this.dismissed) return;
+    this.dismissed = true;
+    this.style.pointerEvents = 'none';
+    this.style.transition = 'opacity var(--dur) var(--ease)';
     this.style.opacity = '0';
-    this.addEventListener('transitionend', () => this.remove());
+    this.addEventListener('transitionend', () => this.remove(), { once: true });
+    // Fallback: no transition runs if the toast was never visible.
+    setTimeout(() => this.remove(), 400);
   }
 }
 customElements.define('sentio-toast', SentioToast);
 
 // Global Toast helper
 export function toast(message, isError = false) {
-  document.querySelectorAll('sentio-toast').forEach((old) => old.remove());
+  document.querySelectorAll('sentio-toast').forEach((old) => old.dismiss());
   const el = document.createElement('sentio-toast');
   el.setAttribute('message', message);
   if (isError) el.setAttribute('error', '');
