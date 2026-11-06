@@ -1279,20 +1279,14 @@ header {
   border-color: var(--accent) !important;
 }
 
-/* ── FLASHCARD INTERACTIVE FLIP ANIMATIONS ── */
+/* ── FLASHCARD FACES ── */
 .flashcard-inner {
-  transition: transform var(--dur-slow) var(--ease);
-  transform-style: preserve-3d;
   position: relative;
   width: 100%;
   height: 220px;
 }
-.flashcard-inner.flipped {
-  transform: rotateY(180deg);
-}
 .flashcard-front,
 .flashcard-back {
-  backface-visibility: hidden;
   position: absolute;
   top: 0;
   left: 0;
@@ -1307,6 +1301,5 @@ header {
   box-sizing: border-box;
 }
 .flashcard-back {
-  transform: rotateY(180deg);
   background: var(--bg3) !important;
 }
