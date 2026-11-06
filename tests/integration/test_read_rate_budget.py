@@ -25,7 +25,7 @@ def test_polling_cannot_exhaust_submission_budget_and_both_remain_limited():
 def test_auth_has_its_own_stricter_budget_and_retry_after_is_usable(monkeypatch):
     from types import SimpleNamespace
 
-    from sentio.shared import utils
+    from sentio.shared import rate_limit as utils
 
     now = [0.0]
     monkeypatch.setattr(utils, "time", SimpleNamespace(perf_counter=lambda: now[0]))

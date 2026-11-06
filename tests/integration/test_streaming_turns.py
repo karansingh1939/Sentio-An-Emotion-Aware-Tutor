@@ -7,7 +7,7 @@ from queue import Empty
 import pytest
 from fastapi.testclient import TestClient
 
-from sentio.ai.streaming import visible_text
+from sentio.ai.stream_schema import visible_text
 from sentio.api.app import agent, app
 from sentio.jobs.control import current_control
 

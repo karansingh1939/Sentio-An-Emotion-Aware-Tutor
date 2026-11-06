@@ -49,7 +49,7 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
-from sentio.ai.nlp_engine import NLPEngine, TutorResponse
+from sentio.ai.tutor_llm import NLPEngine, TutorResponse
 from sentio.emotion.detector import EmotionDetector, EmotionResult
 from sentio.rag.knowledge_base import KnowledgeBase
 from sentio.session.manager import SessionManager

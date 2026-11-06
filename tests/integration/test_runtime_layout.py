@@ -51,7 +51,7 @@ def test_missing_model_disables_inference(tmp_path):
 def test_health_check_does_not_import_optional_ml_libraries(monkeypatch):
     import builtins
 
-    from sentio.shared.utils import system_health_check
+    from sentio.maintenance.health_check import system_health_check
 
     original_import = builtins.__import__
     optional = {

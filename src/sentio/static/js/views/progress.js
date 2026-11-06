@@ -13,7 +13,7 @@ const SORTS = [
 ];
 const band = (mastery) => (mastery >= 0.8 ? 'green' : mastery >= 0.4 ? '' : 'amber');
 
-export class AnalyticsView {
+export class ProgressView {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
     this.revision = 0;

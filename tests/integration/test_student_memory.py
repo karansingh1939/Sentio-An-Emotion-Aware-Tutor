@@ -272,7 +272,7 @@ class TestSentioPhaseB(unittest.TestCase):
                 }
             )
             with patch(
-                "sentio.ai.nlp_engine.OllamaBackend.complete", return_value=(mock_response, 50)
+                "sentio.ai.tutor_llm.OllamaBackend.complete", return_value=(mock_response, 50)
             ):
                 resp_chat = client.post(
                     f"/api/v1/sessions/{session_id}/chat",

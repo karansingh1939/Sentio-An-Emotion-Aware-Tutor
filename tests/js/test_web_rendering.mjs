@@ -93,8 +93,8 @@ cards.bindDeckEvents = () => {};
 cards.renderDeckBrowser();
 assert.ok(!container.innerHTML.includes(malicious), 'Deck names render as executable HTML');
 
-const { DocumentsView } = await loadView('documents');
-const documents = new DocumentsView('view');
+const { LibraryView } = await loadView('library');
+const documents = new LibraryView('view');
 documents.documents = [{ filename: malicious, id: 'doc', category: 'notes', status: 'indexed' }];
 documents.bindEvents = () => {};
 documents.render();
@@ -107,8 +107,8 @@ new HistoryView('view').render([
 ]);
 assert.ok(!container.innerHTML.includes(malicious));
 assert.ok(container.innerHTML.includes('physics'));
-const { AnalyticsView } = await loadView('analytics');
-new AnalyticsView('view').render({ topic_mastery: { [malicious]: 0.7 }, overall_mastery: 0.7 });
+const { ProgressView } = await loadView('progress');
+new ProgressView('view').render({ topic_mastery: { [malicious]: 0.7 }, overall_mastery: 0.7 });
 assert.ok(!container.innerHTML.includes(malicious));
 assert.ok(container.innerHTML.includes('70%'));
 

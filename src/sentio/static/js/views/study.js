@@ -20,7 +20,7 @@ function sourceOptions(docs, courses, selected) {
   ].join('');
 }
 
-export class TutorView {
+export class StudyView {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
     this.sessionsList = [];

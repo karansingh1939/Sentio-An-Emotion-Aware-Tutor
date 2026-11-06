@@ -215,7 +215,7 @@ function dailyPlan(plan) {
     <ul class="study-list plan-list">${plan.tasks.map((task) => `<li><label><input type="checkbox" class="plan-complete" data-task="${escapeHtml(task.task_id)}" ${task.completed_at ? 'checked' : ''}> ${escapeHtml(task.title)}</label><small>${escapeHtml(task.minutes)} min${task.evidence_count ? ` · ${escapeHtml(task.evidence_count)} saved practice records` : ''}</small><a class="workspace-action" href="${escapeHtml(task.destination)}">Open</a></li>`).join('')}</ul>`;
 }
 
-export class DashboardView {
+export class TodayView {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
     this.revision = 0;

@@ -32,7 +32,7 @@ def study(tmp_path, monkeypatch):
         sys.modules,
         {"sentio.emotion.detector": SimpleNamespace(EmotionDetector=Mock(), EmotionResult=Mock())},
     ):
-        with patch("sentio.shared.utils.setup_logging"):
+        with patch("sentio.api.app.setup_logging"):
             api = importlib.import_module("sentio.api.app")
     db_url = "sqlite:///" + (tmp_path / "study.db").as_posix()
     monkeypatch.setattr(session_cfg, "DB_URL", db_url)

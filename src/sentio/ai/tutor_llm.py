@@ -2,11 +2,11 @@ import logging
 import time
 from typing import Dict, List, Optional
 
-from sentio.ai.history import ConversationHistory
-from sentio.ai.models import TutorResponse
-from sentio.ai.parser import ResponseParser
+from sentio.ai.conversation_history import ConversationHistory
 from sentio.ai.prompts import PromptBuilder
 from sentio.ai.providers import LLMBackend, OllamaBackend
+from sentio.ai.response_models import TutorResponse
+from sentio.ai.response_parser import ResponseParser
 from sentio.config import nlp_cfg, tutor_cfg
 from sentio.shared.exceptions import LLMServiceUnavailableError
 

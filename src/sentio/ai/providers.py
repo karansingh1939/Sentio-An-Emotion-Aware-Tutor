@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from threading import BoundedSemaphore
 from typing import Dict, List
 
-from sentio.ai.streaming import current_schema, visible_text
+from sentio.ai.stream_schema import current_schema, visible_text
 from sentio.config import nlp_cfg
 from sentio.jobs.control import WorkCancelled, checkpoint, current_control
 from sentio.shared.exceptions import InvalidModelOutput, LLMServiceUnavailableError

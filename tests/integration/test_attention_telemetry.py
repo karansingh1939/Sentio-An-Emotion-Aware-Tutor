@@ -22,7 +22,7 @@ config.tutor_cfg.ENABLE_ADAPTIVE_TUTORING = False
 
 # Mock system_health_check to prevent webcam lock during testing
 with patch(
-    "sentio.shared.utils.system_health_check",
+    "sentio.api.routes.system.system_health_check",
     return_value={"webcam_available": True, "emotion_model_ok": True},
 ):
     from fastapi.testclient import TestClient

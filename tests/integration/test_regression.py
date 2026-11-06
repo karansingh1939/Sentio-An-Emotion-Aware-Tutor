@@ -4,7 +4,7 @@ import unittest
 from fastapi.testclient import TestClient
 
 # Import local codebase modules
-from sentio.ai.nlp_engine import NLPEngine, PromptBuilder, ResponseParser
+from sentio.ai.tutor_llm import NLPEngine, PromptBuilder, ResponseParser
 from sentio.api.app import app
 from sentio.rag.knowledge_base import KnowledgeBase
 from sentio.session.manager import SessionManager, SessionStatus
@@ -151,7 +151,7 @@ class TestSentioRegression(unittest.TestCase):
             login_student(client, admin=True)
             from unittest.mock import patch
 
-            with patch("sentio.shared.utils.RateLimiter.allow", return_value=False):
+            with patch("sentio.shared.rate_limit.RateLimiter.allow", return_value=False):
                 resp = client.post(
                     "/api/v1/sessions",
                     json={

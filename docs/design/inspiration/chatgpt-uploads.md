@@ -21,7 +21,7 @@
 
 ## How Sentio handles them today
 
-From `src/sentio/static/js/views/documents.js` and `src/sentio/static/js/core/jobs.js`.
+From `src/sentio/static/js/views/library.js` and `src/sentio/static/js/core/jobs.js`.
 
 - **Uploads happen only in the Library,** in a "1. Add your notes" card with a dashed drop box. To study a file, you go back to Study and pick it from "Notes to use".
 - **Several files upload one after another,** with a single text line ("Uploading 2 of 5: …"), then a summary of what was added and what wasn't.
