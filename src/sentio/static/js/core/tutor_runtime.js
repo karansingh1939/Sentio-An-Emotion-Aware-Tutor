@@ -14,6 +14,14 @@ let generationInProgress = false;
 let generationRequest = null;
 let sessionStartingFor = null;
 
+// Readable progress for the typing line. A queued answer waits for the one local model,
+// which may be busy writing a quiz, flashcards or an overview.
+function stageLabel(stage) {
+  if (stage === 'queued') return 'Waiting for the local AI to finish another task…';
+  const text = String(stage || '').trim();
+  return text ? `${text[0].toUpperCase()}${text.slice(1)}…` : 'Working…';
+}
+
 function getActiveSessionId() {
   if (window.store) return window.store.getState('activeSessionId');
   return (
@@ -471,7 +479,7 @@ async function sendMessage() {
         sourcesPreview = appendSourcesPreview(value.sources);
       } else if (kind === 'status') {
         const progress = document.querySelector('#typing-indicator > span');
-        if (progress) progress.textContent = value.stage;
+        if (progress) progress.textContent = stageLabel(value.stage);
       } else if (kind === 'complete') {
         data = value;
       } else if (kind === 'cancelled' || kind === 'error') {

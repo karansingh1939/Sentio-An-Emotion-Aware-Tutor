@@ -149,7 +149,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+class RevalidatedStaticFiles(StaticFiles):
+    """Ask browsers to revalidate UI files so an update never runs old HTML with new JS."""
+
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
+app.mount("/static", RevalidatedStaticFiles(directory=str(STATIC_DIR)), name="static")
 app.include_router(system.router)
 app.include_router(sessions.router)
 app.include_router(tutoring.router)
