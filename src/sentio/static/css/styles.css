@@ -398,10 +398,12 @@ header {
 }
 
 .ebar-fill {
+  width: 100%;
   height: 100%;
-  border-radius: 3px;
   background: var(--accent2);
-  transition: width var(--dur-slow) var(--ease);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--dur-slow) var(--ease);
 }
 
 .ebar-pct {
@@ -1159,13 +1161,16 @@ header {
   background: var(--bg3);
   border-radius: 2px;
   margin-bottom: 14px;
+  overflow: hidden;
 }
 
 .engage-fill {
+  width: 100%;
   height: 100%;
-  border-radius: 2px;
   background: var(--accent);
-  transition: width var(--dur-slow) var(--ease);
+  transform: scaleX(0.5);
+  transform-origin: left center;
+  transition: transform var(--dur-slow) var(--ease);
 }
 
 /* Topics covered */
