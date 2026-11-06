@@ -2,11 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+    <meta name="theme-color" content="#ffffff" />
     <title>Sentio · Your study workspace</title>
     <link rel="icon" href="static/img/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="static/css/styles.css" />
     <link rel="stylesheet" href="static/css/workspace.css" />
+    <link rel="stylesheet" href="static/css/theme.css" />
     <script src="static/js/core/icons.js"></script>
     <script type="module" src="static/js/app.js"></script>
     <script src="static/js/core/tutor_runtime.js" defer></script>
@@ -32,8 +37,8 @@
     ></div>
 
     <div id="app">
-      <!-- SIDEBAR NAV -->
-      <div id="sidebar">
+      <!-- TOP BAR: brand, page tabs, status and account (id kept as #sidebar for tests and scripts) -->
+      <div id="sidebar" class="topbar">
         <div class="sidebar-brand">
           <a class="logo brand-lockup" href="#/dashboard" aria-label="Sentio, go to Today">
             <svg
@@ -60,83 +65,84 @@
             </svg>
           </a>
         </div>
-        <div class="nav-links">
+        <nav class="nav-links" aria-label="Main">
+          <span class="tab-pill" aria-hidden="true"></span>
           <a href="#/dashboard" class="nav-link active">Today</a>
           <a href="#/documents" class="nav-link">Library</a>
           <a href="#/tutor" class="nav-link">Study</a>
           <a href="#/quizzes" class="nav-link">Review</a>
           <a href="#/analytics" class="nav-link">Progress</a>
-        </div>
-        <div class="sidebar-footer">
-          <a href="#/history" class="nav-link">Study history</a>
-          <a href="#/settings" class="nav-link">Settings</a>
-          <button id="theme-toggle" type="button" aria-label="Switch colour theme">
-            Dark theme
-          </button>
-          <p class="local-note">Your notes. Your machine.</p>
+        </nav>
+        <div class="topbar-actions">
+          <header>
+            <div class="logo"><span id="workspace-title">Your study workspace</span></div>
+            <div class="header-status">
+              <div class="dot" id="conn-dot"></div>
+              <span id="conn-label">No session</span>
+            </div>
+            <!-- E7 Privacy Indicators -->
+            <div
+              id="cam-active-indicator"
+              style="
+                display: none;
+                align-items: center;
+                gap: 6px;
+                color: var(--green);
+                font-size: 14px;
+                font-weight: bold;
+              "
+            >
+              <span
+                style="
+                  width: 8px;
+                  height: 8px;
+                  border-radius: 50%;
+                  background: var(--green);
+                  box-shadow: 0 0 8px var(--green);
+                  display: inline-block;
+                "
+              ></span>
+              <span>Camera Active</span>
+            </div>
+            <div
+              id="mic-active-indicator"
+              style="
+                display: none;
+                align-items: center;
+                gap: 6px;
+                color: var(--green);
+                font-size: 14px;
+                font-weight: bold;
+              "
+            >
+              <span
+                style="
+                  width: 8px;
+                  height: 8px;
+                  border-radius: 50%;
+                  background: var(--green);
+                  box-shadow: 0 0 8px var(--green);
+                  display: inline-block;
+                "
+              ></span>
+              <span>Microphone Active</span>
+            </div>
+            <div class="header-session" id="session-label">—</div>
+          </header>
+          <button id="theme-toggle" type="button" aria-label="Switch colour theme"></button>
+          <a class="workspace-action primary topbar-add" href="#/documents"
+            ><span aria-hidden="true">+</span><span class="add-label"> Add notes</span></a
+          >
+          <details class="row-menu account-menu">
+            <summary class="account-btn" aria-label="Account and settings">··</summary>
+            <div class="row-menu-list">
+              <a class="row-menu-item" href="#/history">Study history</a>
+              <a class="row-menu-item" href="#/settings">Settings</a>
+              <p class="local-note">Your notes. Your machine.</p>
+            </div>
+          </details>
         </div>
       </div>
-
-      <!-- HEADER (Top Nav) -->
-      <header>
-        <div class="logo">
-          <span id="workspace-title">Your study workspace</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 16px">
-          <div class="header-status">
-            <div class="dot" id="conn-dot"></div>
-            <span id="conn-label">No session</span>
-          </div>
-          <!-- E7 Privacy Indicators -->
-          <div
-            id="cam-active-indicator"
-            style="
-              display: none;
-              align-items: center;
-              gap: 6px;
-              color: var(--green);
-              font-size: 14px;
-              font-weight: bold;
-            "
-          >
-            <span
-              style="
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-                background: var(--green);
-                box-shadow: 0 0 8px var(--green);
-                display: inline-block;
-              "
-            ></span>
-            <span>Camera Active</span>
-          </div>
-          <div
-            id="mic-active-indicator"
-            style="
-              display: none;
-              align-items: center;
-              gap: 6px;
-              color: var(--green);
-              font-size: 14px;
-              font-weight: bold;
-            "
-          >
-            <span
-              style="
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-                background: var(--green);
-                box-shadow: 0 0 8px var(--green);
-                display: inline-block;
-              "
-            ></span>
-            <span>Microphone Active</span>
-          </div>
-        </div>
-        <div class="header-session" id="session-label">—</div>
-      </header>
 
       <!-- MAIN CONTENT VIEWPORT -->
       <main id="main-content" tabindex="-1">
@@ -365,6 +371,7 @@
               </div>
               <textarea
                 id="msg-input"
+                enterkeyhint="send"
                 placeholder="Start a session first..."
                 rows="1"
                 disabled

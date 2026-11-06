@@ -1,0 +1,23 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font",
+        "value": "outfit",
+        "createdAt": "2026-11-06T09:24:08.267Z",
+        "reason": "user confirmed on 2026-11-06: adopt self-hosted Outfit for the Amplo-style redesign; DESIGN.md will be updated with it"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "docs/design/mockups/sentio-dark-mockup.html"
+        ],
+        "createdAt": "2026-11-06T09:25:15.947Z",
+        "reason": "DESIGN.md documents coloured left rules for learning status (cited passages, notices); the board cards use the same status rule seen in the Amplo reference Karan asked to match"
+      }
+    ]
+  }
+}

@@ -285,7 +285,7 @@ async def test_workspace_is_readable_offline_and_honest_about_failed_data():
                             "document.documentElement.scrollWidth <= window.innerWidth"
                         ), f"{route} overflows at {width} in {theme}"
                     await page.goto(url + "/#/dashboard")
-                    await page.wait_for_selector(".today-columns")
+                    await page.wait_for_selector(".today-grid")
                     await page.screenshot(path=str(screenshots / f"today-{theme}-{width}.png"))
             await page.route(
                 "**/profile", lambda route: route.fulfill(status=503, json={"detail": "Offline"})

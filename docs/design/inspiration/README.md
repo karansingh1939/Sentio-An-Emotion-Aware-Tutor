@@ -10,6 +10,7 @@ Notes on designs Karan likes, gathered to improve Sentio. **We take inspiration 
 | Research: trust and clarity (2026-11-06)                  | Checkable citations build trust; one primary action, a small type scale and hidden extras keep screens calm   | [research-trust-and-clarity.md](research-trust-and-clarity.md) |
 | UI tools review (Anime.js, Motion, Bklit, Coconut, Manus) | None needed now: CSS already covers Sentio's motion, and the rest need React, Flutter or a separate agent     | [ui-tools-review.md](ui-tools-review.md)                       |
 | ChatGPT, adding files and waiting                         | Attach files right where you ask; one chip per file; drop anywhere                                            | [chatgpt-uploads.md](chatgpt-uploads.md)                       |
+| Amplo dashboard (screen recording, 2026-11-06)            | Dark dashboard; a stretchy tab pill; typed titles; staggered panels; charts that draw in                      | [amplo-dashboard.md](amplo-dashboard.md)                       |
 | Apple, MacBook Air page                                   | Premium, calm feel; one accent; footnoted claims; every element responds to the cursor with consistent timing | [apple-comparison.md](apple-comparison.md)                     |
 
 ## Ideas worth taking so far

@@ -17,7 +17,10 @@ class SentioStore {
       activeRoute: '#/dashboard',
       notifications: [],
       loading: false,
-      theme: localStorage.getItem('sentio_theme') || 'light',
+      // First visit follows the system setting; a choice made in the app is remembered.
+      theme:
+        localStorage.getItem('sentio_theme') ||
+        (window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ? 'dark' : 'light'),
       telemetryActive: false,
       telemetryLog: [],
       currentMastery: {}, // Topic-wise mastery map

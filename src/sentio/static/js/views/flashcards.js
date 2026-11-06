@@ -419,7 +419,7 @@ export class FlashcardsView {
         </div>
 
         <!-- Feedback / Rating Panel (Visible only when flipped) -->
-        <div id="rating-controls-panel" class="flashcard-reveal" style="display:${this.isFlipped ? 'flex' : 'none'};flex-direction:column;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;">
+        <div id="rating-controls-panel" style="display:${this.isFlipped ? 'flex' : 'none'};flex-direction:column;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;">
           <label style="display:block;font-size:14px;color:var(--text-dim);text-align:center;font-weight:bold;">How well did you recall this concept?</label>
           
           <div class="review-ratings">

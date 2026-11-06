@@ -104,10 +104,67 @@ function syllabusView(syllabus, courseId) {
   </div>`;
 }
 
+// Board columns, in learning order. Topics not in the notes stay in the syllabus view.
+const BOARD_COLUMNS = [
+  ['not_started', 'Not started'],
+  ['practising', 'Practising'],
+  ['review_due', 'Review due'],
+  ['ready', 'Ready'],
+];
+const BOARD_LIMIT = 60; // lectures fetched for the board at most
+
+const tileClass = (text) =>
+  `t${[...(text || '')].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 4}`;
+const initials = (filename) =>
+  (filename || '?')
+    .replace(/\.[a-z0-9]+$/i, '')
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => [...word][0])
+    .join('')
+    .toUpperCase() || '?';
+
+// How far along a topic is, as a 0–100 bar, from the evidence the server keeps.
+function topicShare(topic) {
+  if (typeof topic.recall === 'number') return Math.round(topic.recall * 100);
+  if (topic.recent_total) return Math.round((topic.recent_correct / topic.recent_total) * 100);
+  return topic.state === 'ready' ? 100 : 0;
+}
+
+function boardCard(topic) {
+  const memory = topicMemory(topic);
+  const evidence = topic.recent_total
+    ? `${topic.recent_correct} of ${topic.recent_total} correct`
+    : 'Not practised yet';
+  return `<article class="board-card ${escapeHtml(topic.state)}">
+    <div class="board-card-file"><span class="tile ${tileClass(topic.filename)}" aria-hidden="true">${escapeHtml(initials(topic.filename))}</span><span>${escapeHtml(topic.filename)}</span></div>
+    <h4>${escapeHtml(topic.title)}</h4>
+    ${topic.state === 'not_started' ? '' : `<div class="meter ${topic.state === 'ready' ? 'green' : topic.state === 'review_due' ? 'amber' : ''}"><i style="width:${topicShare(topic)}%"></i></div>`}
+    <div class="board-card-meta"><span>${escapeHtml(pageRange(topic))} · ${escapeHtml(memory || evidence)}</span></div>
+    <div class="board-card-actions">
+      <button type="button" class="workspace-action pill" data-topic-action="review" data-topic="${escapeHtml(topic.id)}">Review</button>
+      <button type="button" class="workspace-action" data-topic-action="practise" data-topic="${escapeHtml(topic.id)}">Practise</button>
+    </div>
+  </article>`;
+}
+
+function boardView(topics) {
+  if (!topics.length)
+    return '<p class="muted">No topics yet. Topics appear once your notes are ready to study.</p>';
+  return BOARD_COLUMNS.map(([state, label]) => {
+    const cards = topics.filter((topic) => topic.state === state);
+    return `<section class="board-column" aria-label="${label}">
+      <div class="board-column-head"><span class="topic-state ${state}">${label}</span><span class="board-count">${cards.length.toLocaleString()}</span></div>
+      ${cards.length ? cards.map(boardCard).join('') : '<p class="muted board-empty">Nothing here yet.</p>'}
+    </section>`;
+  }).join('');
+}
+
 function progressLine(summary) {
-  if (!summary.total) return 'No topics yet.';
+  if (!summary.total) return 'No topics yet';
   const due = summary.review_due ? `${summary.review_due} due for review · ` : '';
-  return `${summary.ready} of ${summary.total} topics ready · ${due}${summary.practising} practising · ${summary.not_started} not started`;
+  return `${summary.ready} of ${summary.total} topic${summary.total === 1 ? '' : 's'} ready · ${due}${summary.practising} practising · ${summary.not_started} not started`;
 }
 
 export class DocumentsView {
@@ -120,6 +177,8 @@ export class DocumentsView {
     this.batchItems = [];
     this.failedFiles = [];
     this.filterQuery = '';
+    this.libraryView =
+      globalThis.localStorage?.getItem('sentio_library_view') === 'board' ? 'board' : 'list';
     this.ocrReady = false;
     this.revision = 0;
     this.uploadInProgress = false;
@@ -169,6 +228,7 @@ export class DocumentsView {
         sentioAPI.get('/courses'),
       ]);
       if (!current()) return;
+      this.current = current;
       this.ocrReady = capabilities.ocr_available;
       this.documents = res.documents || [];
       this.courses = courses.courses || [];
@@ -176,6 +236,7 @@ export class DocumentsView {
       this.render();
       this.bindEvents();
       this.loadCourseProgress(current);
+      if (this.libraryView === 'board') this.loadBoard(current);
       if (localStorage.getItem(pendingJobKey('/documents/jobs', false))) this.uploadFile(null);
     } catch (e) {
       if (!current()) return;
@@ -214,7 +275,7 @@ export class DocumentsView {
           d.status === 'indexed' ? 'ready' : d.status === 'failed' ? 'failed' : 'working';
         return `
         <tr class="document-row" data-search="${escapeHtml((d.filename + ' ' + this.courseName(d.course_id)).toLowerCase())}" style="border-bottom:1px solid var(--border);color:var(--text);">
-          <td style="padding:10px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(d.filename)}">
+          <td style="padding:10px;width:100%;max-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(d.filename)}">
             ${escapeHtml(d.filename)}
           </td>
           <td style="padding:10px;">
@@ -248,7 +309,7 @@ export class DocumentsView {
     return `
       <section class="course-group stack" ${course ? `data-course="${escapeHtml(course.id)}"` : ''}>
         <div class="row-between course-header">
-          <h3 class="course-title">${escapeHtml(title)} <span class="badge">${docs.length} lecture${docs.length === 1 ? '' : 's'}</span></h3>
+          <h3 class="course-title">${escapeHtml(title)} <span class="badge">${docs.length.toLocaleString()} lecture${docs.length === 1 ? '' : 's'}</span></h3>
           ${
             course
               ? `<div>
@@ -319,12 +380,12 @@ export class DocumentsView {
       </div>
 
       ${this.justUploadedId ? `<div class="notice library-ready" role="status">Your notes are ready. <button class="workspace-action primary study-doc-btn" data-id="${escapeHtml(this.justUploadedId)}">Study these notes</button></div>` : ''}
-      <div class="library-layout" style="display:grid;grid-template-columns:1fr 340px;gap:20px;width:100%;">
+      <div class="library-layout ${this.libraryView === 'board' ? 'is-board' : ''}" style="display:grid;gap:20px;width:100%;">
         <!-- Left: Search and List -->
         <div class="stack stack-lg">
           <sentio-card title="Your notes">
             <div style="display:flex;gap:10px;margin-bottom:16px;">
-              <input type="text" id="doc-search-input" value="${escapeHtml(this.filterQuery)}" placeholder="Search files or courses..." style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;" />
+              <input type="text" id="doc-search-input" value="${escapeHtml(this.filterQuery)}" placeholder="Search files or courses..." style="flex:1;min-width:0;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;" />
               <button class="workspace-action" id="new-course-btn">New course</button>
             </div>
 
@@ -340,7 +401,17 @@ export class DocumentsView {
                 </ul>
               </div>
             `
-                : `<p id="doc-search-status" role="status"></p><div class="stack stack-lg">${groups}</div>`
+                : `<div class="library-view-bar"><div class="seg" role="group" aria-label="Library view">${[
+                    ['list', 'List'],
+                    ['board', 'Board'],
+                  ]
+                    .map(
+                      ([value, label]) =>
+                        `<button type="button" class="seg-option" data-library-view="${value}" aria-pressed="${this.libraryView === value}">${label}</button>`,
+                    )
+                    .join('')}</div><p id="doc-search-status" role="status"></p></div>
+                  <div class="stack stack-lg" ${this.libraryView === 'board' ? 'hidden' : ''}>${groups}</div>
+                  ${this.libraryView === 'board' ? '<div id="topic-board" class="topic-board"><p role="status">Loading topics…</p></div>' : ''}`
             }
           </sentio-card>
         </div>
@@ -388,6 +459,18 @@ export class DocumentsView {
   }
 
   bindEvents() {
+    this.container.querySelectorAll('[data-library-view]').forEach((button) => {
+      button.onclick = () => {
+        if (this.libraryView === button.dataset.libraryView) return;
+        this.libraryView = button.dataset.libraryView;
+        globalThis.localStorage?.setItem('sentio_library_view', this.libraryView);
+        this.render();
+        this.bindEvents();
+        const current = this.current || (() => true);
+        this.loadCourseProgress(current);
+        if (this.libraryView === 'board') this.loadBoard(current);
+      };
+    });
     this.container.querySelectorAll('.study-doc-btn').forEach((button) => {
       button.onclick = () =>
         this.studyDocument(this.documents.find((item) => item.id === button.dataset.id));
@@ -575,7 +658,36 @@ export class DocumentsView {
       if (!row.hidden) shown++;
     });
     const status = this.container.querySelector('#doc-search-status');
-    if (status) status.textContent = `${shown} matching material${shown === 1 ? '' : 's'}`;
+    if (status)
+      status.textContent = `${shown.toLocaleString()} matching material${shown === 1 ? '' : 's'}`;
+  }
+
+  // The board shows every topic from ready lectures, grouped by learning state.
+  async loadBoard(current) {
+    const lectures = this.documents.filter((d) => d.status === 'indexed').slice(0, BOARD_LIMIT);
+    const results = await Promise.allSettled(
+      lectures.map((d) => sentioAPI.get(`/documents/${encodeURIComponent(d.id)}/topics`)),
+    );
+    if (!current()) return;
+    const board = this.container.querySelector('#topic-board');
+    if (!board) return;
+    const topics = results.flatMap((result) =>
+      result.status === 'fulfilled' ? result.value.topics || [] : [],
+    );
+    this.remember(topics);
+    const failed = results.filter((result) => result.status === 'rejected').length;
+    board.innerHTML =
+      boardView(topics) +
+      (failed
+        ? `<p class="muted" role="status">${failed} lecture${failed === 1 ? '' : 's'} could not load.</p>`
+        : '') +
+      (this.documents.filter((d) => d.status === 'indexed').length > BOARD_LIMIT
+        ? `<p class="muted">Showing topics from the first ${BOARD_LIMIT} lectures.</p>`
+        : '');
+    board.querySelectorAll('.board-column').forEach((column, index) => {
+      column.style.animationDelay = `${index * 50}ms`;
+      column.classList.add('enter-rise');
+    });
   }
 
   remember(topics) {

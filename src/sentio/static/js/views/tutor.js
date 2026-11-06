@@ -91,7 +91,9 @@ export class TutorView {
   }
 
   showOverview(panel, overview) {
-    panel.innerHTML = `<details open>
+    // Phones keep the overview folded so the conversation stays in view.
+    const open = window.matchMedia('(max-width: 600px)').matches ? '' : ' open';
+    panel.innerHTML = `<details${open}>
       <summary><strong>Overview of these notes</strong></summary>
       <p>${escapeHtml(overview.summary)}</p>
       <div class="source-row">${overview.key_concepts.map((concept) => `<span class="badge">${escapeHtml(concept)}</span>`).join('')}</div>
@@ -202,13 +204,15 @@ export class TutorView {
       .map((s) => {
         const activeClass = s.session_id === currentSessionId ? 'active' : '';
         const topicName = s.topic ? s.topic.replace(/_/g, ' ') : 'General';
-        const difficulty = s.difficulty || 'intermediate';
+        const difficulty = s.difficulty
+          ? ' · ' + s.difficulty.charAt(0).toUpperCase() + s.difficulty.slice(1)
+          : '';
 
         return `
         <div class="session-item-row ${activeClass}" data-id="${escapeHtml(s.session_id)}" style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:var(--radius);border:1px solid ${s.session_id === currentSessionId ? 'var(--border-glow)' : 'transparent'};background:${s.session_id === currentSessionId ? 'var(--bg3)' : 'transparent'};cursor:pointer;transition:background 0.2s;">
-          <div class="select-session-btn" data-id="${escapeHtml(s.session_id)}" style="display:flex;flex-direction:column;gap:2px;flex:1;">
+          <div class="select-session-btn" data-id="${escapeHtml(s.session_id)}" style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;overflow-wrap:anywhere;">
             <div style="font-weight:bold;font-size:14px;color:${s.session_id === currentSessionId ? 'var(--accent)' : 'var(--text)'};">${escapeHtml(topicName)}</div>
-            <div style="font-size:14px;color:var(--text-dim);">${escapeHtml(s.subject)} · ${escapeHtml(difficulty.charAt(0).toUpperCase() + difficulty.slice(1))}</div>
+            <div style="font-size:14px;color:var(--text-dim);">${escapeHtml(s.subject)}${escapeHtml(difficulty)}</div>
           </div>
           ${s.status === 'active' ? `<button class="delete-session-btn" data-id="${escapeHtml(s.session_id)}" title="End session" aria-label="End session" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:4px;">&times;</button>` : ''}
         </div>
@@ -295,12 +299,20 @@ export class TutorView {
       const activeBar = document.getElementById('session-active-bar');
       if (activeBar) activeBar.style.display = 'flex';
       const barTopic = document.getElementById('active-bar-topic');
-      if (barTopic)
-        barTopic.textContent = `${res.subject || 'Tutoring'} · ${res.topic || 'Session'}`;
+      if (barTopic) {
+        const topic = (res.topic || 'Session').replace(/_/g, ' ');
+        barTopic.textContent = `${res.subject || 'Tutoring'} · ${topic}`;
+        barTopic.title = barTopic.textContent;
+      }
       const barMeta = document.getElementById('active-bar-meta');
       if (barMeta) {
         const isGrounded = res.metadata?.document_id && res.metadata.document_id !== 'none';
-        barMeta.textContent = `${res.difficulty || 'intermediate'} · ${isGrounded ? 'From your notes' : 'Not linked to notes'}`;
+        barMeta.textContent = [
+          res.difficulty,
+          isGrounded ? 'From your notes' : 'Not linked to notes',
+        ]
+          .filter(Boolean)
+          .join(' · ');
       }
 
       const welcome = document.getElementById('welcome');

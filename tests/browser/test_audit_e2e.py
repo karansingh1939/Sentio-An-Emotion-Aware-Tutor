@@ -248,7 +248,9 @@ async def test_sentio_real_browser_e2e_and_tenant_isolation():
                 "Grounding state was not preserved upon session resumption"
             )
 
-            await page.click('a[href="#/history"]')
+            # Study history lives in the account menu in the top bar.
+            await page.click(".account-btn")
+            await page.click('.account-menu a[href="#/history"]')
             await page.wait_for_selector("#view-history tbody tr")
             assert "kinematics" in await page.inner_text("#view-history")
             await page.click('a[href="#/analytics"]')
