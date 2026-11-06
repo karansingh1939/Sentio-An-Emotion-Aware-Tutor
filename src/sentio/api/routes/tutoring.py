@@ -14,7 +14,7 @@ from sentio.api.schemas import ChatRequest, SwitchTopicRequest
 from sentio.auth.middleware import get_current_user
 from sentio.emotion.access import decode_frame, require_emotion_access
 from sentio.shared.exceptions import LLMServiceUnavailableError
-from sentio.shared.utils import sanitise_input
+from sentio.shared.text import sanitise_input
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

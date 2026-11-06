@@ -1,7 +1,7 @@
 from collections import deque
 from typing import Dict, List, Optional
 
-from sentio.ai.models import Message
+from sentio.ai.response_models import Message
 from sentio.config import nlp_cfg
 
 

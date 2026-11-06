@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from sentio.api.dependencies import PREFIX, _verify_session_owner
 from sentio.auth.middleware import get_current_user
-from sentio.shared.utils import sanitise_input
+from sentio.shared.text import sanitise_input
 
 router = APIRouter()
 

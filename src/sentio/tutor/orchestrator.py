@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, TypedDict
 import psutil
 from langgraph.graph import END, StateGraph
 
-from sentio.ai.streaming import TutorPayload, output_schema
+from sentio.ai.stream_schema import TutorPayload, output_schema
 from sentio.config import tutor_cfg
 from sentio.jobs.control import checkpoint, current_control
 from sentio.tutor.difficulty import asks_for_another_explanation, requested_change, step
@@ -389,7 +389,7 @@ class SentioOrchestrator:
     def refuse_node(self, state: OrchestratorState) -> OrchestratorState:
         """The selected notes do not support the question: answer without the model."""
         from sentio.ai.grounding import MISSING_EVIDENCE, NO_SOURCE
-        from sentio.ai.models import TutorResponse
+        from sentio.ai.response_models import TutorResponse
 
         checkpoint("insufficient selected evidence")
         outcome = getattr(state.get("retrieved_content"), "evidence_outcome", "")
@@ -411,7 +411,7 @@ class SentioOrchestrator:
         t0 = time.perf_counter()
 
         from sentio.ai.grounding import validate_references
-        from sentio.ai.models import TutorResponse
+        from sentio.ai.response_models import TutorResponse
 
         tone = state.get("tone_instruction", "Be encouraging.")
         system_prompt, user_message = self.tutor_agent.nlp.prompt_builder.build_study_messages(

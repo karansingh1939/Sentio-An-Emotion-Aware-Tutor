@@ -108,7 +108,7 @@ def test_live_frames_are_analysed_at_most_once_a_second_per_connection():
 
     with (
         patch.object(emotion_cfg, "ENABLED", True),
-        patch("sentio.emotion.routes.decode_frame", return_value=object()),
+        patch("sentio.api.routes.emotion.decode_frame", return_value=object()),
         patch.object(agent.detector, "detect_from_frame", side_effect=detect),
         TestClient(app) as client,
     ):
@@ -121,7 +121,7 @@ def test_live_frames_are_analysed_at_most_once_a_second_per_connection():
                 assert ws.receive_json() == {"error": "Too many frames"}
             assert len(calls) == 1
 
-            with patch("sentio.emotion.routes.FRAME_INTERVAL_SEC", 0.05):
+            with patch("sentio.api.routes.emotion.FRAME_INTERVAL_SEC", 0.05):
                 time.sleep(0.1)
                 ws.send_json({"frame_b64": "x"})
                 reply = ws.receive_json()

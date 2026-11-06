@@ -167,7 +167,7 @@ function progressLine(summary) {
   return `${summary.ready} of ${summary.total} topic${summary.total === 1 ? '' : 's'} ready · ${due}${summary.practising} practising · ${summary.not_started} not started`;
 }
 
-export class DocumentsView {
+export class LibraryView {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
     this.documents = [];

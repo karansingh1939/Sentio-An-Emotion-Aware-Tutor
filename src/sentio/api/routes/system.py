@@ -6,8 +6,8 @@ from fastapi import APIRouter
 from fastapi.responses import FileResponse
 
 from sentio.api.dependencies import PREFIX, STATIC_DIR, agent
+from sentio.maintenance.health_check import system_health_check
 from sentio.maintenance.readiness import readiness
-from sentio.shared.utils import system_health_check
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

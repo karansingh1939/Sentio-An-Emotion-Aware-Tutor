@@ -679,7 +679,7 @@ def generate_structured(backend, schema_class, system_prompt, user_message, temp
     Raises ValueError or LLMServiceUnavailableError when no valid result is possible,
     so callers can fall back to source-based content.
     """
-    from sentio.ai.streaming import output_schema
+    from sentio.ai.stream_schema import output_schema
     from sentio.shared.exceptions import InvalidModelOutput
 
     def call(sys_p, hist, user_p):

@@ -2,7 +2,7 @@ import json
 import logging
 import re
 
-from sentio.ai.models import TutorResponse
+from sentio.ai.response_models import TutorResponse
 
 logger = logging.getLogger(__name__)
 

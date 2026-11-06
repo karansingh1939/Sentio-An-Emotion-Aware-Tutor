@@ -11,7 +11,7 @@ import psutil
 import requests
 
 from sentio.ai.grounding import GROUNDING_RULES
-from sentio.ai.streaming import TutorPayload, visible_text
+from sentio.ai.stream_schema import TutorPayload, visible_text
 from sentio.config import nlp_cfg
 from sentio.evaluation.evidence_dataset import digest
 from sentio.evaluation.latency import messages_for, quality_check

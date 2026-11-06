@@ -38,11 +38,11 @@ from sentio.api.routes import (
     topics,
     tutoring,
 )
+from sentio.api.routes import emotion as emotion_routes
 from sentio.config import api_cfg
-from sentio.emotion import routes as emotion_routes
 from sentio.shared.exceptions import LLMServiceUnavailableError
-from sentio.shared.utils import RateLimiter as RateLimiter
-from sentio.shared.utils import setup_logging
+from sentio.shared.logging_setup import setup_logging
+from sentio.shared.rate_limit import RateLimiter as RateLimiter
 
 setup_logging(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -148,6 +148,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.include_router(system.router)
 app.include_router(sessions.router)
