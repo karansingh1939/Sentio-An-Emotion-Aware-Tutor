@@ -136,18 +136,21 @@ are at `/docs` and capability checks at `/api/v1/ready`. See the
 
 ```text
 src/sentio/
-  api/            FastAPI app, middleware, routes
-  tutor/          LangGraph orchestrator, streaming turns
+  api/            FastAPI app, middleware, routes (one file per area, emotion included)
+  tutor/          LangGraph orchestrator, tutor agent, streaming turns
   rag/            Hybrid retrieval, evidence policy, vector store
-  ai/             Ollama provider, prompts, structured-output parsing
+  ai/             Ollama provider, prompts, tutor_llm, response and structured-output parsing
   ingestion/      Upload pipeline, OCR, recovery journal
-  quiz/ flashcards/ study/ intelligence/   Practice, planning, learner model
+  quiz/ flashcards/ study/ intelligence/   Practice, topics, planning, learner model
   repositories/   SQL access and migrations
-  emotion/        Optional emotion-aware side feature
-  static/         Browser UI
+  session/ auth/  Study sessions; local accounts, tokens and recovery keys
+  maintenance/    Backups, readiness, health check, account clean-up
+  shared/         Logging set-up, input clean-up, rate limiter, exceptions
+  emotion/        Optional emotion-aware side feature (detector, consent, policy)
+  static/         Browser UI: views/ named after screens (today, library, study, quizzes, flashcards, progress)
 tests/            unit/ · integration/ · browser/ (Chromium) · js/
 scripts/          dev/ · ops/ · eval/ · emotion/
-docs/             guides/ · architecture/ · evaluation/ · project/ · images/
+docs/             guides/ · architecture/ · evaluation/ · project/ (plans, audits) · images/
 reports/          Recorded measurements and raw outputs
 ```
 
