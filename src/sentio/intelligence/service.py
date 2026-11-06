@@ -309,24 +309,6 @@ class IntelligenceService:
         all_recs.sort(key=lambda x: x.priority_score, reverse=True)
         return all_recs
 
-    def generate_learning_path(self, student_id: str, subject: str = "general") -> List[str]:
-        """
-        Generates a sequenced list of topics based on prerequisite topology.
-        """
-        # Get all topics seeded in the system
-        all_topics = []
-        with self.sm.persister._engine.connect() as conn:
-            rows = conn.execute(
-                text("SELECT topic_id FROM topics WHERE subject = :sub"), {"sub": subject}
-            ).fetchall()
-            all_topics = [r[0] for r in rows]
-
-        if not all_topics:
-            all_topics = ["limits", "derivatives", "newtons_laws", "recursion"]
-
-        prereqs, _ = self._get_knowledge_graph()
-        return self.learning_path_engine.sequence_topics(all_topics, prereqs)
-
     def generate_session_summary(self, session_id: str) -> SessionSummaryReport:
         """
         Compiles the progress metrics and recommendations for a finished session.

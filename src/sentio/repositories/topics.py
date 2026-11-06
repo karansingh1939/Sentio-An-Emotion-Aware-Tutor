@@ -196,6 +196,52 @@ class TopicRepository:
             "due": _due(topics),
         }
 
+    def learning_path(self, owner, course_id=None, limit=12):
+        """What to study next from the learner's own lectures: due reviews first (least
+        remembered), then topics being practised, then new topics in lecture order."""
+        with self.engine.begin() as connection:
+            query = "SELECT id FROM documents WHERE student_id=:owner AND status='indexed'"
+            params = {"owner": owner}
+            if course_id:
+                if not connection.execute(
+                    text("SELECT 1 FROM courses WHERE id=:id AND student_id=:owner"),
+                    {"id": course_id, "owner": owner},
+                ).first():
+                    return None
+                query += " AND course_id=:course"
+                params["course"] = course_id
+            ids = list(connection.execute(text(query + " ORDER BY upload_date"), params).scalars())
+            results = self._results(connection, owner, ids)
+            lectures = [
+                self._lecture(connection, owner, self._document(connection, owner, i), results)
+                for i in ids
+            ]
+        topics = [topic for lecture in lectures for topic in lecture["topics"]]
+        practising = [t for t in topics if t["state"] == "practising"]
+        practising.sort(key=lambda t: t["recent_correct"] / max(1, t["recent_total"]))
+        ordered = (
+            [(t, "review", "Due for review: your memory of it is fading.") for t in _due(topics)]
+            + [
+                (t, "practise", "Practising: recent answers were not all right.")
+                for t in practising
+            ]
+            + [
+                (t, "learn", "Not started yet, next in lecture order.")
+                for t in topics
+                if t["state"] == "not_started"
+            ]
+        )
+        keys = ("id", "title", "document_id", "filename", "first_page", "last_page", "state")
+        return {
+            "course_id": course_id,
+            "total": len(topics),
+            "ready": sum(t["state"] == "ready" for t in topics),
+            "steps": [
+                {**{k: t[k] for k in keys}, "action": action, "reason": reason}
+                for t, action, reason in ordered[:limit]
+            ],
+        }
+
     def due_topics(self, owner):
         """Topics due for review across all the student's notes, least remembered first."""
         with self.engine.begin() as connection:
