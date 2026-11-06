@@ -72,7 +72,7 @@ function initBars() {
     c.innerHTML += `
       <div class="ebar-row">
         <div class="ebar-label">${em}</div>
-        <div class="ebar-track"><div class="ebar-fill" id="bar-${em}" style="width:0%"></div></div>
+        <div class="ebar-track"><div class="ebar-fill" id="bar-${em}" style="transform:scaleX(0)"></div></div>
         <div class="ebar-pct" id="barpct-${em}">--</div>
       </div>`;
   });
@@ -818,7 +818,7 @@ function updateStatePanel(data) {
   const stateStrat = document.getElementById('state-strategy');
   if (stateStrat) stateStrat.textContent = 'Strategy: ' + (STRATEGY_LABEL[strategy] || strategy);
   const engageBar = document.getElementById('engage-bar');
-  if (engageBar) engageBar.style.width = engage + '%';
+  if (engageBar) engageBar.style.transform = 'scaleX(' + engage / 100 + ')';
   const statEngage = document.getElementById('stat-engage');
   if (statEngage) statEngage.textContent = engage + '%';
   const statConf = document.getElementById('stat-conf');
@@ -865,10 +865,10 @@ function updateStatePanel(data) {
     const pct = document.getElementById('barpct-' + em);
     if (hasScores && typeof data.emotion_scores[em] === 'number') {
       const p = Math.round(data.emotion_scores[em] * 100);
-      if (fill) fill.style.width = p + '%';
+      if (fill) fill.style.transform = 'scaleX(' + p / 100 + ')';
       if (pct) pct.textContent = p + '%';
     } else {
-      if (fill) fill.style.width = '0%';
+      if (fill) fill.style.transform = 'scaleX(0)';
       if (pct) pct.textContent = '--';
     }
   });
