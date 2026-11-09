@@ -22,6 +22,33 @@ def login_student(client, *, admin=False):
     return student_id
 
 
+def upload_notes(client, text, name="notes.txt"):
+    """Upload a notes file as the logged-in student and return its document id."""
+    from sentio.api.app import PREFIX
+
+    response = client.post(
+        PREFIX + "/documents/upload", files={"file": (name, text.encode(), "text/plain")}
+    )
+    assert response.status_code == 201, response.text
+    return response.json()["document_id"]
+
+
+def index_notes(agent, owner, text, name="notes.txt"):
+    """Index a small notes file for an owner directly (no HTTP) and return its document id."""
+    import tempfile
+    from pathlib import Path
+
+    from sentio.ingestion.pipeline import DocumentIngestionPipeline
+
+    folder = Path(tempfile.mkdtemp(prefix="sentio-notes-"))
+    path = folder / name
+    path.write_text(text, encoding="utf-8")
+    pipeline = DocumentIngestionPipeline(sm=agent.sm, vdb=agent.kb.vdb)
+    pipeline.load()
+    assert pipeline.process_file(path, "notes", None, student_id=owner), pipeline.last_error
+    return agent.sm.get_document_by_filename(name, student_id=owner, category="notes")["id"]
+
+
 def complete(system_prompt, history, user_message, **kwargs):
     prompt = system_prompt.lower()
     requested = re.search(r"exactly (\d+) (?:questions|flashcards)", prompt)
@@ -74,3 +101,26 @@ def complete(system_prompt, history, user_message, **kwargs):
             "suggested_topic": "thermodynamics",
         }
     ), 30
+
+
+async def auto_answer_dialogs(page, text):
+    """Accept every in-page dialog, typing `text` into text dialogs.
+
+    Stands in for Playwright's page.on("dialog") now that the app uses in-page dialogs
+    instead of window.prompt and window.confirm.
+    """
+    await page.add_init_script(
+        """text => new MutationObserver(() => {
+            const modal = [...document.querySelectorAll('sentio-modal')].at(-1);
+            if (!modal || modal.dataset.autoAnswered) return;
+            const input = modal.querySelector('#dialog-text');
+            const ok = modal.querySelector('[data-dialog-ok], .dialog-form [type=submit]');
+            if (!ok) return;
+            modal.dataset.autoAnswered = '1';
+            if (input) input.value = text;
+            setTimeout(() => ok.click(), 0);
+        }).observe(document, { childList: true, subtree: true })""".replace(
+            "text =>", "(text => "
+        ).rstrip()
+        + f")({text!r})"
+    )

@@ -12,7 +12,6 @@ from sentio.session.analytics import SessionAnalytics, SessionAnalyticsEngine
 from sentio.session.models import (
     EmotionEvent,
     QuizAttempt,
-    QuizTracker,
     Session,
     SessionStatus,
 )
@@ -203,10 +202,7 @@ class SessionManager:
         emotion_result,  # EmotionResult from sentio.emotion.detector
         strategy_active: str = "standard",
     ):
-        """
-        Record a new emotion detection result into the session timeline.
-        Also checks if difficulty should be adapted.
-        """
+        """Record an emotion detection result. It informs tone only, never difficulty."""
         session = self.get_or_raise(session_id)
         if not session.is_active:
             return
@@ -221,9 +217,6 @@ class SessionManager:
         session.emotion_timeline.record(event)
         session.touch()
 
-        # Check if we should auto-adapt difficulty
-        self._maybe_adapt_difficulty(session)
-
     def record_quiz_attempt(
         self,
         session_id: str,
@@ -235,6 +228,7 @@ class SessionManager:
         connection=None,
         student_answer: str = "answered",
         score: Optional[float] = None,
+        question_id: Optional[str] = None,
     ):
         """Record a quiz answer and update difficulty if needed."""
         session = self.get_or_raise(session_id)
@@ -261,8 +255,8 @@ class SessionManager:
                 text("""
                     INSERT INTO quiz_attempts 
                     (session_id, student_id, topic, question_text, student_answer, 
-                     correct, score, response_time_sec, difficulty, timestamp)
-                    VALUES (:sid, :stud, :topic, :q_text, :ans, :correct, :score, :resp_time, :diff, :ts)
+                     correct, score, response_time_sec, difficulty, timestamp, question_id)
+                    VALUES (:sid, :stud, :topic, :q_text, :ans, :correct, :score, :resp_time, :diff, :ts, :qid)
                 """),
                 {
                     "sid": session_id,
@@ -275,6 +269,7 @@ class SessionManager:
                     "resp_time": response_time_sec,
                     "diff": attempt.difficulty,
                     "ts": attempt.timestamp,
+                    "qid": question_id,
                 },
             )
             if connection is None:
@@ -290,13 +285,14 @@ class SessionManager:
         )
 
         # 3. Difficulty adaptation based on quiz performance
-        self._maybe_adapt_difficulty(session)
+        change = self._maybe_adapt_difficulty(session)
 
         logger.debug(
             f"Quiz attempt | session={session_id[:8]} | "
             f"correct={correct} | streak_correct={session.quiz_tracker.consecutive_correct} "
             f"| streak_wrong={session.quiz_tracker.consecutive_wrong}"
         )
+        return change
 
     def record_exchange(
         self,
@@ -314,34 +310,25 @@ class SessionManager:
     # ── Difficulty Adaptation ──────────────────
 
     def _maybe_adapt_difficulty(self, session: Session):
+        """Step the level after a quiz streak (sentio.tutor.difficulty), unless it is pinned.
+
+        The streak restarts after a change, so one streak moves the level by one step.
+        Returns the change for the learner to see, or None.
         """
-        Check signals and update difficulty if thresholds are met.
-        Uses both emotion state AND quiz streaks.
-        """
+        from sentio.tutor.difficulty import describe, step, streak_change
+
         qt = session.quiz_tracker
-        state = session.current_learning_state
-
-        # Import the standalone adapter logic
-        from sentio.rag.knowledge_base import ContentAdapter, Difficulty
-
-        adapter = ContentAdapter()
-        new_diff = adapter.adapt_difficulty(
-            current=Difficulty(session.difficulty),
-            learning_state=state,
-            consecutive_correct=qt.consecutive_correct,
-            consecutive_wrong=qt.consecutive_wrong,
-        )
-
-        if new_diff.value != session.difficulty:
-            reason = self._build_reason(state, qt)
-            session.update_difficulty(new_diff.value, reason)
-
-    def _build_reason(self, state: str, qt: QuizTracker) -> str:
-        if qt.consecutive_correct >= 3:
-            return f"{qt.consecutive_correct}_correct_streak"
-        if qt.consecutive_wrong >= 2:
-            return f"{qt.consecutive_wrong}_wrong_streak"
-        return f"emotion_state_{state}"
+        change = streak_change(qt.consecutive_correct, qt.consecutive_wrong)
+        if change is None or session.metadata.get("difficulty_pinned"):
+            return None
+        direction, reason = change
+        previous = session.difficulty
+        new_level = step(previous, direction)
+        if new_level == previous:
+            return None
+        session.update_difficulty(new_level, reason)
+        qt.consecutive_correct = qt.consecutive_wrong = 0
+        return describe(previous, new_level, reason)
 
     # ── Queries & Analytics ────────────────────
 
@@ -905,8 +892,8 @@ class SessionManager:
                 conn.execute(
                     text("""
                         INSERT INTO quiz_questions 
-                        (question_id, quiz_id, question_text, question_type, options_json, correct_answer, explanation, difficulty, topic)
-                        VALUES (:qid, :quiz_id, :text, :type, :opts, :correct, :exp, :diff, :topic)
+                        (question_id, quiz_id, question_text, question_type, options_json, correct_answer, explanation, difficulty, topic, source_document_id, source_page)
+                        VALUES (:qid, :quiz_id, :text, :type, :opts, :correct, :exp, :diff, :topic, :source_document, :source_page)
                     """),
                     {
                         "qid": q_id,
@@ -918,6 +905,8 @@ class SessionManager:
                         "exp": q["explanation"],
                         "diff": q.get("difficulty", "intermediate"),
                         "topic": q.get("topic", "general"),
+                        "source_document": q.get("source_document_id"),
+                        "source_page": q.get("source_page"),
                     },
                 )
             if connection is None:
@@ -1024,8 +1013,8 @@ class SessionManager:
                 conn.execute(
                     text("""
                         INSERT INTO flashcards 
-                        (card_id, student_id, topic_id, deck_id, front_text, back_text, created_at, interval_days, repetition_count, ease_factor, next_review_at, tags, provenance_json)
-                        VALUES (:cid, :sid, :tid, :did, :front, :back, :ts, 0, 0, 2.5, :next_ts, :tags, :provenance)
+                        (card_id, student_id, topic_id, deck_id, front_text, back_text, created_at, interval_days, repetition_count, ease_factor, next_review_at, tags, provenance_json, source_document_id, source_page)
+                        VALUES (:cid, :sid, :tid, :did, :front, :back, :ts, 0, 0, 2.5, :next_ts, :tags, :provenance, :source_document, :source_page)
                     """),
                     {
                         "cid": card_id,
@@ -1038,6 +1027,8 @@ class SessionManager:
                         "next_ts": time.time(),
                         "tags": json.dumps(c.get("tags", [])),
                         "provenance": json.dumps(provenance) if provenance else None,
+                        "source_document": c.get("source_document_id"),
+                        "source_page": c.get("source_page"),
                     },
                 )
             if connection is None:

@@ -1,0 +1,437 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-04T10:00:00Z",
+  "title": "Design System: Sentio",
+  "extensions": {
+    "colorMeta": {
+      "ink-indigo": {
+        "role": "primary",
+        "displayName": "Ink Indigo",
+        "canonical": "#465bb2",
+        "cssVar": "--accent",
+        "dark": "dark-ink-indigo",
+        "tonalRamp": [
+          "#151b36",
+          "#222c5a",
+          "#34478f",
+          "#465bb2",
+          "#6d7fc8",
+          "#a9baff",
+          "#c3ceff",
+          "#e6ebff"
+        ]
+      },
+      "ink-indigo-deep": {
+        "role": "primary",
+        "displayName": "Ink Indigo Deep",
+        "canonical": "#34478f",
+        "cssVar": "--accent2",
+        "dark": "dark-ink-indigo-soft",
+        "tonalRamp": [
+          "#151b36",
+          "#222c5a",
+          "#34478f",
+          "#465bb2",
+          "#6d7fc8",
+          "#a9baff",
+          "#c3ceff",
+          "#e6ebff"
+        ]
+      },
+      "paper-grey": {
+        "role": "neutral",
+        "displayName": "Paper Grey",
+        "canonical": "#f5f6f8",
+        "cssVar": "--bg",
+        "dark": "dark-desk",
+        "tonalRamp": [
+          "#161b24",
+          "#293242",
+          "#3c475a",
+          "#556174",
+          "#8a95a8",
+          "#d8dde6",
+          "#edf0f5",
+          "#f5f6f8"
+        ]
+      },
+      "sheet-white": {
+        "role": "neutral",
+        "displayName": "Sheet White",
+        "canonical": "#ffffff",
+        "cssVar": "--bg2",
+        "dark": "dark-sheet",
+        "tonalRamp": [
+          "#1d2430",
+          "#293242",
+          "#3c475a",
+          "#556174",
+          "#8a95a8",
+          "#d8dde6",
+          "#edf0f5",
+          "#ffffff"
+        ]
+      },
+      "tray-grey": {
+        "role": "neutral",
+        "displayName": "Tray Grey",
+        "canonical": "#edf0f5",
+        "cssVar": "--bg3",
+        "dark": "dark-tray",
+        "tonalRamp": [
+          "#161b24",
+          "#293242",
+          "#3c475a",
+          "#556174",
+          "#8a95a8",
+          "#d8dde6",
+          "#edf0f5",
+          "#f5f6f8"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#d8dde6",
+        "cssVar": "--border",
+        "dark": "dark-hairline",
+        "tonalRamp": [
+          "#161b24",
+          "#293242",
+          "#3c475a",
+          "#556174",
+          "#8a95a8",
+          "#d8dde6",
+          "#edf0f5",
+          "#f5f6f8"
+        ]
+      },
+      "graphite": {
+        "role": "neutral",
+        "displayName": "Graphite",
+        "canonical": "#202938",
+        "cssVar": "--text",
+        "dark": "dark-chalk",
+        "tonalRamp": [
+          "#11161f",
+          "#202938",
+          "#3c475a",
+          "#556174",
+          "#8a95a8",
+          "#b8c2d3",
+          "#dfe4ee",
+          "#edf0f7"
+        ]
+      },
+      "pencil-grey": {
+        "role": "neutral",
+        "displayName": "Pencil Grey",
+        "canonical": "#556174",
+        "cssVar": "--text-dim",
+        "dark": "dark-pencil",
+        "tonalRamp": [
+          "#11161f",
+          "#202938",
+          "#3c475a",
+          "#556174",
+          "#8a95a8",
+          "#b8c2d3",
+          "#dfe4ee",
+          "#edf0f7"
+        ]
+      },
+      "ready-green": {
+        "role": "status",
+        "displayName": "Ready Green",
+        "canonical": "#16704e",
+        "cssVar": "--green",
+        "dark": "dark-ready-green",
+        "tonalRamp": [
+          "#0b3526",
+          "#104f37",
+          "#16704e",
+          "#2a9168",
+          "#4fb88b",
+          "#75d6ac",
+          "#b3ecd2",
+          "#e3f7ee"
+        ]
+      },
+      "practising-amber": {
+        "role": "status",
+        "displayName": "Practising Amber",
+        "canonical": "#8a6007",
+        "cssVar": "--yellow",
+        "dark": "dark-practising-amber",
+        "tonalRamp": [
+          "#3d2a03",
+          "#5e4205",
+          "#8a6007",
+          "#b07e14",
+          "#d3a240",
+          "#eac476",
+          "#f5dfb0",
+          "#fbf2dd"
+        ]
+      },
+      "correction-red": {
+        "role": "status",
+        "displayName": "Correction Red",
+        "canonical": "#b32c40",
+        "cssVar": "--red",
+        "dark": "dark-correction-red",
+        "tonalRamp": [
+          "#4d121b",
+          "#7a1d2b",
+          "#b32c40",
+          "#d24d61",
+          "#ef7489",
+          "#ff9aab",
+          "#ffc9d2",
+          "#ffecef"
+        ]
+      },
+      "hover-tint": {
+        "role": "neutral",
+        "displayName": "Hover tint",
+        "canonical": "#e8ecf3",
+        "cssVar": "--hover",
+        "dark": "dark-hover-tint"
+      },
+      "press-tint": {
+        "role": "neutral",
+        "displayName": "Press tint",
+        "canonical": "#dde3ed",
+        "cssVar": "--press",
+        "dark": "dark-press-tint"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page title in each view header."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Session-card and welcome titles; 21px at phone width."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card and panel titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Default reading text; tutor answers use 1.8 line height in an 800px column."
+      },
+      "body-small": {
+        "displayName": "Body small",
+        "purpose": "Metadata, notices, tables, helper text, secondary buttons."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Form labels, topic states, badges, stat labels. Sentence case."
+      },
+      "stat": {
+        "displayName": "Stat",
+        "purpose": "The single number on a progress stat card."
+      },
+      "code": {
+        "displayName": "Code",
+        "purpose": "Code in answers and recovery keys only."
+      }
+    },
+    "shadows": [
+      {
+        "name": "toast-float",
+        "value": "0 4px 16px #0001",
+        "purpose": "Transient toasts above content."
+      },
+      {
+        "name": "dialog-float",
+        "value": "0 12px 32px rgb(0 0 0 / 0.12)",
+        "purpose": "Dialogs, over a rgb(22 27 36 / 0.45) scrim with a 4px backdrop blur."
+      }
+    ],
+    "focus": [
+      {
+        "name": "focus-ring",
+        "value": "outline: 3px solid var(--accent); outline-offset: 3px",
+        "purpose": "Every button, link and form control on :focus-visible."
+      }
+    ],
+    "motion": [
+      {
+        "name": "dur",
+        "value": "180ms",
+        "purpose": "Hover, press and focus changes on controls."
+      },
+      {
+        "name": "dur-slow",
+        "value": "320ms",
+        "purpose": "Arrivals: messages, toasts and status changes."
+      },
+      {
+        "name": "ease",
+        "value": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+        "purpose": "The one easing curve, an exponential ease-out."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animation-duration: 0.01ms; transition-duration: 0.01ms",
+        "purpose": "Applied to everything under prefers-reduced-motion: reduce."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone",
+        "value": "600px"
+      },
+      {
+        "name": "tablet",
+        "value": "768px"
+      },
+      {
+        "name": "narrow-desktop",
+        "value": "1000px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one solid action in an area: Start studying, Send, Check answer.",
+      "html": "<button class=\"ds-btn-primary\">Start studying</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 36px; padding: 8px 16px; background: var(--accent, #465bb2); border: 1px solid var(--accent, #465bb2); color: var(--bg2, #ffffff); border-radius: var(--radius, 8px); font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; } .ds-btn-primary:hover { background: var(--accent2, #34478f); border-color: var(--accent2, #34478f); } .ds-btn-primary:focus-visible { outline: 3px solid var(--accent, #465bb2); outline-offset: 3px; } .ds-btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Default button: Try a quiz, Make flashcards, suggested questions.",
+      "html": "<button class=\"ds-btn-secondary\">Try a quiz</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 36px; padding: 8px 16px; background: var(--bg2, #ffffff); border: 1px solid var(--border, #d8dde6); color: var(--text, #202938); border-radius: var(--radius, 8px); font: inherit; font-size: 14px; cursor: pointer; } .ds-btn-secondary:hover { background: var(--bg3, #edf0f5); } .ds-btn-secondary:focus-visible { outline: 3px solid var(--accent, #465bb2); outline-offset: 3px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Recessed field with its label above; at least 15px text.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Goal for this session</span><input class=\"ds-input\" placeholder=\"Understand Newton's first law\" /></label>",
+      "css": ".ds-field { display: grid; gap: 6px; max-width: 360px; } .ds-field-label { font-size: 14px; font-weight: 600; color: var(--text-dim, #556174); } .ds-input { font: inherit; font-size: 15px; padding: 8px 12px; background: var(--bg3, #edf0f5); border: 1px solid var(--border, #d8dde6); border-radius: var(--radius, 8px); color: var(--text, #202938); } .ds-input:focus-visible { outline: 3px solid var(--accent, #465bb2); outline-offset: 3px; }"
+    },
+    {
+      "name": "Sidebar Navigation",
+      "kind": "nav",
+      "refersTo": "nav-link-active",
+      "description": "Left sidebar links; the active item gets a tray fill and heavier weight.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-link\" href=\"#\">Today</a><a class=\"ds-nav-link\" href=\"#\">Library</a><a class=\"ds-nav-link is-active\" href=\"#\" aria-current=\"page\">Study</a><a class=\"ds-nav-link\" href=\"#\">Review</a><a class=\"ds-nav-link\" href=\"#\">Progress</a></nav>",
+      "css": ".ds-nav { display: grid; gap: 6px; width: 196px; } .ds-nav-link { display: flex; align-items: center; min-height: 44px; padding: 10px 16px; border-radius: var(--radius, 8px); color: var(--text, #202938); font-size: 15px; text-decoration: none; } .ds-nav-link:hover { background: var(--bg3, #edf0f5); } .ds-nav-link.is-active { background: var(--bg3, #edf0f5); font-weight: 650; } .ds-nav-link:focus-visible { outline: 3px solid var(--accent, #465bb2); outline-offset: 3px; }"
+    },
+    {
+      "name": "Citation Chip",
+      "kind": "chip",
+      "refersTo": "chip-citation",
+      "description": "Opens the exact passage an answer cites.",
+      "html": "<span class=\"ds-cite-row\"><button class=\"ds-cite-chip\">mechanics-notes.txt · p.1</button><button class=\"ds-cite-chip\">Lecture 3 · slide 12</button></span>",
+      "css": ".ds-cite-row { display: flex; flex-wrap: wrap; gap: 6px; } .ds-cite-chip { border: 1px solid var(--border, #d8dde6); background: var(--bg3, #edf0f5); color: var(--accent, #465bb2); border-radius: 999px; padding: 3px 10px; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; } .ds-cite-chip:hover { border-color: var(--accent, #465bb2); } .ds-cite-chip:focus-visible { outline: 3px solid var(--accent, #465bb2); outline-offset: 3px; }"
+    },
+    {
+      "name": "Topic State",
+      "kind": "chip",
+      "refersTo": "topic-state-ready",
+      "description": "Outlined pill showing a topic's learning state.",
+      "html": "<span class=\"ds-topic-states\"><span class=\"ds-topic-state\">Not started</span><span class=\"ds-topic-state is-practising\">Practising</span><span class=\"ds-topic-state is-ready\">Ready</span><span class=\"ds-topic-state is-due\">Review due</span></span>",
+      "css": ".ds-topic-states { display: flex; flex-wrap: wrap; gap: 8px; } .ds-topic-state { font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border, #d8dde6); color: var(--text-dim, #556174); } .ds-topic-state.is-practising { color: var(--yellow, #8a6007); border-color: var(--yellow, #8a6007); } .ds-topic-state.is-ready { color: var(--green, #16704e); border-color: var(--green, #16704e); } .ds-topic-state.is-due { color: var(--accent, #465bb2); border-color: var(--accent, #465bb2); }"
+    },
+    {
+      "name": "Stat Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Flat outlined card holding one progress number.",
+      "html": "<div class=\"ds-stat\"><div class=\"ds-stat-value\">3</div><div class=\"ds-stat-label\">Topics to review today</div></div>",
+      "css": ".ds-stat { background: var(--bg2, #ffffff); border: 1px solid var(--border, #d8dde6); border-radius: var(--radius-lg, 12px); padding: 16px 20px; max-width: 280px; } .ds-stat-value { font-size: 26px; font-weight: 800; color: var(--text, #202938); } .ds-stat-label { color: var(--text-dim, #556174); font-size: 13px; margin-top: 4px; }"
+    },
+    {
+      "name": "Cited Passage",
+      "kind": "custom",
+      "refersTo": "cited-passage",
+      "description": "Signature: a quoted excerpt from the student's notes with an ink left rule.",
+      "html": "<blockquote class=\"ds-cited-passage\">Inertia is the tendency of an object to resist changes in its state of motion.</blockquote>",
+      "css": ".ds-cited-passage { margin: 0; padding: 12px 16px; border-left: 3px solid var(--accent, #465bb2); background: var(--bg3, #edf0f5); border-radius: var(--radius, 8px); color: var(--text, #202938); white-space: pre-wrap; line-height: 1.6; max-width: 560px; }"
+    },
+    {
+      "name": "Answer Feedback",
+      "kind": "custom",
+      "refersTo": "notice",
+      "description": "Instant check on a quiz answer; red rule for incorrect.",
+      "html": "<div class=\"ds-feedback\"><strong>Correct.</strong><p>Mass measures how much inertia an object has.</p></div><div class=\"ds-feedback is-incorrect\"><strong>Not quite.</strong><p>The notes say a net external force is required.</p></div>",
+      "css": ".ds-feedback { margin-top: 12px; padding: 12px 14px; border-radius: var(--radius, 8px); border-left: 4px solid var(--green, #16704e); background: var(--bg3, #edf0f5); font-size: 14px; color: var(--text, #202938); max-width: 520px; } .ds-feedback.is-incorrect { border-left-color: var(--red, #b32c40); } .ds-feedback p { margin: 6px 0 0; color: var(--text-dim, #556174); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Study Desk",
+    "overview": "Sentio looks like a tidy desk for long study sessions. The student's notes and the tutor's cited answers are the only things that should hold attention. The interface stays flat, bordered and plain, using the operating system's own font. Ink Indigo, the single accent, marks only what the student can act on or check: links, citations, the primary action and topics due for review. Everything else is graphite text on pale grey and white sheets separated by hairline borders.\n\nThe density suits reading, not a dashboard. Body text is 16px at a generous 1.65 line height, chat answers are wider at 1.8, and the conversation column stays at most 800px wide. Layout is a fixed left sidebar and one working column. Cards are outlined rather than lifted, and status shows as coloured outlines and left rules rather than filled blocks, so a page full of topics stays calm.\n\nThe older neon theme still in `styles.css` is retired: near-black backgrounds, cyan glows, scan-line overlays, Syne and JetBrains Mono, uppercase letter-spaced buttons and gradient fills. Its glows, gradients, uppercase labels and scan-lines have been removed. The base layer it left behind in `styles.css` now follows this system, and `workspace.css` refines it. If any of it resurfaces, treat it as a bug, not a pattern to follow.",
+    "keyCharacteristics": [
+      "Flat surfaces separated by 1px hairlines; no shadows at rest.",
+      "One accent (Ink Indigo) for action and evidence; green, amber and red only for learning status and errors.",
+      "System font throughout; hierarchy comes from size and weight, never from case or letter-spacing.",
+      "Pill shapes are reserved for small metadata: citations, badges and topic states.",
+      "Light and dark themes are equal: every colour has a tuned counterpart, not an inversion."
+    ],
+    "rules": [
+      {
+        "name": "The Ink Means Evidence Rule",
+        "body": "Ink Indigo is for things the student can act on or check against their notes. Never use it for decoration, headings or large backgrounds.",
+        "section": "colors"
+      },
+      {
+        "name": "The Status Is Learning Rule",
+        "body": "Green, amber and red describe the student's learning or an error. They never stand in for brand colour or emphasis.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Desks Rule",
+        "body": "Every colour change ships with its dark-theme counterpart. Both themes are checked; neither is derived by inverting the other.",
+        "section": "colors"
+      },
+      {
+        "name": "The Sentence Case Rule",
+        "body": "Labels, buttons and headings use sentence case with normal letter-spacing. Uppercase, letter-spaced text belongs to the retired theme.",
+        "section": "typography"
+      },
+      {
+        "name": "The 15px Floor Rule",
+        "body": "Text inputs, selects and textareas render at 15px or larger (the chat input at 16px) so they stay comfortable to type in and don't trigger mobile zoom.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Desk Rule",
+        "body": "Surfaces never cast shadows at rest or on hover. To separate something, use a hairline border or a step in tone. Floating, transient UI (toasts, dialogs) is the only exception, and its shadow stays faint.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do separate surfaces with 1px Hairline borders and tonal steps (Paper Grey → Sheet White → Tray Grey).",
+      "Do use Ink Indigo only for actions, links, citations, focus and the Review due state.",
+      "Do show sources as citation chips and cited passages with the 3px Ink Indigo left rule.",
+      "Do keep every interactive element's 3px Ink Indigo focus outline at a 3px offset.",
+      "Do define and check each colour in both the light and the dark theme.",
+      "Do keep text inputs at 15px or larger and nav targets at least 44px tall.",
+      "Do respect `prefers-reduced-motion`; the workspace already disables animations and transitions under it.",
+      "Do give every control a hover state (`--hover`) and a press state (`--press`). The primary action darkens to Ink Indigo Deep instead.",
+      "Do animate only colour, background, border and opacity, with the shared timing: `--dur` (180ms) for controls, `--dur-slow` (320ms) for arrivals, and `--ease` (`cubic-bezier(0.2, 0.8, 0.2, 1)`) for both."
+    ],
+    "donts": [
+      "Don't add drop shadows or glows to cards, buttons or bubbles; only toasts and dialogs float.",
+      "Don't reuse the retired neon theme: cyan-on-black, scan-line overlays, glows, gradient buttons, Syne or JetBrains Mono.",
+      "Don't set buttons or labels in uppercase with letter-spacing.",
+      "Don't use green, amber or red as decoration or brand colour; they mean learning status or error.",
+      "Don't use pill shapes for primary buttons or large containers; pills are for small metadata.",
+      "Don't let the optional camera / emotion UI bring its own visual language into the main study flow.",
+      "Don't use `transition: all`, bounce or overshoot curves, or a different duration per element.",
+      "Don't end interface copy with exclamation marks, or write \"successfully\"."
+    ]
+  }
+}

@@ -49,7 +49,7 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
-from sentio.ai.nlp_engine import NLPEngine, TutorResponse
+from sentio.ai.tutor_llm import NLPEngine, TutorResponse
 from sentio.emotion.detector import EmotionDetector, EmotionResult
 from sentio.rag.knowledge_base import KnowledgeBase
 from sentio.session.manager import SessionManager
@@ -92,6 +92,7 @@ class AgentResponse:
     topics_covered: list
     total_latency_ms: float
     source_citations: List[dict] = field(default_factory=list)
+    difficulty_reason: Optional[str] = None
 
     # Timing
     timestamp: float = field(default_factory=time.time)
@@ -248,7 +249,6 @@ class TutorAgent:
         self._require_loaded()
         analytics = self.sm.close_session(session_id)
         self.nlp.clear_history(session_id)
-        self.kb.reset_session(session_id)
         self.detector.clear_session(session_id)
         logger.info("Session ended: %s", session_id[:8])
         return analytics
@@ -407,6 +407,7 @@ class TutorAgent:
             learning_state=final_state.get("learning_state", learning_state),
             strategy=final_state.get("strategy", strategy),
             difficulty=final_state.get("difficulty", difficulty),
+            difficulty_reason=final_state.get("difficulty_reason"),
             engagement_score=engagement,
             detected_emotion=emotion_result.emotion,
             emotion_confidence=emotion_result.confidence,
@@ -442,7 +443,6 @@ class TutorAgent:
         if new_difficulty:
             session.update_difficulty(new_difficulty, reason="manual_topic_switch")
         self.nlp.clear_history(session_id)
-        self.kb.reset_session(session_id)
         logger.info(
             "Topic switched: %s -> %s [%s]",
             session_id[:8],

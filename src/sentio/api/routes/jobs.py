@@ -19,6 +19,7 @@ from sentio.auth.middleware import get_current_user
 from sentio.jobs.control import WorkCancelled
 from sentio.repositories.jobs import JobConflict, JobExpired
 from sentio.repositories.practice import PracticeRepository
+from sentio.repositories.topics import TopicChanged, TopicRepository
 
 router = APIRouter()
 
@@ -49,6 +50,13 @@ def study_snapshot(service, session):
     try:
         return PracticeRepository(service.agent.sm.persister._engine).snapshot(session)
     except WorkCancelled as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+def current_topics(service, session):
+    try:
+        TopicRepository(service.agent.sm.persister._engine).focus(session)
+    except TopicChanged as exc:
         raise HTTPException(409, str(exc)) from exc
 
 
@@ -116,6 +124,7 @@ def quiz_job(
     session = deepcopy(_verify_session_owner(req.session_id, user))
     # Freeze context at submission; mutable frontend fields are not a second authority.
     snapshot = study_snapshot(quiz_service, session)
+    current_topics(quiz_service, session)
     return submit(
         jobs,
         user["student_id"],
@@ -149,6 +158,7 @@ def card_job(
         raise HTTPException(422, "Choose an active study session before generating cards.")
     session = deepcopy(_verify_session_owner(req.session_id, user))
     snapshot = study_snapshot(flashcard_service, session)
+    current_topics(flashcard_service, session)
     if not any(
         d["deck_id"] == req.deck_id for d in flashcard_service.list_decks(user["student_id"])
     ):

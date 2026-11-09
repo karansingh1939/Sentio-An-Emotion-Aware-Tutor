@@ -14,6 +14,14 @@ let generationInProgress = false;
 let generationRequest = null;
 let sessionStartingFor = null;
 
+// Readable progress for the typing line. A queued answer waits for the one local model,
+// which may be busy writing a quiz, flashcards or an overview.
+function stageLabel(stage) {
+  if (stage === 'queued') return 'Waiting for the local AI to finish another task…';
+  const text = String(stage || '').trim();
+  return text ? `${text[0].toUpperCase()}${text.slice(1)}…` : 'Working…';
+}
+
 function getActiveSessionId() {
   if (window.store) return window.store.getState('activeSessionId');
   return (
@@ -32,18 +40,6 @@ window.setLegacySessionId = function (id) {
     window.store.setState('activeSessionId', id);
   }
 };
-
-function getAuthHeaders() {
-  const headers = { 'Content-Type': 'application/json' };
-  const token =
-    window.store && typeof window.store.getState === 'function'
-      ? window.store.getState('authToken')
-      : localStorage.getItem('sentio_token');
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  return headers;
-}
 
 // Emotion meta
 const EMOTIONS = ['angry', 'disgusted', 'fearful', 'happy', 'neutral', 'sad', 'surprised'];
@@ -66,13 +62,13 @@ const STATE_COLOR = {
   disengaged: 'var(--disengaged)',
 };
 const STRATEGY_LABEL = {
-  challenge: '🚀 Challenge',
-  standard: '📖 Standard',
-  explore: '🔭 Explore',
-  simplify: '🧩 Simplify',
-  reassure: '💚 Reassure',
-  reframe: '🔄 Reframe',
-  motivate: '⚡ Motivate',
+  challenge: 'Challenge',
+  standard: 'Standard',
+  explore: 'Explore',
+  simplify: 'Simplify',
+  reassure: 'Reassure',
+  reframe: 'Reframe',
+  motivate: 'Motivate',
 };
 
 // ── INIT BARS ────────────────────────────────
@@ -84,7 +80,7 @@ function initBars() {
     c.innerHTML += `
       <div class="ebar-row">
         <div class="ebar-label">${em}</div>
-        <div class="ebar-track"><div class="ebar-fill" id="bar-${em}" style="width:0%"></div></div>
+        <div class="ebar-track"><div class="ebar-fill" id="bar-${em}" style="transform:scaleX(0)"></div></div>
         <div class="ebar-pct" id="barpct-${em}">--</div>
       </div>`;
   });
@@ -109,7 +105,7 @@ async function startSession(options = {}) {
     getActiveSessionId() === previousSession &&
     (!options.isCurrent || options.isCurrent());
   if (!current()) return null;
-  const subject = options.subject || document.getElementById('f-subject').value;
+  const subject = options.subject || 'My notes';
   const topic = (options.topic ?? document.getElementById('f-topic').value).trim();
   if (!topic) {
     toast('Choose a topic to study.', true);
@@ -118,11 +114,14 @@ async function startSession(options = {}) {
   const difficulty = options.difficulty || document.getElementById('f-difficulty').value;
   const grounding =
     options.documentId ??
-    (document.getElementById('f-grounding')
-      ? document.getElementById('f-grounding').value
-      : 'none');
+    (document.getElementById('f-grounding') ? document.getElementById('f-grounding').value : 'all');
   const goalId = options.goalId ?? (document.getElementById('f-goal')?.value || '');
-  const metadata = { document_id: grounding, ...(goalId ? { goal_id: goalId } : {}) };
+  const metadata = {
+    document_id: grounding,
+    ...(goalId ? { goal_id: goalId } : {}),
+    ...(options.topicIds?.length ? { topic_ids: options.topicIds } : {}),
+    ...(options.mode ? { mode: options.mode } : {}),
+  };
 
   sessionStartingFor = studentId;
   document.getElementById('start-btn').disabled = true;
@@ -169,17 +168,20 @@ async function startSession(options = {}) {
     const activeBar = document.getElementById('session-active-bar');
     if (activeBar) activeBar.style.display = 'flex';
     const barTopic = document.getElementById('active-bar-topic');
-    if (barTopic) barTopic.textContent = `${subject} · ${topic}`;
+    if (barTopic) {
+      barTopic.textContent = `${subject} · ${topic.replace(/_/g, ' ')}`;
+      barTopic.title = barTopic.textContent;
+    }
     const barMeta = document.getElementById('active-bar-meta');
     if (barMeta)
-      barMeta.textContent = `${difficulty} · ${grounding === 'none' ? 'General Tutor' : 'Document Grounded'}`;
+      barMeta.textContent = `${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} · ${grounding === 'none' ? 'Not linked to notes' : 'From your notes'}`;
 
     const welcome = document.getElementById('welcome');
     if (welcome) welcome.style.display = 'none';
     const startBtn = document.getElementById('start-btn');
     if (startBtn) startBtn.style.display = 'none';
     const endBtn = document.getElementById('end-btn');
-    if (endBtn) endBtn.style.display = 'inline-block';
+    if (endBtn) endBtn.style.display = 'inline-flex';
     const msgInput = document.getElementById('msg-input');
     if (msgInput) {
       msgInput.disabled = false;
@@ -232,10 +234,10 @@ async function startSession(options = {}) {
 
     if (camNoSess) {
       camNoSess.style.display = 'flex';
-      camNoSess.textContent = 'Camera is off. Click CAM ON to start attention tracking.';
+      camNoSess.textContent = 'Camera is off. Turn it on to start attention tracking.';
     }
 
-    toast('Session started! Ask your first question.');
+    toast('Session started. Ask your first question.');
     return data;
   } catch (e) {
     if (current()) toast('Could not start studying: ' + e.message, true);
@@ -338,7 +340,7 @@ function cleanupSession() {
   const camBtn = document.getElementById('cam-toggle-btn');
   if (camBtn) {
     camBtn.disabled = true;
-    camBtn.textContent = 'CAM ON';
+    camBtn.textContent = 'Camera on';
     camBtn.classList.remove('active');
   }
   const camQuick = document.getElementById('cam-quick-toggle-btn');
@@ -348,7 +350,7 @@ function cleanupSession() {
     const qText = document.getElementById('cam-quick-text');
     if (qText) qText.textContent = 'Enable Camera';
     const qIcon = document.getElementById('cam-quick-icon');
-    if (qIcon) qIcon.textContent = '📷';
+    if (qIcon) qIcon.innerHTML = window.sentioIcon('camera', 16);
   }
 
   // E7: Disable privacy control buttons and reset active indicators
@@ -458,16 +460,11 @@ async function sendMessage() {
   let sourcesPreview = null;
   let data = null;
   try {
-    const res = await fetch(`${API}/sessions/${currentSessionId}/chat/stream`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ message: msg, request_id: requestId }),
-      signal: controller.signal,
-    });
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.detail || 'Tutor generation failed. Please retry.');
-    }
+    const res = await window.sentioAPI.post(
+      `/sessions/${currentSessionId}/chat/stream`,
+      { message: msg, request_id: requestId },
+      { signal: controller.signal, stream: true },
+    );
     await readTutorEvents(res, (kind, value) => {
       if (getActiveSessionId() !== currentSessionId) return;
       if (kind === 'delta') {
@@ -482,7 +479,7 @@ async function sendMessage() {
         sourcesPreview = appendSourcesPreview(value.sources);
       } else if (kind === 'status') {
         const progress = document.querySelector('#typing-indicator > span');
-        if (progress) progress.textContent = value.stage;
+        if (progress) progress.textContent = stageLabel(value.stage);
       } else if (kind === 'complete') {
         data = value;
       } else if (kind === 'cancelled' || kind === 'error') {
@@ -500,6 +497,7 @@ async function sendMessage() {
     if (data.text) {
       exchangeCount++;
       appendTutorMessage(data);
+      if (data.difficulty_change) appendDifficultyNotice(data.difficulty_change, currentSessionId);
       updateStatePanel(data);
       addLog(
         'Exchange ' + exchangeCount + ' — state: ' + (data.learning_state || 'neutral'),
@@ -510,9 +508,6 @@ async function sendMessage() {
       lastTutorResponseText = data.text;
       const playBtn = document.getElementById('play-speech-btn');
       if (playBtn) playBtn.disabled = false;
-
-      // Play the tutor response aloud
-      speakText(data.text);
     } else {
       toast('No response from tutor. Check server logs.', true);
       if (voiceModeActive) {
@@ -579,11 +574,7 @@ async function readTutorEvents(response, onEvent) {
 
 window.cancelTutorRequest = async (sid, requestId) => {
   try {
-    const response = await fetch(`${API}/sessions/${sid}/chat/${requestId}/cancel`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-    });
-    return response.ok && (await response.json()).accepted;
+    return (await window.sentioAPI.post(`/sessions/${sid}/chat/${requestId}/cancel`, {})).accepted;
   } catch (_) {
     return false;
   }
@@ -604,13 +595,7 @@ window.updateGrounding = async (documentId) => {
   if (!sid || getActiveSessionId() !== sid || owner !== window.store?.getState('currentUser')?.id)
     return;
   try {
-    const response = await fetch(`${API}/sessions/${sid}/grounding`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ document_id: documentId }),
-    });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.detail || 'Source update failed.');
+    await window.sentioAPI.post(`/sessions/${sid}/grounding`, { document_id: documentId });
     if (getActiveSessionId() !== sid || owner !== window.store?.getState('currentUser')?.id) return;
     const context = window.store?.getState('activeSession') || {};
     window.store?.setState('activeSession', {
@@ -632,13 +617,7 @@ window.updateSessionGoal = async (goalId) => {
   if (!sid || getActiveSessionId() !== sid || owner !== window.store?.getState('currentUser')?.id)
     return;
   try {
-    const response = await fetch(`${API}/sessions/${sid}/goal`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ goal_id: goalId || null }),
-    });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.detail || 'Goal update failed.');
+    await window.sentioAPI.post(`/sessions/${sid}/goal`, { goal_id: goalId || null });
     if (getActiveSessionId() !== sid || owner !== window.store?.getState('currentUser')?.id) return;
     const context = window.store?.getState('activeSession') || {};
     window.store?.setState('activeSession', {
@@ -655,14 +634,14 @@ window.updateSessionGoal = async (goalId) => {
 };
 
 // ── RENDER MESSAGES ──────────────────────────
-function appendMessage(role, text) {
+function appendMessage(role, text, at) {
   const container = document.getElementById('chat-messages');
   const div = document.createElement('div');
   div.className = 'msg ' + role;
   div.innerHTML = `
-    <div class="msg-avatar">${role === 'tutor' ? '🧠' : '🎓'}</div>
+    <div class="msg-avatar">${role === 'tutor' ? window.sentioSymbol(18) : ''}</div>
     <div class="msg-body">
-      <div class="msg-meta">${role === 'tutor' ? 'Tutor' : 'You'} · ${timeNow()}</div>
+      <div class="msg-meta">${role === 'tutor' ? 'Tutor' : 'You'} · ${timeNow(at)}</div>
       <div class="msg-bubble">${escHtml(text)}</div>
     </div>`;
   container.insertBefore(div, document.getElementById('typing-indicator'));
@@ -670,9 +649,9 @@ function appendMessage(role, text) {
   return div;
 }
 
-function appendTutorMessage(data) {
+function appendTutorMessage(data, at) {
   const container = document.getElementById('chat-messages');
-  const strategy = STRATEGY_LABEL[data.strategy] || data.strategy || '';
+  const strategy = STRATEGY_LABEL[data.strategy] || '';
   const div = document.createElement('div');
   div.className = 'msg tutor';
 
@@ -686,14 +665,14 @@ function appendTutorMessage(data) {
   if (answerLabel) extra += `<div class="msg-encouragement">${answerLabel}</div>`;
   if (data.encouragement)
     extra += `<div class="msg-encouragement">${escHtml(data.encouragement)}</div>`;
-  if (data.follow_up) extra += `<div class="msg-followup">🤔 ${escHtml(data.follow_up)}</div>`;
+  if (data.follow_up) extra += `<div class="msg-followup">${escHtml(data.follow_up)}</div>`;
 
   div.innerHTML = `
-    <div class="msg-avatar">🧠</div>
+    <div class="msg-avatar">${window.sentioSymbol(18)}</div>
     <div class="msg-body">
       <div class="msg-meta">
-        Tutor · ${timeNow()}
-        <span class="msg-strategy-badge">${strategy}</span>
+        Tutor · ${timeNow(at)}
+        ${strategy ? `<span class="msg-strategy-badge">${escHtml(strategy)}</span>` : ''}
       </div>
       <div class="msg-bubble">${linkCitations(renderMarkdown(data.text), data.source_citations)}</div>
       ${sourceChips(data.source_citations)}
@@ -706,14 +685,59 @@ function appendTutorMessage(data) {
 }
 
 // ── CITATIONS ────────────────────────────────
+// Pin the session to a level the learner chose; quiz streaks stop moving it.
+window.setSessionDifficulty = async (sessionId, level) => {
+  await window.sentioAPI.post(`/sessions/${sessionId}/difficulty`, { difficulty: level });
+  const meta = document.getElementById('active-bar-meta');
+  if (meta) meta.textContent = [level, ...meta.textContent.split(' · ').slice(1)].join(' · ');
+  const session = window.store?.getState('activeSession');
+  if (session?.session_id === sessionId)
+    window.store.setState('activeSession', { ...session, difficulty: level });
+};
+
+// Every automatic level change is visible, says why, and can be undone.
+window.difficultyNotice = (change, sessionId) => {
+  const notice = document.createElement('p');
+  notice.className = 'difficulty-notice';
+  notice.setAttribute('role', 'status');
+  notice.innerHTML = `Difficulty is now <strong>${escHtml(change.to)}</strong> (${escHtml(change.reason_text)}). <button type="button" class="link-quiet">Undo</button>`;
+  notice.querySelector('button').onclick = async () => {
+    try {
+      await window.setSessionDifficulty(sessionId, change.from);
+      notice.textContent = `Difficulty stays ${change.from}. Ask in chat to change it.`;
+    } catch (error) {
+      toast('Difficulty not changed: ' + error.message, true);
+    }
+  };
+  return notice;
+};
+
+function appendDifficultyNotice(change, sessionId) {
+  document.getElementById('chat-messages').appendChild(window.difficultyNotice(change, sessionId));
+}
+
+// "slide 4" for PowerPoint lectures, "p.4" for other notes.
+function slideOrPage(citation) {
+  return /\.pptx$/i.test(citation.filename || '') ? `slide ${citation.page}` : `p.${citation.page}`;
+}
+
+// One chip per distinct passage; past the first few, the rest wait behind "+N more".
+const VISIBLE_CHIPS = 4;
 function sourceChips(citations) {
   if (!citations?.length) return '';
-  return `<div class="source-row">${citations
+  const seen = new Set();
+  const chips = citations
+    .map((c, i) => ({ c, i, key: `${c.filename} ${c.page}` }))
+    .filter(({ key }) => !seen.has(key) && seen.add(key));
+  const extra = chips.length - VISIBLE_CHIPS;
+  return `<div class="source-row">${chips
     .map(
-      (c, i) =>
-        `<button type="button" class="cite-chip" data-cite="${i}">${escHtml(c.filename)} · p.${escHtml(c.page)}</button>`,
+      ({ c, i }, n) =>
+        `<button type="button" class="cite-chip" data-cite="${i}"${n >= VISIBLE_CHIPS && extra > 1 ? ' hidden' : ''}>${escHtml(c.filename)} · ${escHtml(slideOrPage(c))}</button>`,
     )
-    .join('')}</div>`;
+    .join(
+      '',
+    )}${extra > 1 ? `<button type="button" class="cite-chip cite-more">+${extra} more</button>` : ''}</div>`;
 }
 
 function linkCitations(html, citations) {
@@ -722,7 +746,7 @@ function linkCitations(html, citations) {
     html = html
       .split(reference)
       .join(
-        `<button type="button" class="cite-chip inline" data-cite="${i}">${reference}</button>`,
+        `<button type="button" class="cite-chip inline" data-cite="${i}">${escHtml(`[${c.filename} ${slideOrPage(c)}]`)}</button>`,
       );
   });
   return html;
@@ -733,6 +757,7 @@ function appendSourcesPreview(citations) {
   const div = document.createElement('div');
   div.className = 'msg tutor sources-preview';
   div.innerHTML = `<div class="msg-body"><div class="msg-meta">Found in your notes · writing the answer…</div>${sourceChips(citations)}</div>`;
+  div.onclick = openCitation;
   div.citations = citations || [];
   div.onclick = openCitation;
   container.insertBefore(div, document.getElementById('typing-indicator'));
@@ -742,7 +767,7 @@ function appendSourcesPreview(citations) {
 
 function showCitation(citation) {
   const modal = document.createElement('sentio-modal');
-  modal.setAttribute('title', `${citation.filename} · page ${citation.page}`);
+  modal.setAttribute('title', `${citation.filename} · ${slideOrPage(citation)}`);
   const passage = document.createElement('blockquote');
   passage.className = 'cited-passage';
   passage.textContent = citation.text || 'The passage text is not available.';
@@ -751,6 +776,12 @@ function showCitation(citation) {
 }
 
 function openCitation(event) {
+  const more = event.target.closest('.cite-more');
+  if (more) {
+    more.parentElement.querySelectorAll('.cite-chip[hidden]').forEach((c) => (c.hidden = false));
+    more.remove();
+    return;
+  }
   const chip = event.target.closest('.cite-chip');
   const citation = chip && this.citations?.[Number(chip.dataset.cite)];
   if (citation) showCitation(citation);
@@ -768,6 +799,15 @@ function renderMarkdown(text) {
   text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
   // Bold
   text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  // Quoted passages ("> " lines, already escaped), e.g. excerpts from the learner's notes
+  text = text.replace(
+    /(^|\n)((?:&gt; ?[^\n]*(?:\n|$))+)/g,
+    (_, lead, block) =>
+      `${lead}<blockquote>${block
+        .replace(/(^|\n)&gt; ?/g, '$1')
+        .trim()
+        .replace(/\n/g, '<br>')}</blockquote>`,
+  );
   // Line breaks
   text = text.replace(/\n/g, '<br>');
   return text;
@@ -814,7 +854,7 @@ function updateStatePanel(data) {
   const stateStrat = document.getElementById('state-strategy');
   if (stateStrat) stateStrat.textContent = 'Strategy: ' + (STRATEGY_LABEL[strategy] || strategy);
   const engageBar = document.getElementById('engage-bar');
-  if (engageBar) engageBar.style.width = engage + '%';
+  if (engageBar) engageBar.style.transform = 'scaleX(' + engage / 100 + ')';
   const statEngage = document.getElementById('stat-engage');
   if (statEngage) statEngage.textContent = engage + '%';
   const statConf = document.getElementById('stat-conf');
@@ -861,10 +901,10 @@ function updateStatePanel(data) {
     const pct = document.getElementById('barpct-' + em);
     if (hasScores && typeof data.emotion_scores[em] === 'number') {
       const p = Math.round(data.emotion_scores[em] * 100);
-      if (fill) fill.style.width = p + '%';
+      if (fill) fill.style.transform = 'scaleX(' + p / 100 + ')';
       if (pct) pct.textContent = p + '%';
     } else {
-      if (fill) fill.style.width = '0%';
+      if (fill) fill.style.transform = 'scaleX(0)';
       if (pct) pct.textContent = '--';
     }
   });
@@ -925,8 +965,9 @@ function toast(msg, isError) {
 }
 
 // ── HELPERS ───────────────────────────────────
-function timeNow() {
-  return new Date().toLocaleTimeString('en-GB', {
+// `at` is a saved time in seconds; without it, the current time.
+function timeNow(at) {
+  return (at ? new Date(at * 1000) : new Date()).toLocaleTimeString('en-GB', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
@@ -1058,7 +1099,7 @@ function restartVoiceCapture() {
 function toggleVoice() {
   if (!hasSpeechRec || !hasSpeechSynth) return;
   if (!sessionId) {
-    toast('Start a session first!', true);
+    toast('Start a session first.', true);
     return;
   }
   voiceModeActive = !voiceModeActive;

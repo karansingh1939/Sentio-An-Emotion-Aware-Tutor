@@ -33,6 +33,11 @@ class UvicornServer(Thread):
     def stop(self):
         if self.server:
             self.server.should_exit = True
+        # Wait for the app's shutdown to finish. All test servers share one app, so a
+        # shutdown that ends late stops the next test's job worker (seen on Linux CI:
+        # uploads were accepted but never processed).
+        if self.is_alive():
+            self.join(timeout=30)
 
 
 def wait_for_server(url, timeout=30):
@@ -155,7 +160,6 @@ async def test_sentio_real_browser_e2e_and_tenant_isolation():
             # Navigate to Tutor View
             await page.click('a[href="#/tutor"]')
             await page.wait_for_selector("#start-btn")
-            await page.select_option("#f-subject", "physics")
             await page.fill("#f-topic", "kinematics")
             await page.wait_for_selector(
                 '#f-grounding option:has-text("kinematics_test.txt")', state="attached"
@@ -198,7 +202,12 @@ async def test_sentio_real_browser_e2e_and_tenant_isolation():
             await page.set_input_files("#file-uploader", file_b_path)
             # Wait for list update and confirm document appears in table
             try:
-                await page.wait_for_selector("text=thermodynamics_test.txt", timeout=20000)
+                # Wait for the saved row, not the progress panel that names the file
+                # while indexing is still running.
+                await page.wait_for_selector(
+                    '#view-documents .document-row:has-text("thermodynamics_test.txt")',
+                    timeout=20000,
+                )
             except Exception as exc:
                 raise AssertionError(
                     (await page.locator("#view-documents").inner_text(), failed_requests)
@@ -249,7 +258,9 @@ async def test_sentio_real_browser_e2e_and_tenant_isolation():
                 "Grounding state was not preserved upon session resumption"
             )
 
-            await page.click('a[href="#/history"]')
+            # Study history lives in the account menu in the top bar.
+            await page.click(".account-btn")
+            await page.click('.account-menu a[href="#/history"]')
             await page.wait_for_selector("#view-history tbody tr")
             assert "kinematics" in await page.inner_text("#view-history")
             await page.click('a[href="#/analytics"]')

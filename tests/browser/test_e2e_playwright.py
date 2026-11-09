@@ -31,6 +31,11 @@ class UvicornServer(Thread):
     def stop(self):
         if self.server:
             self.server.should_exit = True
+        # Wait for the app's shutdown to finish. All test servers share one app, so a
+        # shutdown that ends late stops the next test's job worker (seen on Linux CI:
+        # uploads were accepted but never processed).
+        if self.is_alive():
+            self.join(timeout=30)
 
 
 def wait_for_server(url, timeout=45):
@@ -101,12 +106,9 @@ async def test_sentio_playwright_e2e():
             health_json = await api_resp.json()
             assert health_json.get("status") in ["ok", "healthy", "degraded"]
 
-            # 5. Verify Subjects Endpoint
+            # 5. The fixed subject list is gone: sessions are labelled by notes and courses
             subjects_url = f"{BASE_URL}{api_cfg.API_PREFIX}/subjects"
-            subj_resp = await page.request.get(subjects_url)
-            assert subj_resp.status == 200, (
-                f"Subjects endpoint failed with status {subj_resp.status}"
-            )
+            assert (await page.request.get(subjects_url)).status == 404
 
             await browser.close()
 

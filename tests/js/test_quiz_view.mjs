@@ -2,7 +2,11 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
-import { describeProvenance, escapeHtml } from '../../src/sentio/static/js/core/html.js';
+import {
+  describeFocus,
+  describeProvenance,
+  escapeHtml,
+} from '../../src/sentio/static/js/core/html.js';
 
 const fields = Object.fromEntries(
   ['subject', 'topic', 'difficulty'].map((name) => [`#quiz-${name}`, { parentElement: {} }]),
@@ -22,7 +26,10 @@ const session = {
   status: 'active',
 };
 let submission;
-const context = vm.createContext({ document: { getElementById: () => container } });
+const context = vm.createContext({
+  window: { sentioIcon: () => '', sentioSymbol: () => '' },
+  document: { getElementById: () => container },
+});
 const api = {
   get: async (path) => {
     assert.equal(path, '/sessions/session-a');
@@ -35,12 +42,13 @@ const api = {
 };
 const imports = {
   '../core/jobs.js': {
+    pendingJobKey: (endpoint) => `job:${endpoint}`,
     runPracticeJob: async (path, body) => {
       submission = { path, body };
       return { questions: [] };
     },
   },
-  '../core/html.js': { describeProvenance, escapeHtml },
+  '../core/html.js': { describeFocus, describeProvenance, escapeHtml },
   '../core/api.js': { sentioAPI: api },
   '../core/store.js': {
     store: { getState: (key) => (key === 'activeSessionId' ? 'session-a' : null) },

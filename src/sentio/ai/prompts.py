@@ -78,6 +78,9 @@ class PromptBuilder:
             "do not claim to observe emotions or a camera. "
             "Return only JSON with text, follow_up_question, encouragement, suggested_topic. "
             "The last three fields may be null. "
+            # Local models write about 6-15 words a second on a laptop CPU.
+            "Keep text under about 150 words unless the learner asks for more detail; "
+            "leave encouragement and suggested_topic null unless they clearly help. "
         )
         if grounded:
             system += GROUNDING_RULES
@@ -93,8 +96,9 @@ class PromptBuilder:
             system += (
                 "No selected document evidence is available. Do not invent document citations. "
             )
+        # The question goes last: Ollama reuses its cache for the unchanged start of a
+        # prompt, so everything that stays the same between turns must come first.
         data = {
-            "student_question": student_message,
             "session": {
                 "subject": subject,
                 "topic": topic,
@@ -121,6 +125,7 @@ class PromptBuilder:
                 field: getattr(retrieved_content, field, None)
                 for field in ("concept", "explanation", "analogy", "example", "hints")
             }
+        data["student_question"] = student_message
         return system, json.dumps(data, ensure_ascii=False)
 
     # Strategy → instruction paragraph
@@ -208,45 +213,21 @@ TEACHING STRATEGY INSTRUCTION
 Tone: {tone_instruction}
 """
 
-        # ── Curriculum grounding ──
+        # ── Grounding in the learner's notes ──
         if retrieved_content and retrieved_content.has_content():
             prompt += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            # Header wording kept so saved evaluation prompts stay reproducible.
             prompt += "CURRICULUM REFERENCE (use this as your knowledge base)\n"
             prompt += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-
-            if getattr(retrieved_content, "is_rag", False) and getattr(
-                retrieved_content, "rag_context", None
-            ):
-                prompt += GROUNDING_RULES + "\n"
-                prompt += "The following reference material is extracted from the student's study materials:\n\n"
-                prompt += retrieved_content.rag_context
-                prompt += (
-                    "\nInstruction: You MUST base your factual answers on the above references. "
-                    "For every fact you state that comes from a reference, you MUST cite the source document "
-                    "and page naturally in your text using brackets, e.g. '[calculus_notes.pdf Page 12]'. "
-                    "Ensure your citations match the document headers exactly.\n\n"
-                )
-            else:
-                if getattr(retrieved_content, "concept", None):
-                    prompt += f"CONCEPT:\n{retrieved_content.concept}\n\n"
-                if getattr(retrieved_content, "explanation", None):
-                    prompt += f"EXPLANATION:\n{retrieved_content.explanation}\n\n"
-                if getattr(retrieved_content, "analogy", None):
-                    prompt += f"ANALOGY TO USE:\n{retrieved_content.analogy}\n\n"
-                if getattr(retrieved_content, "example", None):
-                    prompt += f"WORKED EXAMPLE:\n{retrieved_content.example}\n\n"
-                if getattr(retrieved_content, "motivation", None):
-                    prompt += f"MOTIVATION / REAL-WORLD HOOK:\n{retrieved_content.motivation}\n\n"
-                if getattr(retrieved_content, "hints", None):
-                    prompt += (
-                        "HINTS AVAILABLE:\n"
-                        + "\n".join(f"  • {h}" for h in retrieved_content.hints)
-                        + "\n\n"
-                    )
-                if getattr(retrieved_content, "quiz_question", None):
-                    prompt += f"COMPREHENSION CHECK:\n{retrieved_content.quiz_question}\n\n"
-                if getattr(retrieved_content, "challenge", None):
-                    prompt += f"CHALLENGE PROBLEM:\n{retrieved_content.challenge}\n\n"
+            prompt += GROUNDING_RULES + "\n"
+            prompt += "The following reference material is extracted from the student's study materials:\n\n"
+            prompt += retrieved_content.rag_context
+            prompt += (
+                "\nInstruction: You MUST base your factual answers on the above references. "
+                "For every fact you state that comes from a reference, you MUST cite the source document "
+                "and page naturally in your text using brackets, e.g. '[calculus_notes.pdf Page 12]'. "
+                "Ensure your citations match the document headers exactly.\n\n"
+            )
 
         # ── Output format instructions ──
         prompt += """━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

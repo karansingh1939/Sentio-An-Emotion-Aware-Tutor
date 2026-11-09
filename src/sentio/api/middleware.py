@@ -4,7 +4,7 @@ from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from sentio.shared.utils import RateLimiter
+from sentio.shared.rate_limit import RateLimiter
 
 
 class BodyLimitMiddleware:

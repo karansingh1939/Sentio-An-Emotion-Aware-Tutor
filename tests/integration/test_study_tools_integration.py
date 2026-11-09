@@ -25,7 +25,7 @@ from sentio.ai.structured_parser import metrics as parser_metrics
 from sentio.api.app import agent, app
 
 # Configure test database and backend before importing the app
-from tests.helpers import login_student
+from tests.helpers import login_student, upload_notes
 
 
 # Mock OllamaBackend side_effect helper
@@ -223,12 +223,18 @@ class TestPhaseDE2E(unittest.TestCase):
         with TestClient(app) as client:
             self.student_id = login_student(client, admin=True)
             # 1. Create a Student Session
+            notes = upload_notes(
+                client,
+                "Thermodynamics studies heat, work and energy. Entropy measures disorder. Heat transfer moves energy between bodies.",
+                "thermo.txt",
+            )
             resp_session = client.post(
                 "/api/v1/sessions",
                 json={
                     "student_id": self.student_id,
                     "subject": "physics",
                     "topic": "thermodynamics",
+                    "metadata": {"document_id": notes},
                     "difficulty": "intermediate",
                 },
             )
@@ -248,7 +254,7 @@ class TestPhaseDE2E(unittest.TestCase):
             self.assertTrue(resp_goal.json()["recorded"])
 
             # 3. Generate Quiz (D1)
-            with patch("sentio.ai.nlp_engine.OllamaBackend.complete", side_effect=mock_complete):
+            with patch("sentio.ai.tutor_llm.OllamaBackend.complete", side_effect=mock_complete):
                 resp_quiz = client.post(
                     "/api/v1/quizzes/generate",
                     json={
@@ -276,7 +282,7 @@ class TestPhaseDE2E(unittest.TestCase):
             # Question 1 (TF): student answers incorrect "True" (correct is False)
             # Question 2 (Short Answer): student answers correct "temperature"
             answers = {0: "Entropy increases", 1: "True", 2: "temperature"}
-            with patch("sentio.ai.nlp_engine.OllamaBackend.complete", side_effect=mock_complete):
+            with patch("sentio.ai.tutor_llm.OllamaBackend.complete", side_effect=mock_complete):
                 resp_submit = client.post(
                     f"/api/v1/quizzes/{self.quiz_id}/submit",
                     json={"session_id": self.session_id, "answers": answers},
@@ -305,7 +311,7 @@ class TestPhaseDE2E(unittest.TestCase):
             self.assertIsNotNone(deck_id)
 
             # 6. Generate Flashcards via LLM (D3)
-            with patch("sentio.ai.nlp_engine.OllamaBackend.complete", side_effect=mock_complete):
+            with patch("sentio.ai.tutor_llm.OllamaBackend.complete", side_effect=mock_complete):
                 resp_cards = client.post(
                     "/api/v1/flashcards/generate",
                     json={
@@ -353,7 +359,7 @@ class TestPhaseDE2E(unittest.TestCase):
 
             # 10. Verify Tutor Chat Struggle Recommendation Hook (D3)
             # Send first explanation ask about "entropy"
-            with patch("sentio.ai.nlp_engine.OllamaBackend.complete", side_effect=mock_complete):
+            with patch("sentio.ai.tutor_llm.OllamaBackend.complete", side_effect=mock_complete):
                 resp_chat_1 = client.post(
                     f"/api/v1/sessions/{self.session_id}/chat", json={"message": "What is entropy?"}
                 )
@@ -361,7 +367,7 @@ class TestPhaseDE2E(unittest.TestCase):
             self.assertNotIn("💡 *Tip: You seem to be working on", resp_chat_1.json()["text"])
 
             # Send second explanation ask about "entropy" -> should trigger the suggestion Tip
-            with patch("sentio.ai.nlp_engine.OllamaBackend.complete", side_effect=mock_complete):
+            with patch("sentio.ai.tutor_llm.OllamaBackend.complete", side_effect=mock_complete):
                 resp_chat_2 = client.post(
                     f"/api/v1/sessions/{self.session_id}/chat", json={"message": "What is entropy?"}
                 )

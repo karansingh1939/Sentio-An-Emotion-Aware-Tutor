@@ -1,0 +1,85 @@
+{
+  "timestamp": "2026-11-09T14:42:29.846695+00:00",
+  "model": "qwen2.5:7b",
+  "practice_count": 3,
+  "steps": [
+    {
+      "name": "startup",
+      "status": "passed",
+      "seconds": 4.047000000020489
+    },
+    {
+      "name": "upload",
+      "status": "passed",
+      "seconds": 11.702999999979511
+    },
+    {
+      "name": "cited_explanation",
+      "status": "passed",
+      "seconds": 26.01600000000326
+    },
+    {
+      "name": "unsupported_question",
+      "status": "failed",
+      "failure": "ValueError",
+      "seconds": 0.062000000034458935
+    },
+    {
+      "name": "quiz_generation",
+      "status": "passed",
+      "seconds": 108.18799999996554
+    },
+    {
+      "name": "quiz_submission",
+      "status": "passed",
+      "seconds": 0.14100000000325963
+    },
+    {
+      "name": "card_generation",
+      "status": "passed",
+      "seconds": 40.32799999997951
+    },
+    {
+      "name": "card_review",
+      "status": "passed",
+      "seconds": 0.0
+    },
+    {
+      "name": "preferences",
+      "status": "passed",
+      "seconds": 0.01600000000325963
+    },
+    {
+      "name": "plan_completion",
+      "status": "passed",
+      "seconds": 0.01600000000325963
+    },
+    {
+      "name": "restart",
+      "status": "passed",
+      "seconds": 4.842999999993481
+    },
+    {
+      "name": "saved_work_and_token_after_restart",
+      "status": "passed",
+      "seconds": 0.09399999998277053
+    }
+  ],
+  "limitations": [
+    "One authored physics journey, not a learning study or a model accuracy estimate.",
+    "Quiz submission copies the generated reference answer to test persistence only.",
+    "Qdrant uses memory mode; restart must recover evidence from persisted chunks."
+  ],
+  "answer_modes": [
+    {
+      "question": "Explain Newton's first law and inertia using these notes.",
+      "mode": "ollama/qwen2.5:7b"
+    },
+    {
+      "question": "What is the boiling point of ethanol?",
+      "mode": "evidence_gate"
+    }
+  ],
+  "quiz_generation_mode": "source_recall",
+  "status": "failed"
+}

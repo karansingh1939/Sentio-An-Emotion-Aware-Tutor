@@ -2,7 +2,7 @@
 
 Run one application process. SQLite owns the job inventory and completed turns;
 the application owns its Qdrant client. Camera and experiment tracking are not
-startup requirements. The architecture contract is in `docs/project/tasks/plan.md`.
+startup requirements. The architecture contract is in `docs/archive/tasks/plan.md`.
 
 ```mermaid
 flowchart LR
@@ -132,4 +132,4 @@ models stop acquired media and preserve text study.
 
 Still pending: full hardening and release acceptance, live-model quality
 measurement, manually reviewed ML labels and the model experiment.
-See `docs/project/tasks/continuation.md` for the exact next task.
+Current status and next steps are in `docs/project/FEATURE_AUDIT_2026-11-06.md`.

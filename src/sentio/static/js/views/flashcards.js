@@ -3,7 +3,7 @@ import { describeProvenance, escapeHtml } from '../core/html.js';
 import { sentioAPI } from '../core/api.js';
 import { store } from '../core/store.js';
 import { toast } from '../components/ui.js';
-import { runPracticeJob } from '../core/jobs.js';
+import { pendingJobKey, runPracticeJob } from '../core/jobs.js';
 
 const RATINGS = [
   ['again', 1, 'I could not recall the answer', 'Again'],
@@ -37,7 +37,9 @@ export class FlashcardsView {
         this.revision++;
         this.studentId = store.getState('currentUser')?.id || 'stu_001';
         this.resetState();
-        this.loadDecks();
+        // Cards still being written reconnect, so they appear when ready (goldfish F10).
+        if (localStorage.getItem(pendingJobKey('/flashcards/jobs'))) this.resumeGeneration();
+        else this.loadDecks();
       } else this.revision++;
     });
   }
@@ -111,8 +113,8 @@ export class FlashcardsView {
     this.container.innerHTML = `
       <div class="view-header view-header row-between">
         <div>
-          <h2 class="page-title">Flashcard Decks</h2>
-          <p class="muted">Spaced repetition scheduled by FSRS, a memory model fitted on real review data.</p>
+          <h2 class="page-title">Flashcard decks</h2>
+          <p class="muted">Each card comes back just before you are likely to forget it.</p>
         </div>
         <button id="show-create-deck-modal" style="background:var(--accent);color:var(--bg);border:none;padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;">
           + Create Deck
@@ -122,11 +124,11 @@ export class FlashcardsView {
       <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;width:100%;">
         <!-- Left: Decks Listing -->
         <div class="stack stack-lg">
-          <sentio-card title="Spaced Repetition Decks">
+          <sentio-card title="Your decks">
             ${
               this.decks.length === 0
                 ? `
-              <sentio-empty-state message="No flashcard decks created yet. Create a deck to start reviewing." icon="🗂️"></sentio-empty-state>
+              <sentio-empty-state message="No flashcard decks created yet. Create a deck to start reviewing." icon="cards"></sentio-empty-state>
             `
                 : `
               <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));gap:14px;">
@@ -134,7 +136,7 @@ export class FlashcardsView {
                   .map(
                     (d) => `
                   <div class="deck-item-card" data-id="${escapeHtml(d.deck_id)}" style="border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;background:var(--bg3);cursor:pointer;position:relative;transition:border-color 0.2s, box-shadow 0.2s;">
-                    <h3 style="font-size:13px;font-weight:bold;margin-bottom:6px;text-transform:capitalize;color:var(--text);">${escapeHtml(d.deck_name)}</h3>
+                    <h3 style="font-size:13px;font-weight:bold;margin-bottom:6px;color:var(--text);">${escapeHtml(d.deck_name)}</h3>
                     <div style="font-size:14px;color:var(--text-dim);margin-bottom:12px;">Created: ${new Date(d.created_at * 1000).toLocaleDateString()}</div>
                     
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
@@ -157,13 +159,13 @@ export class FlashcardsView {
 
         <!-- Right: AI Flashcard Generator Form -->
         <div>
-          <sentio-card title="⚡ Create practice cards">
+          <sentio-card title="Create practice cards">
             <p style="font-size:14px;color:var(--text-dim);line-height:1.4;margin-bottom:12px;">${store.getState('activeSession')?.status === 'active' ? 'Turn your current study topic into question-and-answer cards. Review them again when they are due.' : 'First choose Study beside your notes in Library. Your saved cards remain available.'}</p>
             ${store.getState('activeSession')?.status === 'active' ? '<a href="#/tutor">Change what you are studying</a>' : '<a class="workspace-action" href="#/documents">Choose notes</a>'}
             
             <div class="stack">
               <div>
-                <label class="form-label" for="gen-deck-select">Select Target Deck</label>
+                <label class="form-label" for="gen-deck-select">Deck</label>
 <select class="input" id="gen-deck-select">
                   ${this.decks.map((d) => `<option value="${escapeHtml(d.deck_id)}">${escapeHtml(d.deck_name)}</option>`).join('')}
                   ${this.decks.length === 0 ? `<option value="">No decks available</option>` : ''}
@@ -224,7 +226,7 @@ export class FlashcardsView {
     modal.innerHTML = `
       <div class="stack">
         <div>
-          <label class="form-label" for="create-deck-name">Deck Name</label>
+          <label class="form-label" for="create-deck-name">Deck name</label>
 <input class="input" type="text" id="create-deck-name" placeholder="e.g. Calculus Formulas" />
         </div>
         <button class="workspace-action primary" id="create-deck-submit">Create</button>
@@ -246,7 +248,7 @@ export class FlashcardsView {
           student_id: this.studentId,
           deck_name: name,
         });
-        toast('Deck created successfully!');
+        toast('Deck created');
         this.loadDecks();
       } catch (err) {
         toast('Failed to create deck: ' + err.message, true);
@@ -318,6 +320,20 @@ export class FlashcardsView {
     }
   }
 
+  async resumeGeneration() {
+    const revision = this.revision;
+    try {
+      const result = await runPracticeJob('/flashcards/jobs', null, this.container);
+      if (!result || revision !== this.revision) return;
+      toast('Your cards are ready to review.');
+    } catch (e) {
+      if (revision !== this.revision) return;
+      toast('Generation failed: ' + e.message, true);
+    }
+    this.resetState();
+    this.loadDecks();
+  }
+
   async startReview(deckId) {
     const revision = this.revision;
     const owner = store.getState('currentUser')?.id;
@@ -348,11 +364,11 @@ export class FlashcardsView {
     if (this.dueCards.length === 0 || this.currentCardIdx >= this.dueCards.length) {
       this.container.innerHTML = `
         <div style="padding:40px;text-align:center;max-width:500px;margin:0 auto;display:flex;flex-direction:column;gap:16px;align-items:center;justify-content:center;height:60%;">
-          <div style="font-size:42px;">🎉</div>
-          <h3 style="font-weight:bold;color:var(--green);font-size:16px;">Deck Fully Reviewed!</h3>
+          <div style="color:var(--green);">${window.sentioIcon('done', 40)}</div>
+          <h3 style="font-weight:700;color:var(--text);font-size:18px;">All caught up</h3>
           <p style="color:var(--text-dim);font-size:14px;line-height:1.5;">You've completed all due cards in this deck. Come back later for scheduled repetitions.</p>
-          <button id="finish-review-btn" style="background:var(--accent);color:var(--bg);border:none;padding:10px 20px;border-radius:var(--radius);font-family:var(--mono);font-size:14px;font-weight:bold;cursor:pointer;">
-            Close Reviews
+          <button id="finish-review-btn" class="workspace-action primary">
+            Close review
           </button>
         </div>
       `;
@@ -383,10 +399,10 @@ export class FlashcardsView {
           <button class="workspace-action" type="button" id="edit-current-card">Edit this card</button>
         </div>
         <!-- Flip Card Arena -->
-        <div id="flashcard-flip-trigger" role="button" tabindex="0" aria-label="Show or hide the answer" aria-expanded="${this.isFlipped}" style="perspective:1000px;cursor:pointer;width:100%;">
+        <div id="flashcard-flip-trigger" role="button" tabindex="0" aria-label="Show or hide the answer" aria-expanded="${this.isFlipped}" style="cursor:pointer;width:100%;">
           <div class="flashcard-inner ${this.isFlipped ? 'flipped' : ''}">
             <!-- Front -->
-            <div class="flashcard-front" ${this.isFlipped ? 'hidden' : ''} style="border:1px solid var(--border);background:var(--bg2);box-shadow:0 6px 20px rgba(0,0,0,0.2);">
+            <div class="flashcard-front" ${this.isFlipped ? 'hidden' : ''} style="border:1px solid var(--border);background:var(--bg2);">
               <span style="font-size:14px;color:var(--accent);font-family:var(--mono);margin-bottom:12px;font-weight:bold;">QUESTION / TERM</span>
               <p style="font-size:14px;color:var(--text);text-align:center;line-height:1.5;font-weight:500;">
                 ${escapeHtml(card.front_text)}
@@ -395,7 +411,7 @@ export class FlashcardsView {
             </div>
             
             <!-- Back -->
-            <div class="flashcard-back" ${this.isFlipped ? '' : 'hidden'} style="border:1px solid var(--accent);box-shadow:0 6px 25px rgba(0,200,255,0.15);">
+            <div class="flashcard-back" ${this.isFlipped ? '' : 'hidden'} style="border:1px solid var(--accent);">
               <span style="font-size:14px;color:var(--green);font-family:var(--mono);margin-bottom:12px;font-weight:bold;">EXPLANATION / ANSWER</span>
               <p style="font-size:13px;color:var(--text);text-align:center;line-height:1.5;">
                 ${escapeHtml(card.back_text)}
@@ -419,7 +435,7 @@ export class FlashcardsView {
         </div>
 
         <!-- Feedback / Rating Panel (Visible only when flipped) -->
-        <div id="rating-controls-panel" style="display:${this.isFlipped ? 'flex' : 'none'};flex-direction:column;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;animation:fadeIn 0.3s;">
+        <div id="rating-controls-panel" style="display:${this.isFlipped ? 'flex' : 'none'};flex-direction:column;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;">
           <label style="display:block;font-size:14px;color:var(--text-dim);text-align:center;font-weight:bold;">How well did you recall this concept?</label>
           
           <div class="review-ratings">
@@ -446,6 +462,8 @@ export class FlashcardsView {
     const edit = this.container.querySelector('#edit-current-card');
     if (edit) edit.onclick = () => this.editCurrentCard();
     const trigger = this.container.querySelector('#flashcard-flip-trigger');
+    // Focus the card so "press Enter to show the answer" works straight away (goldfish F19).
+    trigger?.focus({ preventScroll: true });
     if (trigger) {
       trigger.onkeydown = (event) => {
         if (event.key === 'Enter' || event.key === ' ') {

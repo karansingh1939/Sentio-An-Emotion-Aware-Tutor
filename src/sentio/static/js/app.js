@@ -3,27 +3,29 @@ import { store } from './core/store.js';
 import { sentioAPI } from './core/api.js';
 import { router } from './core/router.js';
 import { toast } from './components/ui.js';
-import { DashboardView } from './views/dashboard.js';
+import { TodayView } from './views/today.js';
 import { SettingsView } from './views/settings.js';
-import { DocumentsView } from './views/documents.js';
+import { LibraryView } from './views/library.js';
 import { QuizzesView } from './views/quizzes.js';
 import { FlashcardsView } from './views/flashcards.js';
-import { AnalyticsView } from './views/analytics.js';
+import { ProgressView } from './views/progress.js';
 import { HistoryView } from './views/history.js';
-import { TutorView } from './views/tutor.js';
+import { StudyView } from './views/study.js';
+import { SlidesView } from './views/slides.js';
 import { AuthView } from './views/auth.js';
 import { initWorkspace } from './core/workspace.js';
 
 // Setup view controllers mapping
 const viewControllers = {
-  dashboard: new DashboardView('view-dashboard'),
-  tutor: new TutorView('view-tutor'),
+  dashboard: new TodayView('view-dashboard'),
+  tutor: new StudyView('view-tutor'),
   settings: new SettingsView('view-settings'),
-  documents: new DocumentsView('view-documents'),
+  documents: new LibraryView('view-documents'),
   quizzes: new QuizzesView('view-quizzes'),
   flashcards: new FlashcardsView('view-flashcards'),
-  analytics: new AnalyticsView('view-analytics'),
+  analytics: new ProgressView('view-analytics'),
   history: new HistoryView('view-history'),
+  slides: new SlidesView('view-slides'),
 };
 
 // Global App Initialization
@@ -106,4 +108,26 @@ function handleWebcamStateForRoute(route) {
 }
 
 // Start application on DOM content ready
-document.addEventListener('DOMContentLoaded', initApp);
+// Dev-only sample data for stress tests loads first, and only when the URL carries ?data=….
+const samples = new URLSearchParams(window.location.search).has('data')
+  ? import('./dev/data_fixtures.js')
+  : Promise.resolve();
+document.addEventListener('DOMContentLoaded', () => samples.then(initApp));
+
+// Menus built from <details class="row-menu"> close after a choice, on an
+// outside click, and on Escape (focus returns to the menu button).
+document.addEventListener('click', (event) => {
+  document.querySelectorAll('details.row-menu[open]').forEach((menu) => {
+    const chose = menu.contains(event.target) && event.target.closest('.row-menu-item');
+    if (chose || !menu.contains(event.target)) menu.open = false;
+    // Keep keyboard focus on the menu button rather than losing it to the page.
+    if (chose) menu.querySelector('summary').focus();
+  });
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+  const menu = event.target.closest?.('details.row-menu[open]');
+  if (!menu) return;
+  menu.open = false;
+  menu.querySelector('summary').focus();
+});

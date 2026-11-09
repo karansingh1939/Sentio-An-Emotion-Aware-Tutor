@@ -35,10 +35,24 @@ class SessionPersister:
         )
         self._engine = create_engine(
             session_cfg.DB_URL,
-            connect_args={"check_same_thread": False},
+            # Background jobs and requests write at the same time; wait for a lock
+            # instead of failing after SQLite's default 5 s ("database is locked").
+            connect_args={"check_same_thread": False, "timeout": 30},
             hide_parameters=True,
             **pool_options,
         )
+        if not pool_options and session_cfg.DB_URL.startswith("sqlite"):
+            from sqlalchemy import event
+
+            @event.listens_for(self._engine, "connect")
+            def _sqlite_concurrency(dbapi_connection, _record):
+                # WAL lets readers continue while one writer commits. Backups already
+                # use SQLite's backup API, which includes the WAL contents.
+                cursor = dbapi_connection.cursor()
+                cursor.execute("PRAGMA journal_mode=WAL")
+                cursor.execute("PRAGMA busy_timeout=30000")
+                cursor.close()
+
         self._init_db()
         from sentio.repositories.migrations import apply_migrations
 
@@ -270,6 +284,14 @@ class SessionPersister:
                 )
             if "overview_json" not in document_columns:
                 conn.execute(text("ALTER TABLE documents ADD COLUMN overview_json TEXT"))
+            conn.execute(
+                text(
+                    "CREATE TABLE IF NOT EXISTS courses (id TEXT PRIMARY KEY, student_id TEXT NOT NULL, "
+                    "name TEXT NOT NULL, created_at REAL NOT NULL)"
+                )
+            )
+            if "course_id" not in document_columns:
+                conn.execute(text("ALTER TABLE documents ADD COLUMN course_id TEXT"))
 
             if "student_id" not in document_columns:
                 conn.execute(text("ALTER TABLE documents ADD COLUMN student_id TEXT"))
@@ -325,6 +347,41 @@ class SessionPersister:
                 )
             if "provenance_json" not in quiz_columns:
                 conn.execute(text("ALTER TABLE quizzes ADD COLUMN provenance_json TEXT"))
+            question_columns = {
+                row[1] for row in conn.execute(text("PRAGMA table_info(quiz_questions)"))
+            }
+            if "source_document_id" not in question_columns:
+                conn.execute(text("ALTER TABLE quiz_questions ADD COLUMN source_document_id TEXT"))
+                conn.execute(text("ALTER TABLE quiz_questions ADD COLUMN source_page INTEGER"))
+            attempt_columns = {
+                row[1] for row in conn.execute(text("PRAGMA table_info(quiz_attempts)"))
+            }
+            if "question_id" not in attempt_columns:
+                conn.execute(text("ALTER TABLE quiz_attempts ADD COLUMN question_id TEXT"))
+            conn.execute(
+                text(
+                    "CREATE TABLE IF NOT EXISTS note_topics (id TEXT PRIMARY KEY, student_id TEXT NOT NULL, "
+                    "document_id TEXT NOT NULL, title TEXT NOT NULL, first_page INTEGER NOT NULL, "
+                    "last_page INTEGER NOT NULL, position INTEGER NOT NULL, checksum TEXT NOT NULL)"
+                )
+            )
+            conn.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS idx_note_topics_document ON note_topics(document_id)"
+                )
+            )
+            conn.execute(
+                text(
+                    "CREATE TABLE IF NOT EXISTS syllabus_items (id TEXT PRIMARY KEY, student_id TEXT NOT NULL, "
+                    "course_id TEXT NOT NULL, unit TEXT, title TEXT NOT NULL, position INTEGER NOT NULL, "
+                    "link_mode TEXT NOT NULL DEFAULT 'auto', linked_topic_id TEXT)"
+                )
+            )
+            syllabus_columns = {
+                row[1] for row in conn.execute(text("PRAGMA table_info(syllabus_items)"))
+            }
+            if "unit_hours" not in syllabus_columns:
+                conn.execute(text("ALTER TABLE syllabus_items ADD COLUMN unit_hours INTEGER"))
             conn.execute(
                 text("""
                 CREATE TABLE IF NOT EXISTS flashcard_decks (
@@ -351,6 +408,9 @@ class SessionPersister:
             for column in ("stability", "difficulty", "last_review_at"):
                 if column not in card_columns:
                     conn.execute(text(f"ALTER TABLE flashcards ADD COLUMN {column} REAL"))
+            if "source_document_id" not in card_columns:
+                conn.execute(text("ALTER TABLE flashcards ADD COLUMN source_document_id TEXT"))
+                conn.execute(text("ALTER TABLE flashcards ADD COLUMN source_page INTEGER"))
 
             # Identity & Privacy Platform tables
             conn.execute(
@@ -530,8 +590,9 @@ class SessionPersister:
                 conn.execute(
                     text("""
                     INSERT OR REPLACE INTO documents 
-                    (id, filename, file_type, category, subject, upload_date, last_modified, chunk_count, embedding_count, status, last_indexed, checksum, student_id, extraction_method)
-                    VALUES (:id, :filename, :file_type, :category, :subject, :upload_date, :last_modified, :chunk_count, :embedding_count, :status, :last_indexed, :checksum, :student_id, :extraction_method)
+                    (id, filename, file_type, category, subject, upload_date, last_modified, chunk_count, embedding_count, status, last_indexed, checksum, student_id, extraction_method, course_id)
+                    VALUES (:id, :filename, :file_type, :category, :subject, :upload_date, :last_modified, :chunk_count, :embedding_count, :status, :last_indexed, :checksum, :student_id, :extraction_method,
+                            (SELECT course_id FROM documents WHERE id = :id))
                 """),
                     doc_copy,
                 )
@@ -609,7 +670,7 @@ class SessionPersister:
         try:
             with self._engine.connect() as conn:
                 query = """
-                    SELECT id, filename, file_type, category, subject, upload_date, last_modified, chunk_count, embedding_count, status, last_indexed, checksum, student_id, extraction_method
+                    SELECT id, filename, file_type, category, subject, upload_date, last_modified, chunk_count, embedding_count, status, last_indexed, checksum, student_id, extraction_method, course_id
                     FROM documents
                 """
                 params = {}

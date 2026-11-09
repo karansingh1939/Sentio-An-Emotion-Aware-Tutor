@@ -46,8 +46,20 @@ class SentioAPIClient {
     return operation.promise;
   }
 
-  // Common request handler
+  // Common request handler. With `stream: true` the Response is returned unread and the
+  // caller's signal stays connected, so a streamed body can still be cancelled.
   async request(endpoint, options = {}) {
+    // Dev-only sample data (?data=…): GETs may come from fixtures, and writes are refused.
+    const sample = globalThis.sentioFixtures;
+    if (sample?.active()) {
+      const method = (options.method || 'GET').toUpperCase();
+      if (method === 'GET') {
+        const data = sample.fixtureFor(endpoint);
+        if (data !== undefined) return structuredClone(data);
+      } else if (!endpoint.startsWith('/auth/')) {
+        throw new Error('Saving is off while sample data is shown. Switch to Demo data first.');
+      }
+    }
     const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
 
     // Setup AbortController for timeouts/cancellations
@@ -87,8 +99,12 @@ class SentioAPIClient {
       signal: controller.signal,
     };
 
-    this.pending++;
-    store.setState('loading', true);
+    // Background polls (such as the camera mood) do not show the loading overlay.
+    const quiet = options.background;
+    if (!quiet) {
+      this.pending++;
+      store.setState('loading', true);
+    }
 
     try {
       const response = await fetch(url, fetchOptions);
@@ -131,6 +147,7 @@ class SentioAPIClient {
         throw failure;
       }
 
+      if (options.stream) return response;
       // Handle raw responses or JSON
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
@@ -148,9 +165,11 @@ class SentioAPIClient {
       throw error;
     } finally {
       clearTimeout(id);
-      options.signal?.removeEventListener('abort', cancel);
-      this.pending--;
-      store.setState('loading', this.pending > 0);
+      if (!options.stream) options.signal?.removeEventListener('abort', cancel);
+      if (!quiet) {
+        this.pending--;
+        store.setState('loading', this.pending > 0);
+      }
     }
   }
 

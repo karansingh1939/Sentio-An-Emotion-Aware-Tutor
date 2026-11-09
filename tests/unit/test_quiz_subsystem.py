@@ -15,6 +15,7 @@ import unittest
 from sentio.ai.structured_parser import metrics as parser_metrics
 from sentio.quiz.service import QuizService
 from sentio.tutor.agent import TutorAgent
+from tests.helpers import index_notes
 
 
 class TestQuizSubsystem(unittest.TestCase):
@@ -35,6 +36,13 @@ class TestQuizSubsystem(unittest.TestCase):
             subject="physics",
             topic="thermodynamics",
             difficulty="intermediate",
+            metadata={
+                "document_id": index_notes(
+                    cls.agent,
+                    cls.student_id,
+                    "Thermodynamics studies heat, work and energy. Entropy measures disorder. The first law of thermodynamics conserves energy.",
+                )
+            },
         )
         cls.session_id = cls.session.session_id
 

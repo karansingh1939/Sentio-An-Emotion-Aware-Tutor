@@ -6,9 +6,10 @@ from typing import Any, Dict, List, Optional, TypedDict
 import psutil
 from langgraph.graph import END, StateGraph
 
-from sentio.ai.streaming import TutorPayload, output_schema
+from sentio.ai.stream_schema import TutorPayload, output_schema
 from sentio.config import tutor_cfg
 from sentio.jobs.control import checkpoint, current_control
+from sentio.tutor.difficulty import asks_for_another_explanation, requested_change, step
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +21,13 @@ class OrchestratorState(TypedDict):
     subject: str
     topic: str
     difficulty: str
+    difficulty_reason: Optional[str]
     learning_state: str
     strategy: str
     user_message: str
     document_id: Optional[str]
+    slide: Optional[int]  # The slide explained this turn, in slide study.
+    student_request: bool  # The student asked for a change of level or explanation this turn.
 
     # Context
     student_memory: str
@@ -153,7 +157,7 @@ class SentioOrchestrator:
             )
 
         # 4. Check explicit student adaptation requests (Phase 6 & 8)
-        new_strategy, new_difficulty, new_learning_state, text_directive = (
+        new_strategy, new_difficulty, new_learning_state, text_directive, difficulty_reason = (
             self._detect_student_adaptation_intent(
                 user_msg=state["user_message"],
                 current_difficulty=state["difficulty"],
@@ -178,12 +182,6 @@ class SentioOrchestrator:
                     hints_enabled = adaptation.get("hints_enabled", True)
                     adaptation_msg = f"Learner Model Adaptation: depth={depth}, pace={pace}, hints_enabled={hints_enabled}."
                     memory_context += f"\n{adaptation_msg}\n"
-                    if (
-                        not text_directive
-                        and adaptation.get("difficulty") == "beginner"
-                        and state["difficulty"] == "intermediate"
-                    ):
-                        new_difficulty = "beginner"
             except Exception as e:
                 logger.debug(f"AdaptationEngine lookup skipped: {e}")
 
@@ -202,7 +200,9 @@ class SentioOrchestrator:
             **state,
             "strategy": new_strategy,
             "difficulty": new_difficulty,
+            "difficulty_reason": difficulty_reason,
             "learning_state": new_learning_state,
+            "student_request": bool(text_directive),
             "student_memory": memory_context,
             "agent_timeline": timeline,
             "selected_route": route,
@@ -216,12 +216,13 @@ class SentioOrchestrator:
         current_strategy: str,
         current_state: str,
         session_id: str,
-    ) -> tuple[str, str, str, Optional[str]]:
+    ) -> tuple[str, str, str, Optional[str], Optional[str]]:
         """
         Deterministic, lightweight analysis of explicit student requests for:
         - difficulty adjustment (harder, easier)
         - pedagogical style adjustment (simplify, reframe, challenge, quiz)
-        Returns (new_strategy, new_difficulty, new_learning_state, directive_instruction)
+        Returns (new_strategy, new_difficulty, new_learning_state, directive_instruction,
+        difficulty_change_reason)
         """
         msg = user_msg.lower().strip()
         new_strategy = current_strategy
@@ -229,55 +230,32 @@ class SentioOrchestrator:
         new_state = current_state
         directive = None
 
-        difficulty_levels = ["beginner", "intermediate", "advanced"]
-
-        # 1. Check for explicit request to increase difficulty / challenge
-        harder_signals = [
-            "harder",
-            "more difficult",
-            "make this harder",
-            "make it harder",
-            "challenge me",
-            "more advanced",
-            "too easy",
-            "give me a harder",
-        ]
-        if any(sig in msg for sig in harder_signals):
-            new_strategy = "challenge"
-            idx = (
-                difficulty_levels.index(current_difficulty)
-                if current_difficulty in difficulty_levels
-                else 0
+        # Difficulty moves only on an explicit request (see sentio.tutor.difficulty).
+        direction = requested_change(msg)
+        if direction:
+            harder = direction == "harder"
+            new_strategy = "challenge" if harder else "simplify"
+            new_state = "engaged" if harder else "struggling"
+            new_difficulty = step(current_difficulty, direction)
+            reason = "request_harder" if harder else "request_easier"
+            directive = (
+                "INSTRUCTION (Student requested harder challenge):\n- Present a deeper, more advanced conceptual example.\n- Ask a thought-provoking challenge question."
+                if harder
+                else "INSTRUCTION (Student requested simpler explanation):\n- Strip away jargon and present an elementary, intuitive example.\n- Focus only on core fundamentals."
             )
-            if idx < len(difficulty_levels) - 1:
-                new_difficulty = difficulty_levels[idx + 1]
-            new_state = "engaged"
-            directive = "INSTRUCTION (Student requested harder challenge):\n- Present a deeper, more advanced conceptual example.\n- Ask a thought-provoking challenge question."
             try:
                 session = self.tutor_agent.sm.get_session(session_id)
                 if session and not getattr(current_control(), "defer_turn", False):
                     session.metadata["strategy"] = new_strategy
                     session.metadata["learning_state"] = new_state
-                    if session.difficulty != new_difficulty:
-                        session.update_difficulty(new_difficulty, "student_request_harder")
+                    session.metadata["difficulty_pinned"] = False
+                    session.update_difficulty(new_difficulty, reason)
             except Exception:
                 pass
-            return new_strategy, new_difficulty, new_state, directive
+            return new_strategy, new_difficulty, new_state, directive, reason
 
-        # 2. Check for explicit struggle, confusion, or request to explain another way
-        reframe_signals = [
-            "don't understand",
-            "dont understand",
-            "do not understand",
-            "explain another way",
-            "explain it another way",
-            "another way",
-            "explain differently",
-            "confused",
-            "lost",
-            "makes no sense",
-        ]
-        if any(sig in msg for sig in reframe_signals):
+        # Confusion changes the explanation and tone, not the level.
+        if asks_for_another_explanation(msg):
             new_strategy = "reframe"
             new_state = "struggling"
             directive = "INSTRUCTION (Student expressed confusion):\n- Reframe the concept using an entirely different, vivid real-world analogy.\n- Break down the mechanism step by step with clear intuition."
@@ -288,39 +266,7 @@ class SentioOrchestrator:
                     session.metadata["learning_state"] = new_state
             except Exception:
                 pass
-            return new_strategy, new_difficulty, new_state, directive
-
-        # 3. Check for explicit request to make it easier / simpler
-        simpler_signals = [
-            "easier",
-            "too hard",
-            "make it easier",
-            "too complex",
-            "simplify",
-            "simpler",
-            "give me an easier",
-        ]
-        if any(sig in msg for sig in simpler_signals):
-            new_strategy = "simplify"
-            new_state = "struggling"
-            idx = (
-                difficulty_levels.index(current_difficulty)
-                if current_difficulty in difficulty_levels
-                else 1
-            )
-            if idx > 0:
-                new_difficulty = difficulty_levels[idx - 1]
-            directive = "INSTRUCTION (Student requested simpler explanation):\n- Strip away jargon and present an elementary, intuitive example.\n- Focus only on core fundamentals."
-            try:
-                session = self.tutor_agent.sm.get_session(session_id)
-                if session and not getattr(current_control(), "defer_turn", False):
-                    session.metadata["strategy"] = new_strategy
-                    session.metadata["learning_state"] = new_state
-                    if session.difficulty != new_difficulty:
-                        session.update_difficulty(new_difficulty, "student_request_easier")
-            except Exception:
-                pass
-            return new_strategy, new_difficulty, new_state, directive
+            return new_strategy, new_difficulty, new_state, directive, None
 
         # 4. Check for quiz request
         quiz_signals = [
@@ -332,18 +278,36 @@ class SentioOrchestrator:
         ]
         if any(sig in msg for sig in quiz_signals):
             directive = "INSTRUCTION (Student requested a quiz):\n- Conclude your explanation with a specific multiple-choice or short-answer comprehension check."
-            return new_strategy, new_difficulty, new_state, directive
+            return new_strategy, new_difficulty, new_state, directive, None
 
-        return new_strategy, new_difficulty, new_state, None
+        return new_strategy, new_difficulty, new_state, None, None
 
     def route_after_retrieval(self, state: OrchestratorState) -> str:
         outcome = getattr(state.get("retrieved_content"), "evidence_outcome", "general")
-        return "refuse" if outcome == "insufficient" else "generate"
+        return "refuse" if outcome in ("insufficient", "no_source") else "generate"
 
-    def retrieve_node(self, state: OrchestratorState) -> OrchestratorState:
-        t0 = time.perf_counter()
+    def _session(self, session_id):
+        sm = getattr(self.tutor_agent, "sm", None)
+        # Lightweight managers without sessions have no slide or camera context.
+        return sm.get_session(session_id) if hasattr(sm, "get_session") else None
 
-        content = self.tutor_agent.kb.retrieve(
+    def _study_slide(self, state):
+        """The slide being studied in slide mode, or None to retrieve as usual."""
+        from sentio.repositories.slides import SlideRepository
+
+        session = self._session(state["session_id"])
+        metadata = getattr(session, "metadata", None) or {}
+        number, document_id = metadata.get("slide"), state.get("document_id")
+        # Slide study needs one lecture; booleans are not slide numbers.
+        if metadata.get("mode") != "slides" or type(number) is not int:
+            return None
+        if not isinstance(document_id, str):
+            return None
+        engine = self.tutor_agent.sm.persister._engine
+        return SlideRepository(engine).slide(state["student_id"], document_id, number)
+
+    def _retrieve(self, state, document_id):
+        return self.tutor_agent.kb.retrieve(
             subject=state["subject"],
             topic=state["topic"],
             difficulty=state["difficulty"],
@@ -351,14 +315,55 @@ class SentioOrchestrator:
             query=state["user_message"],
             session_id=state["session_id"],
             student_id=state.get("student_id"),
-            document_id=state.get("document_id"),
+            document_id=document_id,
         )
+
+    def _tone_state(self, state):
+        """The camera's study mood sets the tone while fresh; it never changes anything else.
+        What the student asks for this turn ("make it harder") wins over the camera's guess."""
+        from sentio.emotion.access import camera_consented, emotion_enabled
+        from sentio.emotion.policy import study_mood
+
+        if state.get("student_request") or not emotion_enabled():
+            return state["learning_state"]
+        session = self._session(state["session_id"])
+        timeline = getattr(session, "emotion_timeline", None)
+        try:
+            # Withdrawn consent ends the camera's say in the tone at once.
+            consented = camera_consented(self.tutor_agent.sm.persister, session.student_id)
+        except Exception:
+            consented = False
+        if timeline is not None and consented:
+            mood = study_mood(timeline.recent(len(timeline)), time.time())
+            if mood["fresh"]:
+                return mood["learning_state"]
+        return state["learning_state"]
+
+    def retrieve_node(self, state: OrchestratorState) -> OrchestratorState:
+        t0 = time.perf_counter()
+
+        slide = self._study_slide(state)
+        if slide:
+            from sentio.tutor.slides import slide_content
+
+            # The slide leads; passages from the same lecture answer follow-up questions.
+            nearby = self._retrieve(state, slide["document_id"])
+            content = slide_content(
+                self.tutor_agent.kb,
+                state["subject"],
+                state["topic"],
+                state["difficulty"],
+                slide,
+                getattr(nearby, "source_citations", None) or [],
+            )
+        else:
+            content = self._retrieve(state, state.get("document_id"))
         control = current_control()
         citations = getattr(content, "source_citations", None) or []
         if control and control.emit and citations:
             # Streaming clients show the passages while the model is still writing.
             control.emit("sources", {"sources": citations[:5]})
-        tone = self.tutor_agent.kb.get_tone_instruction(state["learning_state"])
+        tone = self.tutor_agent.kb.get_tone_instruction(self._tone_state(state))
 
         t1 = time.perf_counter()
         latency = (t1 - t0) * 1000
@@ -374,6 +379,7 @@ class SentioOrchestrator:
         return {
             **state,
             "retrieved_content": content,
+            "slide": slide["number"] if slide else None,
             "tone_instruction": tone,
             "agent_timeline": timeline,
             "selected_route": route,
@@ -382,12 +388,13 @@ class SentioOrchestrator:
 
     def refuse_node(self, state: OrchestratorState) -> OrchestratorState:
         """The selected notes do not support the question: answer without the model."""
-        from sentio.ai.grounding import MISSING_EVIDENCE
-        from sentio.ai.models import TutorResponse
+        from sentio.ai.grounding import MISSING_EVIDENCE, NO_SOURCE
+        from sentio.ai.response_models import TutorResponse
 
         checkpoint("insufficient selected evidence")
+        outcome = getattr(state.get("retrieved_content"), "evidence_outcome", "")
         response = TutorResponse(
-            text=MISSING_EVIDENCE,
+            text=NO_SOURCE if outcome == "no_source" else MISSING_EVIDENCE,
             strategy_used=state["strategy"],
             learning_state=state["learning_state"],
             backend_used="evidence_gate",
@@ -404,7 +411,7 @@ class SentioOrchestrator:
         t0 = time.perf_counter()
 
         from sentio.ai.grounding import validate_references
-        from sentio.ai.models import TutorResponse
+        from sentio.ai.response_models import TutorResponse
 
         tone = state.get("tone_instruction", "Be encouraging.")
         system_prompt, user_message = self.tutor_agent.nlp.prompt_builder.build_study_messages(
@@ -418,6 +425,10 @@ class SentioOrchestrator:
             retrieved_content=state["retrieved_content"],
             student_memory=state["student_memory"],
         )
+        if state.get("slide") is not None:
+            from sentio.tutor.slides import SLIDE_INSTRUCTION
+
+            system_prompt += SLIDE_INSTRUCTION
 
         from sentio.ai.source_practice import source_excerpt
         from sentio.shared.exceptions import LLMServiceUnavailableError

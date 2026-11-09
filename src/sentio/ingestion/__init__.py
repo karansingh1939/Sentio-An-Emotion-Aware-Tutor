@@ -1,1 +1,3 @@
-SUPPORTED_DOCUMENT_EXTENSIONS = frozenset({".pdf", ".docx", ".txt", ".png", ".jpg", ".jpeg"})
+SUPPORTED_DOCUMENT_EXTENSIONS = frozenset(
+    {".pdf", ".docx", ".pptx", ".txt", ".png", ".jpg", ".jpeg"}
+)

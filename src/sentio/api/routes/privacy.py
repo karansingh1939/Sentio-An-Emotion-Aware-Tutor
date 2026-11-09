@@ -1,5 +1,6 @@
 """Privacy API routes."""
 
+import json
 import logging
 import time
 
@@ -18,6 +19,38 @@ from sentio.session.models import EmotionTimeline
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+def _emotion_history(student_id):
+    """Every camera reading kept for the student: the live timelines and the logs written when
+    sessions end. (The emotion_events table is never written.)"""
+    history = []
+    for row in agent.sm.persister.list_sessions(student_id=student_id, limit=-1):
+        sid = row["session_id"]
+        events = []
+        try:
+            logged = json.loads((session_cfg.EMOTION_LOG_PATH / f"{sid}_emotions.json").read_text())
+            events += [event for event in logged if isinstance(event, dict)]
+        except (OSError, ValueError, TypeError):
+            pass
+        live = agent.sm._sessions.get(sid)
+        if live is not None:
+            events += live.emotion_timeline.all_as_dicts()
+        seen = set()
+        for event in sorted(events, key=lambda e: e.get("timestamp") or 0):
+            key = (event.get("timestamp"), event.get("emotion"), event.get("learning_state"))
+            if key not in seen:
+                seen.add(key)
+                history.append(
+                    {
+                        "session_id": sid,
+                        "timestamp": event.get("timestamp"),
+                        "emotion": event.get("emotion"),
+                        "learning_state": event.get("learning_state"),
+                        "confidence": event.get("confidence"),
+                    }
+                )
+    return history
 
 
 @router.get(PREFIX + "/student/{student_id}/export", tags=["Privacy"])
@@ -98,6 +131,7 @@ def export_student_data(student_id: str, user: dict = Depends(get_current_user))
             data["consent_history"] = persister.auth_repo.get_consent_history(student_id)
 
         data.update(persister.auth_repo.export_study_artifacts(student_id))
+        data["emotion_timeline"] = _emotion_history(student_id)
         # Serialize database mappings to json-serializable list/dict structure
         serializable_data = {}
         for key, val in data.items():
@@ -140,7 +174,6 @@ def delete_student_data(student_id: str, request: Request, user: dict = Depends(
             agent.sm._sessions.pop(sid, None)
             agent.sm._diagnostics.pop(sid, None)
             agent.detector.clear_session(sid)
-            agent.kb.reset_session(sid)
             if hasattr(agent.nlp, "clear_history"):
                 agent.nlp.clear_history(sid)
         return {
@@ -216,6 +249,11 @@ def update_student_consent(
             timestamp=time.time(),
         )
         agent.sm.persister.auth_repo.save_consent(consent)
+        if not req.preferences.get("telemetry"):
+            # Withdrawn camera consent stops live readings from shaping the tone at once.
+            for session in list(agent.sm._sessions.values()):
+                if session.student_id == student_id and session.is_active:
+                    session.emotion_timeline = EmotionTimeline()
         agent.sm.persister.auth_service.audit.log_event(
             student_id, "consent_update", details=f"Version {req.consent_version}"
         )

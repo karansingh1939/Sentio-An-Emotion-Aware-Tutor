@@ -71,12 +71,16 @@ def get_recovery(request):
     return service
 
 
-async def stage_upload(request, file, category, subject, owner):
+async def stage_upload(request, file, category, course_id, owner):
     from tempfile import TemporaryDirectory
+
+    from sentio.repositories.courses import CourseRepository
 
     form = await request.form()
     category = request.query_params.get("category", form.get("category", category))
-    subject = subject or form.get("subject")
+    course_id = course_id or form.get("course_id") or None
+    if course_id and not CourseRepository(agent.sm.persister._engine).get(owner, course_id):
+        raise HTTPException(404, "Course not found.")
     if category not in ["textbooks", "notes", "assignments", "reference", "uploaded"]:
         raise HTTPException(400, "Invalid document category.")
     filename = file.filename or ""
@@ -98,9 +102,14 @@ async def stage_upload(request, file, category, subject, owner):
         raise HTTPException(
             400, "Use a filename of up to 180 characters without paths or reserved characters."
         )
-    if Path(file.filename).suffix.lower() not in SUPPORTED_DOCUMENT_EXTENSIONS:
+    suffix = Path(file.filename).suffix.lower()
+    if suffix == ".ppt":
         raise HTTPException(
-            400, "Upload PDF, DOCX, TXT, PNG or JPEG. Scans and images require OCR."
+            400, "Save this presentation as .pptx (PowerPoint: File > Save As) and upload it again."
+        )
+    if suffix not in SUPPORTED_DOCUMENT_EXTENSIONS:
+        raise HTTPException(
+            400, "Upload PDF, DOCX, PPTX, TXT, PNG or JPEG. Scans and images require OCR."
         )
     for document in agent.sm.list_documents(student_id=owner):
         if (
@@ -131,21 +140,25 @@ async def stage_upload(request, file, category, subject, owner):
     except Exception:
         temp.cleanup()
         raise
-    return temp, pending, destination, category, subject, recovery
+    return temp, pending, destination, category, course_id, recovery
 
 
-def ingest_staged(pending, destination, category, subject, owner, recovery):
+def ingest_staged(pending, destination, category, course_id, owner, recovery):
+    from sentio.repositories.courses import CourseRepository
+
     def publisher(document, chunks, old_chunks):
         recovery.replace(pending, destination, document, chunks, old_chunks)
 
     document = _index_upload(
-        pending, category, subject, owner, publisher, force=not destination.exists()
+        pending, category, None, owner, publisher, force=not destination.exists()
     )
+    if course_id:
+        CourseRepository(agent.sm.persister._engine).move_document(owner, document["id"], course_id)
     return {
         "indexed": True,
         "filename": document["filename"],
         "category": category,
-        "subject": document["subject"],
+        "course_id": course_id,
         "filepath": str(destination),
         "document_id": document["id"],
         "indexing_mode": "semantic" if document["embedding_count"] else "keyword",
@@ -158,18 +171,18 @@ async def upload_document(
     request: Request,
     file: UploadFile = File(...),
     category: str = "uploaded",
-    subject: Optional[str] = None,
+    course_id: Optional[str] = None,
     user: dict = Depends(get_current_user),
 ):
     from starlette.concurrency import run_in_threadpool
 
-    temp, pending, destination, category, subject, recovery = await stage_upload(
-        request, file, category, subject, user["student_id"]
+    temp, pending, destination, category, course_id, recovery = await stage_upload(
+        request, file, category, course_id, user["student_id"]
     )
 
     try:
         return await run_in_threadpool(
-            ingest_staged, pending, destination, category, subject, user["student_id"], recovery
+            ingest_staged, pending, destination, category, course_id, user["student_id"], recovery
         )
     finally:
         temp.cleanup()
@@ -180,7 +193,7 @@ async def upload_job(
     request: Request,
     file: UploadFile = File(...),
     category: str = "uploaded",
-    subject: Optional[str] = None,
+    course_id: Optional[str] = None,
     user: dict = Depends(get_current_user),
 ):
     from sentio.api.routes.jobs import fingerprint, get_jobs, submission_id
@@ -188,8 +201,8 @@ async def upload_job(
 
     jobs = get_jobs(request)
     request_id = submission_id(request)
-    temp, pending, destination, category, subject, recovery = await stage_upload(
-        request, file, category, subject, user["student_id"]
+    temp, pending, destination, category, course_id, recovery = await stage_upload(
+        request, file, category, course_id, user["student_id"]
     )
 
     def work(control):
@@ -197,7 +210,7 @@ async def upload_job(
 
         try:
             return ingest_staged(
-                pending, destination, category, subject, user["student_id"], recovery
+                pending, destination, category, course_id, user["student_id"], recovery
             )
         except HTTPException as exc:
             if exc.status_code == 422:
@@ -216,7 +229,7 @@ async def upload_job(
                 {
                     "filename": destination.name,
                     "category": category,
-                    "subject": subject,
+                    "course_id": course_id,
                     "checksum": hashlib.sha256(pending.read_bytes()).hexdigest(),
                 }
             ),
@@ -285,6 +298,9 @@ def delete_document(doc_id: str, request: Request, user: dict = Depends(get_curr
         raise HTTPException(
             503, "Document deletion could not finish. Retry after local recovery."
         ) from exc
+    from sentio.repositories.topics import TopicRepository
+
+    TopicRepository(agent.sm.persister._engine).forget_document(doc_id)
     return {"deleted": True, "document_id": doc_id, "cleanup_pending": not cleaned}
 
 

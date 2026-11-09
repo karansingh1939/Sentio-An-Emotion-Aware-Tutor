@@ -60,7 +60,7 @@ def test_general_study_does_not_claim_to_have_document_evidence():
     ],
 )
 def test_selected_source_questions_cannot_bypass_evidence_gate(monkeypatch, selected, message):
-    from sentio.ai.parser import ResponseParser
+    from sentio.ai.response_parser import ResponseParser
     from sentio.jobs.control import WorkControl, execution
     from sentio.study.planning import PlanningService
     from sentio.tutor.orchestrator import SentioOrchestrator

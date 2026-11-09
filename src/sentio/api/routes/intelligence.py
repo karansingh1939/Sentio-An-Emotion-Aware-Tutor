@@ -1,11 +1,13 @@
 """Intelligence API routes."""
 
 import logging
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from sentio.api.dependencies import PREFIX, _verify_session_owner, agent
 from sentio.auth.middleware import get_current_user
+from sentio.repositories.topics import TopicRepository
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -41,18 +43,16 @@ def get_student_recommendations(student_id: str, user: dict = Depends(get_curren
 
 @router.get(PREFIX + "/student/{student_id}/learning_path", tags=["Intelligence"])
 def get_student_learning_path(
-    student_id: str, subject: str = "mathematics", user: dict = Depends(get_current_user)
+    student_id: str, course_id: Optional[str] = None, user: dict = Depends(get_current_user)
 ):
     """
-    Retrieve the topologically sequenced learning path for the student.
+    What to study next, built from the learner's own lecture topics: due reviews first,
+    then topics being practised, then new topics in lecture order. Optionally one course.
     """
-    student_id = user["student_id"]
-    try:
-        path = agent.intelligence.generate_learning_path(student_id, subject)
-        return {"student_id": student_id, "subject": subject, "path": path}
-    except Exception as e:
-        logger.exception("Failed to generate learning path")
-        raise HTTPException(status_code=500, detail=str(e))
+    path = TopicRepository(agent.sm.persister._engine).learning_path(user["student_id"], course_id)
+    if path is None:
+        raise HTTPException(status_code=404, detail="Course not found.")
+    return {"student_id": user["student_id"], **path}
 
 
 @router.get(PREFIX + "/session/{session_id}/summary", tags=["Intelligence"])
