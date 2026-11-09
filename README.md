@@ -6,7 +6,7 @@
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-[Quick start](#quick-start) | [How it works](#how-it-works) | [Results](#measured-results) | [Architecture](docs/architecture/ARCHITECTURE.md) | [Interview guide](docs/INTERVIEW_GUIDE.md)
+[Quick start](#quick-start) | [How it works](#how-it-works) | [Results](#measured-results) | [Architecture](docs/architecture/ARCHITECTURE.md)
 
 ![Sentio journey: Today, Library, Study, Quiz, Flashcards, Progress](docs/images/journey.gif)
 

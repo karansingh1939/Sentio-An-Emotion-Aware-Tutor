@@ -135,7 +135,7 @@ components:
 
 Sentio is a calm, dark study dashboard. A near-black page holds a few dark cards; your notes, your cited answers and your real progress are the only things that ask for attention. One blue accent marks what you can act on. Green, amber and coral mean learning status, nothing else. Big figures and simple charts show progress at a glance, and each figure is real data from your own practice.
 
-The look and the motion follow the Amplo dashboard reference (`docs/design/inspiration/amplo-dashboard.md`), adapted to Sentio's purpose. The light theme ("The Day Desk") uses the same layout and components on pale grey and white, and every colour has a tuned counterpart in each theme.
+The look and the motion follow an Amplo dashboard reference, adapted to Sentio's purpose. The light theme ("The Day Desk") uses the same layout and components on pale grey and white, and every colour has a tuned counterpart in each theme.
 
 **Key Characteristics:**
 

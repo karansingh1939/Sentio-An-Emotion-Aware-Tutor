@@ -19,4 +19,3 @@ Include the affected commit, a minimal sanitized reproduction, expected versus a
 - Do not use semantic grades for high-stakes decisions. Known false positives and false negatives are recorded in the evaluation reports.
 - Camera features are excluded from the supported study interface pending consent, resource-boundary, and physical-device privacy checks.
 
-See the [release handoff](docs/archive/RELEASE_HANDOFF.md) for outstanding acceptance gates.
