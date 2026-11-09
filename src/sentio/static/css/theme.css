@@ -2,7 +2,6 @@
    Loaded after styles.css and workspace.css. It sets the palette for both
    themes, the Outfit typeface, the shared components and the top-bar shell.
    Motion lives in js/core/motion.js; the keyframes it uses are at the end.
-   Reference: docs/design/inspiration/amplo-dashboard.md
    ─────────────────────────────────────────────────────────────────── */
 
 @font-face {

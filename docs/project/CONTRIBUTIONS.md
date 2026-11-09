@@ -21,4 +21,4 @@ The following incremental commits make the current engineering contribution revi
 
 FastAPI, SQLite, Qdrant, Sentence Transformers, Ollama, pretrained generation/embedding models, scikit-learn, and Playwright are upstream components. No full LLM training or validated emotion model is claimed. The proposed evidence classifier is an offline experiment awaiting reviewed labels.
 
-For an interview, demonstrate one failure, explain the transaction or ownership boundary that prevents it, run its regression, and show the corresponding commit. Use the [development record](DEVELOPMENT_LOG.md) and [architecture](../architecture/ARCHITECTURE.md) for context.
+For an interview, demonstrate one failure, explain the transaction or ownership boundary that prevents it, run its regression, and show the corresponding commit. Use the [architecture](../architecture/ARCHITECTURE.md) for context.

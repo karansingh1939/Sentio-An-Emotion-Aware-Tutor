@@ -77,10 +77,13 @@ class ResponseHeadersMiddleware:
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, rate: float = 1.0, burst: float = 60.0):
+    def __init__(self, app, rate: float = 1.0, burst: float = 60.0, read_burst: float = None):
         super().__init__(app)
         self.rate = rate
         self.burst = burst
+        # Opening a screen reads many small resources at once (one per lecture in the
+        # Library, nine on Today), so reads may get a larger burst than submissions.
+        self.read_burst = burst if read_burst is None else read_burst
         self.limiters = OrderedDict()
 
     async def dispatch(self, request: Request, call_next):
@@ -99,7 +102,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 self.limiters.popitem(last=False)
             self.limiters[key] = RateLimiter(
                 rate=self.rate * (0.1 if auth else 10 if read else 1),
-                burst=min(self.burst, 10) if auth else self.burst,
+                burst=min(self.burst, 10) if auth else self.read_burst if read else self.burst,
             )
         self.limiters.move_to_end(key)
 

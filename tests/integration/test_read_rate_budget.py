@@ -48,3 +48,19 @@ def test_auth_has_its_own_stricter_budget_and_retry_after_is_usable(monkeypatch)
         assert client.post("/api/v1/practice").status_code == 200
         now[0] += int(rejected.headers["Retry-After"])
         assert client.post("/api/v1/auth/login").status_code == 200
+
+
+def test_reads_can_have_a_larger_burst_than_submissions():
+    """Opening the Library with many lectures must not run out of reads (CI flake, PR #7)."""
+    app = FastAPI()
+    app.add_middleware(RateLimitMiddleware, rate=0.001, burst=3, read_burst=8)
+
+    @app.api_route("/resource", methods=["GET", "POST"])
+    def resource():
+        return {"ok": True}
+
+    with TestClient(app) as client:
+        assert all(client.get("/resource").status_code == 200 for _ in range(8))
+        assert client.get("/resource").status_code == 429
+        assert all(client.post("/resource").status_code == 200 for _ in range(3))
+        assert client.post("/resource").status_code == 429
