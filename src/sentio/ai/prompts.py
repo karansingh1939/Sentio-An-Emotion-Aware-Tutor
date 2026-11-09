@@ -78,6 +78,9 @@ class PromptBuilder:
             "do not claim to observe emotions or a camera. "
             "Return only JSON with text, follow_up_question, encouragement, suggested_topic. "
             "The last three fields may be null. "
+            # Local models write about 6-15 words a second on a laptop CPU.
+            "Keep text under about 150 words unless the learner asks for more detail; "
+            "leave encouragement and suggested_topic null unless they clearly help. "
         )
         if grounded:
             system += GROUNDING_RULES
@@ -93,8 +96,9 @@ class PromptBuilder:
             system += (
                 "No selected document evidence is available. Do not invent document citations. "
             )
+        # The question goes last: Ollama reuses its cache for the unchanged start of a
+        # prompt, so everything that stays the same between turns must come first.
         data = {
-            "student_question": student_message,
             "session": {
                 "subject": subject,
                 "topic": topic,
@@ -121,6 +125,7 @@ class PromptBuilder:
                 field: getattr(retrieved_content, field, None)
                 for field in ("concept", "explanation", "analogy", "example", "hints")
             }
+        data["student_question"] = student_message
         return system, json.dumps(data, ensure_ascii=False)
 
     # Strategy → instruction paragraph

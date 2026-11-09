@@ -163,15 +163,16 @@ JSON Template:
 
         # Call LLM
         checkpoint("generating quiz")
+        from sentio.ai.practice_schema import generate_practice
         from sentio.ai.source_practice import practice_provenance, source_recall
-        from sentio.ai.structured_parser import generate_structured
         from sentio.shared.exceptions import LLMServiceUnavailableError
 
         mode = "generated"
         try:
-            quiz_data = generate_structured(
+            quiz_data = generate_practice(
                 self.agent.nlp._backend,
-                batch_schema,
+                "quiz",
+                num_questions,
                 system_prompt,
                 "Generate the quiz now.",
                 temperature=0.7,
