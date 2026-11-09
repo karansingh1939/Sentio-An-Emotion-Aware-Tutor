@@ -27,8 +27,8 @@ async def test_flashcards_made_while_away_appear_on_return(monkeypatch):
         return json.dumps({"text": "Inertia resists change [mechanics.txt Page 1]."}), 20
 
     monkeypatch.setattr(OllamaBackend, "complete", complete)
-    url = "http://127.0.0.1:8025"
-    server = UvicornServer("sentio.api.app:app", port=8025)
+    url = "http://127.0.0.1:8027"
+    server = UvicornServer("sentio.api.app:app", port=8027)
     server.start()
     assert wait_for_server(url)
     try:
