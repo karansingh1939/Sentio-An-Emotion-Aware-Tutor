@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from sentio.repositories.sessions import SessionPersister
+from sentio.shared.sqlite_tx import begin_immediate
 
 
 class DocumentRepository:
@@ -37,7 +38,7 @@ class DocumentRepository:
         from sqlalchemy import text
 
         with self.persister._engine.begin() as connection:
-            connection.exec_driver_sql("BEGIN IMMEDIATE")
+            begin_immediate(connection)
             if (
                 require_owner
                 and not connection.execute(

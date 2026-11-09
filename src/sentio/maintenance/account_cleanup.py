@@ -9,6 +9,8 @@ from pathlib import Path
 
 from sqlalchemy import text
 
+from sentio.shared.sqlite_tx import begin_immediate
+
 logger = logging.getLogger(__name__)
 
 
@@ -23,7 +25,7 @@ class AccountCleanup:
 
     def delete(self, owner):
         with self.engine.begin() as connection:
-            connection.exec_driver_sql("BEGIN IMMEDIATE")
+            begin_immediate(connection)
             parameters = {"owner": owner}
             documents = list(
                 connection.execute(

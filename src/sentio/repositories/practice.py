@@ -8,6 +8,7 @@ from sqlalchemy import text
 
 from sentio.jobs.control import WorkCancelled
 from sentio.repositories.planning import active_goal
+from sentio.shared.sqlite_tx import begin_immediate
 
 
 class ReviewConflict(ValueError):
@@ -59,7 +60,7 @@ class PracticeRepository:
 
         owner_id = session.student_id if session else student_id
         with self.engine.connect() as connection:
-            connection.exec_driver_sql("BEGIN IMMEDIATE")
+            begin_immediate(connection)
             try:
                 owner = connection.execute(
                     text("SELECT 1 FROM student_accounts WHERE student_id=:owner"),
@@ -151,7 +152,7 @@ class PracticeRepository:
     @contextmanager
     def rating(self, owner, card_id, request_id, quality):
         with self.engine.begin() as connection:
-            connection.exec_driver_sql("BEGIN IMMEDIATE")
+            begin_immediate(connection)
             card = (
                 connection.execute(
                     text("SELECT * FROM flashcards WHERE card_id=:card AND student_id=:owner"),

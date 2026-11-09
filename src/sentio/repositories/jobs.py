@@ -4,6 +4,8 @@ import uuid
 
 from sqlalchemy import text
 
+from sentio.shared.sqlite_tx import begin_immediate
+
 
 class JobConflict(ValueError):
     pass
@@ -57,7 +59,7 @@ class JobRepository:
         job_id = str(uuid.uuid4())
         now = time.time()
         with self.engine.begin() as conn:
-            conn.exec_driver_sql("BEGIN IMMEDIATE")
+            begin_immediate(conn)
             if request_id:
                 conn.execute(
                     text(

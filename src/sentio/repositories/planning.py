@@ -5,6 +5,8 @@ import time
 
 from sqlalchemy import text
 
+from sentio.shared.sqlite_tx import begin_immediate
+
 
 def active_goal(connection, owner, goal_id):
     """The owner's active goal bound to study context, or None if absent, foreign or finished."""
@@ -78,7 +80,7 @@ class PlanningRepository:
 
     def complete(self, owner, day, task_id, completed):
         with self.engine.begin() as connection:
-            connection.exec_driver_sql("BEGIN IMMEDIATE")
+            begin_immediate(connection)
             row = connection.execute(
                 text("SELECT tasks_json FROM daily_plans WHERE student_id=:owner AND day=:day"),
                 {"owner": owner, "day": str(day)},
@@ -142,7 +144,7 @@ class PlanningRepository:
 
     def update_goal(self, owner, goal_id, changes):
         with self.engine.begin() as connection:
-            connection.exec_driver_sql("BEGIN IMMEDIATE")
+            begin_immediate(connection)
             goal = (
                 connection.execute(
                     text("SELECT * FROM learning_goals WHERE student_id=:owner AND goal_id=:goal"),
