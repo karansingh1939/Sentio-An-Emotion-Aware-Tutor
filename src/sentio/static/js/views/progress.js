@@ -3,7 +3,6 @@ import { store } from '../core/store.js';
 import { escapeHtml } from '../core/html.js';
 
 // Progress: stat tiles and a sortable topic-mastery report.
-// Layout follows the Reports screen in docs/design/inspiration/amplo-dashboard.md.
 
 const percentage = (value) => Math.round(Math.max(0, Math.min(1, Number(value) || 0)) * 100);
 const SORTS = [

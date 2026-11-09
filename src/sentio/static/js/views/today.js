@@ -3,7 +3,7 @@ import { store } from '../core/store.js';
 import { sentioAPI } from '../core/api.js';
 
 // Today: an overview of real progress, what is due, goals and the daily plan.
-// Layout reference: docs/design/mockups/today-dark.png. Every figure comes from the API.
+// Every figure on this screen comes from the API.
 
 const percent = (value) => Math.round(Math.max(0, Math.min(1, Number(value) || 0)) * 100);
 const DAY = 86400;

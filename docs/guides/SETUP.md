@@ -94,4 +94,4 @@ Restore only into an empty directory. Set `SENTIO_HOME` to the restored director
 | OCR unavailable          | Install Tesseract, English data, and the OCR extra; check `TESSERACT_CMD`     |
 | Slow first launch        | Allow library/model initialization; inspect readiness and local logs          |
 
-For normal study use, follow the [learner guide](STUDY_GUIDE.md). For supported boundaries and unfinished work, see [release handoff](../archive/RELEASE_HANDOFF.md).
+For normal study use, follow the [learner guide](STUDY_GUIDE.md).

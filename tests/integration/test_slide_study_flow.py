@@ -1,6 +1,6 @@
 """Phase 4: study a lecture slide by slide, with an optional camera mood that changes tone only.
 
-Written against docs/archive/phase-4-slide-study.md. Where the contract is silent the
+Written against the Phase 4 slide-study contract. Where the contract is silent the
 assumption is marked "ASSUMPTION" and listed in the QA report.
 """
 
