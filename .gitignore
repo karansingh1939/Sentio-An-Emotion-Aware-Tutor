@@ -91,3 +91,12 @@ reports/evidence/mlruns/
 reports/evidence/*/model.joblib
 reports/evidence/annotations-*.json
 reports/usability/
+
+# Optional MediaPipe browser assets (downloaded locally, never committed)
+src/sentio/static/vendor/mediapipe/
+
+# ─────────────────────────────────────────────
+# Design tool state (Impeccable hook caches; not shipped with the app)
+# ─────────────────────────────────────────────
+src/sentio/static/.impeccable/
+**/.impeccable/hook.cache.json

@@ -6,9 +6,8 @@ from fastapi import APIRouter
 from fastapi.responses import FileResponse
 
 from sentio.api.dependencies import PREFIX, STATIC_DIR, agent
-from sentio.config import tutor_cfg
+from sentio.maintenance.health_check import system_health_check
 from sentio.maintenance.readiness import readiness
-from sentio.shared.utils import system_health_check
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -26,7 +25,7 @@ def root():
     index = STATIC_DIR / "index.html"
     if not index.exists():
         return {"message": "Frontend not found. Place index.html in the static/ folder."}
-    return FileResponse(str(index))
+    return FileResponse(str(index), headers={"Cache-Control": "no-cache"})
 
 
 @router.get(PREFIX + "/health", tags=["System"])
@@ -39,13 +38,3 @@ def health_check():
         "agent_loaded": agent._loaded,
         "report": report,
     }
-
-
-@router.get(PREFIX + "/subjects", tags=["Curriculum"])
-def list_subjects():
-    """List all supported subjects and their available topics."""
-    result = {}
-    for subject in tutor_cfg.SUBJECTS:
-        topics = agent.kb.list_topics(subject)
-        result[subject] = topics
-    return {"subjects": result}

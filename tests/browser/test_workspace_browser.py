@@ -64,6 +64,7 @@ async def test_streaming_turn_is_readable_and_survives_refresh(monkeypatch):
                         "subject": "physics",
                         "topic": "Inertia",
                         "difficulty": "beginner",
+                        "metadata": {"document_id": "all"},
                     },
                 )
             ).json()
@@ -82,22 +83,23 @@ async def test_streaming_turn_is_readable_and_survives_refresh(monkeypatch):
                     "buffer": b"Inertia means resistance to changes in motion. <script>window.previewInjected=true</script>",
                 },
             )
-            await page.wait_for_selector(".preview-doc-btn")
+            await page.wait_for_selector(".preview-doc-btn", state="attached")
             await page.fill("#doc-search-input", "browser-inertia")
             assert await page.locator("#doc-search-input").evaluate(
                 "element => element === document.activeElement"
             )
+            await page.locator(".document-row .row-menu summary").first.click()
             await page.click(".preview-doc-btn")
             await page.wait_for_selector('sentio-modal[role="dialog"]')
             assert "<script>" in await page.locator("sentio-modal").inner_text()
             assert not await page.evaluate("Boolean(window.previewInjected)")
             await page.keyboard.press("Escape")
             await page.wait_for_selector("sentio-modal", state="detached")
-            assert await page.locator(".preview-doc-btn").evaluate(
+            assert await page.locator(".document-row .row-menu summary").first.evaluate(
                 "element => element === document.activeElement"
             )
             await page.reload()
-            await page.wait_for_selector(".preview-doc-btn")
+            await page.wait_for_selector(".preview-doc-btn", state="attached")
             await page.goto(url + "/#/tutor")
             await page.wait_for_selector("#msg-input:enabled")
             await page.fill("#msg-input", "Explain inertia")
@@ -145,7 +147,7 @@ async def test_streaming_turn_is_readable_and_survives_refresh(monkeypatch):
             await page.click(".saved-quiz")
             await page.check('input[name="quiz-opt"][value="B"]')
             await page.click("#submit-quiz-btn")
-            await page.wait_for_selector("text=Assessment Results")
+            await page.wait_for_selector("text=Quiz results")
             await page.goto(url + "/#/documents")
             await page.goto(url + "/#/quizzes")
             await page.wait_for_selector('#saved-practice:has-text("Your answer: Color")')
@@ -283,7 +285,7 @@ async def test_workspace_is_readable_offline_and_honest_about_failed_data():
                             "document.documentElement.scrollWidth <= window.innerWidth"
                         ), f"{route} overflows at {width} in {theme}"
                     await page.goto(url + "/#/dashboard")
-                    await page.wait_for_selector(".today-columns")
+                    await page.wait_for_selector(".today-grid")
                     await page.screenshot(path=str(screenshots / f"today-{theme}-{width}.png"))
             await page.route(
                 "**/profile", lambda route: route.fulfill(status=503, json={"detail": "Offline"})

@@ -7,7 +7,9 @@ from pydantic import BaseModel, Field
 
 class CreateSessionRequest(BaseModel):
     student_id: str = Field(..., description="Unique student identifier")
-    subject: str = Field(..., description="e.g. mathematics, physics, computer_science")
+    subject: str = Field(
+        "My notes", min_length=1, max_length=120, description="Session label, e.g. a course name"
+    )
     topic: str = Field(..., description="e.g. derivatives, recursion")
     difficulty: str = Field("beginner", description="beginner | intermediate | advanced")
     metadata: dict = Field(default_factory=dict, description="Optional extra fields")
@@ -54,7 +56,7 @@ class CreateGoalRequest(BaseModel):
 class QuizGenerateRequest(BaseModel):
     student_id: str = Field(..., description="Student ID")
     session_id: str = Field(..., description="Active Session ID")
-    subject: str = Field(..., description="Subject")
+    subject: str = Field("My notes", max_length=120, description="Session label")
     topic: str = Field(..., description="Topic")
     difficulty: str = Field("intermediate", description="beginner | intermediate | advanced")
     num_questions: int = Field(3, ge=1, le=20, description="Number of questions to generate")

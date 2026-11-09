@@ -93,6 +93,14 @@ hybrid keyword/dense search over the owner's active chunks and classifies eviden
 retrieved passages, and falls back to labelled source excerpts. Quizzes, flashcards and
 plans have their own endpoints and jobs rather than graph branches.
 
+A session studies from `all` notes, one document, a list, or `course:<id>`. Courses
+(`repositories/courses.py`) are optional folders; `expand_source` resolves a course to its
+current documents at question time, so retrieval, the stale-context fingerprint and
+practice snapshots include lectures added after the session started. Sessions saved
+without notes (`none`) get a fixed "choose notes" reply from the `refuse` node; there is no
+built-in curriculum or ungrounded tutor. PowerPoint decks are parsed with `python-pptx`,
+one page per slide (title, text, tables, speaker notes).
+
 When the stream is open, `retrieve` emits a `sources` event, so the browser shows the
 passages before the answer arrives.
 
@@ -101,6 +109,73 @@ quizzes, flashcards and document overviews: a mismatch (`InvalidModelOutput`) is
 repaired or regenerated before any fallback. A document overview (summary, key
 concepts, suggested questions) is written as a background job from the document's
 opening passages and cached on the document row against its checksum.
+
+Difficulty (`tutor/difficulty.py`) has one policy: the learner's chosen level moves one
+step only on an explicit chat request (phrase patterns, not single words) or a quiz
+streak (3 correct up, 2 wrong down; the streak restarts after a change). `POST
+/sessions/{id}/difficulty` sets and pins a level, which quiz streaks then respect until the
+learner asks for a change. Changes are returned as `difficulty_change` (from, to, reason)
+on the stream `complete` event and on quiz results. Emotion and the learner model only
+shape tone and depth.
+
+Syllabus progress (`study/syllabus.py`, `repositories/syllabus.py`): a pasted or uploaded
+syllabus is parsed deterministically into units and topics and stored in `syllabus_items`.
+Matching to lecture topics is computed live by word overlap (title words count double over
+slide text; plurals normalised), so new lectures match automatically; only the learner's
+corrections are stored (`link_mode` auto/manual/none). A syllabus topic's status comes from
+the states of the lecture topics it matches, and the course percentage is the share Ready
+now: topics due for review are shown separately, so the number falls between reviews. When
+every unit states its hours, an item weighs its unit's hours divided by the unit's items.
+Words split by PDF extraction are rejoined when the whole word is in the syllabus or the
+course's slides and the pieces are not both real words.
+
+Matching stays lexical on measured evidence. `scripts/eval/syllabus_matching.py` compares it
+with three uses of MiniLM similarity by nested cross-validation, on one real 72-item syllabus
+(24 items in the notes). Labels were written by the AI assistant from the slides, with a
+strict "teaches or defines it" rule, so treat the numbers as an engineering check rather than
+a student study. Word overlap scored F1 0.56 on links and 0.86 on "is it in the notes" (with
+precision 1.00); adding similar topics gave 0.53 and 0.80, filling gaps gave 0.54 and 0.79,
+and pruning weak links gave 0.54 and 0.86. Embeddings measure relatedness, and a syllabus
+gap is usually close to a slide without being taught by it.
+
+Topic mastery (`study/topics.py`, `repositories/topics.py`): a lecture's topics are page
+ranges grouped by heading (slide titles; PDF page headings, skipping running headers),
+stored in `note_topics` with the document checksum and rebuilt when it changes. Topic ids
+are derived from the owner, document, checksum and first page, so concurrent rebuilds agree.
+A generated question names the passage it came from by Citation Index. The server keeps
+that when the passage exists and shares at least half as many words with the question as
+the best match does; otherwise the best match is used (`quiz_questions.source_document_id`,
+`source_page`). Each submitted answer records its `question_id`. A topic's state comes from
+the answers whose question page falls in its range, so renaming or merging topics regroups
+past answers without re-grading.
+
+Topic practice: a session may carry up to 5 `topic_ids`, checked at creation to be the
+student's own and inside the session's notes, and frozen in the study snapshot. Quizzes on
+such a session skip retrieval: `KnowledgeBase.topic_content` reads the topics' pages from
+`document_chunks`, within 3,000 characters shared between topics, sampling evenly across
+long topics. Questions are assigned to topics in turn. A question that fails the passage
+check falls back to word overlap within its assigned topic and, failing that, to that
+topic's first slide, so a topic quiz always counts toward the topics chosen. A topic that
+was merged away or whose lecture changed gives 409. Provenance records the topics and how
+each question was placed (`located`: model, overlap or topic).
+
+Slide study (Phase 4, contract in `docs/archive/phase-4-slide-study.md`): sessions may
+carry `mode: "slides"` with one document and a current `slide`
+(`PUT /sessions/{id}/slide`). `repositories/slides.py` lists a lecture's pages with
+their topics. In slide mode the retrieve step builds context with `tutor/slides.py`: the
+slide as Citation Index 1, then up to three nearby passages from the same lecture, and
+`SLIDE_INSTRUCTION` joins the system prompt. The camera mood (`emotion/policy.py`)
+replaces the tone's learning state while fresh, unless the student made an explicit
+request this turn; difficulty, sources and the evidence gate never see it.
+`GET /sessions/{id}/mood` exposes it, guarded by the feature flag and consent.
+
+Topic memory: a topic is scheduled like a flashcard, with no stored schedule. Its quiz
+answers (right is Good, wrong is Again) and the ratings in `card_reviews` for cards on its
+pages (`flashcards.source_document_id`, `source_page`, set when cards are generated, the
+same way as quiz questions) are replayed through `fsrs.review` in time order. Reviews
+within a day of a sitting's first one count once, rated by the worst of them. A topic whose
+last 3 answers were right is Ready until recall reaches 90%, then `review_due`. Replay keeps
+renames and merges working: the state is always derived from page ranges and reviews.
 
 Flashcards are scheduled by `flashcards/fsrs.py`, a dependency-free FSRS-5 model: each
 card stores stability, difficulty and its last review time, and the next review is set

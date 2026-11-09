@@ -38,7 +38,8 @@ export class AuthView {
       // Show main app shell
       if (appShell) appShell.style.display = 'flex';
       if (headerShell) headerShell.style.display = 'flex';
-      if (mainShell) mainShell.style.display = 'block';
+      // Clear the inline value so the stylesheet's flex layout (and scrolling) applies.
+      if (mainShell) mainShell.style.display = '';
 
       // Hide auth screen
       this.container.style.display = 'none';
@@ -46,60 +47,92 @@ export class AuthView {
   }
 
   render() {
+    const mode = this.isRecoverMode ? 'recover' : this.isRegisterMode ? 'register' : 'signin';
+    const heading = {
+      signin: 'Welcome back',
+      register: 'Create your account',
+      recover: 'Reset your password',
+    }[mode];
+    const lead = {
+      signin: 'Sign in to your study workspace.',
+      register: 'Keep your notes, practice and progress together.',
+      recover: 'Use the recovery key you saved when you created your account, or from Settings.',
+    }[mode];
+    const submitLabel = {
+      signin: 'Sign in',
+      register: 'Create account',
+      recover: 'Reset password',
+    }[mode];
     this.container.innerHTML = `
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:30px;width:100%;max-width:400px;box-shadow:0 10px 30px rgba(0,0,0,0.3);display:flex;flex-direction:column;gap:16px;">
-        <div style="text-align:center;">
-          <span style="font-size:36px;">🧠</span>
-          <h2 style="font-family:var(--display);font-weight:800;color:var(--text);margin-top:10px;">
-            ${this.isRecoverMode ? 'Reset your password' : this.isRegisterMode ? 'Create Student Account' : 'Welcome to Sentio'}
-          </h2>
-          <p style="color:var(--text-dim);font-size:14px;margin-top:6px;">
-            ${this.isRecoverMode ? 'Use the recovery key you saved when creating your account or in Settings.' : this.isRegisterMode ? 'Keep your notes, practice and progress together' : 'Sign in to your local study workspace'}
-          </p>
-        </div>
-
-        <form id="auth-form" style="display:flex;flex-direction:column;gap:12px;margin-top:10px;">
-          <div>
-            <label class="form-label" for="auth-email">Email Address</label>
-<input class="input" type="email" id="auth-email" autocomplete="username" required placeholder="student@sentio.edu" />
+      <div class="auth-shell">
+        <section class="auth-main" aria-labelledby="auth-heading">
+          <div class="auth-brand">
+            ${window.sentioSymbol(28)}
+            <svg class="sentio-wordmark" viewBox="0 0 854 100" role="img" aria-label="Sentio"><g fill="none" stroke="currentColor"><path d="M110 4H4V50H106V96H0"/><path d="M270 4H178V96H270M178 50H249"/><path d="M338 100V4L440 96V0"/><path d="M500 4H610M555 4V100"/><path d="M666 0V100"/><rect x="738" y="4" width="112" height="92" rx="10"/></g></svg>
           </div>
+          <div class="auth-form-wrap">
+            <h1 id="auth-heading" class="auth-heading">${heading}</h1>
+            <p class="auth-lead">${lead}</p>
 
-          ${this.isRecoverMode ? '<div><label for="auth-recovery-key">Recovery key</label><input id="auth-recovery-key" autocomplete="off" type="password"><details><summary>I do not have a recovery key</summary><p>If you can still sign in, create a key in Settings. Otherwise this local app cannot verify ownership. It cannot send reset emails. Your saved notes are not deleted by failed recovery attempts.</p></details></div>' : ''}
-          <div>
-            <label class="form-label" for="auth-password">${this.isRecoverMode ? 'New password' : 'Password'}</label>
-<input class="input" type="password" id="auth-password" autocomplete="${this.isRegisterMode || this.isRecoverMode ? 'new-password' : 'current-password'}" required placeholder="••••••••" />
+            <form id="auth-form" class="auth-form">
+              <div class="auth-field">
+                <label class="form-label" for="auth-email">Email address</label>
+                <input class="input" type="email" id="auth-email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required placeholder="you@university.edu" />
+              </div>
+              ${
+                mode === 'recover'
+                  ? `<div class="auth-field">
+                <label class="form-label" for="auth-recovery-key">Recovery key</label>
+                <input class="input" id="auth-recovery-key" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" type="password" />
+                <details class="auth-help"><summary>I don’t have a recovery key</summary><p>If you can still sign in, create a key in Settings. Otherwise this local app can’t verify ownership, and it can’t send reset emails. Failed attempts never delete your saved notes.</p></details>
+              </div>`
+                  : ''
+              }
+              <div class="auth-field">
+                <div class="auth-label-row">
+                  <label class="form-label" for="auth-password">${mode === 'recover' ? 'New password' : 'Password'}</label>
+                  ${mode === 'signin' ? '<button id="forgot-password-btn" class="link-quiet" type="button">Forgot password?</button>' : ''}
+                </div>
+                <input class="input" type="password" id="auth-password" autocomplete="${mode === 'signin' ? 'current-password' : 'new-password'}" required${mode === 'signin' ? '' : ' aria-describedby="password-rules"'} />
+                ${mode === 'signin' ? '' : '<p id="password-rules" class="muted">At least 8 characters, with an uppercase and a lowercase letter, a number and a symbol.</p>'}
+              </div>
+              ${
+                mode !== 'signin'
+                  ? `<div class="auth-field">
+                <label class="form-label" for="auth-confirm-password">Confirm password</label>
+                <input class="input" type="password" id="auth-confirm-password" autocomplete="new-password" required />
+              </div>`
+                  : ''
+              }
+              <button id="auth-submit-btn" class="workspace-action primary auth-submit" type="submit">${submitLabel}</button>
+            </form>
+            <p id="auth-error" class="auth-error" role="alert"></p>
+            <div id="auth-recovery-result"></div>
+            ${mode === 'recover' ? '<button id="back-to-signin" class="link-quiet auth-switch" type="button">Back to sign in</button>' : ''}
+            <p class="auth-switch-row">
+              ${
+                mode === 'register'
+                  ? 'Already have an account? <button class="accent-strong" type="button" id="auth-toggle-btn">Sign in</button>'
+                  : 'New to Sentio? <button class="accent-strong" type="button" id="auth-toggle-btn">Create an account</button>'
+              }
+            </p>
           </div>
+          <p class="auth-local">${window.sentioIcon('folder', 16)} Your account and notes stay on this computer.</p>
+        </section>
 
-          ${
-            this.isRegisterMode || this.isRecoverMode
-              ? `
-            <div>
-              <label class="form-label" for="auth-confirm-password">Confirm Password</label>
-<input class="input" type="password" id="auth-confirm-password" autocomplete="new-password" required placeholder="••••••••" />
+        <aside class="auth-aside" aria-label="How Sentio answers">
+          <div class="auth-aside-inner">
+            <p class="auth-promise">Answers only from your notes.</p>
+            <p class="auth-promise-sub">Every explanation cites the slide or page it came from. When your notes don’t cover a question, Sentio says so.</p>
+            <div class="auth-example" aria-hidden="true">
+              <p class="auth-example-q">What is inertia?</p>
+              <div class="auth-example-a">
+                <p>Inertia is an object’s resistance to a change in its velocity <span class="cite-chip inline">mechanics.pdf · p.1</span></p>
+              </div>
+              <blockquote class="cited-passage">Inertia resists changes in velocity. A net force changes velocity. Mass measures inertia.</blockquote>
             </div>
-          `
-              : ''
-          }
-
-          <button id="auth-submit-btn" style="margin-top:10px;background:var(--accent);color:var(--bg);border:none;padding:12px;border-radius:var(--radius);font-family:var(--mono);font-weight:bold;cursor:pointer;font-size:14px;">
-            ${this.isRecoverMode ? 'Reset password' : this.isRegisterMode ? 'Register Account' : 'Sign In'}
-          </button>
-        </form>
-        <p id="auth-error" role="alert"></p><div id="auth-recovery-result"></div>
-        ${!this.isRegisterMode && !this.isRecoverMode ? '<button id="forgot-password-btn" type="button">Forgot password?</button>' : ''}
-        ${this.isRecoverMode ? '<button id="back-to-signin" type="button">Back to sign in</button>' : ''}
-
-        <div style="text-align:center;font-size:14px;color:var(--text-dim);margin-top:10px;">
-          ${
-            this.isRegisterMode
-              ? `
-            Already have an account? <button class="accent-strong" type="button" id="auth-toggle-btn">Sign In</button>
-          `
-              : `
-            New to Sentio? <button class="accent-strong" type="button" id="auth-toggle-btn">Create Account</button>
-          `
-          }
-        </div>
+          </div>
+        </aside>
       </div>
     `;
 
@@ -142,7 +175,7 @@ export class AuthView {
     if (submit.disabled) return;
 
     if (!email || !password) {
-      toast('Please fill in all fields', true);
+      toast('Enter your email and password.', true);
       return;
     }
 
@@ -153,7 +186,9 @@ export class AuthView {
       if (this.isRegisterMode || this.isRecoverMode) {
         const confirmPw = this.container.querySelector('#auth-confirm-password').value;
         if (password !== confirmPw) {
-          toast('Passwords do not match', true);
+          // Next to the form, not only in a corner toast (goldfish F5).
+          this.container.querySelector('#auth-error').textContent = 'Those passwords don’t match.';
+          toast('Those passwords don’t match.', true);
           return;
         }
 
@@ -165,6 +200,7 @@ export class AuthView {
             })
           : await sentioAPI.post('/auth/register', { email, password });
         this.recoveryKey = result.recovery_key;
+        const signedUp = Boolean(result.recovery_key);
         toast(
           this.isRecoverMode
             ? 'Password reset. Save your new key and sign in.'
@@ -173,6 +209,11 @@ export class AuthView {
         this.isRegisterMode = false;
         this.isRecoverMode = false;
         this.render();
+        // Keep the email so signing in needs only the password.
+        this.container.querySelector('#auth-email').value = email;
+        this.container.querySelector('#auth-password')?.focus();
+        // After saving the key, one click signs in with the password just chosen (goldfish F6).
+        if (signedUp) this.offerContinue(email, password);
       } else {
         const res = await sentioAPI.post('/auth/login', { email, password });
         this.recoveryKey = null;
@@ -183,7 +224,7 @@ export class AuthView {
         store.setState('refreshToken', res.refresh_token);
         store.setState('currentUser', { email, id: res.student_id, role: res.role });
 
-        toast('Welcome back to Sentio!');
+        toast('Signed in.');
       }
     } catch (e) {
       this.container.querySelector('#auth-error').textContent = e.message;
@@ -192,6 +233,21 @@ export class AuthView {
       submit.disabled = false;
       store.setState('loading', false);
     }
+  }
+
+  offerContinue(email, password) {
+    const notice = this.container.querySelector('#auth-recovery-result .notice');
+    if (!notice) return;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'workspace-action primary';
+    button.textContent = 'I saved it. Continue to Sentio';
+    button.onclick = () => {
+      this.container.querySelector('#auth-email').value = email;
+      this.container.querySelector('#auth-password').value = password;
+      this.container.querySelector('#auth-submit-btn').click();
+    };
+    notice.appendChild(button);
   }
 
   async logout() {
@@ -205,7 +261,7 @@ export class AuthView {
     }
 
     // Clear local credentials
-    store.clearAuth();
+    store.clearAuth({ signedOut: true });
     toast('Logged out successfully.');
   }
 }

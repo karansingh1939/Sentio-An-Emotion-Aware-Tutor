@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Syllabus Checklist</title>
+    <style>
+      :root {
+        --bg: #f6f7f9;
+        --card: #ffffff;
+        --text: #1b1f27;
+        --dim: #5b6472;
+        --line: #d9dee6;
+        --accent: #1f6feb;
+        --done: #1a7f4b;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #12151b;
+          --card: #1b2029;
+          --text: #e7eaf0;
+          --dim: #9aa4b3;
+          --line: #2e3542;
+          --accent: #6ea8fe;
+          --done: #4cc38a;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          16px/1.5 system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 0 16px 64px;
+      }
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        margin: 0 -16px 16px;
+        padding: 12px 16px;
+        background: var(--bg);
+        border-bottom: 1px solid var(--line);
+      }
+      h1 {
+        margin: 16px 0 4px;
+        font-size: 24px;
+      }
+      h2 {
+        margin: 28px 0 8px;
+        font-size: 18px;
+      }
+      .tools {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+      }
+      .count {
+        font-weight: 600;
+        margin-right: auto;
+      }
+      .item {
+        margin: 12px 0;
+        padding: 14px 16px;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+      .item.confirmed {
+        border-color: var(--done);
+      }
+      .title {
+        font-weight: 600;
+      }
+      .state {
+        color: var(--done);
+        font-size: 14px;
+        font-weight: 400;
+      }
+      label.option {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 6px 0;
+        cursor: pointer;
+      }
+      .where {
+        display: block;
+        color: var(--dim);
+        font-size: 14px;
+      }
+      select {
+        width: 100%;
+        margin: 8px 0;
+        padding: 8px;
+        color: var(--text);
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        font: inherit;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 6px;
+      }
+      button {
+        padding: 8px 14px;
+        color: var(--text);
+        background: transparent;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        font: inherit;
+        cursor: pointer;
+      }
+      button.primary {
+        color: #fff;
+        background: var(--accent);
+        border-color: var(--accent);
+      }
+      @media (prefers-color-scheme: dark) {
+        button.primary {
+          color: #10131a;
+        }
+      }
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Syllabus checklist</h1>
+      <p>
+        For each syllabus topic, tick every lecture topic that really teaches it, then press
+        <strong>Confirm</strong>. Press <strong>Not in my notes</strong> if none do. Ticked boxes
+        are what Sentio matches today, so they may be wrong or missing.
+      </p>
+      <p>
+        Your answers are kept in this browser as you go. When you finish, press
+        <strong>Save labels</strong> and tell Claude. Nothing leaves your laptop.
+      </p>
+      <header>
+        <div class="tools">
+          <span class="count" id="count" role="status"></span>
+          <label><input type="checkbox" id="only-open" /> Hide confirmed</label>
+          <button class="primary" id="save" type="button">Save labels</button>
+        </div>
+      </header>
+      <div id="list"></div>
+    </main>
+    <script id="data" type="application/json">
+      __DATA__
+    </script>
+    <script>
+      const { items, topics } = JSON.parse(document.getElementById('data').textContent);
+      const byId = new Map(topics.map((topic) => [topic.id, topic]));
+      const storageKey = 'syllabus-labels';
+
+      function readSaved() {
+        try {
+          return JSON.parse(localStorage.getItem(storageKey)) || {};
+        } catch {
+          return {};
+        }
+      }
+      const saved = readSaved();
+      const answers = new Map(
+        items.map((item) => [
+          item.position,
+          saved[item.position] && saved[item.position].title === item.title
+            ? saved[item.position]
+            : { title: item.title, topics: [...item.matched], confirmed: false },
+        ]),
+      );
+
+      function remember() {
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(Object.fromEntries(answers)));
+        } catch {
+          // The page still works; only the save button keeps the answers then.
+        }
+      }
+
+      function pages(topic) {
+        const label = topic.filename.toLowerCase().endsWith('.pptx') ? 'slide' : 'page';
+        return topic.first_page === topic.last_page
+          ? `${label} ${topic.first_page}`
+          : `${label}s ${topic.first_page}–${topic.last_page}`;
+      }
+
+      function element(tag, className, text) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = text;
+        return node;
+      }
+
+      function refreshCount() {
+        const done = [...answers.values()].filter((answer) => answer.confirmed).length;
+        document.getElementById('count').textContent = `${done} of ${items.length} confirmed`;
+      }
+
+      function applyFilter() {
+        const only = document.getElementById('only-open').checked;
+        document.querySelectorAll('.item').forEach((card) => {
+          card.classList.toggle('hidden', only && card.classList.contains('confirmed'));
+        });
+      }
+
+      function option(topicId, answer, card, item) {
+        const topic = byId.get(topicId);
+        const row = element('label', 'option');
+        const box = document.createElement('input');
+        box.type = 'checkbox';
+        box.checked = answer.topics.includes(topicId);
+        box.onchange = () => {
+          answer.topics = box.checked
+            ? [...answer.topics, topicId]
+            : answer.topics.filter((id) => id !== topicId);
+          setConfirmed(answer, card, item, false);
+        };
+        const text = element('span', '', topic.title);
+        text.append(element('span', 'where', `${topic.filename} · ${pages(topic)}`));
+        row.append(box, text);
+        return row;
+      }
+
+      function setConfirmed(answer, card, item, confirmed) {
+        answer.confirmed = confirmed;
+        card.classList.toggle('confirmed', confirmed);
+        card.querySelector('.state').textContent = confirmed ? ' · confirmed' : '';
+        remember();
+        refreshCount();
+      }
+
+      function render(item) {
+        const answer = answers.get(item.position);
+        const card = element('section', 'item');
+        const title = element('div', 'title', item.title);
+        title.append(element('span', 'state'));
+        const options = element('div');
+        const shown = new Set([...item.suggested, ...answer.topics]);
+        shown.forEach((id) => options.append(option(id, answer, card, item)));
+
+        const add = document.createElement('select');
+        add.setAttribute('aria-label', `Add another lecture topic for ${item.title}`);
+        add.append(new Option('Add another lecture topic…', ''));
+        topics.forEach((topic) =>
+          add.append(new Option(`${topic.filename} · ${topic.title}`, topic.id)),
+        );
+        add.onchange = () => {
+          const id = add.value;
+          add.value = '';
+          if (!id || answer.topics.includes(id)) return;
+          answer.topics = [...answer.topics, id];
+          if (!shown.has(id)) {
+            shown.add(id);
+            options.append(option(id, answer, card, item));
+          } else {
+            options.querySelectorAll('input').forEach((box, index) => {
+              if ([...shown][index] === id) box.checked = true;
+            });
+          }
+          setConfirmed(answer, card, item, false);
+        };
+
+        const actions = element('div', 'actions');
+        const confirm = element('button', 'primary', 'Confirm');
+        confirm.type = 'button';
+        confirm.onclick = () => {
+          setConfirmed(answer, card, item, true);
+          applyFilter();
+        };
+        const none = element('button', '', 'Not in my notes');
+        none.type = 'button';
+        none.onclick = () => {
+          answer.topics = [];
+          options.querySelectorAll('input').forEach((box) => {
+            box.checked = false;
+          });
+          setConfirmed(answer, card, item, true);
+          applyFilter();
+        };
+        actions.append(confirm, none);
+        card.append(title, options, add, actions);
+        if (answer.confirmed) {
+          card.classList.add('confirmed');
+          card.querySelector('.state').textContent = ' · confirmed';
+        }
+        return card;
+      }
+
+      const list = document.getElementById('list');
+      let unit;
+      items.forEach((item) => {
+        if (item.unit !== unit) {
+          unit = item.unit;
+          list.append(element('h2', '', unit || 'Topics'));
+        }
+        list.append(render(item));
+      });
+      refreshCount();
+
+      document.getElementById('only-open').onchange = applyFilter;
+      document.getElementById('save').onclick = () => {
+        const rows = items.map((item) => ({ position: item.position, ...answers.get(item.position) }));
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(
+          new Blob([JSON.stringify({ items: rows }, null, 2)], { type: 'application/json' }),
+        );
+        link.download = 'syllabus-labels.json';
+        link.click();
+        URL.revokeObjectURL(link.href);
+      };
+    </script>
+  </body>
+</html>

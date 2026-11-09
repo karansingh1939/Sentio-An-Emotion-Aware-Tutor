@@ -2,12 +2,14 @@
 
 import re
 import time
+from itertools import zip_longest
 
 
 def source_recall(content, count):
-    items = []
+    batches = {}
     seen = set()
-    for citation in getattr(content, "source_citations", []):
+    for position, citation in enumerate(getattr(content, "source_citations", []), 1):
+        batch = batches.setdefault(citation.get("topic_id", position), [])
         for sentence in re.split(r"(?<=[.!?])\s+|\n+", citation.get("text", "")):
             sentence = sentence.strip()
             if not 16 <= len(sentence) <= 700:
@@ -22,16 +24,18 @@ def source_recall(content, count):
                 seen.add(identity)
                 blank = sentence[: word.start()] + "_____" + sentence[word.end() :]
                 reference = f"[{citation['filename']} Page {citation['page']}]"
-                items.append(
+                batch.append(
                     {
                         "question_text": "Complete the sentence from your notes:\n" + blank,
                         "question_type": "fill_in_the_blank",
                         "correct_answer": answer,
                         "explanation": f'Your notes say: "{sentence}" {reference}',
+                        "source": position,
                     }
                 )
-                # Prefer different passages before making another blank in this one.
-                break
+                break  # One blank per sentence.
+    # One from each passage (or topic) in turn, so each is covered before any repeats.
+    items = [item for turn in zip_longest(*batches.values()) for item in turn if item]
     if len(items) < count:
         raise ValueError(
             "Not enough readable source sentences for this practice batch. Choose fewer items or add more notes."

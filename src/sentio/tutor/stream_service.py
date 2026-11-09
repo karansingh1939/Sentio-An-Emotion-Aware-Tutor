@@ -12,7 +12,9 @@ from threading import RLock
 from sqlalchemy import text
 
 from sentio.jobs.control import WorkCancelled
+from sentio.repositories.courses import expand_source
 from sentio.repositories.planning import active_goal
+from sentio.tutor.difficulty import describe
 
 logger = logging.getLogger(__name__)
 
@@ -117,16 +119,21 @@ class StreamService:
                         try:
                             session.metadata["strategy"] = response.strategy
                             session.metadata["learning_state"] = response.learning_state
+                            change = None
                             if session.difficulty != response.difficulty:
-                                session.update_difficulty(
-                                    response.difficulty, "completed_tutor_turn"
-                                )
+                                reason = response.difficulty_reason or "completed_tutor_turn"
+                                change = describe(session.difficulty, response.difficulty, reason)
+                                session.update_difficulty(response.difficulty, reason)
+                            if response.difficulty_reason:
+                                session.metadata["difficulty_pinned"] = False
                             session.record_exchange(
                                 tokens=response.tutor_response.tokens_used,
                                 latency_ms=response.tutor_response.latency_ms,
                             )
                             response.total_exchanges = session.total_exchanges
                             result = response.to_dict()
+                            if change:
+                                result["difficulty_change"] = change
                             with self.engine.begin() as conn:
                                 conn.exec_driver_sql("BEGIN IMMEDIATE")
                                 if not conn.execute(
@@ -218,7 +225,7 @@ class StreamService:
             rows = (
                 conn.execute(
                     text(
-                        "SELECT request_id,message,result_json FROM chat_requests WHERE student_id=:owner AND session_id=:session AND context=:context AND status='complete' ORDER BY updated_at DESC LIMIT :limit OFFSET :offset"
+                        "SELECT request_id,message,result_json,updated_at FROM chat_requests WHERE student_id=:owner AND session_id=:session AND context=:context AND status='complete' ORDER BY updated_at DESC LIMIT :limit OFFSET :offset"
                     ),
                     {
                         "owner": owner,
@@ -236,6 +243,8 @@ class StreamService:
                 "request_id": row["request_id"],
                 "message": row["message"],
                 "response": json.loads(row["result_json"]),
+                # When the answer was saved, so a resumed chat shows real times (goldfish F14).
+                "answered_at": row["updated_at"],
             }
             for row in reversed(rows)
         ]
@@ -255,6 +264,10 @@ class StreamService:
                     .mappings()
                     .all()
                 )
+            with (
+                nullcontext(connection) if connection is not None else self.engine.connect() as conn
+            ):
+                selected = expand_source(conn, session.student_id, selected)
             ids = selected if isinstance(selected, list) else [selected]
             versions = sorted(
                 (d["id"], d["checksum"]) for d in documents if selected == "all" or d["id"] in ids

@@ -21,6 +21,7 @@ from sentio.api.middleware import (
 from sentio.api.routes import (
     analytics,
     auth,
+    courses,
     documents,
     flashcards,
     intelligence,
@@ -30,15 +31,18 @@ from sentio.api.routes import (
     privacy,
     quizzes,
     sessions,
+    slides,
     streaming,
+    syllabus,
     system,
+    topics,
     tutoring,
 )
+from sentio.api.routes import emotion as emotion_routes
 from sentio.config import api_cfg
-from sentio.emotion import routes as emotion_routes
 from sentio.shared.exceptions import LLMServiceUnavailableError
-from sentio.shared.utils import RateLimiter as RateLimiter
-from sentio.shared.utils import setup_logging
+from sentio.shared.logging_setup import setup_logging
+from sentio.shared.rate_limit import RateLimiter as RateLimiter
 
 setup_logging(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -144,7 +148,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+
+class RevalidatedStaticFiles(StaticFiles):
+    """Ask browsers to revalidate UI files so an update never runs old HTML with new JS."""
+
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
+app.mount("/static", RevalidatedStaticFiles(directory=str(STATIC_DIR)), name="static")
 app.include_router(system.router)
 app.include_router(sessions.router)
 app.include_router(tutoring.router)
@@ -155,6 +170,10 @@ app.include_router(privacy.router)
 app.include_router(intelligence.router)
 app.include_router(analytics.router)
 app.include_router(documents.router)
+app.include_router(courses.router)
+app.include_router(topics.router)
+app.include_router(slides.router)
+app.include_router(syllabus.router)
 app.include_router(memory.router)
 app.include_router(planning.router)
 app.include_router(jobs.router)

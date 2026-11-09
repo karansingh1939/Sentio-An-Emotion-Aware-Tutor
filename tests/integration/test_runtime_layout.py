@@ -38,6 +38,15 @@ def test_packaged_frontend_and_provider_failure(monkeypatch):
         client.close()
 
 
+def test_ui_files_are_revalidated_so_updates_never_mix_old_and_new_code():
+    with TestClient(app) as client:
+        for path in ("/", "/static/js/app.js", "/static/css/theme.css"):
+            response = client.get(path)
+            assert response.status_code == 200, path
+            assert response.headers["cache-control"] == "no-cache", path
+            assert response.headers.get("etag"), path
+
+
 def test_missing_model_disables_inference(tmp_path):
     from sentio.emotion.detector import EmotionDetector
 
@@ -51,7 +60,7 @@ def test_missing_model_disables_inference(tmp_path):
 def test_health_check_does_not_import_optional_ml_libraries(monkeypatch):
     import builtins
 
-    from sentio.shared.utils import system_health_check
+    from sentio.maintenance.health_check import system_health_check
 
     original_import = builtins.__import__
     optional = {

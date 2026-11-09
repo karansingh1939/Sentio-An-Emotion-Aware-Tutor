@@ -43,4 +43,4 @@ work in both themes. Report live AI quality/latency separately from fixture test
 Deliver architecture, dataset/model cards, measured report, course/demo material
 and honest résumé bullets. Public deployment and billing are out of scope.
 
-See tasks/plan.md and tasks/todo.md for the approved sequence.
+The original sequence is in ../archive/tasks/plan.md and ../archive/tasks/todo.md; current status is in FEATURE_AUDIT_2026-11-06.md.

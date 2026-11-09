@@ -24,37 +24,39 @@ export class SentioToast extends HTMLElement {
     this.style.borderRadius = 'var(--radius)';
     this.style.background = 'var(--bg2)';
     this.style.border = `1px solid ${this.isError ? 'var(--red)' : 'var(--border)'}`;
-    this.style.boxShadow = '0 8px 30px rgba(0,0,0,0.5)';
-    this.style.color = this.isError ? 'var(--red)' : 'var(--accent)';
-    this.style.fontFamily = 'var(--mono)';
-    this.style.fontSize = '12px';
-    this.style.transition = 'opacity 0.3s, transform 0.3s';
-    this.style.transform = 'translateY(10px)';
+    this.style.boxShadow = '0 4px 16px #0001';
+    this.style.color = this.isError ? 'var(--red)' : 'var(--text)';
+    this.style.fontSize = '14px';
+    this.style.transition = 'opacity var(--dur-slow) var(--ease)';
     this.style.opacity = '0';
 
     this.innerHTML = `
-      <span>${this.isError ? '🛑' : '⚡'}</span>
+      ${window.sentioIcon(this.isError ? 'alert' : 'check', 16)}
       <span>${escapeHtml(this.message)}</span>
     `;
 
     // Trigger animate-in
     requestAnimationFrame(() => {
-      this.style.transform = 'translateY(0)';
       this.style.opacity = '1';
     });
   }
 
   dismiss() {
-    this.style.transform = 'translateY(-10px)';
+    if (this.dismissed) return;
+    this.dismissed = true;
+    this.style.pointerEvents = 'none';
+    this.style.transition = 'opacity var(--dur) var(--ease)';
     this.style.opacity = '0';
-    this.addEventListener('transitionend', () => this.remove());
+    this.addEventListener('transitionend', () => this.remove(), { once: true });
+    // Fallback: no transition runs if the toast was never visible.
+    setTimeout(() => this.remove(), 400);
   }
 }
 customElements.define('sentio-toast', SentioToast);
 
 // Global Toast helper
 export function toast(message, isError = false) {
-  document.querySelectorAll('sentio-toast').forEach((old) => old.remove());
+  document.querySelectorAll('sentio-toast').forEach((old) => old.dismiss());
   const el = document.createElement('sentio-toast');
   el.setAttribute('message', message);
   if (isError) el.setAttribute('error', '');
@@ -67,7 +69,7 @@ export class SentioLoader extends HTMLElement {
     this.style.display = 'inline-block';
     this.style.width = this.getAttribute('size') || '18px';
     this.style.height = this.getAttribute('size') || '18px';
-    this.style.border = '2px solid rgba(0, 200, 255, 0.1)';
+    this.style.border = '2px solid var(--border)';
     this.style.borderTop = '2px solid var(--accent)';
     this.style.borderRadius = '50%';
     this.style.animation = 'spin 0.8s linear infinite';
@@ -123,13 +125,13 @@ export class SentioModal extends HTMLElement {
     this.style.display = 'flex';
     this.style.alignItems = 'center';
     this.style.justifyContent = 'center';
-    this.style.background = 'rgba(8, 12, 16, 0.85)';
+    this.style.background = 'rgb(22 27 36 / 0.45)';
     this.style.backdropFilter = 'blur(4px)';
 
     const bodyContent = this.innerHTML;
     this.innerHTML = `
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);width:90%;max-width:500px;box-shadow:0 20px 50px rgba(0,0,0,0.6);display:flex;flex-direction:column;overflow:hidden;">
-        <div style="display:flex;align-items:center;justify-content:between;padding:16px 20px;border-bottom:1px solid var(--border);background:var(--bg3);">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);width:90%;max-width:500px;box-shadow:0 12px 32px rgb(0 0 0 / 0.12);display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);background:var(--bg3);">
           <span style="font-family:var(--display);font-weight:700;font-size:16px;">${escapeHtml(this.title)}</span>
           <button id="modal-close-btn" aria-label="Close dialog" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;">&times;</button>
         </div>
@@ -168,7 +170,10 @@ export class SentioModal extends HTMLElement {
 
   disconnectedCallback() {
     document.removeEventListener('keydown', this.onKey);
-    if (this.previousFocus?.isConnected) this.previousFocus.focus();
+    // A choice made inside a closed menu returns focus to that menu's button.
+    const closedMenu = this.previousFocus?.closest?.('details:not([open])');
+    const target = closedMenu ? closedMenu.querySelector('summary') : this.previousFocus;
+    if (target?.isConnected) target.focus();
   }
 
   close() {
@@ -177,11 +182,86 @@ export class SentioModal extends HTMLElement {
 }
 customElements.define('sentio-modal', SentioModal);
 
+// In-page replacements for window.prompt and window.confirm. Some browsers and embedded
+// views block the native boxes, which left buttons doing nothing (goldfish test F3, F17).
+function openDialog(title, bodyHtml, onReady) {
+  return new Promise((resolve) => {
+    const modal = document.createElement('sentio-modal');
+    modal.setAttribute('title', title);
+    modal.innerHTML = bodyHtml;
+    let settled = false;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      modal.close();
+      resolve(value);
+    };
+    const close = modal.close.bind(modal);
+    document.body.appendChild(modal);
+    modal.close = () => {
+      close();
+      if (!settled) {
+        settled = true;
+        resolve(null);
+      }
+    };
+    modal.querySelector('[data-dialog-cancel]').onclick = () => finish(null);
+    onReady(modal, finish);
+  });
+}
+
+export function askText(
+  title,
+  { label = title, value = '', placeholder = '', confirmLabel = 'Save' } = {},
+) {
+  return openDialog(
+    title,
+    `<form class="dialog-form" style="display:flex;flex-direction:column;gap:12px;">
+      <label class="form-label" for="dialog-text">${escapeHtml(label)}</label>
+      <input class="input" id="dialog-text" maxlength="200" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}" />
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button type="button" class="link-quiet" data-dialog-cancel>Cancel</button>
+        <button type="submit" class="workspace-action">${escapeHtml(confirmLabel)}</button>
+      </div>
+    </form>`,
+    (modal, finish) => {
+      const input = modal.querySelector('#dialog-text');
+      queueMicrotask(() => {
+        input.focus();
+        input.select();
+      });
+      modal.querySelector('form').onsubmit = (event) => {
+        event.preventDefault();
+        const text = input.value.trim();
+        if (text) finish(text);
+        else input.focus();
+      };
+    },
+  );
+}
+
+export function askConfirm(
+  message,
+  { title = 'Are you sure?', confirmLabel = 'Confirm', danger = false } = {},
+) {
+  return openDialog(
+    title,
+    `<p style="margin:0 0 16px;">${escapeHtml(message)}</p>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button type="button" class="link-quiet" data-dialog-cancel>Cancel</button>
+      <button type="button" class="workspace-action${danger ? ' danger' : ''}" data-dialog-ok>${escapeHtml(confirmLabel)}</button>
+    </div>`,
+    (modal, finish) => {
+      modal.querySelector('[data-dialog-ok]').onclick = () => finish(true);
+    },
+  ).then(Boolean);
+}
+
 // 5. Empty State View Component
 export class SentioEmptyState extends HTMLElement {
   connectedCallback() {
     const message = this.getAttribute('message') || 'No records found';
-    const icon = this.getAttribute('icon') || '📂';
+    const icon = this.getAttribute('icon') || 'folder';
     this.style.display = 'flex';
     this.style.flexDirection = 'column';
     this.style.alignItems = 'center';
@@ -191,7 +271,7 @@ export class SentioEmptyState extends HTMLElement {
     this.style.fontFamily = 'var(--mono)';
 
     this.innerHTML = `
-      <div style="font-size:32px;margin-bottom:12px;">${escapeHtml(icon)}</div>
+      <div style="margin-bottom:12px;color:var(--text-dim);">${window.sentioIcon(icon, 28)}</div>
       <div style="font-size:14px;text-align:center;">${escapeHtml(message)}</div>
     `;
   }

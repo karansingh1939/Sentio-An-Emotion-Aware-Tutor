@@ -10,8 +10,9 @@
 
 ![Sentio journey: Today, Library, Study, Quiz, Flashcards, Progress](docs/images/journey.gif)
 
-Upload PDF, Word or text notes. Ask questions and get answers grounded in retrieved
-passages, with page citations. Turn the same notes into quizzes and spaced-repetition
+Upload lecture slides (PowerPoint), PDF, Word or text notes, several at once, and group
+them into courses. Ask questions about one lecture or a whole course and get answers
+grounded in retrieved passages, with slide and page citations. Turn the same notes into quizzes and spaced-repetition
 flashcards, and track what to review. Everything — the model, the database and your
 files — runs on your own machine.
 
@@ -31,7 +32,8 @@ flowchart LR
 1. **Retrieval-augmented generation.** Notes are chunked and indexed twice — BM25 for
    keywords and `all-MiniLM-L6-v2` embeddings in Qdrant — and fused with a hybrid score.
 2. **Evidence gate.** A LangGraph workflow retrieves before it generates. If the selected
-   notes have no relevant passage, it refuses without calling the model.
+   notes have no relevant passage, it refuses without calling the model. There is no
+   ungrounded mode: every answer comes from the learner's own notes.
 3. **Structured, validated output.** The local Ollama model must return JSON matching a
    schema; invalid replies are repaired or regenerated, and citations must name a
    retrieved passage. Otherwise Sentio shows the passages themselves, clearly labelled.
@@ -70,6 +72,20 @@ flowchart LR
   suggested questions, clickable citations, instant answer checks, session goals,
   editable quizzes with revision checks, practice provenance, FSRS spaced repetition
   with the next interval shown on each rating.
+- **Topic mastery per lecture** — topics come from slide titles and page headings;
+  practising a topic quizzes on exactly its slides, and the model names each question's
+  slide for the server to check, so each topic shows Not started, Practising, Ready or
+  Review due, and weak topics link back to their slides with one-click review or practice.
+- **Mastery that fades** — quiz answers and flashcard reviews on a topic are replayed
+  through the FSRS memory model, so Ready means you probably still remember it, and Today
+  lists the topics due for review.
+- **Syllabus progress** — paste or upload the course syllabus; each syllabus topic is
+  matched to lecture topics, so the course shows a percentage ready, weighted by module
+  hours, and lists the topics your notes don't cover yet. Matches can be corrected. Word
+  matching was kept after a measured comparison with embeddings (see
+  `scripts/eval/syllabus_matching.py`).
+- **Study slides** — go through a lecture slide by slide; the tutor explains the slide on
+  screen first and cites it.
 - **Optional emotion-aware tone** — my earlier facial-emotion CNN (FER2013) and browser
   attention tracking, now an opt-in, consented side feature
   ([details](docs/guides/EMOTION.md)).
@@ -120,18 +136,21 @@ are at `/docs` and capability checks at `/api/v1/ready`. See the
 
 ```text
 src/sentio/
-  api/            FastAPI app, middleware, routes
-  tutor/          LangGraph orchestrator, streaming turns
+  api/            FastAPI app, middleware, routes (one file per area, emotion included)
+  tutor/          LangGraph orchestrator, tutor agent, streaming turns
   rag/            Hybrid retrieval, evidence policy, vector store
-  ai/             Ollama provider, prompts, structured-output parsing
+  ai/             Ollama provider, prompts, tutor_llm, response and structured-output parsing
   ingestion/      Upload pipeline, OCR, recovery journal
-  quiz/ flashcards/ study/ intelligence/   Practice, planning, learner model
+  quiz/ flashcards/ study/ intelligence/   Practice, topics, planning, learner model
   repositories/   SQL access and migrations
-  emotion/        Optional emotion-aware side feature
-  static/         Browser UI
+  session/ auth/  Study sessions; local accounts, tokens and recovery keys
+  maintenance/    Backups, readiness, health check, account clean-up
+  shared/         Logging set-up, input clean-up, rate limiter, exceptions
+  emotion/        Optional emotion-aware side feature (detector, consent, policy)
+  static/         Browser UI: views/ named after screens (today, library, study, quizzes, flashcards, progress)
 tests/            unit/ · integration/ · browser/ (Chromium) · js/
 scripts/          dev/ · ops/ · eval/ · emotion/
-docs/             guides/ · architecture/ · evaluation/ · project/ · images/
+docs/             guides/ · architecture/ · evaluation/ · project/ (plans, audits) · images/
 reports/          Recorded measurements and raw outputs
 ```
 

@@ -1,6 +1,6 @@
 // Settings View Controller for Sentio (ES Module)
 import { store } from '../core/store.js';
-import { toast } from '../components/ui.js';
+import { askConfirm, toast } from '../components/ui.js';
 import { sentioAPI } from '../core/api.js';
 import { showRecoveryKey } from '../components/recovery.js';
 
@@ -27,15 +27,16 @@ export class SettingsView {
         <sentio-card title="Your study data">
           <div class="stack">
             <p class="muted">Download your saved study data, or delete your local account and its records.</p>
-            <div style="display:flex;gap:12px;margin-top:8px;">
-              <button id="export-data-btn" style="background:var(--accent);color:var(--bg);border:none;padding:8px 16px;border-radius:var(--radius);font-family:var(--mono);cursor:pointer;font-size:14px;font-weight:bold;">📥 Export My Data</button>
-              <button id="purge-data-btn" style="background:none;color:var(--red);border:1px solid var(--red);padding:8px 16px;border-radius:var(--radius);font-family:var(--mono);cursor:pointer;font-size:14px;font-weight:bold;">🗑️ Purge My Account Data</button>
+            <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;">
+              <button id="export-data-btn" class="workspace-action primary">${window.sentioIcon('download', 16)} Export my data</button>
+              <button id="purge-data-btn" class="workspace-action danger">${window.sentioIcon('trash', 16)} Delete my account data</button>
             </div>
           </div>
         </sentio-card>
 
         <sentio-card title="Camera (optional emotion feature)" class="emotion-only">
           <label><input id="consent-cb" type="checkbox"> Allow the camera to estimate attention and emotion during study. Off by default; you can turn it off at any time.</label>
+          <div class="btn-row"><button id="delete-camera-data-btn" class="workspace-action" type="button">Delete camera data</button></div>
         </sentio-card>
 
         <sentio-card title="Password recovery">
@@ -45,10 +46,10 @@ export class SettingsView {
           <button id="make-recovery-key" class="workspace-action" type="button">Generate recovery key</button>
           <p id="recovery-error" role="alert"></p><div id="recovery-key-result"></div>
         </sentio-card>
-        <sentio-card title="Account Actions">
+        <sentio-card title="Account">
           <div class="stack">
             <p class="muted">Sign out of your active student session on this machine.</p>
-            <button id="signout-btn" style="background:none;border:1px solid var(--red);color:var(--red);padding:8px 16px;border-radius:var(--radius);font-family:var(--mono);cursor:pointer;font-size:14px;font-weight:bold;align-self:flex-start;transition:background 0.2s;">🚪 Sign Out of Sentio</button>
+            <button id="signout-btn" class="workspace-action" style="align-self:flex-start;">${window.sentioIcon('logout', 16)} Sign out</button>
           </div>
         </sentio-card>
       </div>
@@ -97,24 +98,66 @@ export class SettingsView {
       };
     }
 
+    const cameraData = this.container.querySelector('#delete-camera-data-btn');
+    if (cameraData) {
+      cameraData.onclick = async () => {
+        const owner = store.getState('currentUser')?.id;
+        if (!owner || cameraData.disabled) return;
+        if (
+          !(await askConfirm(
+            'This removes your saved attention and emotion readings. Your notes, quizzes and flashcards stay.',
+            { title: 'Delete all camera data?', confirmLabel: 'Delete camera data', danger: true },
+          ))
+        )
+          return;
+        cameraData.disabled = true;
+        try {
+          await sentioAPI.delete(`/student/${encodeURIComponent(owner)}/telemetry`);
+          toast('Your camera data has been deleted.');
+        } catch (error) {
+          toast('Camera data was not deleted: ' + error.message, true);
+        } finally {
+          cameraData.disabled = false;
+        }
+      };
+    }
+
     const expBtn = this.container.querySelector('#export-data-btn');
     if (expBtn) {
       expBtn.onclick = async () => {
-        const studentId = store.getState('currentUser')?.id || 'stu_001';
+        const studentId = store.getState('currentUser')?.id;
+        if (!studentId || expBtn.disabled) return;
+        // Say what happened next to the button; a corner toast is easy to miss (goldfish F16).
+        let status = this.container.querySelector('#export-status');
+        if (!status) {
+          status = document.createElement('p');
+          status.id = 'export-status';
+          status.className = 'muted';
+          status.setAttribute('role', 'status');
+          expBtn.insertAdjacentElement('afterend', status);
+        }
+        expBtn.disabled = true;
+        status.textContent = 'Preparing your data…';
         try {
           const res = await sentioAPI.get(`/student/${studentId}/export`);
-          // Download raw JSON
-          const dataStr =
-            'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(res, null, 2));
-          const dlAnchor = document.createElement('a');
-          dlAnchor.setAttribute('href', dataStr);
-          dlAnchor.setAttribute('download', `sentio_export_${studentId}.json`);
-          document.body.appendChild(dlAnchor);
-          dlAnchor.click();
-          dlAnchor.remove();
-          toast('GDPR export download started!');
+          const blob = new Blob([JSON.stringify(res, null, 2)], { type: 'application/json' });
+          const name = `sentio-export-${new Date().toISOString().slice(0, 10)}.json`;
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = name;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 60000);
+          const size =
+            blob.size < 1024 ? `${blob.size} bytes` : `${Math.ceil(blob.size / 1024)} KB`;
+          status.textContent = `Downloaded ${name} (${size}). Look in your Downloads folder.`;
         } catch (e) {
+          status.textContent = 'Export failed: ' + e.message;
           toast('Export failed: ' + e.message, true);
+        } finally {
+          expBtn.disabled = false;
         }
       };
     }
@@ -123,9 +166,10 @@ export class SettingsView {
     if (purgeBtn) {
       purgeBtn.onclick = async () => {
         if (
-          !confirm(
-            'Are you absolutely sure you want to delete ALL of your data? This action is permanent and cannot be undone.',
-          )
+          !(await askConfirm(
+            'Your account, notes, quizzes, flashcards and study history are deleted permanently. This cannot be undone.',
+            { title: 'Delete all your data?', confirmLabel: 'Delete everything', danger: true },
+          ))
         ) {
           return;
         }
@@ -133,7 +177,7 @@ export class SettingsView {
         try {
           await sentioAPI.delete(`/student/${studentId}/data`);
           toast('Your data has been permanently deleted from the database.');
-          store.clearAuth();
+          store.clearAuth({ signedOut: true });
         } catch (e) {
           toast('Purge failed: ' + e.message, true);
         }
@@ -151,7 +195,7 @@ export class SettingsView {
             console.warn('Logout request failed:', e);
           }
         }
-        store.clearAuth();
+        store.clearAuth({ signedOut: true });
         toast('Signed out successfully.');
       };
     }

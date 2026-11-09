@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import pytest
 
 from sentio.ai.providers import OllamaBackend
-from sentio.ai.streaming import TutorPayload, output_schema
+from sentio.ai.stream_schema import TutorPayload, output_schema
 from sentio.jobs.control import WorkCancelled, WorkControl, execution
 from sentio.shared.exceptions import InvalidModelOutput, LLMServiceUnavailableError
 

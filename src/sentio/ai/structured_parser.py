@@ -15,7 +15,7 @@ import re
 import threading
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, TypeVar
 
-from pydantic import BaseModel, Field, ValidationError, model_validator
+from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +26,21 @@ T = TypeVar("T", bound=BaseModel)
 # ─────────────────────────────────────────────
 
 
+class SourcedItem(BaseModel):
+    source: Optional[int] = Field(
+        default=None, description="Citation Index of the passage this item is based on"
+    )
+
+    @field_validator("source", mode="before")
+    @classmethod
+    def readable_source(cls, value):
+        # The server checks the source, so an oddly written one never fails the batch.
+        digits = re.search(r"\d+", str(value))
+        return int(digits[0]) if digits else None
+
+
 # --- 1. Quiz Generation ---
-class QuizQuestion(BaseModel):
+class QuizQuestion(SourcedItem):
     question_text: str = Field(..., description="The body of the question")
     question_type: Literal["multiple_choice", "true_false", "short_answer", "fill_in_the_blank"]
     options: Optional[List[str]] = Field(
@@ -109,10 +122,21 @@ class ShortAnswerGrade(BaseModel):
 
 
 # --- 3. Flashcard Generation ---
-class FlashcardItem(BaseModel):
+class FlashcardItem(SourcedItem):
     front: str = Field(..., description="Concept, term, or question on front of card")
     back: str = Field(..., description="Definition, explanation, or answer on back of card")
-    tags: List[str] = Field(default_factory=list, description="Keywords or topic labels")
+    # Bounded so structured output cannot repeat tags until it runs out of tokens.
+    tags: List[str] = Field(
+        default_factory=list, max_length=5, description="Keywords or topic labels"
+    )
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def topic_tags_only(cls, value):
+        # Models sometimes copy prompt bookkeeping ("Citation Index: 3") into tags.
+        if not isinstance(value, list):
+            return value
+        return [t for t in value if not re.search(r"citation|index\s*:?\s*\d", str(t), re.I)]
 
 
 class FlashcardPayloadSchema(BaseModel):
@@ -663,7 +687,7 @@ def generate_structured(backend, schema_class, system_prompt, user_message, temp
     Raises ValueError or LLMServiceUnavailableError when no valid result is possible,
     so callers can fall back to source-based content.
     """
-    from sentio.ai.streaming import output_schema
+    from sentio.ai.stream_schema import output_schema
     from sentio.shared.exceptions import InvalidModelOutput
 
     def call(sys_p, hist, user_p):

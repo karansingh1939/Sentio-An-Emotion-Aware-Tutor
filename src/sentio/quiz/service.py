@@ -10,6 +10,7 @@ import json
 import logging
 import re
 import uuid
+from collections import Counter
 from copy import deepcopy
 from fractions import Fraction
 from typing import Any, Dict, Optional, Tuple
@@ -24,7 +25,9 @@ from sentio.ai.structured_parser import (
 from sentio.jobs.control import checkpoint, publish
 from sentio.repositories.practice import PracticeRepository
 from sentio.repositories.quizzes import QuizRepository
+from sentio.repositories.topics import TopicRepository
 from sentio.shared.exceptions import LLMServiceUnavailableError
+from sentio.tutor.difficulty import describe
 
 logger = logging.getLogger(__name__)
 
@@ -74,8 +77,14 @@ class QuizService:
             session = deepcopy(session)
         document_id = session.metadata.get("document_id")
         grounded = document_id not in (None, "none")
+        if not grounded:
+            raise ValueError("Choose notes for this session before making a quiz.")
         if grounded and document_id != "all":
-            selected = document_id if isinstance(document_id, list) else [document_id]
+            from sentio.repositories.courses import expand_source
+
+            with self.agent.sm.persister._engine.connect() as connection:
+                selected = expand_source(connection, student_id, document_id)
+            selected = selected if isinstance(selected, list) else [selected]
             owned = {d["id"] for d in self.agent.sm.list_documents(student_id=student_id)}
             if any(d not in owned for d in selected):
                 raise PermissionError("Access denied or document not found.")
@@ -83,16 +92,21 @@ class QuizService:
             source_snapshot = PracticeRepository(self.agent.sm.persister._engine).snapshot(session)
 
         checkpoint("retrieving sources")
-        # 1. Retrieve RAG context
-        retrieved = self.agent.kb.retrieve(
-            subject=subject,
-            topic=topic,
-            difficulty=difficulty,
-            learning_state="neutral",
-            query=topic,
-            session_id=session_id,
-            student_id=student_id,
-            document_id=document_id,
+        # 1. Use the chosen topics' slides, or retrieve RAG context
+        focus = TopicRepository(self.agent.sm.persister._engine).focus(session)
+        retrieved = (
+            self.agent.kb.topic_content(subject, topic, difficulty, focus)
+            if focus
+            else self.agent.kb.retrieve(
+                subject=subject,
+                topic=topic,
+                difficulty=difficulty,
+                learning_state="neutral",
+                query=topic,
+                session_id=session_id,
+                student_id=student_id,
+                document_id=document_id,
+            )
         )
         context = (getattr(retrieved, "rag_context", None) or "").strip()
         if grounded and (not getattr(retrieved, "is_rag", False) or not context):
@@ -109,6 +123,9 @@ class QuizService:
             if grounded
             else "Use the topic and available context."
         )
+        from sentio.study.topics import locate, place, turn, turns_rule
+
+        turns = turns_rule(focus, num_questions, "question")
 
         # 3. Build prompts
         system_prompt = f"""Generate a quiz with exactly {num_questions} questions on '{topic}' ({difficulty}) in '{subject}'.
@@ -116,7 +133,8 @@ Context: {context}
 Student History: {student_memory}
 
 Requirements:
-- {grounding_rule}
+- {grounding_rule}{turns}
+- Each passage in Context has a Citation Index. Set 'source' to the Citation Index of the passage each question is based on.
 - Mix of: 'multiple_choice' (MCQ, 4 options), 'true_false' (TF, options: ["True", "False"]), 'short_answer' (exemplar response), 'fill_in_the_blank' (one-word answer).
 - For MCQ and TF, 'correct_answer' MUST be the exact option text, not an option letter.
 - For 'short_answer', 'correct_answer' MUST be a brief exemplar response (NOT null).
@@ -134,7 +152,8 @@ JSON Template:
       "correct_answer": "<answer>",
       "explanation": "<explanation>",
       "difficulty": "{difficulty}",
-      "topic": "{topic}"
+      "topic": "{topic}",
+      "source": <citation index>
     }}
   ]
 }}"""
@@ -144,15 +163,16 @@ JSON Template:
 
         # Call LLM
         checkpoint("generating quiz")
+        from sentio.ai.practice_schema import generate_practice
         from sentio.ai.source_practice import practice_provenance, source_recall
-        from sentio.ai.structured_parser import generate_structured
         from sentio.shared.exceptions import LLMServiceUnavailableError
 
         mode = "generated"
         try:
-            quiz_data = generate_structured(
+            quiz_data = generate_practice(
                 self.agent.nlp._backend,
-                batch_schema,
+                "quiz",
+                num_questions,
                 system_prompt,
                 "Generate the quiz now.",
                 temperature=0.7,
@@ -179,8 +199,22 @@ JSON Template:
         # 6. Generate quiz_id and save to database
         quiz_id = str(uuid.uuid4())
         provenance = practice_provenance(mode, retrieved, self.agent.nlp._backend, source_snapshot)
+        citations = getattr(retrieved, "source_citations", [])
+        located = Counter()
         for index, question in enumerate(quiz_dict["questions"]):
             question["question_id"] = f"{quiz_id}_q{index}"
+            citation, how = locate(question, citations, turn(index, citations, focus))
+            question["source_document_id"], question["source_page"] = place(citation)
+            question["topic"] = (citation or {}).get("topic", question["topic"])
+            del question["source"]
+            located[how] += 1
+        if mode == "generated":
+            provenance["located"] = dict(located)
+        if focus:
+            provenance["topics"] = [
+                {key: chosen[key] for key in ("title", "filename", "first_page", "last_page")}
+                for chosen in focus
+            ]
 
         def save(connection=None):
             self.agent.sm.save_quiz(
@@ -257,18 +291,7 @@ JSON Template:
         avg_score = total_correct_score / len(questions) if questions else 0.0
         passed = avg_score >= 0.6
 
-        # Build prompt to generate overall summary via LLM
-        summary_prompt = f"""Provide a warm, encouraging 2-3 sentence summary of student performance.
-Quiz: '{quiz["title"]}'
-Score: {avg_score:.1%} ({total_correct_score}/{len(questions)} correct)"""
-        try:
-            raw_summary, _ = self.agent.nlp._backend.complete(
-                summary_prompt, [], "Assess the performance."
-            )
-            summary = raw_summary.strip()
-        except Exception:
-            logger.warning("Quiz summary unavailable; returning deterministic grade.")
-            summary = f"You scored {avg_score:.0%}. Review the explanations and practice the concepts you missed."
+        summary = f"You scored {avg_score:.0%}. Review the explanations and practice the concepts you missed."
 
         scoring_result = {
             "total_score": avg_score,
@@ -290,8 +313,10 @@ Score: {avg_score:.1%} ({total_correct_score}/{len(questions)} correct)"""
                 if answers_key in results:
                     return results[answers_key]
                 snapshot = deepcopy(session.__dict__)
+                starting_level = session.difficulty
+                reasons = []
                 for feedback, question in zip(feedback_items, questions):
-                    self.agent.sm.record_quiz_attempt(
+                    change = self.agent.sm.record_quiz_attempt(
                         session_id=session_id,
                         correct=feedback["is_correct"],
                         topic=question["topic"],
@@ -300,6 +325,13 @@ Score: {avg_score:.1%} ({total_correct_score}/{len(questions)} correct)"""
                         student_answer=feedback["student_answer"],
                         score=feedback["score"],
                         connection=connection,
+                        question_id=question.get("question_id"),
+                    )
+                    if change:
+                        reasons.append(change["reason"])
+                if session.difficulty != starting_level:
+                    result["difficulty_change"] = describe(
+                        starting_level, session.difficulty, reasons[-1]
                     )
                 results[answers_key] = result
                 repository.save_results(connection, quiz_id, results)

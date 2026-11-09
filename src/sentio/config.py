@@ -36,6 +36,16 @@ for directory in [
     directory.mkdir(parents=True, exist_ok=True)
 
 
+def _physical_cores():
+    """Physical CPU cores, or None to let Ollama choose when they cannot be read."""
+    try:
+        import psutil
+
+        return psutil.cpu_count(logical=False) or None
+    except Exception:
+        return None
+
+
 # ─────────────────────────────────────────────
 # EMOTION DETECTION (Computer Vision)
 # ─────────────────────────────────────────────
@@ -116,6 +126,11 @@ class NLPConfig:
     # Local Ollama model used for every generation
     OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
     OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "phi3:mini")
+    # Measured on a 14-core / 20-thread laptop CPU (2026-11-09): using every logical
+    # thread wrote 5.4 tokens/s; physical cores only wrote 6.6-7.1 tokens/s.
+    OLLAMA_NUM_THREAD = int(os.getenv("OLLAMA_NUM_THREAD", "0")) or _physical_cores()
+    # Keep the model in memory between study turns; reloading 2-5 GB costs 10-35 s.
+    OLLAMA_KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "60m")
 
     # Qdrant Vector Database Mode: "local" (disk persistent) | "memory" (ephemeral) | "server" (external container)
     QDRANT_MODE = os.getenv("QDRANT_MODE", "local").lower().strip()
@@ -137,18 +152,6 @@ class NLPConfig:
 # TUTORING & PEDAGOGY
 # ─────────────────────────────────────────────
 class TutorConfig:
-    # Supported subjects
-    SUBJECTS = [
-        "general",
-        "mathematics",
-        "physics",
-        "chemistry",
-        "biology",
-        "computer_science",
-        "history",
-        "literature",
-    ]
-
     # Difficulty levels
     DIFFICULTY_LEVELS = ["beginner", "intermediate", "advanced"]
 

@@ -26,7 +26,7 @@ class TestLearningIdentity(unittest.TestCase):
         previous = sys.modules.get("sentio.emotion.detector")
         sys.modules["sentio.emotion.detector"] = detector
         try:
-            with patch("sentio.shared.utils.setup_logging"):
+            with patch("sentio.api.app.setup_logging"):
                 cls.api = importlib.import_module("sentio.api.app")
         finally:
             if previous is None:
@@ -351,6 +351,10 @@ class TestLearningIdentity(unittest.TestCase):
         enabled = patch.object(emotion_cfg, "ENABLED", True)
         enabled.start()
         self.addCleanup(enabled.stop)
+        # This test sends frames back to back; the frame-rate limit has its own test.
+        no_limit = patch("sentio.api.routes.emotion.FRAME_INTERVAL_SEC", 0)
+        no_limit.start()
+        self.addCleanup(no_limit.stop)
         self.client.post(
             self.prefix + f"/student/{self.a}/consent",
             headers=self.headers_a,

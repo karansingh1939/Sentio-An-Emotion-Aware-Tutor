@@ -43,7 +43,6 @@ async function sendAggregatedTelemetry() {
   };
 
   resetTelemetryBuffer();
-  console.log('Dispatching aggregated telemetry:', payload);
   dispatchTelemetryWithRetry(payload, 3, 1000);
 }
 
@@ -52,15 +51,7 @@ async function dispatchTelemetryWithRetry(payload, retriesLeft, delay) {
   if (!currentSessionId) return;
 
   try {
-    const res = await fetch(`${API}/sessions/${currentSessionId}/telemetry`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      throw new Error('Telemetry endpoint returned status ' + res.status);
-    }
+    await window.sentioAPI.post(`/sessions/${currentSessionId}/telemetry`, payload);
     console.log('Telemetry sent successfully');
   } catch (err) {
     console.warn(`Failed to send telemetry. Retries left: ${retriesLeft}. Error:`, err);
@@ -134,7 +125,7 @@ function declinePrivacyConsent() {
     const qText = document.getElementById('cam-quick-text');
     if (qText) qText.textContent = 'Enable Camera';
     const qIcon = document.getElementById('cam-quick-icon');
-    if (qIcon) qIcon.textContent = '📷';
+    if (qIcon) qIcon.innerHTML = window.sentioIcon('camera', 16);
   }
   pendingConsentFeature = null;
   pendingConsentCallback = null;
@@ -146,7 +137,7 @@ function disableCamera() {
 
   const btn = document.getElementById('cam-toggle-btn');
   if (btn) {
-    btn.textContent = 'CAM OFF';
+    btn.textContent = 'Camera off';
     btn.classList.remove('active');
   }
   const camQuick = document.getElementById('cam-quick-toggle-btn');
@@ -155,7 +146,7 @@ function disableCamera() {
     const qText = document.getElementById('cam-quick-text');
     if (qText) qText.textContent = 'Enable Camera';
     const qIcon = document.getElementById('cam-quick-icon');
-    if (qIcon) qIcon.textContent = '📷';
+    if (qIcon) qIcon.innerHTML = window.sentioIcon('camera', 16);
   }
 
   const camNoSess = document.getElementById('cam-no-session');
@@ -218,6 +209,106 @@ function disableAllTracking() {
   addLog('All tracking disabled', 'var(--red)');
 }
 
+// ── LIVE EMOTION FRAMES ───────────────────────
+// While the camera is on, a small JPEG goes to the server's emotion model every few seconds
+// over a WebSocket. Frames are drawn, sent and dropped: none is kept in the browser.
+const FRAME_INTERVAL_MS = 3000;
+let frameTimer = null;
+let frameCanvas = null;
+let framePending = false;
+
+// The server checks the access token on every frame, and it expires after 15 minutes. When the
+// app renews it, reopen the stream once with the new token; clearing it (logout) just stops.
+let tokenWatched = false;
+let watchedToken = null;
+
+function watchAuthToken() {
+  if (tokenWatched || !window.store) return;
+  tokenWatched = true;
+  watchedToken = window.store.getState('authToken');
+  window.store.subscribe('authToken', (token) => {
+    if (token === watchedToken) return;
+    watchedToken = token;
+    if (!token) stopFrameStream();
+    else if (camActive && camStream && getActiveSessionId()) {
+      stopFrameStream();
+      startFrameStream();
+    }
+  });
+}
+
+function startFrameStream() {
+  stopFrameStream();
+  watchAuthToken();
+  const sessionId = getActiveSessionId();
+  if (!sessionId || !window.store?.getState('authToken')) return;
+  const scheme = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const socket = new WebSocket(
+    `${scheme}//${window.location.host}/api/v1/ws/${encodeURIComponent(sessionId)}`,
+  );
+  wsEmotion = socket;
+  socket.onopen = () => {
+    if (wsEmotion !== socket) return;
+    // The token travels in the first message, never in the URL.
+    socket.send(JSON.stringify({ access_token: window.store.getState('authToken') }));
+    frameTimer = setInterval(() => sendFrame(socket, sessionId), FRAME_INTERVAL_MS);
+  };
+  // One reply per frame: send the next frame only after it, so frames never queue up.
+  socket.onmessage = () => {
+    if (wsEmotion === socket) framePending = false;
+  };
+  // Any close ends the stream; it is never reopened by a timer.
+  socket.onclose = (event) => {
+    if (wsEmotion !== socket) return;
+    stopFrameStream();
+    if (event.code === 1008) settleRefusal(sessionId);
+  };
+}
+
+// Code 1008 means refused: consent was not saved, or the access token expired. One mood request
+// settles which: it renews an expired token (the token watch then reopens the stream) and fails
+// with 403 without consent, which switches the camera off with an explanation.
+async function settleRefusal(sessionId) {
+  addLog('Camera mood updates were refused', 'var(--yellow)');
+  try {
+    await window.sentioAPI.get(`/sessions/${encodeURIComponent(sessionId)}/mood`, {
+      background: true,
+    });
+  } catch (error) {
+    if (error.status !== 403 || !camStream || getActiveSessionId() !== sessionId) return;
+    disableCamera();
+    toast('Camera mood needs camera consent in Settings.', true);
+  }
+}
+
+function sendFrame(socket, sessionId) {
+  if (wsEmotion !== socket || getActiveSessionId() !== sessionId || !camStream) {
+    stopFrameStream();
+    return;
+  }
+  const video = document.getElementById('cam-video');
+  if (framePending || socket.readyState !== WebSocket.OPEN || !video?.videoWidth) return;
+  const scale = Math.min(1, 320 / video.videoWidth, 240 / video.videoHeight);
+  frameCanvas = frameCanvas || document.createElement('canvas');
+  frameCanvas.width = Math.round(video.videoWidth * scale);
+  frameCanvas.height = Math.round(video.videoHeight * scale);
+  frameCanvas.getContext('2d').drawImage(video, 0, 0, frameCanvas.width, frameCanvas.height);
+  framePending = true;
+  socket.send(
+    JSON.stringify({ frame_b64: frameCanvas.toDataURL('image/jpeg', 0.7).split(',')[1] }),
+  );
+}
+
+function stopFrameStream() {
+  clearInterval(frameTimer);
+  frameTimer = null;
+  framePending = false;
+  frameCanvas = null;
+  const socket = wsEmotion;
+  wsEmotion = null;
+  if (socket && socket.readyState < WebSocket.CLOSING) socket.close();
+}
+
 async function startWebcam() {
   if (camStream || cameraStarting || !window.store?.getState('telemetryActive')) return;
   const owner = window.store.getState('currentUser')?.id;
@@ -231,7 +322,9 @@ async function startWebcam() {
     window.store.getState('telemetryActive') &&
     window.store.getState('currentUser')?.id === owner &&
     getActiveSessionId() === activeSession &&
-    ['#/tutor', '#/quizzes', '#/flashcards'].includes(window.store.getState('activeRoute'));
+    ['#/tutor', '#/quizzes', '#/flashcards', '#/slides'].includes(
+      window.store.getState('activeRoute'),
+    );
   try {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       throw new Error('MediaDevices API not supported');
@@ -247,7 +340,11 @@ async function startWebcam() {
     camStream = acquired;
     window.camStream = camStream;
     const video = document.getElementById('cam-video');
-    if (video) video.srcObject = camStream;
+    if (video) {
+      video.srcObject = camStream;
+      // Autoplay does not start while the tutor page is hidden, as in slide study.
+      video.play().catch(() => {});
+    }
     if (!faceLandmarker) await initMediaPipe();
     if (!stillCurrent()) {
       acquired.getTracks().forEach((track) => track.stop());
@@ -257,12 +354,13 @@ async function startWebcam() {
     if (faceLandmarker) startAttentionTrackingLoop();
     addLog('Camera started', 'var(--green)');
     camActive = true;
+    startFrameStream();
     const camActInd = document.getElementById('cam-active-indicator');
     if (camActInd) camActInd.style.display = 'flex';
     const btn = document.getElementById('cam-toggle-btn');
     if (btn) {
       btn.disabled = false;
-      btn.textContent = 'CAM ON';
+      btn.textContent = 'Camera on';
       btn.classList.add('active');
     }
     const camQuick = document.getElementById('cam-quick-toggle-btn');
@@ -271,7 +369,7 @@ async function startWebcam() {
       const qText = document.getElementById('cam-quick-text');
       if (qText) qText.textContent = 'Camera Active';
       const qIcon = document.getElementById('cam-quick-icon');
-      if (qIcon) qIcon.textContent = '🟢';
+      if (qIcon) qIcon.innerHTML = '<span class="live-dot" aria-hidden="true"></span>';
     }
   } catch (e) {
     if (acquired) acquired.getTracks().forEach((track) => track.stop());
@@ -288,7 +386,7 @@ async function startWebcam() {
     const btn = document.getElementById('cam-toggle-btn');
     if (btn) {
       btn.disabled = false;
-      btn.textContent = 'CAM OFF';
+      btn.textContent = 'Camera off';
       btn.classList.remove('active');
     }
     const camQuick = document.getElementById('cam-quick-toggle-btn');
@@ -297,7 +395,7 @@ async function startWebcam() {
       const qText = document.getElementById('cam-quick-text');
       if (qText) qText.textContent = 'Enable Camera';
       const qIcon = document.getElementById('cam-quick-icon');
-      if (qIcon) qIcon.textContent = '📷';
+      if (qIcon) qIcon.innerHTML = window.sentioIcon('camera', 16);
     }
   } finally {
     if (epoch === cameraEpoch) cameraStarting = false;
@@ -310,6 +408,7 @@ function stopWebcam() {
   if (telemetryTimer) clearInterval(telemetryTimer);
   telemetryTimer = null;
   resetTelemetryBuffer();
+  stopFrameStream();
   stopAttentionTrackingLoop();
   camActive = false;
   window.camStream = null;
@@ -342,7 +441,7 @@ async function toggleWebcamDirect() {
         camActive = true;
         const btn = document.getElementById('cam-toggle-btn');
         if (btn) {
-          btn.textContent = 'CAM ON';
+          btn.textContent = 'Camera on';
           btn.classList.add('active');
         }
         startAttentionTrackingLoop();

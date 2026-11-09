@@ -101,7 +101,6 @@ async def test_first_time_notes_to_study_to_practice_without_hidden_setup(monkey
             await page.click("#hud-toggle-btn")
             await page.click("#tutor-new-session-btn")
             await page.wait_for_selector("#new-sess-topic")
-            await page.select_option("#new-sess-subject", "physics")
             await page.fill("#new-sess-topic", "Inertia")
             await page.select_option("#new-sess-grounding", selected)
             created = asyncio.Event()
@@ -136,6 +135,7 @@ async def test_first_time_notes_to_study_to_practice_without_hidden_setup(monkey
             passage = page.locator("sentio-modal .cited-passage")
             assert "Inertia resists changes in velocity" in await passage.inner_text()
             await page.click("#modal-close-btn")
+            await page.locator("#session-active-bar .practise-menu summary").click()
             await page.locator("#session-active-bar").get_by_role("link", name="Try a quiz").click()
             await page.wait_for_selector("#generate-quiz-btn:enabled")
             assert not await page.locator("#quiz-topic").is_visible()
@@ -143,8 +143,11 @@ async def test_first_time_notes_to_study_to_practice_without_hidden_setup(monkey
             for index in range(3):
                 await page.check('input[name="quiz-opt"][value="A"]')
                 await page.click("#next-question-btn" if index < 2 else "#submit-quiz-btn")
-            await page.wait_for_selector("text=Assessment Results")
+            await page.wait_for_selector("text=Quiz results")
             await page.goto(url + "/#/tutor")
+            await page.locator("#session-active-bar .practise-menu").evaluate(
+                "menu => (menu.open = true)"
+            )
             await (
                 page.locator("#session-active-bar")
                 .get_by_role("link", name="Make flashcards")

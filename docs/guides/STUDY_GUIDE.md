@@ -4,11 +4,16 @@ Start with `python scripts/dev/dev_start.py --port 8001` from the project direct
 Open http://127.0.0.1:8001 and leave the terminal open. Stop with Ctrl+C.
 
 1. Create an account or sign in. Save the recovery key displayed after registration.
-2. On Today, choose **Add your first notes**. Upload a readable TXT, PDF or DOCX
-   in Library. Wait for **Ready to study**. Upload progress reports actual stages;
+2. On Today, choose **Add your first notes**. In Library, optionally pick or create a
+   **Course** (for example "Operating Systems"), then upload one or several files:
+   PowerPoint (PPTX), PDF, DOCX or TXT. Each slide of a deck becomes its own page, so
+   citations say "slide 4". Old `.ppt` files must be saved as `.pptx` first. Wait for
+   **Ready to study**. You can move a lecture to another course at any time; deleting a
+   course keeps its lectures. Upload progress reports actual stages;
    keyword retrieval can remain available when semantic retrieval is unavailable.
-3. Choose **Study** beside those notes. Studying starts at once; the topic comes from
-   the notes' opening line. Choose **Summarize these notes** for a short summary, key
+3. Choose **Study** beside a lecture, or **Study course** to ask about every lecture in
+   a course (lectures added later are included automatically). Studying starts at once;
+   the topic comes from the notes' opening line. Choose **Summarize these notes** for a short summary, key
    concepts and suggested questions; click a question to ask it. The overview is saved,
    so it appears instantly next time.
    Optionally pick a **Goal for this session** from the goals you added on Today.
@@ -20,6 +25,10 @@ Open http://127.0.0.1:8001 and leave the terminal open. Stop with Ctrl+C.
    passages explicitly labelled as a fallback, rather than claim a verified explanation.
    Selected-note chat always checks those sources, including requests to review or
    summarize them. Use Today for your revision plan and saved-practice progress.
+   The difficulty you chose stays unless you ask ("make it harder", "explain it more
+   simply") or your quiz answers show it: 3 correct in a row steps up, 2 wrong steps
+   down. Each change appears with its reason and an **Undo**, which keeps your level
+   until you ask for a change.
 5. Choose **Try a quiz** or **Make flashcards**. These use the current study notes
    without asking you to configure another session. Start with three items.
    Choose **Check answer** for instant feedback on one question; nothing is recorded
@@ -33,6 +42,36 @@ Open http://127.0.0.1:8001 and leave the terminal open. Stop with Ctrl+C.
    come back; the FSRS scheduler sets the interval so you review a card when your chance
    of recalling it has fallen to about 90%. Due reviews and saved work survive restart.
    Progress estimates include self-reported ratings; they are not exam results.
+7. See how each lecture is going: open **Progress by topic** under a course, or
+   **Topics** beside a lecture. Topics follow slide titles (PDF page headings; Word and
+   text files form one topic). Each topic is **Not started**, **Practising**, **Ready**
+   (your last 3 answers on it were all correct and you probably still remember it) or
+   **Review due** (those answers were right, but enough time has passed that you may be
+   forgetting). A correct answer on a due topic makes it Ready again for longer: about
+   3 days after the first good sitting, then about 11, then about 35. Topics due for
+   review appear on Today and in the course panel. **Weak topics** lists
+   practised topics below that bar with their slides; **Review** opens the tutor on the
+   topic and **Practise** prepares a quiz on exactly that topic's slides, and the quiz
+   shows which slides it covers. **Practise weak topics** spreads questions across your
+   5 weakest topics. You can rename a topic or merge it into the one above. Quizzes and
+   flashcard reviews count when they are linked to a slide; older ones may not be. The
+   result is a practice estimate.
+8. Add the course **Syllabus** in the same panel: paste it, or choose its PDF, Word,
+   PowerPoint or text file. Sentio splits it into units and topics (skipping textbooks,
+   references and outcomes) and matches each topic to your lecture topics. The course
+   then shows "62% of the syllabus ready", and topics with no matching notes are marked
+   **Not in your notes yet**, so you know what to collect before the exam. When the
+   syllabus states hours per unit, each unit counts for its hours in that percentage. If a
+   match is wrong, pick the right lecture topic or "Not in my notes" from its list.
+9. Study a lecture slide by slide: choose **Study slides** beside it. Move with Previous,
+   Next or the arrow keys, press **Explain this slide**, and ask follow-up questions
+   underneath. Answers start from the slide on screen and cite it. If your installation
+   enables the camera, a **Camera** switch appears. With it on, a small chip shows the
+   camera's guess ("focused", "unsure", "looking away" or "calm"), and nothing until it
+   has a reading. After a while of looking unsure it offers to explain the slide in a
+   different way; after a minute looking away it suggests a short break. The guess only
+   changes the tutor's tone, never your level, and what you ask for always wins. Camera
+   consent is saved in Settings, where **Delete camera data** removes the readings.
 
 To change notes, return to Library and choose Study on the new document. Saved
 practice remains accessible. Settings contains diagnostics, data export and account

@@ -7,7 +7,7 @@ from queue import Empty
 import pytest
 from fastapi.testclient import TestClient
 
-from sentio.ai.streaming import visible_text
+from sentio.ai.stream_schema import visible_text
 from sentio.api.app import agent, app
 from sentio.jobs.control import current_control
 
@@ -20,6 +20,18 @@ def study():
         assert client.post("/api/v1/auth/register", json=credentials).status_code == 201
         tokens = client.post("/api/v1/auth/login", json=credentials).json()
         headers = {"Authorization": "Bearer " + tokens["access_token"]}
+        notes = client.post(
+            "/api/v1/documents/upload",
+            headers=headers,
+            files={
+                "file": (
+                    "newton.txt",
+                    b"Newton's First Law: inertia keeps an object at rest or in uniform motion "
+                    b"unless a net external force acts on it.",
+                    "text/plain",
+                )
+            },
+        ).json()["document_id"]
         session = client.post(
             "/api/v1/sessions",
             headers=headers,
@@ -28,6 +40,7 @@ def study():
                 "subject": "physics",
                 "topic": "Newton's First Law",
                 "difficulty": "beginner",
+                "metadata": {"document_id": notes},
             },
         ).json()["session_id"]
         yield client, headers, session
@@ -141,7 +154,7 @@ def test_queued_turn_cancellation_sends_terminal_event(study):
     assert session.total_exchanges == 0
 
 
-def test_malformed_output_is_error_and_never_a_completed_turn(study, monkeypatch):
+def test_malformed_output_falls_back_to_quoted_notes_never_the_broken_reply(study, monkeypatch):
     client, headers, sid = study
     monkeypatch.setattr(agent.nlp._backend, "complete", lambda **kw: ('{"text":"unfinished', 10))
     response = client.post(
@@ -149,9 +162,9 @@ def test_malformed_output_is_error_and_never_a_completed_turn(study, monkeypatch
         headers=headers,
         json={"message": "Explain inertia", "request_id": "malformed-output"},
     )
-    assert "event: error" in response.text
-    assert "event: complete" not in response.text
-    assert agent.sm.get_or_raise(sid).total_exchanges == 0
+    assert "event: complete" in response.text
+    assert "could not verify" in response.text and "newton.txt" in response.text
+    assert "unfinished" not in response.text
 
 
 @pytest.mark.parametrize("terminal", ["cancelled", "complete", "error"])
@@ -194,3 +207,18 @@ def test_full_stream_buffer_still_delivers_terminal_event(study, monkeypatch, te
         job["status"]
         == {"complete": "succeeded", "error": "failed", "cancelled": "cancelled"}[terminal]
     )
+
+
+def test_saved_turns_carry_the_time_they_were_answered(study):
+    """Goldfish test F14: a resumed chat stamped every message with the reopening time."""
+    import time
+
+    client, headers, sid = study
+    before = time.time()
+    body = {"message": "Explain Newton's First Law", "request_id": "timed-request"}
+    assert (
+        "event: complete"
+        in client.post(f"/api/v1/sessions/{sid}/chat/stream", headers=headers, json=body).text
+    )
+    turns = client.get(f"/api/v1/sessions/{sid}/turns", headers=headers).json()["turns"]
+    assert before - 1 <= turns[-1]["answered_at"] <= time.time() + 1

@@ -85,5 +85,5 @@ def test_selected_notes_without_relevant_evidence_do_not_call_provider(monkeypat
             },
         )
         assert "event: complete" in result.text, result.text
-        assert "do not provide retrievable evidence" in result.text
+        assert "notes don't cover that question" in result.text
         assert "78.37" not in result.text

@@ -1,11 +1,12 @@
 import json
 import logging
+import threading
 import time
 from abc import ABC, abstractmethod
 from threading import BoundedSemaphore
 from typing import Dict, List
 
-from sentio.ai.streaming import current_schema, visible_text
+from sentio.ai.stream_schema import current_schema, visible_text
 from sentio.config import nlp_cfg
 from sentio.jobs.control import WorkCancelled, checkpoint, current_control
 from sentio.shared.exceptions import InvalidModelOutput, LLMServiceUnavailableError
@@ -76,6 +77,31 @@ class OllamaBackend(LLMBackend):
                 self.cfg.OLLAMA_BASE_URL,
                 e,
             )
+            return
+        # Load the model now, in the background, so the first question does not wait
+        # 10-35 s for 2-5 GB of weights to load from disk.
+        threading.Thread(target=self.warm_up, name="ollama-warm-up", daemon=True).start()
+
+    def _options(self, **options):
+        if self.cfg.OLLAMA_NUM_THREAD:
+            options["num_thread"] = self.cfg.OLLAMA_NUM_THREAD
+        return options
+
+    def warm_up(self):
+        """Ask Ollama to load the model with the same options study requests use."""
+        try:
+            self._session.post(
+                f"{self.cfg.OLLAMA_BASE_URL}/api/generate",
+                json={
+                    "model": self.cfg.OLLAMA_MODEL,
+                    "keep_alive": self.cfg.OLLAMA_KEEP_ALIVE,
+                    "options": self._options(),
+                },
+                timeout=180,
+            ).raise_for_status()
+            logger.info("Ollama model %s loaded and kept warm.", self.cfg.OLLAMA_MODEL)
+        except Exception as error:
+            logger.warning("Ollama warm-up did not finish: %s", error)
 
     def complete(
         self,
@@ -93,11 +119,8 @@ class OllamaBackend(LLMBackend):
             "model": self.cfg.OLLAMA_MODEL,
             "messages": messages,
             "stream": True,
-            "keep_alive": "15m",
-            "options": {
-                "temperature": temperature,
-                "num_predict": max_tokens,
-            },
+            "keep_alive": self.cfg.OLLAMA_KEEP_ALIVE,
+            "options": self._options(temperature=temperature, num_predict=max_tokens),
             "format": current_schema().model_json_schema() if current_schema() else "json",
         }
 

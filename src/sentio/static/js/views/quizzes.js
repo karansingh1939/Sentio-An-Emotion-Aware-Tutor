@@ -1,9 +1,9 @@
-import { describeProvenance, escapeHtml } from '../core/html.js';
+import { describeFocus, describeProvenance, escapeHtml } from '../core/html.js';
 // Quizzes View Controller for Sentio (ES Module)
 import { sentioAPI } from '../core/api.js';
 import { store } from '../core/store.js';
 import { toast } from '../components/ui.js';
-import { runPracticeJob } from '../core/jobs.js';
+import { pendingJobKey, runPracticeJob } from '../core/jobs.js';
 
 function renderCheck(result) {
   if (!result) return '';
@@ -28,9 +28,29 @@ export class QuizzesView {
       if (route === '#/quizzes') {
         this.studentId = store.getState('currentUser')?.id || 'stu_001';
         this.resetQuizState();
-        this.render();
+        // A quiz still being written reconnects instead of silently disappearing.
+        if (localStorage.getItem(pendingJobKey('/quizzes/jobs'))) this.resumeGeneration();
+        else this.render();
       } else this.revision++;
     });
+  }
+
+  async resumeGeneration() {
+    const revision = this.revision;
+    try {
+      const res = await runPracticeJob('/quizzes/jobs', null, this.container);
+      if (revision !== this.revision) return;
+      if (res) {
+        this.quiz = res;
+        this.currentQuestionIdx = 0;
+        this.answers = {};
+        this.checks = {};
+      }
+    } catch (e) {
+      if (revision !== this.revision) return;
+      toast('Failed to generate quiz: ' + e.message, true);
+    }
+    this.render();
   }
 
   resetQuizState() {
@@ -67,14 +87,7 @@ export class QuizzesView {
           ${store.getState('activeSessionId') ? '<a href="#/tutor">Change what you are studying</a>' : '<a class="workspace-action" href="#/documents">Choose notes</a>'}
           <div style="display:flex;flex-direction:column;gap:14px;margin-top:10px;">
             <div>
-              <label class="form-label" for="quiz-subject">Subject</label>
-<select class="input" id="quiz-subject">
-                <option value="physics">Physics</option>
-                <option value="computer_science">Computer Science</option>
-                <option value="mathematics">Mathematics</option>
-                <option value="chemistry">Chemistry</option>
-                <option value="biology">Biology</option>
-              </select>
+              <input type="hidden" id="quiz-subject" value="My notes" />
             </div>
 
             <div>
@@ -92,11 +105,11 @@ export class QuizzesView {
                 </select>
               </div>
               <div>
-                <label class="form-label" for="quiz-num-questions">Number of Questions</label>
+                <label class="form-label" for="quiz-num-questions">Questions</label>
 <select class="input" id="quiz-num-questions">
-                  <option value="1">1 Question</option>
-                  <option value="3" selected>3 Questions</option>
-                  <option value="5">5 Questions</option>
+                  <option value="1">1</option>
+                  <option value="3" selected>3</option>
+                  <option value="5">5</option>
                 </select>
               </div>
             </div>
@@ -241,6 +254,7 @@ export class QuizzesView {
         <div>
           <h2 class="page-title">${escapeHtml(this.quiz.title || 'Dynamic Assessment')}</h2>
           <p class="muted">Select your answer and navigate using the controls below.</p>
+          ${describeFocus(this.quiz.provenance) ? `<p class="practice-focus">${escapeHtml(describeFocus(this.quiz.provenance))}</p>` : ''}
           ${this.quiz.provenance ? `<p class="practice-provenance"><small>${escapeHtml(describeProvenance(this.quiz.provenance))}</small></p>` : ''}
         </div>
         <span class="badge">
@@ -250,7 +264,7 @@ export class QuizzesView {
 
       <div style="max-width:650px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:20px;">
         ${q.question_id ? '<div class="card-toolbar"><span></span><button class="workspace-action" type="button" id="edit-question-btn">Edit this question</button></div>' : ''}
-        <sentio-card title="Concept Check">
+        <sentio-card title="Concept check">
           <p style="font-size:13px;line-height:1.5;color:var(--text);margin-bottom:16px;font-weight:500;">
             ${escapeHtml(q.question_text)}
           </p>
@@ -263,7 +277,7 @@ export class QuizzesView {
                       const char = String.fromCharCode(65 + idx); // A, B, C...
                       const isChecked = selectedAns === opt;
                       return `
-                <label style="border:1px solid ${isChecked ? 'var(--accent)' : 'var(--border)'};background:${isChecked ? 'rgba(0,200,255,0.05)' : 'var(--bg3)'};border-radius:var(--radius);padding:12px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color 0.2s, background 0.2s;">
+                <label style="border:1px solid ${isChecked ? 'var(--accent)' : 'var(--border)'};background:${isChecked ? 'var(--bg2)' : 'var(--bg3)'};border-radius:var(--radius);padding:12px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color 0.2s, background 0.2s;">
                   <input type="radio" name="quiz-opt" value="${char}" ${isChecked ? 'checked' : ''} style="accent-color:var(--accent);" />
                   <span style="font-family:var(--mono);font-size:14px;font-weight:bold;color:var(--accent);">${char}.</span>
                   <span style="font-size:14px;color:var(--text);">${escapeHtml(opt)}</span>
@@ -373,6 +387,8 @@ export class QuizzesView {
       const result = await sentioAPI.post(
         `/quizzes/${quiz.quiz_id}/questions/${question.question_id}/check`,
         { answer: this.answers[index] },
+        // Short answers are graded by the local model, which can take minutes on CPU
+        { timeout: question.question_type === 'short_answer' ? 190000 : undefined },
       );
       if (this.quiz !== quiz) return;
       this.checks[index] = result;
@@ -425,28 +441,29 @@ export class QuizzesView {
 
     this.container.innerHTML = `
       <div class="view-header view-header">
-        <h2 class="page-title">Assessment Results</h2>
-        <p class="muted">Review explanations and pedagogical feedback to improve retention.</p>
+        <h2 class="page-title">Quiz results</h2>
+        <p class="muted">Read each explanation to see what to review next.</p>
       </div>
 
       <div style="max-width:700px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:20px;">
         <!-- Summary Scorecard -->
-        <sentio-card title="Grading Summary">
+        <sentio-card title="Summary">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
             <div>
               <div style="font-size:32px;font-weight:bold;color:${passed ? 'var(--green)' : 'var(--red)'};">${scorePct}%</div>
               <div style="font-size:14px;color:var(--text-dim);margin-top:4px;">Correct answers: <strong>${correctCount} of ${totalQ}</strong></div>
             </div>
-            <span style="background:${passed ? 'rgba(78,205,196,0.1)' : 'rgba(255,80,96,0.1)'};color:${passed ? 'var(--green)' : 'var(--red)'};border:1px solid ${passed ? 'rgba(78,205,196,0.2)' : 'rgba(255,80,96,0.2)'};padding:6px 12px;border-radius:20px;font-size:14px;font-weight:bold;font-family:var(--mono);">
+            <span style="background:var(--bg3);color:${passed ? 'var(--green)' : 'var(--red)'};border:1px solid ${passed ? 'var(--green)' : 'var(--red)'};padding:6px 12px;border-radius:20px;font-size:14px;font-weight:bold;font-family:var(--mono);">
               ${passed ? 'PASSED' : 'RETRY ADVISED'}
             </span>
           </div>
           <p class="muted">${escapeHtml(this.results.summary)}</p>
+          <div id="quiz-difficulty-change"></div>
           ${this.quiz.questions.some((q) => q.question_type === 'short_answer') ? '<p class="muted">Short-answer scores are practice feedback. AI grading can misjudge valid wording; compare your answer with the reference and explanation below.</p>' : ''}
         </sentio-card>
 
         <!-- Detailed Feedback -->
-        <sentio-card title="Detailed Questions Review">
+        <sentio-card title="Question by question">
           <div class="stack stack-lg">
             ${this.results.feedback
               .map((f, idx) => {
@@ -456,7 +473,7 @@ export class QuizzesView {
                   <div class="row-between">
                     <span style="font-weight:bold;font-size:14px;color:var(--text);">Question ${idx + 1}</span>
                     <span style="color:${f.is_correct ? 'var(--green)' : 'var(--red)'};font-weight:bold;font-size:14px;">
-                      ${f.is_correct ? '✅ CORRECT' : '❌ INCORRECT'}
+                      ${window.sentioIcon(f.is_correct ? 'check' : 'x', 16)} ${f.is_correct ? 'Correct' : 'Incorrect'}
                     </span>
                   </div>
                   <p style="font-size:14px;color:var(--text);line-height:1.4;margin:4px 0;">${escapeHtml(qOriginal.question_text)}</p>
@@ -476,11 +493,15 @@ export class QuizzesView {
         </sentio-card>
 
         <button id="close-quiz-btn" style="background:var(--accent);color:var(--bg);border:none;padding:12px;border-radius:var(--radius);font-weight:bold;cursor:pointer;font-family:var(--mono);font-size:14px;">
-          Return to Learning Center
+          Back to Review
         </button>
       </div>
     `;
 
+    const change = this.results.difficulty_change;
+    const slot = this.container.querySelector('#quiz-difficulty-change');
+    if (change && slot && window.difficultyNotice)
+      slot.appendChild(window.difficultyNotice(change, store.getState('activeSessionId')));
     this.container.querySelector('#close-quiz-btn').onclick = () => {
       this.resetQuizState();
       this.render();
