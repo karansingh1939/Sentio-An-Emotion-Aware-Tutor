@@ -4,6 +4,8 @@ import time
 
 from sqlalchemy import text
 
+from sentio.shared.sqlite_tx import begin_immediate
+
 MIGRATIONS = {
     1: [
         """CREATE TABLE jobs (
@@ -66,7 +68,7 @@ MIGRATIONS = {
 
 def apply_migrations(engine):
     with engine.begin() as connection:
-        connection.exec_driver_sql("BEGIN IMMEDIATE")
+        begin_immediate(connection)
         connection.execute(
             text(
                 "CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at REAL NOT NULL)"
