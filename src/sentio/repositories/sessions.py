@@ -35,10 +35,24 @@ class SessionPersister:
         )
         self._engine = create_engine(
             session_cfg.DB_URL,
-            connect_args={"check_same_thread": False},
+            # Background jobs and requests write at the same time; wait for a lock
+            # instead of failing after SQLite's default 5 s ("database is locked").
+            connect_args={"check_same_thread": False, "timeout": 30},
             hide_parameters=True,
             **pool_options,
         )
+        if not pool_options and session_cfg.DB_URL.startswith("sqlite"):
+            from sqlalchemy import event
+
+            @event.listens_for(self._engine, "connect")
+            def _sqlite_concurrency(dbapi_connection, _record):
+                # WAL lets readers continue while one writer commits. Backups already
+                # use SQLite's backup API, which includes the WAL contents.
+                cursor = dbapi_connection.cursor()
+                cursor.execute("PRAGMA journal_mode=WAL")
+                cursor.execute("PRAGMA busy_timeout=30000")
+                cursor.close()
+
         self._init_db()
         from sentio.repositories.migrations import apply_migrations
 
