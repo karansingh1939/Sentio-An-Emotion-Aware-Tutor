@@ -225,7 +225,7 @@ class StreamService:
             rows = (
                 conn.execute(
                     text(
-                        "SELECT request_id,message,result_json FROM chat_requests WHERE student_id=:owner AND session_id=:session AND context=:context AND status='complete' ORDER BY updated_at DESC LIMIT :limit OFFSET :offset"
+                        "SELECT request_id,message,result_json,updated_at FROM chat_requests WHERE student_id=:owner AND session_id=:session AND context=:context AND status='complete' ORDER BY updated_at DESC LIMIT :limit OFFSET :offset"
                     ),
                     {
                         "owner": owner,
@@ -243,6 +243,8 @@ class StreamService:
                 "request_id": row["request_id"],
                 "message": row["message"],
                 "response": json.loads(row["result_json"]),
+                # When the answer was saved, so a resumed chat shows real times (goldfish F14).
+                "answered_at": row["updated_at"],
             }
             for row in reversed(rows)
         ]

@@ -182,6 +182,81 @@ export class SentioModal extends HTMLElement {
 }
 customElements.define('sentio-modal', SentioModal);
 
+// In-page replacements for window.prompt and window.confirm. Some browsers and embedded
+// views block the native boxes, which left buttons doing nothing (goldfish test F3, F17).
+function openDialog(title, bodyHtml, onReady) {
+  return new Promise((resolve) => {
+    const modal = document.createElement('sentio-modal');
+    modal.setAttribute('title', title);
+    modal.innerHTML = bodyHtml;
+    let settled = false;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      modal.close();
+      resolve(value);
+    };
+    const close = modal.close.bind(modal);
+    document.body.appendChild(modal);
+    modal.close = () => {
+      close();
+      if (!settled) {
+        settled = true;
+        resolve(null);
+      }
+    };
+    modal.querySelector('[data-dialog-cancel]').onclick = () => finish(null);
+    onReady(modal, finish);
+  });
+}
+
+export function askText(
+  title,
+  { label = title, value = '', placeholder = '', confirmLabel = 'Save' } = {},
+) {
+  return openDialog(
+    title,
+    `<form class="dialog-form" style="display:flex;flex-direction:column;gap:12px;">
+      <label class="form-label" for="dialog-text">${escapeHtml(label)}</label>
+      <input class="input" id="dialog-text" maxlength="200" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}" />
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button type="button" class="link-quiet" data-dialog-cancel>Cancel</button>
+        <button type="submit" class="workspace-action">${escapeHtml(confirmLabel)}</button>
+      </div>
+    </form>`,
+    (modal, finish) => {
+      const input = modal.querySelector('#dialog-text');
+      queueMicrotask(() => {
+        input.focus();
+        input.select();
+      });
+      modal.querySelector('form').onsubmit = (event) => {
+        event.preventDefault();
+        const text = input.value.trim();
+        if (text) finish(text);
+        else input.focus();
+      };
+    },
+  );
+}
+
+export function askConfirm(
+  message,
+  { title = 'Are you sure?', confirmLabel = 'Confirm', danger = false } = {},
+) {
+  return openDialog(
+    title,
+    `<p style="margin:0 0 16px;">${escapeHtml(message)}</p>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button type="button" class="link-quiet" data-dialog-cancel>Cancel</button>
+      <button type="button" class="workspace-action${danger ? ' danger' : ''}" data-dialog-ok>${escapeHtml(confirmLabel)}</button>
+    </div>`,
+    (modal, finish) => {
+      modal.querySelector('[data-dialog-ok]').onclick = () => finish(true);
+    },
+  ).then(Boolean);
+}
+
 // 5. Empty State View Component
 export class SentioEmptyState extends HTMLElement {
   connectedCallback() {

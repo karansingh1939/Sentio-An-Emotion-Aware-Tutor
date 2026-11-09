@@ -8,6 +8,7 @@ from playwright.async_api import async_playwright
 
 from tests.browser.test_audit_e2e import UvicornServer, wait_for_server
 from tests.browser.test_courses_browser import PPTX
+from tests.helpers import auto_answer_dialogs
 from tests.integration.test_syllabus_progress import SYLLABUS
 from tests.integration.test_topic_mastery import _deck
 
@@ -25,7 +26,7 @@ async def test_add_a_syllabus_and_correct_a_match():
             page = await browser.new_page(viewport={"width": 1280, "height": 900})
             errors = []
             page.on("pageerror", lambda error: errors.append(str(error)))
-            page.on("dialog", lambda dialog: dialog.accept("Operating Systems"))
+            await auto_answer_dialogs(page, "Operating Systems")
             await page.goto(url)
             await page.click("#auth-toggle-btn")
             email = f"syllabus-{uuid.uuid4().hex}@example.com"

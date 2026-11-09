@@ -15,6 +15,8 @@ from pathlib import Path
 import psutil
 import requests
 
+from sentio.ai.grounding import MISSING_EVIDENCE
+
 
 def run(output, practice_count=3, grounding_dataset=None, model="phi3:mini"):
     if practice_count not in (1, 3, 5):
@@ -187,7 +189,7 @@ def run(output, practice_count=3, grounding_dataset=None, model="phi3:mini"):
                 )
                 raise ValueError("Stream did not complete successfully")
             if insufficient:
-                if "do not provide retrievable evidence" not in response.text:
+                if MISSING_EVIDENCE.split(",")[0] not in response.text:
                     raise ValueError("Unsupported question was not rejected")
             elif "mechanics.txt Page" not in response.text:
                 raise ValueError("Completed answer did not cite the selected notes")

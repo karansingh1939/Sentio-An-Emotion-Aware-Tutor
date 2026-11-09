@@ -68,7 +68,7 @@ export class ProgressView {
       <div class="stat-grid">
         <div class="stat"><div class="stat-label">Practice estimate${topics.length ? '' : ' (not assessed yet)'}</div><div class="stat-value">${topics.length ? `<span data-count="${percentage(profile.overall_mastery)}" data-suffix="%">${percentage(profile.overall_mastery)}%</span>` : '—'}</div></div>
         <div class="stat"><div class="stat-label">Day learning streak</div><div class="stat-value"><span data-count="${Number(profile.learning_streak) || 0}">${escapeHtml(profile.learning_streak || 0)}</span></div></div>
-        <div class="stat"><div class="stat-label">Topics to review: ${escapeHtml(priorities.join(', ') || 'none due')}</div><div class="stat-value">${escapeHtml(priorities.length)}</div></div>
+        <div class="stat"><div class="stat-label">Weakest topics to practise: ${escapeHtml(priorities.join(', ') || 'none yet')}</div><div class="stat-value">${escapeHtml(priorities.length)}</div></div>
       </div>
       <sentio-card title="Topic mastery">
         ${

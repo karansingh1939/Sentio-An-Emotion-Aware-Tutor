@@ -42,6 +42,7 @@ const api = {
 };
 const imports = {
   '../core/jobs.js': {
+    pendingJobKey: (endpoint) => `job:${endpoint}`,
     runPracticeJob: async (path, body) => {
       submission = { path, body };
       return { questions: [] };

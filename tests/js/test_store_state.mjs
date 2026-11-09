@@ -10,7 +10,11 @@ globalThis.localStorage = {
   removeItem: (key) => values.delete(key),
 };
 let cleanupCount = 0;
-globalThis.window = { cleanupSession: () => cleanupCount++ };
+const urls = [];
+globalThis.window = {
+  cleanupSession: () => cleanupCount++,
+  history: { replaceState: (_state, _title, url) => urls.push(url) },
+};
 const { store } = await import('../../src/sentio/static/js/core/store.js');
 assert.equal(store.getState('currentUser'), null);
 store.setState('currentUser', { id: 'owner' });
@@ -24,4 +28,8 @@ assert.equal(store.getState('telemetryActive'), false);
 assert.deepEqual(store.getState('currentMastery'), {});
 assert.equal(cleanupCount, 1);
 assert.equal(values.has('sentio_session_id'), false);
+// An expired token keeps the screen; choosing to sign out sends the next sign-in to Today.
+assert.deepEqual(urls, []);
+store.clearAuth({ signedOut: true });
+assert.deepEqual(urls, ['#/dashboard']);
 console.log('Corrupt saved state and logout cleanup are handled.');

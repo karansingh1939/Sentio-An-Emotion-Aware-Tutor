@@ -26,7 +26,7 @@ function statusLine(due, notes, goals) {
   const parts = [
     due
       ? `<span><i class="live-dot"></i>${plural(due, 'topic')} due for review</span>`
-      : '<span>Nothing due for review</span>',
+      : '<span>No topics due for review</span>',
   ];
   if (notes !== undefined) parts.push(`<span>${plural(notes, 'lecture')} ready</span>`);
   const next = nextGoal(goals);
@@ -83,7 +83,7 @@ function progressCard(profile, topics, recommendations, noteCount) {
             : '<span class="big-unit">Not assessed yet</span>'
         }</div>
         <div class="trio">
-          <div><small>Study streak</small><b><span data-count="${Number(profile.learning_streak) || 0}">${escapeHtml(profile.learning_streak || 0)}</span> days</b></div>
+          <div><small>Study streak</small><b><span data-count="${Number(profile.learning_streak) || 0}">${escapeHtml(profile.learning_streak || 0)}</span> ${Number(profile.learning_streak) === 1 ? 'day' : 'days'}</b></div>
           <div><small>Topics assessed</small><b>${total}</b></div>
           <div><small>Notes ready</small><b>${noteCount ?? '—'}</b></div>
         </div>
@@ -335,7 +335,7 @@ export class TodayView {
       <div class="today-grid today-low">
         <section class="study-guide card" aria-labelledby="study-guide-title">
           <h3 id="study-guide-title">Your study path</h3>
-          <ol><li><a href="#/documents">Add notes</a><span>Upload a PDF, Word document or text file. Wait for “Ready to study”.</span></li><li><a href="#/documents">Study a concept</a><span>Choose Study beside your notes, then ask a question. Check the cited passage.</span></li><li><a href="${activeId ? '#/quizzes' : '#/documents'}">Practice and review</a><span>After starting study, make a quiz or cards. Saved practice stays available.</span></li></ol>
+          <ol><li><a href="#/documents">Add notes</a><span>Upload slides, a PDF, a Word document, a text file or a photo of your notes. Wait for “Ready to study”.</span></li><li><a href="#/documents">Study a concept</a><span>Choose Study beside your notes, then ask a question. Check the cited passage.</span></li><li><a href="${activeId ? '#/quizzes' : '#/documents'}">Practice and review</a><span>After starting study, make a quiz or cards. Saved practice stays available.</span></li></ol>
         </section>
         <sentio-card title="Recent study">${
           sessions === undefined

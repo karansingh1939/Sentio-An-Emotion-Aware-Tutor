@@ -1274,3 +1274,11 @@ table th {
     width: 100%;
   }
 }
+
+/* Phones (goldfish test F18, 2026-11-09): all five tabs fit without sideways scrolling. */
+@media (max-width: 420px) {
+  #sidebar .nav-links .nav-link {
+    padding: 0 5px;
+    font-size: 12px;
+  }
+}

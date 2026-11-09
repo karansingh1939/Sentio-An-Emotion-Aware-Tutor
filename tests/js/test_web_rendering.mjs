@@ -29,6 +29,8 @@ async function loadView(name) {
       sentioAPI: {},
       store: { getState: () => null },
       toast: () => {},
+      askText: async () => null,
+      askConfirm: async () => false,
       runPracticeJob: () => {},
       pendingJobKey: () => '',
     };
