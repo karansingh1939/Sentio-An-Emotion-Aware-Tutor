@@ -6,6 +6,7 @@ from typing import List, Optional
 
 from sentio.config import session_cfg
 from sentio.session.models import Session
+from sentio.shared.sqlite_tx import begin_immediate
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +89,7 @@ class SessionPersister:
         with self._engine.connect() as conn:
             conn.execute(text("PRAGMA journal_mode=WAL;"))
             conn.execute(text("PRAGMA synchronous=NORMAL;"))
-            conn.exec_driver_sql("BEGIN IMMEDIATE")
+            begin_immediate(conn)
             conn.execute(
                 text("""
                 CREATE TABLE IF NOT EXISTS students (
@@ -475,7 +476,7 @@ class SessionPersister:
         from sqlalchemy import text
 
         with self._engine.connect() as connection:
-            connection.exec_driver_sql("BEGIN IMMEDIATE")
+            begin_immediate(connection)
             if not connection.execute(
                 text(
                     "SELECT 1 FROM sessions s JOIN student_accounts a ON a.student_id=s.student_id WHERE s.session_id=:session AND a.student_id=:owner"

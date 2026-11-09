@@ -7,6 +7,7 @@ import time
 from sqlalchemy import text
 
 from sentio.auth.exceptions import CredentialsError
+from sentio.shared.sqlite_tx import begin_immediate
 
 
 def key_digest(value):
@@ -35,7 +36,7 @@ class RecoveryRepository:
     def reset(self, email, key, password_hash):
         replacement = secrets.token_urlsafe(32)
         with self.engine.connect() as conn:
-            conn.exec_driver_sql("BEGIN IMMEDIATE")
+            begin_immediate(conn)
             try:
                 owner = conn.execute(
                     text(

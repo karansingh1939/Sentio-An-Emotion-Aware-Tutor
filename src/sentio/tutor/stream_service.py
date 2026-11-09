@@ -14,6 +14,7 @@ from sqlalchemy import text
 from sentio.jobs.control import WorkCancelled
 from sentio.repositories.courses import expand_source
 from sentio.repositories.planning import active_goal
+from sentio.shared.sqlite_tx import begin_immediate
 from sentio.tutor.difficulty import describe
 
 logger = logging.getLogger(__name__)
@@ -135,7 +136,7 @@ class StreamService:
                             if change:
                                 result["difficulty_change"] = change
                             with self.engine.begin() as conn:
-                                conn.exec_driver_sql("BEGIN IMMEDIATE")
+                                begin_immediate(conn)
                                 if not conn.execute(
                                     text(
                                         "SELECT student_id FROM student_accounts WHERE student_id=:owner"
