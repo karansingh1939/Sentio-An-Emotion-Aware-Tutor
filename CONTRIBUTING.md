@@ -1,6 +1,6 @@
 # Contributing to Sentio
 
-Start with the [README](README.md), [setup guide](docs/guides/SETUP.md), and [architecture](docs/architecture/ARCHITECTURE.md). Check the [release handoff](docs/archive/RELEASE_HANDOFF.md) for unfinished capabilities before expanding scope.
+Start with the [README](README.md), [setup guide](docs/guides/SETUP.md), and [architecture](docs/architecture/ARCHITECTURE.md).
 
 ## Development workflow
 

@@ -100,3 +100,6 @@ src/sentio/static/vendor/mediapipe/
 # ─────────────────────────────────────────────
 src/sentio/static/.impeccable/
 **/.impeccable/hook.cache.json
+
+# Personal notes, plans and drafts: kept on this machine only.
+private-notes/

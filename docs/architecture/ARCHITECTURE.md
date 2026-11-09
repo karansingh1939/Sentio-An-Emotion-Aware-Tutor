@@ -159,7 +159,7 @@ topic's first slide, so a topic quiz always counts toward the topics chosen. A t
 was merged away or whose lecture changed gives 409. Provenance records the topics and how
 each question was placed (`located`: model, overlap or topic).
 
-Slide study (Phase 4, contract in `docs/archive/phase-4-slide-study.md`): sessions may
+Slide study (Phase 4): sessions may
 carry `mode: "slides"` with one document and a current `slide`
 (`PUT /sessions/{id}/slide`). `repositories/slides.py` lists a lecture's pages with
 their topics. In slide mode the retrieve step builds context with `tutor/slides.py`: the

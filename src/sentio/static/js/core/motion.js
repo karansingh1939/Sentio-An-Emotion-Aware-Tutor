@@ -1,5 +1,5 @@
 // Shared motion for Sentio (ES Module).
-// Reference: docs/design/inspiration/amplo-dashboard.md. Timings follow DESIGN.md:
+// Timings follow DESIGN.md:
 // - Every page change: the tab pill stretches to the new tab and the page fades in (under 300 ms).
 // - The first visit to a page in a session also types its title and brings panels in one by one.
 // - Figures count up, bars fill and chart lines draw only when the page enters.
