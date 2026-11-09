@@ -93,7 +93,8 @@ export class AuthView {
                   <label class="form-label" for="auth-password">${mode === 'recover' ? 'New password' : 'Password'}</label>
                   ${mode === 'signin' ? '<button id="forgot-password-btn" class="link-quiet" type="button">Forgot password?</button>' : ''}
                 </div>
-                <input class="input" type="password" id="auth-password" autocomplete="${mode === 'signin' ? 'current-password' : 'new-password'}" required />
+                <input class="input" type="password" id="auth-password" autocomplete="${mode === 'signin' ? 'current-password' : 'new-password'}" required${mode === 'signin' ? '' : ' aria-describedby="password-rules"'} />
+                ${mode === 'signin' ? '' : '<p id="password-rules" class="muted">At least 8 characters, with an uppercase and a lowercase letter, a number and a symbol.</p>'}
               </div>
               ${
                 mode !== 'signin'
@@ -185,6 +186,8 @@ export class AuthView {
       if (this.isRegisterMode || this.isRecoverMode) {
         const confirmPw = this.container.querySelector('#auth-confirm-password').value;
         if (password !== confirmPw) {
+          // Next to the form, not only in a corner toast (goldfish F5).
+          this.container.querySelector('#auth-error').textContent = 'Those passwords don’t match.';
           toast('Those passwords don’t match.', true);
           return;
         }
@@ -197,6 +200,7 @@ export class AuthView {
             })
           : await sentioAPI.post('/auth/register', { email, password });
         this.recoveryKey = result.recovery_key;
+        const signedUp = Boolean(result.recovery_key);
         toast(
           this.isRecoverMode
             ? 'Password reset. Save your new key and sign in.'
@@ -208,6 +212,8 @@ export class AuthView {
         // Keep the email so signing in needs only the password.
         this.container.querySelector('#auth-email').value = email;
         this.container.querySelector('#auth-password')?.focus();
+        // After saving the key, one click signs in with the password just chosen (goldfish F6).
+        if (signedUp) this.offerContinue(email, password);
       } else {
         const res = await sentioAPI.post('/auth/login', { email, password });
         this.recoveryKey = null;
@@ -229,6 +235,21 @@ export class AuthView {
     }
   }
 
+  offerContinue(email, password) {
+    const notice = this.container.querySelector('#auth-recovery-result .notice');
+    if (!notice) return;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'workspace-action primary';
+    button.textContent = 'I saved it. Continue to Sentio';
+    button.onclick = () => {
+      this.container.querySelector('#auth-email').value = email;
+      this.container.querySelector('#auth-password').value = password;
+      this.container.querySelector('#auth-submit-btn').click();
+    };
+    notice.appendChild(button);
+  }
+
   async logout() {
     const refreshToken = store.getState('refreshToken');
     if (refreshToken) {
@@ -240,7 +261,7 @@ export class AuthView {
     }
 
     // Clear local credentials
-    store.clearAuth();
+    store.clearAuth({ signedOut: true });
     toast('Logged out successfully.');
   }
 }

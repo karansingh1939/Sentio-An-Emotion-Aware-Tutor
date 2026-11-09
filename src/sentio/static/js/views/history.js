@@ -43,12 +43,15 @@ export class HistoryView {
       ${
         sessions.length
           ? `<div style="overflow-x:auto"><table style="width:100%;text-align:left;border-spacing:0 16px">
-      <thead><tr><th scope="col">Topic</th><th scope="col">Subject</th><th scope="col">Status</th><th scope="col">Started</th><th scope="col">Messages</th></tr></thead>
-      <tbody>${sessions.map((s) => `<tr><td>${escapeHtml(s.topic || 'General')}</td><td>${escapeHtml(s.subject)}</td><td>${escapeHtml(s.status)}</td><td>${escapeHtml(new Date(s.created_at * 1000).toLocaleString())}</td><td>${escapeHtml(s.total_exchanges ?? s.exchanges?.length ?? 0)}</td></tr>`).join('')}</tbody></table></div>`
+      <thead><tr><th scope="col">Topic</th><th scope="col">Subject</th><th scope="col">Status</th><th scope="col">Started</th><th scope="col">Questions asked</th></tr></thead>
+      <tbody>${sessions.map((s) => `<tr><td><a href="#/tutor" class="continue-session" data-session="${escapeHtml(s.session_id)}" title="Continue this session">${escapeHtml(s.topic || 'General')}</a></td><td>${escapeHtml(s.subject)}</td><td>${escapeHtml(s.status === 'active' ? 'In progress' : s.status === 'paused' ? 'Paused' : 'Ended')}</td><td>${escapeHtml(new Date(s.created_at * 1000).toLocaleString())}</td><td>${escapeHtml(s.total_exchanges ?? s.exchanges?.length ?? 0)}</td></tr>`).join('')}</tbody></table></div>`
           : '<p role="status">Your sessions will appear here after you start studying.</p>'
       }
       ${this.nextOffset != null ? '<button class="workspace-action" id="history-more">Load more sessions</button>' : ''}
     `;
+    this.container.querySelectorAll('.continue-session').forEach((link) => {
+      link.onclick = () => store.setState('activeSessionId', link.dataset.session);
+    });
     const more = this.container.querySelector('#history-more');
     if (more)
       more.onclick = () => {

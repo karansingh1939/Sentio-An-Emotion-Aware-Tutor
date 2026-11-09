@@ -2,7 +2,7 @@ import { escapeHtml } from '../core/html.js';
 // Tutor View Controller for Sentio (ES Module)
 import { sentioAPI } from '../core/api.js';
 import { store } from '../core/store.js';
-import { toast } from '../components/ui.js';
+import { askConfirm, toast } from '../components/ui.js';
 import { runPracticeJob } from '../core/jobs.js';
 
 // Options for "study from": all notes, each course (with lectures added later) and each lecture.
@@ -233,7 +233,12 @@ export class StudyView {
       btn.onclick = async (e) => {
         e.stopPropagation();
         const id = e.currentTarget.dataset.id;
-        if (confirm('End this session? You can resume it later from this list.')) {
+        if (
+          await askConfirm('You can resume it later from this list.', {
+            title: 'End this session?',
+            confirmLabel: 'End session',
+          })
+        ) {
           try {
             await sentioAPI.delete(`/sessions/${id}`);
             toast('Session ended.');
@@ -350,8 +355,8 @@ export class StudyView {
         const saved = await sentioAPI.get(`/sessions/${sessionId}/turns`);
         if (!current() || store.getState('activeSessionId') !== sessionId) return;
         for (const turn of saved.turns) {
-          window.appendMessage?.('student', turn.message);
-          window.appendTutorMessage?.(turn.response);
+          window.appendMessage?.('student', turn.message, turn.answered_at);
+          window.appendTutorMessage?.(turn.response, turn.answered_at);
         }
       }
 

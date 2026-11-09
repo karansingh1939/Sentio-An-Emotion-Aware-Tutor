@@ -9,6 +9,7 @@ from sqlalchemy import text
 
 from tests.browser.test_audit_e2e import UvicornServer, wait_for_server
 from tests.browser.test_courses_browser import PPTX
+from tests.helpers import auto_answer_dialogs
 from tests.integration.test_topic_mastery import QUESTIONS, _deck
 
 
@@ -34,7 +35,7 @@ async def test_a_faded_topic_can_be_practised_from_today(monkeypatch):
             page = await browser.new_page(viewport={"width": 1280, "height": 900})
             errors = []
             page.on("pageerror", lambda error: errors.append(str(error)))
-            page.on("dialog", lambda dialog: dialog.accept("Operating Systems"))
+            await auto_answer_dialogs(page, "Operating Systems")
             await page.goto(url)
             await page.click("#auth-toggle-btn")
             email = f"memory-{uuid.uuid4().hex}@example.com"

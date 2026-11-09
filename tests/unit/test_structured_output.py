@@ -216,3 +216,11 @@ class TestStructuredParser(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_flashcard_tags_drop_prompt_bookkeeping():
+    """Goldfish test F11: a card tag read "(Citation Index: 3)"."""
+    from sentio.ai.structured_parser import FlashcardItem
+
+    card = FlashcardItem(front="ATP", back="Energy carrier", tags=["ATP", "(Citation Index: 3)"])
+    assert card.tags == ["ATP"]

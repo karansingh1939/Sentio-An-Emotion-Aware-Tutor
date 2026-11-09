@@ -634,14 +634,14 @@ window.updateSessionGoal = async (goalId) => {
 };
 
 // ── RENDER MESSAGES ──────────────────────────
-function appendMessage(role, text) {
+function appendMessage(role, text, at) {
   const container = document.getElementById('chat-messages');
   const div = document.createElement('div');
   div.className = 'msg ' + role;
   div.innerHTML = `
     <div class="msg-avatar">${role === 'tutor' ? window.sentioSymbol(18) : ''}</div>
     <div class="msg-body">
-      <div class="msg-meta">${role === 'tutor' ? 'Tutor' : 'You'} · ${timeNow()}</div>
+      <div class="msg-meta">${role === 'tutor' ? 'Tutor' : 'You'} · ${timeNow(at)}</div>
       <div class="msg-bubble">${escHtml(text)}</div>
     </div>`;
   container.insertBefore(div, document.getElementById('typing-indicator'));
@@ -649,7 +649,7 @@ function appendMessage(role, text) {
   return div;
 }
 
-function appendTutorMessage(data) {
+function appendTutorMessage(data, at) {
   const container = document.getElementById('chat-messages');
   const strategy = STRATEGY_LABEL[data.strategy] || '';
   const div = document.createElement('div');
@@ -671,7 +671,7 @@ function appendTutorMessage(data) {
     <div class="msg-avatar">${window.sentioSymbol(18)}</div>
     <div class="msg-body">
       <div class="msg-meta">
-        Tutor · ${timeNow()}
+        Tutor · ${timeNow(at)}
         ${strategy ? `<span class="msg-strategy-badge">${escHtml(strategy)}</span>` : ''}
       </div>
       <div class="msg-bubble">${linkCitations(renderMarkdown(data.text), data.source_citations)}</div>
@@ -799,6 +799,15 @@ function renderMarkdown(text) {
   text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
   // Bold
   text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  // Quoted passages ("> " lines, already escaped), e.g. excerpts from the learner's notes
+  text = text.replace(
+    /(^|\n)((?:&gt; ?[^\n]*(?:\n|$))+)/g,
+    (_, lead, block) =>
+      `${lead}<blockquote>${block
+        .replace(/(^|\n)&gt; ?/g, '$1')
+        .trim()
+        .replace(/\n/g, '<br>')}</blockquote>`,
+  );
   // Line breaks
   text = text.replace(/\n/g, '<br>');
   return text;
@@ -956,8 +965,9 @@ function toast(msg, isError) {
 }
 
 // ── HELPERS ───────────────────────────────────
-function timeNow() {
-  return new Date().toLocaleTimeString('en-GB', {
+// `at` is a saved time in seconds; without it, the current time.
+function timeNow(at) {
+  return (at ? new Date(at * 1000) : new Date()).toLocaleTimeString('en-GB', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',

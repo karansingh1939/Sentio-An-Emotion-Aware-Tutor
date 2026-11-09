@@ -3,7 +3,7 @@ import { describeProvenance, escapeHtml } from '../core/html.js';
 import { sentioAPI } from '../core/api.js';
 import { store } from '../core/store.js';
 import { toast } from '../components/ui.js';
-import { runPracticeJob } from '../core/jobs.js';
+import { pendingJobKey, runPracticeJob } from '../core/jobs.js';
 
 const RATINGS = [
   ['again', 1, 'I could not recall the answer', 'Again'],
@@ -37,7 +37,9 @@ export class FlashcardsView {
         this.revision++;
         this.studentId = store.getState('currentUser')?.id || 'stu_001';
         this.resetState();
-        this.loadDecks();
+        // Cards still being written reconnect, so they appear when ready (goldfish F10).
+        if (localStorage.getItem(pendingJobKey('/flashcards/jobs'))) this.resumeGeneration();
+        else this.loadDecks();
       } else this.revision++;
     });
   }
@@ -112,7 +114,7 @@ export class FlashcardsView {
       <div class="view-header view-header row-between">
         <div>
           <h2 class="page-title">Flashcard decks</h2>
-          <p class="muted">Spaced repetition scheduled by FSRS, a memory model fitted on real review data.</p>
+          <p class="muted">Each card comes back just before you are likely to forget it.</p>
         </div>
         <button id="show-create-deck-modal" style="background:var(--accent);color:var(--bg);border:none;padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:14px;font-weight:bold;">
           + Create Deck
@@ -318,6 +320,20 @@ export class FlashcardsView {
     }
   }
 
+  async resumeGeneration() {
+    const revision = this.revision;
+    try {
+      const result = await runPracticeJob('/flashcards/jobs', null, this.container);
+      if (!result || revision !== this.revision) return;
+      toast('Your cards are ready to review.');
+    } catch (e) {
+      if (revision !== this.revision) return;
+      toast('Generation failed: ' + e.message, true);
+    }
+    this.resetState();
+    this.loadDecks();
+  }
+
   async startReview(deckId) {
     const revision = this.revision;
     const owner = store.getState('currentUser')?.id;
@@ -446,6 +462,8 @@ export class FlashcardsView {
     const edit = this.container.querySelector('#edit-current-card');
     if (edit) edit.onclick = () => this.editCurrentCard();
     const trigger = this.container.querySelector('#flashcard-flip-trigger');
+    // Focus the card so "press Enter to show the answer" works straight away (goldfish F19).
+    trigger?.focus({ preventScroll: true });
     if (trigger) {
       trigger.onkeydown = (event) => {
         if (event.key === 'Enter' || event.key === ' ') {

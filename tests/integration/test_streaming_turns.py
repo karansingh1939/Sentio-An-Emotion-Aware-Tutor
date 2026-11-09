@@ -207,3 +207,18 @@ def test_full_stream_buffer_still_delivers_terminal_event(study, monkeypatch, te
         job["status"]
         == {"complete": "succeeded", "error": "failed", "cancelled": "cancelled"}[terminal]
     )
+
+
+def test_saved_turns_carry_the_time_they_were_answered(study):
+    """Goldfish test F14: a resumed chat stamped every message with the reopening time."""
+    import time
+
+    client, headers, sid = study
+    before = time.time()
+    body = {"message": "Explain Newton's First Law", "request_id": "timed-request"}
+    assert (
+        "event: complete"
+        in client.post(f"/api/v1/sessions/{sid}/chat/stream", headers=headers, json=body).text
+    )
+    turns = client.get(f"/api/v1/sessions/{sid}/turns", headers=headers).json()["turns"]
+    assert before - 1 <= turns[-1]["answered_at"] <= time.time() + 1

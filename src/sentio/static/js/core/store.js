@@ -85,7 +85,10 @@ class SentioStore {
   }
 
   // Logout and clear state
-  clearAuth() {
+  // signedOut: the learner chose to leave, so the next sign-in starts on Today.
+  // An expired token keeps the current screen so they can carry on after signing in.
+  clearAuth({ signedOut = false } = {}) {
+    if (signedOut) window.history?.replaceState(null, '', '#/dashboard');
     if (typeof window.cleanupSession === 'function') window.cleanupSession();
     this.setState('telemetryActive', false);
     this.setState('telemetryLog', []);

@@ -15,6 +15,7 @@ from tests.browser.test_slide_study_browser import (
     _fake_model,
     _sign_in_and_open_slides,
 )
+from tests.helpers import auto_answer_dialogs
 
 VENDOR = Path(__file__).resolve().parents[2] / "src/sentio/static/vendor/mediapipe"
 pytestmark = pytest.mark.skipif(
@@ -43,7 +44,7 @@ async def test_the_camera_runs_on_the_slides_page_and_stops_when_leaving(monkeyp
             page = await context.new_page()
             errors, frames = [], []
             page.on("pageerror", lambda error: errors.append(str(error)))
-            page.on("dialog", lambda dialog: dialog.accept("Operating Systems"))
+            await auto_answer_dialogs(page, "Operating Systems")
             page.on(
                 "websocket",
                 lambda ws: ws.on("framesent", lambda payload: frames.append(len(payload))),

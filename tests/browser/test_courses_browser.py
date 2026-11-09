@@ -9,6 +9,7 @@ from playwright.async_api import async_playwright
 from pptx import Presentation
 
 from tests.browser.test_audit_e2e import UvicornServer, wait_for_server
+from tests.helpers import auto_answer_dialogs
 
 PPTX = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 
@@ -47,7 +48,7 @@ async def test_multi_file_upload_into_a_course_then_study_it(monkeypatch):
             page = await browser.new_page(viewport={"width": 1280, "height": 900})
             errors = []
             page.on("pageerror", lambda error: errors.append(str(error)))
-            page.on("dialog", lambda dialog: dialog.accept("Operating Systems"))
+            await auto_answer_dialogs(page, "Operating Systems")
             await page.goto(url)
             await page.click("#auth-toggle-btn")
             email = f"courses-{uuid.uuid4().hex}@example.com"

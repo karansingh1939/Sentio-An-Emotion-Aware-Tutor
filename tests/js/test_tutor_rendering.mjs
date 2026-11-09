@@ -21,6 +21,14 @@ assert.equal(
   context.renderMarkdown('```html\n<b>example</b>\n```'),
   '<pre><code>&lt;b&gt;example&lt;/b&gt;</code></pre>',
 );
+// Quoted note excerpts render as quotes, not as literal "> " marks (goldfish test F7).
+assert.equal(
+  context.renderMarkdown(
+    'Passages:\n\n> Glycolysis splits glucose.\n> It makes 2 ATP.\n\n[a.pptx Page 3]',
+  ),
+  'Passages:<br><br><blockquote>Glycolysis splits glucose.<br>It makes 2 ATP.</blockquote><br>[a.pptx Page 3]',
+);
+assert.equal(context.renderMarkdown('<b>x</b> > y'), '&lt;b&gt;x&lt;/b&gt; &gt; y');
 console.log('Tutor rendering escapes HTML and preserves formatting.');
 
 let renderedTutor;

@@ -12,8 +12,8 @@ GROUNDING_RULES = """Grounded teaching rules:
 
 NO_SOURCE = "This session isn't linked to any notes. Choose notes to study from, then ask again."
 MISSING_EVIDENCE = (
-    "These selected notes do not provide retrievable evidence for that question. "
-    "Try naming the concept more specifically, choosing another source, or adding notes that cover it."
+    "Your selected notes don't cover that question, so I won't guess. "
+    "Try naming the concept more specifically, choosing other notes, or adding notes that cover it."
 )
 
 

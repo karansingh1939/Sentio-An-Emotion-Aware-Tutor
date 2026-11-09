@@ -7,7 +7,7 @@ import {
 } from '../core/html.js';
 // Documents View Controller for Sentio (ES Module)
 import { sentioAPI } from '../core/api.js';
-import { toast } from '../components/ui.js';
+import { askConfirm, askText, toast } from '../components/ui.js';
 import { store } from '../core/store.js';
 import { pendingJobKey, runPracticeJob } from '../core/jobs.js';
 
@@ -410,7 +410,7 @@ export class LibraryView {
                 ? `
               <div class="library-empty">
                 <p class="library-empty-title">Add your first lecture</p>
-                <p class="muted">Drop slides, a PDF, a Word document or a text file on the right. Each one shows up here, ready to study.</p>
+                <p class="muted">Add slides, a PDF, a Word document, a text file or a photo of your notes with the upload box. Each one shows up here, ready to study.</p>
                 <ul class="ghost-rows" aria-hidden="true">
                   <li><span class="ghost-name">Lecture 1 · Introduction.pptx</span><span class="doc-state ready">Ready to study</span></li>
                   <li><span class="ghost-name">Week 2 notes.pdf</span><span class="doc-state ready">Ready to study</span></li>
@@ -448,7 +448,8 @@ export class LibraryView {
               <input type="file" id="file-uploader" multiple style="display:none;" accept="${accept}" />
             </div>
 
-            <p class="muted">PowerPoint, PDF, Word or text. 20 MiB per file. ${this.ocrReady ? 'English OCR enabled; up to 20 scanned pages.' : 'Scans and images require the optional OCR tools.'}</p>
+            <p class="muted">PowerPoint, PDF, Word, text${this.ocrReady ? ', or a photo or scan of your notes (up to 20 pages)' : ''}. 20 MiB per file.${this.ocrReady ? '' : ' Photos and scans need the optional OCR tools.'}</p>
+            <p class="muted">Have a course syllabus? Make a course, then add the syllabus inside it to see how much of it your notes cover.</p>
             <p id="upload-batch" role="status" class="muted">${escapeHtml(this.batchStatus)}</p>
             <div id="upload-list">${this.renderUploadList()}</div>
             <div id="library-job" role="region" aria-label="Upload progress"></div>
@@ -461,7 +462,12 @@ export class LibraryView {
 
   // Ask for a course name; returns the created course, or null if cancelled or failed.
   async createCourse() {
-    const name = (window.prompt('Course name, for example "Operating Systems"') || '').trim();
+    const name =
+      (await askText('New course', {
+        label: 'Course name',
+        placeholder: 'For example, Biology 101',
+        confirmLabel: 'Create course',
+      })) || '';
     if (!name) return null;
     try {
       const course = await sentioAPI.post('/courses', { name });
@@ -525,7 +531,9 @@ export class LibraryView {
     this.container.querySelectorAll('.rename-course-btn').forEach((button) => {
       button.onclick = async () => {
         const course = this.courses.find((item) => item.id === button.dataset.id);
-        const name = (window.prompt('Rename course', course?.name || '') || '').trim();
+        const name =
+          (await askText('Rename course', { label: 'Course name', value: course?.name || '' })) ||
+          '';
         if (!course || !name || name === course.name) return;
         try {
           await sentioAPI.request(`/courses/${encodeURIComponent(course.id)}`, {
@@ -543,7 +551,10 @@ export class LibraryView {
         const course = this.courses.find((item) => item.id === button.dataset.id);
         if (
           !course ||
-          !confirm(`Delete the course "${course.name}"? Its lectures stay in your library.`)
+          !(await askConfirm(
+            `Delete the course "${course.name}"? Its lectures stay in your library.`,
+            { confirmLabel: 'Delete course', danger: true },
+          ))
         )
           return;
         try {
@@ -592,9 +603,10 @@ export class LibraryView {
       btn.onclick = async (e) => {
         const docId = e.target.dataset.id;
         if (
-          !confirm(
-            'Are you sure you want to delete this document? This will remove all Qdrant vector chunks and delete the raw file from disk.',
-          )
+          !(await askConfirm(
+            'Delete this document? Its file and search data are removed from Sentio. This cannot be undone.',
+            { title: 'Delete document?', confirmLabel: 'Delete', danger: true },
+          ))
         ) {
           return;
         }
@@ -815,7 +827,13 @@ export class LibraryView {
     }
     try {
       if (action === 'remove') {
-        if (!confirm('Remove this syllabus? Your notes and practice stay.')) return;
+        if (
+          !(await askConfirm('Remove this syllabus? Your notes and practice stay.', {
+            confirmLabel: 'Remove',
+            danger: true,
+          }))
+        )
+          return;
         await sentioAPI.delete(path);
       } else if (action === 'save') {
         const form = button.closest('.syllabus-form');
@@ -890,14 +908,20 @@ export class LibraryView {
     }
     try {
       if (action === 'rename') {
-        const title = (window.prompt('Rename topic', topic.title) || '').trim();
+        const title =
+          (await askText('Rename topic', { label: 'Topic name', value: topic.title })) || '';
         if (!title || title === topic.title) return;
         await sentioAPI.request(`/topics/${encodeURIComponent(topic.id)}`, {
           method: 'PATCH',
           body: JSON.stringify({ name: title }),
         });
       } else if (action === 'merge') {
-        if (!confirm(`Join "${topic.title}" to the topic above it?`)) return;
+        if (
+          !(await askConfirm(`Join "${topic.title}" to the topic above it?`, {
+            confirmLabel: 'Join topics',
+          }))
+        )
+          return;
         await sentioAPI.post(`/topics/${encodeURIComponent(topic.id)}/merge`, {});
       }
     } catch (error) {
@@ -1029,6 +1053,12 @@ export class LibraryView {
       toast(`${failed.length} file${failed.length === 1 ? '' : 's'} could not be added.`, true);
   }
 
+  // The progress panel, or a detached stand-in while the Library is not drawn, so an
+  // upload never fails only because the learner opened another screen.
+  jobPanel() {
+    return this.container.querySelector('#library-job') || document.createElement('div');
+  }
+
   // Returns true when the file was indexed.
   async uploadFile(file, courseId = '') {
     if (this.uploadInProgress) return false;
@@ -1045,47 +1075,35 @@ export class LibraryView {
       const pendingKey = pendingJobKey('/documents/jobs', false);
       if (file && localStorage.getItem(pendingKey)) {
         try {
-          await runPracticeJob(
-            '/documents/jobs',
-            null,
-            this.container.querySelector('#library-job'),
-            { sessionScoped: false },
-          );
+          await runPracticeJob('/documents/jobs', null, this.jobPanel(), {
+            sessionScoped: false,
+            followAcrossRoutes: true,
+          });
         } catch (error) {
           if (localStorage.getItem(pendingKey)) throw error;
         }
         if (owner !== store.getState('currentUser')?.id || localStorage.getItem(pendingKey))
           return false;
       }
-      // Navigation can replace the progress panel while the prior receipt is read.
-      if (!this.container.querySelector('#library-job')) await this.loadDocuments();
-      if (
-        owner !== store.getState('currentUser')?.id ||
-        !this.container.querySelector('#library-job')
-      )
-        return false;
+      if (owner !== store.getState('currentUser')?.id) return false;
       const form = new FormData();
       if (file) {
         form.append('file', file);
         form.append('category', 'notes');
         if (courseId) form.append('course_id', courseId);
       }
-      const result = await runPracticeJob(
-        '/documents/jobs',
-        null,
-        this.container.querySelector('#library-job'),
-        {
-          sessionScoped: false,
-          submit: (requestId) => {
-            if (!file) throw new Error('Choose the file again to retry this upload.');
-            return sentioAPI.request('/documents/jobs', {
-              method: 'POST',
-              body: form,
-              headers: { 'Idempotency-Key': requestId },
-            });
-          },
+      const result = await runPracticeJob('/documents/jobs', null, this.jobPanel(), {
+        sessionScoped: false,
+        followAcrossRoutes: true,
+        submit: (requestId) => {
+          if (!file) throw new Error('Choose the file again to retry this upload.');
+          return sentioAPI.request('/documents/jobs', {
+            method: 'POST',
+            body: form,
+            headers: { 'Idempotency-Key': requestId },
+          });
         },
-      );
+      });
       added = Boolean(result);
       if (
         result &&
@@ -1099,12 +1117,17 @@ export class LibraryView {
               : 'Ready for study.'),
         );
         this.justUploadedId = result.document_id;
+        // A syllabus uploaded as notes becomes just another lecture (goldfish F4).
+        if (file && /syllabus|course outline|curriculum/i.test(file.name))
+          toast(
+            'This looks like a syllabus. To see how much of it your notes cover, make a course and add the syllabus inside it.',
+          );
         await this.loadDocuments();
         refreshed = true;
       }
     } catch (error) {
       if (owner === store.getState('currentUser')?.id && revision === this.revision) {
-        this.container.querySelector('#library-job').textContent =
+        this.jobPanel().textContent =
           `${file ? file.name + ': ' : ''}${error.message}` +
           (file ? ' Use Try again below.' : ' Choose the file again to retry.');
         toast('Upload did not finish: ' + error.message, true);

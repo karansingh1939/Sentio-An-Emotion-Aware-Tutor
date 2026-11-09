@@ -58,7 +58,13 @@ export function initWorkspace() {
       .join('');
     tools.hidden = !links.length;
     const parent =
-      route === '#/flashcards' ? '#/quizzes' : route === '#/slides' ? '#/documents' : route;
+      route === '#/flashcards'
+        ? '#/quizzes'
+        : route === '#/slides'
+          ? '#/documents'
+          : route === '#/history'
+            ? '#/analytics' // History is part of Progress (goldfish F19)
+            : route;
     document.querySelectorAll('.nav-link').forEach((link) => {
       const active = link.getAttribute('href') === parent;
       link.classList.toggle('active', active);

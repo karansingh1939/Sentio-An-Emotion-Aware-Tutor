@@ -3,7 +3,7 @@ import { describeFocus, describeProvenance, escapeHtml } from '../core/html.js';
 import { sentioAPI } from '../core/api.js';
 import { store } from '../core/store.js';
 import { toast } from '../components/ui.js';
-import { runPracticeJob } from '../core/jobs.js';
+import { pendingJobKey, runPracticeJob } from '../core/jobs.js';
 
 function renderCheck(result) {
   if (!result) return '';
@@ -28,9 +28,29 @@ export class QuizzesView {
       if (route === '#/quizzes') {
         this.studentId = store.getState('currentUser')?.id || 'stu_001';
         this.resetQuizState();
-        this.render();
+        // A quiz still being written reconnects instead of silently disappearing.
+        if (localStorage.getItem(pendingJobKey('/quizzes/jobs'))) this.resumeGeneration();
+        else this.render();
       } else this.revision++;
     });
+  }
+
+  async resumeGeneration() {
+    const revision = this.revision;
+    try {
+      const res = await runPracticeJob('/quizzes/jobs', null, this.container);
+      if (revision !== this.revision) return;
+      if (res) {
+        this.quiz = res;
+        this.currentQuestionIdx = 0;
+        this.answers = {};
+        this.checks = {};
+      }
+    } catch (e) {
+      if (revision !== this.revision) return;
+      toast('Failed to generate quiz: ' + e.message, true);
+    }
+    this.render();
   }
 
   resetQuizState() {
@@ -85,11 +105,11 @@ export class QuizzesView {
                 </select>
               </div>
               <div>
-                <label class="form-label" for="quiz-num-questions">Number of Questions</label>
+                <label class="form-label" for="quiz-num-questions">Questions</label>
 <select class="input" id="quiz-num-questions">
-                  <option value="1">1 Question</option>
-                  <option value="3" selected>3 Questions</option>
-                  <option value="5">5 Questions</option>
+                  <option value="1">1</option>
+                  <option value="3" selected>3</option>
+                  <option value="5">5</option>
                 </select>
               </div>
             </div>
@@ -422,7 +442,7 @@ export class QuizzesView {
     this.container.innerHTML = `
       <div class="view-header view-header">
         <h2 class="page-title">Quiz results</h2>
-        <p class="muted">Review explanations and pedagogical feedback to improve retention.</p>
+        <p class="muted">Read each explanation to see what to review next.</p>
       </div>
 
       <div style="max-width:700px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:20px;">
@@ -473,7 +493,7 @@ export class QuizzesView {
         </sentio-card>
 
         <button id="close-quiz-btn" style="background:var(--accent);color:var(--bg);border:none;padding:12px;border-radius:var(--radius);font-weight:bold;cursor:pointer;font-family:var(--mono);font-size:14px;">
-          Return to Learning Center
+          Back to Review
         </button>
       </div>
     `;

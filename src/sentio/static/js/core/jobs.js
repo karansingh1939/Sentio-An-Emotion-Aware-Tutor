@@ -24,6 +24,13 @@ export function progressText(stage, endpoint) {
     'writing overview': 'Summarizing your notes. Local AI may take a minute…',
     'waiting for local AI': 'Waiting for the local tutor to finish its current task…',
   };
+  // The model reports the same stages for every task; name what this task is making.
+  const making = endpoint?.includes('quiz')
+    ? 'Writing your quiz questions…'
+    : endpoint?.includes('flashcard')
+      ? 'Writing your flashcards…'
+      : null;
+  if (making && stage === 'generating answer') return making;
   return labels[stage] || 'Working on your study material…';
 }
 
@@ -35,8 +42,10 @@ export async function runPracticeJob(endpoint, body, container, options = {}) {
   const route = store.getState('activeRoute');
   let jobId = localStorage.getItem(key);
   let detached = false;
+  // Practice follows the screen that asked for it. An upload batch keeps going while the
+  // learner looks elsewhere, as the page promises (goldfish test F1).
   const unsubscribe = store.subscribe('activeRoute', (next) => {
-    detached ||= next !== route;
+    if (!options.followAcrossRoutes) detached ||= next !== route;
   });
   container.innerHTML = `<div class="study-job"><sentio-loader></sentio-loader><p role="status" aria-live="polite">${endpoint === '/documents/jobs' ? 'Uploading your file…' : 'Starting practice…'}</p><p class="job-help">You can leave this page and return to see progress.</p><button type="button" disabled>Cancel</button></div>`;
   const status = container.querySelector('[role="status"]');

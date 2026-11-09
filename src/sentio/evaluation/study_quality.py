@@ -19,6 +19,7 @@ def observe_answer(case, response):
         for phrase in (
             "do not contain",
             "do not provide",
+            "don't cover",
             "not enough information",
             "insufficient",
             "cannot determine",

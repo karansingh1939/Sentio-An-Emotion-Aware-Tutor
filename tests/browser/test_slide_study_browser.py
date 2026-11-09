@@ -14,6 +14,7 @@ from playwright.async_api import async_playwright
 
 from tests.browser.test_audit_e2e import UvicornServer, wait_for_server
 from tests.browser.test_courses_browser import PPTX
+from tests.helpers import auto_answer_dialogs
 from tests.integration.test_topic_mastery import _deck
 
 SIMPLER = "Explain this slide in a different way."
@@ -150,7 +151,7 @@ async def test_study_slides_one_by_one_and_accept_a_simpler_explanation(monkeypa
             page = await browser.new_page(viewport={"width": 1280, "height": 900})
             errors = []
             page.on("pageerror", lambda error: errors.append(str(error)))
-            page.on("dialog", lambda dialog: dialog.accept("Operating Systems"))
+            await auto_answer_dialogs(page, "Operating Systems")
             email = await _sign_in_and_open_slides(page, url)
 
             assert await page.locator(".slide-item").count() == 3
@@ -222,7 +223,7 @@ async def test_slides_work_and_the_camera_switch_is_hidden_when_the_feature_is_o
             page = await browser.new_page(viewport={"width": 1280, "height": 900})
             errors = []
             page.on("pageerror", lambda error: errors.append(str(error)))
-            page.on("dialog", lambda dialog: dialog.accept("Operating Systems"))
+            await auto_answer_dialogs(page, "Operating Systems")
             await _sign_in_and_open_slides(page, url)
 
             assert not await page.locator("#slide-camera-toggle").is_visible()

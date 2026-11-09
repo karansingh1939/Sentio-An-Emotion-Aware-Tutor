@@ -101,3 +101,26 @@ def complete(system_prompt, history, user_message, **kwargs):
             "suggested_topic": "thermodynamics",
         }
     ), 30
+
+
+async def auto_answer_dialogs(page, text):
+    """Accept every in-page dialog, typing `text` into text dialogs.
+
+    Stands in for Playwright's page.on("dialog") now that the app uses in-page dialogs
+    instead of window.prompt and window.confirm.
+    """
+    await page.add_init_script(
+        """text => new MutationObserver(() => {
+            const modal = [...document.querySelectorAll('sentio-modal')].at(-1);
+            if (!modal || modal.dataset.autoAnswered) return;
+            const input = modal.querySelector('#dialog-text');
+            const ok = modal.querySelector('[data-dialog-ok], .dialog-form [type=submit]');
+            if (!ok) return;
+            modal.dataset.autoAnswered = '1';
+            if (input) input.value = text;
+            setTimeout(() => ok.click(), 0);
+        }).observe(document, { childList: true, subtree: true })""".replace(
+            "text =>", "(text => "
+        ).rstrip()
+        + f")({text!r})"
+    )

@@ -75,7 +75,7 @@ class PlanningService:
     def feedback(self, owner):
         attempts, correct, last_attempt, mistakes = self.repository.feedback(owner)
         summary = (
-            f"{correct} correct out of {attempts} saved quiz attempts. This is practice evidence, not a validated measure of mastery."
+            f"{correct} of {attempts} quiz answers correct so far. This is practice, not a final grade."
             if attempts
             else "Not assessed yet. Complete source-based practice to identify review priorities."
         )

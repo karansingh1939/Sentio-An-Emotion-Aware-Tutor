@@ -130,6 +130,14 @@ class FlashcardItem(SourcedItem):
         default_factory=list, max_length=5, description="Keywords or topic labels"
     )
 
+    @field_validator("tags", mode="before")
+    @classmethod
+    def topic_tags_only(cls, value):
+        # Models sometimes copy prompt bookkeeping ("Citation Index: 3") into tags.
+        if not isinstance(value, list):
+            return value
+        return [t for t in value if not re.search(r"citation|index\s*:?\s*\d", str(t), re.I)]
+
 
 class FlashcardPayloadSchema(BaseModel):
     deck_name: str = Field(..., description="The grouping deck topic name")

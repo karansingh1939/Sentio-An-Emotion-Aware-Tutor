@@ -1875,3 +1875,24 @@ sentio-toast {
     bottom: 0;
   }
 }
+
+/* Phones (goldfish test F18, 2026-11-09): rating buttons keep their interval on its own
+   line, and data buttons do not wrap. The tab sizes are in theme.css, which loads last. */
+@media (max-width: 420px) {
+  .review-ratings {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .review-ratings .rate-btn {
+    flex-direction: column;
+    white-space: normal;
+  }
+  .review-ratings .rate-interval {
+    display: block;
+  }
+  #export-data-btn,
+  #purge-data-btn {
+    white-space: nowrap;
+  }
+}
