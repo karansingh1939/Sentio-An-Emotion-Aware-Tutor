@@ -139,7 +139,7 @@ async def unhandled_failure(request, exc):
 
 
 app.add_middleware(BodyLimitMiddleware)
-app.add_middleware(RateLimitMiddleware, rate=1.0, burst=60.0)
+app.add_middleware(RateLimitMiddleware, rate=1.0, burst=60.0, read_burst=300.0)
 app.add_middleware(ResponseHeadersMiddleware)
 app.add_middleware(
     CORSMiddleware,
