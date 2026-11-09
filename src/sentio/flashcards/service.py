@@ -123,15 +123,16 @@ JSON Template:
         batch_schema = practice_schema("flashcards", num_cards)
 
         checkpoint("generating flashcards")
+        from sentio.ai.practice_schema import generate_practice
         from sentio.ai.source_practice import practice_provenance, source_recall
-        from sentio.ai.structured_parser import generate_structured
         from sentio.shared.exceptions import LLMServiceUnavailableError
 
         mode = "generated"
         try:
-            flashcard_data = generate_structured(
+            flashcard_data = generate_practice(
                 self.agent.nlp._backend,
-                batch_schema,
+                "flashcards",
+                num_cards,
                 system_prompt,
                 "Generate flashcards now.",
                 temperature=0.6,

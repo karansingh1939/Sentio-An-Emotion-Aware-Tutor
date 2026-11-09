@@ -80,7 +80,43 @@ def test_invalid_quiz_is_regenerated_instead_of_falling_back(monkeypatch):
         assert result["status"] == "succeeded", result
         quiz = client.get("/api/v1/quizzes/" + result["result"]["quiz_id"]).json()
     assert quiz["provenance"]["mode"] == "generated"
-    assert len(calls) == 2 and "previous response was invalid" in calls[1]
+    assert len(calls) == 2 and "Return exactly 3 questions" in calls[1]
+
+
+def test_valid_quiz_questions_are_kept_and_only_missing_ones_regenerated(monkeypatch):
+    """A slow local model should not rewrite a whole batch to replace one bad item."""
+    good = {
+        "question_text": "Which quantity measures inertia?",
+        "question_type": "multiple_choice",
+        "options": ["Mass", "Force", "Speed", "Time"],
+        "correct_answer": "Mass",
+        "explanation": "Mass measures inertia.",
+    }
+    also_good = {**good, "question_text": "What changes velocity?", "correct_answer": "Force"}
+    broken = {**good, "question_text": "Pick one", "correct_answer": "Weight"}  # not an option
+    calls = _invalid_first(
+        monkeypatch, json.dumps({"title": "Inertia", "questions": [good, also_good, broken]})
+    )
+    with TestClient(app) as client:
+        owner, session_id = _session(client)
+        job = client.post(
+            "/api/v1/quizzes/jobs",
+            json={
+                "student_id": owner,
+                "session_id": session_id,
+                "subject": "physics",
+                "topic": "Inertia",
+                "num_questions": 3,
+            },
+        ).json()
+        result = _finish(client, job)
+        assert result["status"] == "succeeded", result
+        quiz = client.get("/api/v1/quizzes/" + result["result"]["quiz_id"]).json()
+    texts = [q["question_text"] for q in quiz["questions"]]
+    assert quiz["provenance"]["mode"] == "generated"
+    assert texts[:2] == [good["question_text"], also_good["question_text"]]
+    assert len(texts) == 3 and "Pick one" not in texts
+    assert len(calls) == 2 and "Return exactly 1 questions" in calls[1]
 
 
 def test_invalid_flashcards_are_regenerated_instead_of_falling_back(monkeypatch):
