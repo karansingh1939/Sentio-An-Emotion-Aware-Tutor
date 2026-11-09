@@ -3,7 +3,7 @@
 Update, 14 October 2026: the closed-dialog session race is fixed and verified in
 Chromium. The full local suite passes 258 tests and 31 subtests, with one optional
 Tesseract skip. Cached CPU features and both review pages are ready. Use
-[the current human-only handoff](../project/HUMAN_HANDOFF.md) for remaining owner actions;
+[the current human-only handoff](HUMAN_HANDOFF.md) for remaining owner actions;
 the instructions below describe the historical checkpoint.
 
 Update, 12 October 2026: repository presentation, contribution mapping, runtime
@@ -11,7 +11,7 @@ prompt boundaries, deterministic numeric grading, and a recorded 12-case HTTP
 grounding stress test are implemented. Compose image/startup/authentication/
 restart/outage checks are now in CI; its latest result is the verification
 authority. Author review has been prepared but not completed. See
-[hiring readiness](../project/HIRING_READINESS.md) and [study quality](../evaluation/STUDY_QUALITY_2026-10-12.md).
+[hiring readiness](HIRING_READINESS.md) and [study quality](../evaluation/STUDY_QUALITY_2026-10-12.md).
 The historical checkpoint below retains its original scope and open gates.
 
 This checkpoint improves the supported local workflow. It is not a declaration

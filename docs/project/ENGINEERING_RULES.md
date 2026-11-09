@@ -2,7 +2,7 @@
 
 ## Product and boundaries
 
-Follow docs/project/PRD.md and docs/project/tasks/plan.md. Keep the local CPU-compatible study journey
+Follow docs/project/PRD.md and docs/archive/tasks/plan.md. Keep the local CPU-compatible study journey
 working at each checkpoint. API → coordinator → services → repositories.
 SQL belongs in repositories. Prefer existing helpers, stdlib and installed
 packages; justify additions. Split modules by responsibility, not arbitrary size.
