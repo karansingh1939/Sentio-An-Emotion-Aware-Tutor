@@ -1,6 +1,6 @@
 """A student studies a lecture slide by slide; the optional camera mood only changes tone.
 
-Written against docs/project/phase-4-slide-study.md. The real camera toggle is never clicked
+Written against docs/archive/phase-4-slide-study.md. The real camera toggle is never clicked
 (MediaPipe assets are absent in tests): camera readings are recorded server-side instead.
 """
 

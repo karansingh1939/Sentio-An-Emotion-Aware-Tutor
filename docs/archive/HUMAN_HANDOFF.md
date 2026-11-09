@@ -40,6 +40,6 @@ prepare forms and analyze results, but cannot create actual participants or
 independent human judgments.
 
 You must also be able to explain your own contributions during interviews.
-Use [the contribution map](CONTRIBUTIONS.md) to choose one failure/fix/test to
+Use [the contribution map](../project/CONTRIBUTIONS.md) to choose one failure/fix/test to
 demonstrate. An automated demo proves workflow mechanics, not your understanding
 or student learning.
