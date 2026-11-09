@@ -31,6 +31,11 @@ class UvicornServer(Thread):
     def stop(self):
         if self.server:
             self.server.should_exit = True
+        # Wait for the app's shutdown to finish. All test servers share one app, so a
+        # shutdown that ends late stops the next test's job worker (seen on Linux CI:
+        # uploads were accepted but never processed).
+        if self.is_alive():
+            self.join(timeout=30)
 
 
 def wait_for_server(url, timeout=45):
