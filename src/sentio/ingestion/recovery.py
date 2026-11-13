@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class DocumentRecovery:
     def __init__(self, persister, vectors, root, require_owner=True):
-        self.engine = persister._engine
+        self.engine = persister.engine
         self.repository = DocumentRepository(persister)
         self.vectors = vectors
         self.root = Path(root).resolve()

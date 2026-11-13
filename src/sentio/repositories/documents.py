@@ -1,7 +1,20 @@
 from typing import List, Optional
 
+from sqlalchemy import text
+
 from sentio.repositories.sessions import SessionPersister
 from sentio.shared.sqlite_tx import begin_immediate
+
+
+def document_checksums(connection, owner):
+    """(id, checksum) rows for the owner's documents, read on the caller's connection."""
+    return (
+        connection.execute(
+            text("SELECT id,checksum FROM documents WHERE student_id=:owner"), {"owner": owner}
+        )
+        .mappings()
+        .all()
+    )
 
 
 class DocumentRepository:
@@ -37,7 +50,7 @@ class DocumentRepository:
     def replace(self, document, chunks, require_owner=False):
         from sqlalchemy import text
 
-        with self.persister._engine.begin() as connection:
+        with self.persister.engine.begin() as connection:
             begin_immediate(connection)
             if (
                 require_owner
@@ -57,7 +70,7 @@ class DocumentRepository:
     def remove(self, document_id):
         from sqlalchemy import text
 
-        with self.persister._engine.begin() as connection:
+        with self.persister.engine.begin() as connection:
             connection.execute(
                 text("DELETE FROM document_chunks WHERE document_id=:id"), {"id": document_id}
             )
@@ -66,7 +79,7 @@ class DocumentRepository:
     def preview(self, document_id, owner, limit=20, offset=0):
         from sqlalchemy import text
 
-        with self.persister._engine.connect() as connection:
+        with self.persister.engine.connect() as connection:
             document = (
                 connection.execute(
                     text(
@@ -107,7 +120,7 @@ class DocumentRepository:
 
         from sqlalchemy import text
 
-        with self.persister._engine.connect() as connection:
+        with self.persister.engine.connect() as connection:
             row = connection.execute(
                 text(
                     "SELECT checksum,overview_json FROM documents WHERE id=:id AND student_id=:owner"
@@ -122,7 +135,7 @@ class DocumentRepository:
 
         from sqlalchemy import text
 
-        with self.persister._engine.begin() as connection:
+        with self.persister.engine.begin() as connection:
             checksum = connection.execute(
                 text("SELECT checksum FROM documents WHERE id=:id AND student_id=:owner"),
                 {"id": document_id, "owner": owner},

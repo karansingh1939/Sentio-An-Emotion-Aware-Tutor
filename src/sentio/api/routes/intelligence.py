@@ -49,7 +49,7 @@ def get_student_learning_path(
     What to study next, built from the learner's own lecture topics: due reviews first,
     then topics being practised, then new topics in lecture order. Optionally one course.
     """
-    path = TopicRepository(agent.sm.persister._engine).learning_path(user["student_id"], course_id)
+    path = TopicRepository(agent.sm.persister.engine).learning_path(user["student_id"], course_id)
     if path is None:
         raise HTTPException(status_code=404, detail="Course not found.")
     return {"student_id": user["student_id"], **path}

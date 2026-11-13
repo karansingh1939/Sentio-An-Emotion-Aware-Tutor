@@ -110,7 +110,7 @@ class SessionManager:
 
             from sqlalchemy import text
 
-            with self.persister._engine.connect() as conn:
+            with self.persister.engine.connect() as conn:
                 rows = conn.execute(
                     text(
                         "SELECT timestamp, topic, difficulty, correct, response_time_sec, question_text FROM quiz_attempts WHERE session_id = :sid ORDER BY timestamp, id"
@@ -249,7 +249,7 @@ class SessionManager:
         from sqlalchemy import text
 
         with (
-            nullcontext(connection) if connection is not None else self.persister._engine.connect()
+            nullcontext(connection) if connection is not None else self.persister.engine.connect()
         ) as conn:
             conn.execute(
                 text("""
@@ -387,7 +387,7 @@ class SessionManager:
         from sqlalchemy import text
 
         with (
-            nullcontext(connection) if connection is not None else self.persister._engine.connect()
+            nullcontext(connection) if connection is not None else self.persister.engine.connect()
         ) as conn:
             row = conn.execute(
                 text("SELECT student_id FROM students WHERE student_id = :sid"), {"sid": student_id}
@@ -406,7 +406,7 @@ class SessionManager:
         from sqlalchemy import text
 
         with (
-            nullcontext(connection) if connection is not None else self.persister._engine.connect()
+            nullcontext(connection) if connection is not None else self.persister.engine.connect()
         ) as conn:
             row = conn.execute(
                 text("SELECT topic_id FROM topics WHERE topic_id = :tid"), {"tid": topic_id}
@@ -443,7 +443,7 @@ class SessionManager:
         alpha = mastery_cfg.SMOOTHING_FACTOR
         weight = mastery_cfg.DIFFICULTY_WEIGHTS.get(difficulty, 1.0)
         with (
-            nullcontext(connection) if connection is not None else self.persister._engine.connect()
+            nullcontext(connection) if connection is not None else self.persister.engine.connect()
         ) as conn:
             row = conn.execute(
                 text(
@@ -502,7 +502,7 @@ class SessionManager:
     def get_weak_topics(self, student_id: str) -> List[dict]:
         from sqlalchemy import text
 
-        with self.persister._engine.connect() as conn:
+        with self.persister.engine.connect() as conn:
             rows = conn.execute(
                 text(
                     "SELECT sk.topic_id, sk.mastery_score, t.display_name FROM student_knowledge sk JOIN topics t ON sk.topic_id = t.topic_id WHERE sk.student_id = :sid AND sk.mastery_score < 0.5"
@@ -514,7 +514,7 @@ class SessionManager:
     def get_strong_topics(self, student_id: str) -> List[dict]:
         from sqlalchemy import text
 
-        with self.persister._engine.connect() as conn:
+        with self.persister.engine.connect() as conn:
             rows = conn.execute(
                 text(
                     "SELECT sk.topic_id, sk.mastery_score, t.display_name FROM student_knowledge sk JOIN topics t ON sk.topic_id = t.topic_id WHERE sk.student_id = :sid AND sk.mastery_score >= 0.8"
@@ -536,7 +536,7 @@ class SessionManager:
         goal_id = str(uuid.uuid4())
         from sqlalchemy import text
 
-        with self.persister._engine.connect() as conn:
+        with self.persister.engine.connect() as conn:
             conn.execute(
                 text(
                     "INSERT INTO learning_goals (goal_id, student_id, topic_id, goal_text, target_date, status, created_at) VALUES (:gid, :sid, :tid, :txt, :tgt, 'active', :created)"
@@ -556,7 +556,7 @@ class SessionManager:
     def get_learning_goals(self, student_id: str, status: str = "active") -> List[dict]:
         from sqlalchemy import text
 
-        with self.persister._engine.connect() as conn:
+        with self.persister.engine.connect() as conn:
             rows = conn.execute(
                 text(
                     "SELECT goal_id, topic_id, goal_text, target_date, status, created_at, completed_at FROM learning_goals WHERE student_id = :sid AND status = :status"
@@ -579,7 +579,7 @@ class SessionManager:
     def get_student_mistake_metrics(self, student_id: str) -> dict:
         from sqlalchemy import text
 
-        with self.persister._engine.connect() as conn:
+        with self.persister.engine.connect() as conn:
             recent_rows = conn.execute(
                 text(
                     "SELECT topic, question_text, difficulty, timestamp FROM quiz_attempts WHERE student_id = :sid AND correct = 0 ORDER BY timestamp DESC LIMIT 5"
@@ -720,7 +720,7 @@ class SessionManager:
     ):
         from sqlalchemy import text
 
-        with self.persister._engine.connect() as conn:
+        with self.persister.engine.connect() as conn:
             conn.execute(
                 text("""
                     INSERT INTO attention_logs 
@@ -743,7 +743,7 @@ class SessionManager:
     def get_attention_logs(self, session_id: str) -> List[dict]:
         from sqlalchemy import text
 
-        with self.persister._engine.connect() as conn:
+        with self.persister.engine.connect() as conn:
             rows = conn.execute(
                 text("""
                     SELECT timestamp, emotion, attention_score, focused, eye_openness, head_pose_pitch, head_pose_yaw
@@ -767,7 +767,7 @@ class SessionManager:
     def get_attention_summary(self, session_id: str) -> dict:
         from sqlalchemy import text
 
-        with self.persister._engine.connect() as conn:
+        with self.persister.engine.connect() as conn:
             rows = conn.execute(
                 text("""
                     SELECT attention_score, focused, eye_openness, head_pose_pitch, head_pose_yaw, emotion
@@ -823,7 +823,7 @@ class SessionManager:
     def clear_session_telemetry(self, session_id: str):
         from sqlalchemy import text
 
-        with self.persister._engine.connect() as conn:
+        with self.persister.engine.connect() as conn:
             conn.execute(
                 text("DELETE FROM attention_logs WHERE session_id = :sid"), {"sid": session_id}
             )
@@ -863,7 +863,7 @@ class SessionManager:
         with (
             nullcontext(connection)
             if connection is not None
-            else self.persister._engine.connect() as conn
+            else self.persister.engine.connect() as conn
         ):
             # Verify session_id exists to avoid foreign key orphan records
             if session_id:
@@ -917,7 +917,7 @@ class SessionManager:
 
         from sqlalchemy import text
 
-        with self.persister._engine.connect() as conn:
+        with self.persister.engine.connect() as conn:
             q_row = conn.execute(
                 text(
                     "SELECT title, student_id, session_id, revision, provenance_json FROM quizzes WHERE quiz_id = :qid"
@@ -964,7 +964,7 @@ class SessionManager:
     def save_flashcard_deck(self, deck_id: str, student_id: str, deck_name: str):
         from sqlalchemy import text
 
-        with self.persister._engine.connect() as conn:
+        with self.persister.engine.connect() as conn:
             conn.execute(
                 text("""
                     INSERT INTO flashcard_decks (deck_id, student_id, deck_name, created_at)
@@ -977,7 +977,7 @@ class SessionManager:
     def list_flashcard_decks(self, student_id: str) -> List[dict]:
         from sqlalchemy import text
 
-        with self.persister._engine.connect() as conn:
+        with self.persister.engine.connect() as conn:
             result = conn.execute(
                 text("""
                     SELECT deck_id, deck_name, created_at
@@ -1004,7 +1004,7 @@ class SessionManager:
         with (
             nullcontext(connection)
             if connection is not None
-            else self.persister._engine.connect() as conn
+            else self.persister.engine.connect() as conn
         ):
             self.ensure_student_exists(student_id, connection=conn)
             self.ensure_topic_exists(topic_id, connection=conn)
@@ -1039,7 +1039,7 @@ class SessionManager:
 
         from sqlalchemy import text
 
-        with self.persister._engine.connect() as conn:
+        with self.persister.engine.connect() as conn:
             query = """
                 SELECT card_id, topic_id, deck_id, front_text, back_text, interval_days, repetition_count, ease_factor, next_review_at, tags, provenance_json, stability, difficulty, last_review_at
                 FROM flashcards WHERE student_id = :sid AND next_review_at <= :now
@@ -1077,7 +1077,7 @@ class SessionManager:
 
         from sqlalchemy import text
 
-        with self.persister._engine.connect() as conn:
+        with self.persister.engine.connect() as conn:
             r = conn.execute(
                 text("""
                     SELECT card_id, student_id, topic_id, deck_id, front_text, back_text, interval_days, repetition_count, ease_factor, next_review_at, tags
@@ -1115,7 +1115,7 @@ class SessionManager:
         from sqlalchemy import text
 
         with (
-            nullcontext(connection) if connection is not None else self.persister._engine.connect()
+            nullcontext(connection) if connection is not None else self.persister.engine.connect()
         ) as conn:
             conn.execute(
                 text("""

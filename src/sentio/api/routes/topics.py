@@ -11,7 +11,7 @@ router = APIRouter(tags=["Topics"])
 
 
 def repository():
-    return TopicRepository(agent.sm.persister._engine)
+    return TopicRepository(agent.sm.persister.engine)
 
 
 @router.get(PREFIX + "/documents/{document_id}/topics")

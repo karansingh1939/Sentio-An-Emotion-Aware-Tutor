@@ -6,6 +6,10 @@ every release milestone has passed.
 **Style:** a local-first modular monolith. One FastAPI process serves the API and a
 framework-free browser UI; requests flow `routes → services → repositories → SQLite`,
 with SQL only in repositories. Generation runs on a local Ollama model.
+`tests/unit/test_architecture.py` enforces this: SQL outside repository and storage
+infrastructure modules fails CI, routes may not import SQLAlchemy, and code reaches the
+database through `persister.engine`. Four legacy modules still hold SQL and are listed
+there; the list can only shrink.
 
 ```mermaid
 flowchart TD

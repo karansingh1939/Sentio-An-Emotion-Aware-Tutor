@@ -30,7 +30,7 @@ class LinkChoice(BaseModel):
 
 
 def repository():
-    return SyllabusRepository(agent.sm.persister._engine)
+    return SyllabusRepository(agent.sm.persister.engine)
 
 
 async def _file_text(upload):

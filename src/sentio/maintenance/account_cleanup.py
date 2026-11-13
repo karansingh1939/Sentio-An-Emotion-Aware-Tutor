@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class AccountCleanup:
     def __init__(self, persister, vectors, document_root, session_logs, emotion_logs):
         self.persister = persister
-        self.engine = persister._engine
+        self.engine = persister.engine
         self.vectors = vectors
         self.root = Path(document_root).resolve()
         self.session_logs = Path(session_logs).resolve()

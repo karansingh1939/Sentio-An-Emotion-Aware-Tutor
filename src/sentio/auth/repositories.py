@@ -15,6 +15,17 @@ def _existing_tables(connection):
     )
 
 
+def account_exists(connection, student_id):
+    """Whether the account still exists, read on the caller's connection and transaction."""
+    return (
+        connection.execute(
+            text("SELECT student_id FROM student_accounts WHERE student_id=:owner"),
+            {"owner": student_id},
+        ).first()
+        is not None
+    )
+
+
 class AuthRepository:
     """SQL persistence layer for all authentication and privacy entities."""
 
@@ -22,7 +33,7 @@ class AuthRepository:
         self.persister = persister
 
     def _execute(self, query: str, params: Dict[str, Any] = None) -> Any:
-        with self.persister._engine.connect() as conn:
+        with self.persister.engine.connect() as conn:
             result = conn.execute(text(query), params or {})
             conn.commit()
             return result
@@ -126,7 +137,7 @@ class AuthRepository:
         with (
             nullcontext(connection)
             if connection is not None
-            else self.persister._engine.begin() as connection
+            else self.persister.engine.begin() as connection
         ):
             # Legacy tables such as whiteboards exist only in older databases.
             existing = _existing_tables(connection)
@@ -136,6 +147,22 @@ class AuthRepository:
             for table in owned_tables:
                 if table in existing:
                     connection.execute(text(f"DELETE FROM {table} WHERE student_id = :sid"), params)
+
+    def export_profile(self, student_id):
+        """The account, sessions, knowledge, cards, attempts and goals, in the export's columns."""
+        queries = {
+            "account": "SELECT student_id, email, role, created_at FROM student_accounts WHERE student_id = :sid",
+            "sessions": "SELECT session_id, subject, topic, difficulty, status, created_at, closed_at, duration_min, summary FROM sessions WHERE student_id = :sid",
+            "student_knowledge": "SELECT topic_id, mastery_score, attempts_count, consecutive_correct, last_attempt_at FROM student_knowledge WHERE student_id = :sid",
+            "flashcards": "SELECT card_id, topic_id, front_text, back_text, created_at, interval_days, repetition_count, ease_factor, stability, difficulty, last_review_at, next_review_at FROM flashcards WHERE student_id = :sid",
+            "quiz_attempts": "SELECT id, session_id, topic, question_text, student_answer, correct, score, response_time_sec, difficulty, timestamp FROM quiz_attempts WHERE student_id = :sid",
+            "learning_goals": "SELECT goal_id, topic_id, goal_text, target_date, status, created_at, completed_at FROM learning_goals WHERE student_id = :sid",
+        }
+        with self.persister.engine.connect() as connection:
+            return {
+                name: connection.execute(text(query), {"sid": student_id}).mappings().all()
+                for name, query in queries.items()
+            }
 
     def export_study_artifacts(self, student_id):
         inventory = {
@@ -157,7 +184,7 @@ class AuthRepository:
             "attention_logs": "session_id IN (SELECT session_id FROM sessions WHERE student_id = :sid)",
             "emotion_events": "session_id IN (SELECT session_id FROM sessions WHERE student_id = :sid)",
         }
-        with self.persister._engine.connect() as connection:
+        with self.persister.engine.connect() as connection:
             existing = _existing_tables(connection)
             return {
                 table: [
@@ -172,7 +199,7 @@ class AuthRepository:
 
     def delete_telemetry(self, student_id: str):
         """Purges only webcam-attention and emotion events telemetry."""
-        with self.persister._engine.connect() as conn:
+        with self.persister.engine.connect() as conn:
             sessions_res = conn.execute(
                 text("SELECT session_id FROM sessions WHERE student_id = :sid"), {"sid": student_id}
             ).fetchall()

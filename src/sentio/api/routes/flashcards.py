@@ -26,7 +26,7 @@ class CardEdit(BaseModel):
 def edit_card(card_id: str, body: CardEdit, user: dict = Depends(get_current_user)):
     if not body.front_text.strip() or not body.back_text.strip():
         raise HTTPException(422, "Both sides of the card must contain text.")
-    repository = PracticeRepository(agent.sm.persister._engine)
+    repository = PracticeRepository(agent.sm.persister.engine)
     if not repository.edit_card(
         user["student_id"], card_id, body.front_text.strip(), body.back_text.strip()
     ):
@@ -117,7 +117,7 @@ def get_review_receipt(
     request_id: str = Path(min_length=8, max_length=80, pattern=r"^[a-zA-Z0-9_-]+$"),
     user: dict = Depends(get_current_user),
 ):
-    receipt = PracticeRepository(agent.sm.persister._engine).review_receipt(
+    receipt = PracticeRepository(agent.sm.persister.engine).review_receipt(
         user["student_id"], card_id, request_id
     )
     if receipt is None:
