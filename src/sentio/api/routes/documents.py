@@ -61,7 +61,7 @@ def get_recovery(request):
     service = getattr(request.app.state, "documents", None)
     if (
         service is None
-        or service.engine is not agent.sm.persister._engine
+        or service.engine is not agent.sm.persister.engine
         or service.vectors is not agent.kb.vdb
         or service.root != root.resolve()
     ):
@@ -79,7 +79,7 @@ async def stage_upload(request, file, category, course_id, owner):
     form = await request.form()
     category = request.query_params.get("category", form.get("category", category))
     course_id = course_id or form.get("course_id") or None
-    if course_id and not CourseRepository(agent.sm.persister._engine).get(owner, course_id):
+    if course_id and not CourseRepository(agent.sm.persister.engine).get(owner, course_id):
         raise HTTPException(404, "Course not found.")
     if category not in ["textbooks", "notes", "assignments", "reference", "uploaded"]:
         raise HTTPException(400, "Invalid document category.")
@@ -153,7 +153,7 @@ def ingest_staged(pending, destination, category, course_id, owner, recovery):
         pending, category, None, owner, publisher, force=not destination.exists()
     )
     if course_id:
-        CourseRepository(agent.sm.persister._engine).move_document(owner, document["id"], course_id)
+        CourseRepository(agent.sm.persister.engine).move_document(owner, document["id"], course_id)
     return {
         "indexed": True,
         "filename": document["filename"],
@@ -300,7 +300,7 @@ def delete_document(doc_id: str, request: Request, user: dict = Depends(get_curr
         ) from exc
     from sentio.repositories.topics import TopicRepository
 
-    TopicRepository(agent.sm.persister._engine).forget_document(doc_id)
+    TopicRepository(agent.sm.persister.engine).forget_document(doc_id)
     return {"deleted": True, "document_id": doc_id, "cleanup_pending": not cleaned}
 
 

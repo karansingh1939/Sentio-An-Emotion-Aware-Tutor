@@ -9,10 +9,11 @@ from copy import deepcopy
 from queue import Empty, Full, Queue
 from threading import RLock
 
-from sqlalchemy import text
-
+from sentio.auth.repositories import account_exists
 from sentio.jobs.control import WorkCancelled
+from sentio.repositories import chat_requests
 from sentio.repositories.courses import expand_source
+from sentio.repositories.documents import document_checksums
 from sentio.repositories.planning import active_goal
 from sentio.shared.sqlite_tx import begin_immediate
 from sentio.tutor.difficulty import describe
@@ -32,11 +33,11 @@ class StreamService:
     def __init__(self, agent, jobs):
         self.agent = agent
         self.jobs = jobs
-        self.engine = agent.sm.persister._engine
+        self.engine = agent.sm.persister.engine
         self.lock = RLock()
         self.active = {}
         with self.engine.begin() as conn:
-            conn.execute(text("UPDATE chat_requests SET status='failed' WHERE status='running'"))
+            chat_requests.fail_running(conn)
 
     def begin(self, owner, session_id, request_id, message):
         events = Queue(maxsize=256)
@@ -56,16 +57,7 @@ class StreamService:
         }
         with self.lock:
             with self.engine.begin() as conn:
-                previous = (
-                    conn.execute(
-                        text(
-                            "SELECT * FROM chat_requests WHERE session_id=:session AND request_id=:request AND student_id=:owner"
-                        ),
-                        params,
-                    )
-                    .mappings()
-                    .first()
-                )
+                previous = chat_requests.find(conn, owner, session_id, request_id)
                 if previous and previous["fingerprint"] != fingerprint:
                     raise ValueError(
                         "Request ID already belongs to a different message or study context."
@@ -77,11 +69,15 @@ class StreamService:
                     raise ValueError(
                         "A tutor turn is already running for this session. Stop it before starting another."
                     )
-                conn.execute(
-                    text(
-                        "INSERT OR REPLACE INTO chat_requests (session_id,request_id,student_id,fingerprint,status,updated_at,message,context) VALUES (:session,:request,:owner,:fingerprint,'running',:now,:message,:context)"
-                    ),
-                    params,
+                chat_requests.reserve(
+                    conn,
+                    owner,
+                    session_id,
+                    request_id,
+                    fingerprint,
+                    message,
+                    context,
+                    params["now"],
                 )
             self.active[session_id] = {"owner": owner, "request": request_id, "job_id": None}
 
@@ -137,21 +133,13 @@ class StreamService:
                                 result["difficulty_change"] = change
                             with self.engine.begin() as conn:
                                 begin_immediate(conn)
-                                if not conn.execute(
-                                    text(
-                                        "SELECT student_id FROM student_accounts WHERE student_id=:owner"
-                                    ),
-                                    params,
-                                ).first():
+                                if not account_exists(conn, owner):
                                     raise WorkCancelled("Account is no longer available")
                                 if self.context(session, connection=conn) != context:
                                     raise WorkCancelled("Study sources changed before saving")
                                 self.agent.sm.persister.save_session(session, connection=conn)
-                                conn.execute(
-                                    text(
-                                        "UPDATE chat_requests SET status='complete', result_json=:result,updated_at=:now WHERE session_id=:session AND request_id=:request AND student_id=:owner"
-                                    ),
-                                    {**params, "result": json.dumps(result), "now": time.time()},
+                                chat_requests.complete(
+                                    conn, owner, session_id, request_id, result, time.time()
                                 )
                             history = self.agent.nlp._get_history(session_id)
                             history.add_user(message)
@@ -199,12 +187,7 @@ class StreamService:
 
     def _fail(self, params):
         with self.engine.begin() as conn:
-            conn.execute(
-                text(
-                    "UPDATE chat_requests SET status='failed',updated_at=:now WHERE session_id=:session AND request_id=:request AND status!='complete'"
-                ),
-                {**params, "now": time.time()},
-            )
+            chat_requests.fail(conn, params["session"], params["request"], time.time())
 
     def cancel(self, owner, session_id, request_id):
         with self.lock:
@@ -223,22 +206,7 @@ class StreamService:
     def turns(self, owner, session_id, limit=50, offset=0):
         context = self.context(self.agent.sm.get_or_raise(session_id))
         with self.engine.connect() as conn:
-            rows = (
-                conn.execute(
-                    text(
-                        "SELECT request_id,message,result_json,updated_at FROM chat_requests WHERE student_id=:owner AND session_id=:session AND context=:context AND status='complete' ORDER BY updated_at DESC LIMIT :limit OFFSET :offset"
-                    ),
-                    {
-                        "owner": owner,
-                        "session": session_id,
-                        "context": context,
-                        "limit": limit,
-                        "offset": offset,
-                    },
-                )
-                .mappings()
-                .all()
-            )
+            rows = chat_requests.completed_turns(conn, owner, session_id, context, limit, offset)
         return [
             {
                 "request_id": row["request_id"],
@@ -257,14 +225,7 @@ class StreamService:
             if connection is None:
                 documents = self.agent.sm.list_documents(student_id=session.student_id)
             else:
-                documents = (
-                    connection.execute(
-                        text("SELECT id,checksum FROM documents WHERE student_id=:owner"),
-                        {"owner": session.student_id},
-                    )
-                    .mappings()
-                    .all()
-                )
+                documents = document_checksums(connection, session.student_id)
             with (
                 nullcontext(connection) if connection is not None else self.engine.connect() as conn
             ):

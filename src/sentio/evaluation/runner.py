@@ -52,7 +52,7 @@ def isolated_runtime(model):
             yield sm, pipeline, kb, owner.student_id
         finally:
             vdb.client.close()
-            sm.persister._engine.dispose()
+            sm.persister.engine.dispose()
 
 
 def measure_retrieval(dataset_dir, dataset, model):

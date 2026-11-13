@@ -69,13 +69,13 @@ class FlashcardService:
             raise PermissionError("Session does not belong to this student.")
         if require_owner and session:
             session = deepcopy(session)
-            source_snapshot = PracticeRepository(self.agent.sm.persister._engine).snapshot(session)
+            source_snapshot = PracticeRepository(self.agent.sm.persister.engine).snapshot(session)
         document_id = session.metadata.get("document_id") if session else None
         if document_id in (None, "none"):
             raise ValueError("Choose notes for this session before making flashcards.")
         checkpoint("retrieving sources")
         # 1. Use the chosen topics' slides, or retrieve passages from the selected notes
-        focus = TopicRepository(self.agent.sm.persister._engine).focus(session)
+        focus = TopicRepository(self.agent.sm.persister.engine).focus(session)
         retrieved = (
             self.agent.kb.topic_content(session.subject, topic_id, "intermediate", focus)
             if focus
@@ -189,7 +189,7 @@ JSON Template:
         def save_current():
             if source_snapshot is None and not require_owner:
                 return save()
-            repository = PracticeRepository(self.agent.sm.persister._engine)
+            repository = PracticeRepository(self.agent.sm.persister.engine)
             with repository.publication(
                 session, source_snapshot, deck_id, student_id=student_id
             ) as connection:
@@ -219,7 +219,7 @@ JSON Template:
             raise ValueError("Flashcard not found.")
         student_id = card["student_id"]
         request_id = request_id or str(uuid.uuid4())
-        repository = PracticeRepository(self.agent.sm.persister._engine)
+        repository = PracticeRepository(self.agent.sm.persister.engine)
         with repository.rating(student_id, card_id, request_id, quality_score) as (
             connection,
             card,

@@ -48,14 +48,14 @@ def fingerprint(payload):
 
 def study_snapshot(service, session):
     try:
-        return PracticeRepository(service.agent.sm.persister._engine).snapshot(session)
+        return PracticeRepository(service.agent.sm.persister.engine).snapshot(session)
     except WorkCancelled as exc:
         raise HTTPException(409, str(exc)) from exc
 
 
 def current_topics(service, session):
     try:
-        TopicRepository(service.agent.sm.persister._engine).focus(session)
+        TopicRepository(service.agent.sm.persister.engine).focus(session)
     except TopicChanged as exc:
         raise HTTPException(409, str(exc)) from exc
 

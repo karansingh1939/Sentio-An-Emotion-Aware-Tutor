@@ -371,7 +371,7 @@ class DocumentIngestionPipeline:
         from sqlalchemy import text
 
         try:
-            with self.sm.persister._engine.connect() as connection:
+            with self.sm.persister.engine.connect() as connection:
                 active = set(
                     connection.execute(
                         text("SELECT chunk_id FROM document_chunks WHERE document_id=:id"),

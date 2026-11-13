@@ -31,7 +31,7 @@ def saved_quizzes(
 ):
     from sentio.repositories.practice import PracticeRepository
 
-    return PracticeRepository(agent.sm.persister._engine).quizzes(user["student_id"], limit, offset)
+    return PracticeRepository(agent.sm.persister.engine).quizzes(user["student_id"], limit, offset)
 
 
 @router.get(PREFIX + "/quizzes/{quiz_id}", tags=["Practice"])

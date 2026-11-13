@@ -203,7 +203,7 @@ class KnowledgeBase:
         if student_id:
             from sentio.repositories.courses import expand_source
 
-            with self.doc_repo.persister._engine.connect() as connection:
+            with self.doc_repo.persister.engine.connect() as connection:
                 document_id = expand_source(connection, student_id, document_id)
 
         # Check if we have documents indexed and allowed for this student
