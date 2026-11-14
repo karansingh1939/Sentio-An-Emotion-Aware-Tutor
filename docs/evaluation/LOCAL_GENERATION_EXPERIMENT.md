@@ -106,8 +106,8 @@ the generation models and inference engine are upstream components.
 The supported flow is now Library ? Study ? practice ? review, with guided Today
 actions and no normal camera/voice controls. Authentication issues standard HS256
 JWTs; migration 8 adds hashed single-use recovery keys and token revocation versions.
-Legacy password hashes upgrade on successful login. See STUDY_GUIDE.md and
-RELEASE_HANDOFF.md for recovery, supported workflow and open release gates.
+Legacy password hashes upgrade on successful login. See the
+[learner guide](../guides/STUDY_GUIDE.md) for recovery and the supported workflow.
 
 A real three-item journey failed validation before fallback integration
 (reports/generation/live-journey-usability-3-v1.json). The next journey completed

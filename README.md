@@ -32,8 +32,10 @@ flowchart LR
 1. **Retrieval-augmented generation.** Notes are chunked and indexed twice — BM25 for
    keywords and `all-MiniLM-L6-v2` embeddings in Qdrant — and fused with a hybrid score.
 2. **Evidence gate.** A LangGraph workflow retrieves before it generates. If the selected
-   notes have no relevant passage, it refuses without calling the model. There is no
-   ungrounded mode: every answer comes from the learner's own notes.
+   notes have no relevant passage, it refuses without calling the model. The gate catches
+   off-topic questions; when the notes cover the topic but not the fact asked for, the
+   model is instructed to decline. There is no ungrounded mode: every answer comes from
+   the learner's own notes.
 3. **Structured, validated output.** The local Ollama model must return JSON matching a
    schema; invalid replies are repaired or regenerated, and citations must name a
    retrieved passage. Otherwise Sentio shows the passages themselves, clearly labelled.
@@ -62,10 +64,10 @@ flowchart LR
 - **RAG pipeline with an evidence gate** — hybrid retrieval, owner-scoped documents,
   and a refusal path that never reaches the model when evidence is missing.
 - **Reliable structured generation** — schema-constrained output, a repair/regenerate
-  loop, citation validation and honest fallbacks; this fixed quizzes from `qwen2.5:7b`
-  falling back on every request.
-- **Model evaluation** — a 12-case grounding test over real HTTP; compared four local
-  models and chose `qwen2.5:7b` on measured results.
+  loop, citation validation and honest fallbacks. Invalid quiz replies from `qwen2.5:7b`
+  are now repaired or regenerated first; some runs still end in the labelled fallback.
+- **Model evaluation** — a 12-case grounding test over real HTTP across four local
+  models. `qwen2.5:7b` is the recommendation, on a margin of one question per run.
 - **Durable, cancellable work** — background job lanes, streaming answers that can be
   stopped, idempotent request receipts and transactions that reject stale study context.
 - **Study features** — one-click study from the Library, a cached note overview with
@@ -82,7 +84,7 @@ flowchart LR
 - **Syllabus progress** — paste or upload the course syllabus; each syllabus topic is
   matched to lecture topics, so the course shows a percentage ready, weighted by module
   hours, and lists the topics your notes don't cover yet. Matches can be corrected. Word
-  matching was kept after a measured comparison with embeddings (see
+  matching was kept after a comparison with embeddings on one syllabus (see
   `scripts/eval/syllabus_matching.py`).
 - **Study slides** — go through a lecture slide by slide; the tutor explains the slide on
   screen first and cites it.
@@ -95,16 +97,17 @@ flowchart LR
 The project keeps failed experiments and separates software tests from model-quality
 measurements.
 
-| Experiment                                | Result                                                                                                                       | What it establishes                                                          |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Four local models, 12-case grounding test | `qwen2.5:7b` answered 3/4 covered questions vs 2/4 for `phi3:mini`; every model declined 6/6 questions the notes don't cover | Larger local models improve coverage at higher latency (24 s vs 17 s median) |
-| Retrieval on 12 synthetic documents       | Keyword and hybrid each found the relevant passage in 17/18 cases                                                            | Hybrid showed no gain on this small corpus                                   |
-| Repeated semantic grading                 | Baseline and candidate each passed 20/25 rubrics per repeat                                                                  | The candidate traded false positives for false negatives; not adopted        |
-| Evidence classifier pipeline              | Frozen 30-document, 120-question corpus with review and calibration tooling                                                  | Labels await human review; no classifier gains claimed                       |
+| Experiment                                | Result                                                                                                                                                        | What it establishes                                                                                                                                                       |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Four local models, 12-case grounding test | `qwen2.5:7b` answered 3/4 covered questions vs 2/4 for `phi3:mini` (24 s vs 17 s median). Other single runs gave 1/4 for `phi3:mini` and 4/4 for `qwen2.5:7b` | The gap is one question, within run-to-run variation. Every model declined 6/6 uncovered questions, including one that answered 0/4, so that count does not separate them |
+| Retrieval on 12 synthetic documents       | Keyword and hybrid each found the relevant passage in 17/18 cases; embeddings alone found 18/18                                                               | Hybrid's 0.35 similarity floor discards the one paraphrase embeddings would rescue. The documents are too short to test chunking or ranking                               |
+| Repeated semantic grading                 | Baseline and candidate each passed 20/25 rubrics per repeat                                                                                                   | The candidate traded false positives for false negatives; not adopted                                                                                                     |
+| Evidence classifier pipeline              | Frozen 30-document, 120-question corpus with review and calibration tooling                                                                                   | Labels await human review; no classifier gains claimed                                                                                                                    |
 
 Details: [model comparison](docs/evaluation/MODEL_COMPARISON_2026-10-29.md),
 [grounding stress test](docs/evaluation/STUDY_QUALITY_2026-10-12.md),
-[retrieval](reports/AI_EVALUATION_2026-10-11.md),
+[retrieval](reports/AI_EVALUATION_2026-10-11.md) and its
+[follow-up](reports/RETRIEVAL_FOLLOWUP_2026-11-14.md),
 [grading](reports/GRADING_FOLLOWUP_2026-10-11.md),
 [evidence experiment](docs/evaluation/EVIDENCE_EXPERIMENT.md). These are synthetic,
 author-labelled experiments; they do not establish real-world accuracy or learning gains.
@@ -172,6 +175,8 @@ smoke test on every pull request.
 - Built for one user on one machine; public hosting needs a separate security review.
 - Citations show which passage was used, not that the answer is correct.
 - Answers take roughly 15–60 seconds on CPU-only hardware.
+- Recall, mastery and syllabus percentages come from published FSRS default parameters
+  and hand-set weights; none is calibrated against learner results.
 - The emotion side feature has no validated accuracy and is off by default.
 
 ## Attribution

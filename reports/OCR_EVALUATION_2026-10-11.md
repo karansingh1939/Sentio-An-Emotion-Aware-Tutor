@@ -15,6 +15,9 @@ page segmentation mode 6, 150-DPI PDF rendering, Pillow 12.3.0, PDFium binding
 raw recognized text and timings are saved in
 [the measured JSON report](ocr-evaluation-2026-10-11.json). The results came from
 [this successful CI run](https://github.com/karansingh-1939/Sentio-An-Emotion-Aware-Tutor/actions/runs/38084720600).
+That run belongs to the project's earlier private copy under a different account, so the
+link may not open for other readers. CI on the current repository runs the same evaluator
+and keeps its JSON as a 14-day artifact.
 
 | Check | Observed result |
 |---|---|

@@ -1,0 +1,22 @@
+
+> test
+> node --experimental-vm-modules tests/test_quiz_view.mjs && node tests/test_tutor_rendering.mjs && node --experimental-vm-modules tests/test_web_rendering.mjs && node tests/test_store_state.mjs && node --experimental-vm-modules tests/test_ai_requests.mjs && node --experimental-vm-modules tests/test_job_client.mjs
+
+Quiz UI contract checks passed (session defaults, MCQ/TF answers, quiz ID).
+(node:34244) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+Tutor rendering escapes HTML and preserves formatting.
+Late camera grants and unavailable optional models stop media tracks.
+(node:34724) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+Study-tool HTML is escaped.
+Whiteboard titles are escaped; undo preserves loaded drawings and pointer coordinates scale correctly.
+Corrupt saved state and logout cleanup are handled.
+(node:13720) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+AI requests use provider-compatible deadlines and prevent duplicate generation.
+Concurrent refresh is shared; late refresh and private response bodies cannot replace a new account.
+Practice jobs reconnect after refresh and report cancellation without completion.
+Completed practice from earlier sources is retained without painting the current study context.
+(node:364) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
