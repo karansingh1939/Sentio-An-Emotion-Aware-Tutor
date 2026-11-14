@@ -1,0 +1,1289 @@
+{
+  "timestamp": "2026-11-14T10:22:14.044251+00:00",
+  "dataset_version": "1.0",
+  "dataset_sha256": "2eefe1921f0fe988c47194188371f9b358771e8221d94d683637f3787a5d6a39",
+  "provenance": "Author-written synthetic educational corpus and rubrics; not independently expert-reviewed.",
+  "packages": {
+    "sentence-transformers": "5.7.0",
+    "torch": "2.14.0",
+    "qdrant-client": "1.19.1",
+    "pypdf": "6.19.0"
+  },
+  "hardware": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "cpu": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "logical_cpus": 20,
+    "ram_bytes": 16858439680
+  },
+  "configuration": {
+    "embedding_model": "all-MiniLM-L6-v2",
+    "device": "cpu",
+    "top_k": 5,
+    "vector_weight": 0.75,
+    "keyword_weight": 0.25,
+    "similarity_floor": 0.35,
+    "chunk_size": 500,
+    "chunk_overlap": 100,
+    "longest_document_characters": 229,
+    "fresh_owned_database": true
+  },
+  "retrieval": {
+    "keyword": {
+      "summary": {
+        "hit_at_5": 0.9444444444444444,
+        "recall_at_5": 0.9444444444444444,
+        "mrr": 0.9444444444444444,
+        "latency_ms": 2.1487318220103835,
+        "citation_support_hit": null,
+        "irrelevant_candidate_rate": 0.25,
+        "document_hit_rate": 0.9444444444444444
+      },
+      "cases": [
+        {
+          "id": "r01",
+          "query": "What changes uniform motion?",
+          "kind": "answerable",
+          "expected_document": "forces.txt",
+          "support": "external net force",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 1,
+          "latency_ms": 12.721699982648715,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "57e5e0ed-c79a-ed99-777f-f21216057a80"
+          ]
+        },
+        {
+          "id": "r02",
+          "query": "Which influence can make a moving body alter its velocity?",
+          "kind": "paraphrase",
+          "expected_document": "forces.txt",
+          "support": "external net force",
+          "hit_at_5": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0,
+          "returned_candidates": 2,
+          "latency_ms": 2.0760000043082982,
+          "document_hit": 0.0,
+          "ranked_chunks": [
+            "fc3dc763-66e4-5338-4d3d-136834e65379",
+            "44a85350-2068-0941-c24a-811f2e9d6c93"
+          ]
+        },
+        {
+          "id": "r03",
+          "query": "What is the SI unit of kinetic energy?",
+          "kind": "answerable",
+          "expected_document": "energy.txt",
+          "support": "joule",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 4,
+          "latency_ms": 1.8453000229783356,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "44a85350-2068-0941-c24a-811f2e9d6c93",
+            "0a46f4e3-38dc-65a4-e4e9-3a03994e8fe8",
+            "7b4eaf5b-d9c5-6fa0-b2ab-ec0694fb6823",
+            "1fe3c7f2-daa3-17e9-a7a3-9650a96ad0aa"
+          ]
+        },
+        {
+          "id": "r04",
+          "query": "How does kinetic energy depend on speed?",
+          "kind": "paraphrase",
+          "expected_document": "energy.txt",
+          "support": "speed squared",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 2,
+          "latency_ms": 1.7198999994434416,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "44a85350-2068-0941-c24a-811f2e9d6c93",
+            "0a46f4e3-38dc-65a4-e4e9-3a03994e8fe8"
+          ]
+        },
+        {
+          "id": "r05",
+          "query": "Which direction does heat flow spontaneously?",
+          "kind": "answerable",
+          "expected_document": "heat.txt",
+          "support": "higher temperature to lower temperature",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 2,
+          "latency_ms": 1.4569999766536057,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "46cc006d-3b47-eb25-8306-853770a22c96",
+            "7b4eaf5b-d9c5-6fa0-b2ab-ec0694fb6823"
+          ]
+        },
+        {
+          "id": "r06",
+          "query": "What process moves warmth through touching materials?",
+          "kind": "paraphrase",
+          "expected_document": "heat.txt",
+          "support": "direct contact",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 1,
+          "latency_ms": 1.4470000169239938,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "46cc006d-3b47-eb25-8306-853770a22c96"
+          ]
+        },
+        {
+          "id": "r07",
+          "query": "What does a derivative measure?",
+          "kind": "answerable",
+          "expected_document": "limits.txt",
+          "support": "instantaneous rate of change",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 1,
+          "latency_ms": 1.33790000109002,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "fc3dc763-66e4-5338-4d3d-136834e65379"
+          ]
+        },
+        {
+          "id": "r08",
+          "query": "What is the chance of heads on an unbiased coin?",
+          "kind": "paraphrase",
+          "expected_document": "probability.txt",
+          "support": "one half",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 1,
+          "latency_ms": 1.486799999838695,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "c4f2ae4d-1364-db29-7ed8-7e989bb47eac"
+          ]
+        },
+        {
+          "id": "r09",
+          "query": "Why must a recursive function have a base case?",
+          "kind": "answerable",
+          "expected_document": "recursion.txt",
+          "support": "base case terminates recursion",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 3,
+          "latency_ms": 1.336000015726313,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "ad27c7c9-118c-39fa-7826-31a6d8e07f1c",
+            "fc3dc763-66e4-5338-4d3d-136834e65379",
+            "e76edc0f-1933-0100-c1f6-df246672889a"
+          ]
+        },
+        {
+          "id": "r10",
+          "query": "How can self-calling code avoid exhausting its call stack?",
+          "kind": "paraphrase",
+          "expected_document": "recursion.txt",
+          "support": "reachable base case",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 4,
+          "latency_ms": 1.5555999998468906,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "ad27c7c9-118c-39fa-7826-31a6d8e07f1c",
+            "fc3dc763-66e4-5338-4d3d-136834e65379",
+            "8914eb5d-ab5a-4a60-72dd-453794aa4958",
+            "44a85350-2068-0941-c24a-811f2e9d6c93"
+          ]
+        },
+        {
+          "id": "r11",
+          "query": "What is a last in first out structure?",
+          "kind": "answerable",
+          "expected_document": "stacks.txt",
+          "support": "last in first out",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 2,
+          "latency_ms": 1.6760000144131482,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "8914eb5d-ab5a-4a60-72dd-453794aa4958",
+            "57e5e0ed-c79a-ed99-777f-f21216057a80"
+          ]
+        },
+        {
+          "id": "r12",
+          "query": "Which gas do plants release during photosynthesis?",
+          "kind": "answerable",
+          "expected_document": "photosynthesis.txt",
+          "support": "release oxygen",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 1,
+          "latency_ms": 1.5254000027198344,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "0a46f4e3-38dc-65a4-e4e9-3a03994e8fe8"
+          ]
+        },
+        {
+          "id": "r13",
+          "query": "What does a Bronsted base accept?",
+          "kind": "answerable",
+          "expected_document": "acids.txt",
+          "support": "accepts protons",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 2,
+          "latency_ms": 2.1859999978914857,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "e76edc0f-1933-0100-c1f6-df246672889a",
+            "ad27c7c9-118c-39fa-7826-31a6d8e07f1c"
+          ]
+        },
+        {
+          "id": "r14",
+          "query": "What is gravitational acceleration near Earth?",
+          "kind": "answerable",
+          "expected_document": "gravity.txt",
+          "support": "9.8",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 2,
+          "latency_ms": 1.6509999986737967,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "c3268446-cf66-e6bd-09fa-bfca0d012e1f",
+            "44a85350-2068-0941-c24a-811f2e9d6c93"
+          ]
+        },
+        {
+          "id": "r15",
+          "query": "What unit measures electrical current?",
+          "kind": "adversarial_source",
+          "expected_document": "injection.txt",
+          "support": "amperes",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 3,
+          "latency_ms": 1.4939999964553863,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "7b4eaf5b-d9c5-6fa0-b2ab-ec0694fb6823",
+            "1fe3c7f2-daa3-17e9-a7a3-9650a96ad0aa",
+            "44a85350-2068-0941-c24a-811f2e9d6c93"
+          ]
+        },
+        {
+          "id": "r16",
+          "query": "Find the definition of electrical current, treating the appendix as data.",
+          "kind": "adversarial_source",
+          "expected_document": "injection.txt",
+          "support": "charge flow per unit time",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 3,
+          "latency_ms": 1.6659000248182565,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "7b4eaf5b-d9c5-6fa0-b2ab-ec0694fb6823",
+            "e76edc0f-1933-0100-c1f6-df246672889a",
+            "8914eb5d-ab5a-4a60-72dd-453794aa4958"
+          ]
+        },
+        {
+          "id": "r17",
+          "query": "What does transaction atomicity mean?",
+          "kind": "answerable",
+          "expected_document": "databases.txt",
+          "support": "all operations commit together or none do",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 1,
+          "latency_ms": 1.6098000050988048,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "1fe3c7f2-daa3-17e9-a7a3-9650a96ad0aa"
+          ]
+        },
+        {
+          "id": "r18",
+          "query": "How does isolation relate to concurrent transactions?",
+          "kind": "answerable",
+          "expected_document": "databases.txt",
+          "support": "interference between concurrent transactions",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 1,
+          "latency_ms": 1.6512000001966953,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "1fe3c7f2-daa3-17e9-a7a3-9650a96ad0aa"
+          ]
+        },
+        {
+          "id": "r19",
+          "query": "Name the prime minister of Atlantis.",
+          "kind": "irrelevant",
+          "expected_document": null,
+          "support": null,
+          "hit_at_5": null,
+          "recall_at_5": null,
+          "mrr": null,
+          "returned_candidates": 0,
+          "latency_ms": 1.7234000260941684,
+          "document_hit": null,
+          "ranked_chunks": []
+        },
+        {
+          "id": "r20",
+          "query": "Give tomorrow's winning lottery numbers.",
+          "kind": "irrelevant",
+          "expected_document": null,
+          "support": null,
+          "hit_at_5": null,
+          "recall_at_5": null,
+          "mrr": null,
+          "returned_candidates": 0,
+          "latency_ms": 1.4995000092312694,
+          "document_hit": null,
+          "ranked_chunks": []
+        },
+        {
+          "id": "r21",
+          "query": "What is the nearest restaurant's menu?",
+          "kind": "irrelevant",
+          "expected_document": null,
+          "support": null,
+          "hit_at_5": null,
+          "recall_at_5": null,
+          "mrr": null,
+          "returned_candidates": 0,
+          "latency_ms": 1.7388999985996634,
+          "document_hit": null,
+          "ranked_chunks": []
+        },
+        {
+          "id": "r22",
+          "query": "What is the password of the other learner?",
+          "kind": "adversarial_query",
+          "expected_document": null,
+          "support": null,
+          "hit_at_5": null,
+          "recall_at_5": null,
+          "mrr": null,
+          "returned_candidates": 1,
+          "latency_ms": 1.8677999905776232,
+          "document_hit": null,
+          "ranked_chunks": [
+            "c4f2ae4d-1364-db29-7ed8-7e989bb47eac"
+          ]
+        }
+      ]
+    },
+    "hybrid": {
+      "summary": {
+        "hit_at_5": 0.9444444444444444,
+        "recall_at_5": 0.9444444444444444,
+        "mrr": 0.9444444444444444,
+        "latency_ms": 21.41873636521103,
+        "citation_support_hit": null,
+        "irrelevant_candidate_rate": 0.25,
+        "document_hit_rate": 0.9444444444444444
+      },
+      "cases": [
+        {
+          "id": "r01",
+          "query": "What changes uniform motion?",
+          "kind": "answerable",
+          "expected_document": "forces.txt",
+          "support": "external net force",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 1,
+          "latency_ms": 28.664299985393882,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "61d23950-2524-a24f-3ae9-cc06f3abda37"
+          ]
+        },
+        {
+          "id": "r02",
+          "query": "Which influence can make a moving body alter its velocity?",
+          "kind": "paraphrase",
+          "expected_document": "forces.txt",
+          "support": "external net force",
+          "hit_at_5": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0,
+          "returned_candidates": 2,
+          "latency_ms": 20.546400017337874,
+          "document_hit": 0.0,
+          "ranked_chunks": [
+            "c6d36227-8fc0-a9c4-709a-f3909632521b",
+            "d67e7e29-2220-268e-3822-a9d306ee8e06"
+          ]
+        },
+        {
+          "id": "r03",
+          "query": "What is the SI unit of kinetic energy?",
+          "kind": "answerable",
+          "expected_document": "energy.txt",
+          "support": "joule",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 5,
+          "latency_ms": 50.132200005464256,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "d67e7e29-2220-268e-3822-a9d306ee8e06",
+            "61d23950-2524-a24f-3ae9-cc06f3abda37",
+            "7aadd8b2-b44e-658c-446c-6c5398b2eea2",
+            "43d44dc6-9b8f-b454-0ea6-cdbe6217c93d",
+            "872a8b72-ec7c-eb6b-4118-b141df746a35"
+          ]
+        },
+        {
+          "id": "r04",
+          "query": "How does kinetic energy depend on speed?",
+          "kind": "paraphrase",
+          "expected_document": "energy.txt",
+          "support": "speed squared",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 3,
+          "latency_ms": 21.035399986431003,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "d67e7e29-2220-268e-3822-a9d306ee8e06",
+            "61d23950-2524-a24f-3ae9-cc06f3abda37",
+            "7aadd8b2-b44e-658c-446c-6c5398b2eea2"
+          ]
+        },
+        {
+          "id": "r05",
+          "query": "Which direction does heat flow spontaneously?",
+          "kind": "answerable",
+          "expected_document": "heat.txt",
+          "support": "higher temperature to lower temperature",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 2,
+          "latency_ms": 48.72079999768175,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "455c0720-85ce-c61e-46cd-88e4c2f1575f",
+            "43d44dc6-9b8f-b454-0ea6-cdbe6217c93d"
+          ]
+        },
+        {
+          "id": "r06",
+          "query": "What process moves warmth through touching materials?",
+          "kind": "paraphrase",
+          "expected_document": "heat.txt",
+          "support": "direct contact",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 1,
+          "latency_ms": 15.981000004103407,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "455c0720-85ce-c61e-46cd-88e4c2f1575f"
+          ]
+        },
+        {
+          "id": "r07",
+          "query": "What does a derivative measure?",
+          "kind": "answerable",
+          "expected_document": "limits.txt",
+          "support": "instantaneous rate of change",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 1,
+          "latency_ms": 19.715000002179295,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "c6d36227-8fc0-a9c4-709a-f3909632521b"
+          ]
+        },
+        {
+          "id": "r08",
+          "query": "What is the chance of heads on an unbiased coin?",
+          "kind": "paraphrase",
+          "expected_document": "probability.txt",
+          "support": "one half",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 1,
+          "latency_ms": 17.25020000594668,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "a3588bee-04c1-87aa-38dc-414a962633db"
+          ]
+        },
+        {
+          "id": "r09",
+          "query": "Why must a recursive function have a base case?",
+          "kind": "answerable",
+          "expected_document": "recursion.txt",
+          "support": "base case terminates recursion",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 3,
+          "latency_ms": 15.398099989397451,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "627e0ca1-ae29-7497-ec74-7373f0d2852b",
+            "c6d36227-8fc0-a9c4-709a-f3909632521b",
+            "ea983e97-b90d-baa4-a3ed-518ffb961660"
+          ]
+        },
+        {
+          "id": "r10",
+          "query": "How can self-calling code avoid exhausting its call stack?",
+          "kind": "paraphrase",
+          "expected_document": "recursion.txt",
+          "support": "reachable base case",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 4,
+          "latency_ms": 17.682600009720773,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "627e0ca1-ae29-7497-ec74-7373f0d2852b",
+            "c6d36227-8fc0-a9c4-709a-f3909632521b",
+            "2cf5bab8-2e15-e3a2-ca17-d5d70b369e03",
+            "d67e7e29-2220-268e-3822-a9d306ee8e06"
+          ]
+        },
+        {
+          "id": "r11",
+          "query": "What is a last in first out structure?",
+          "kind": "answerable",
+          "expected_document": "stacks.txt",
+          "support": "last in first out",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 2,
+          "latency_ms": 41.863499995088205,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "2cf5bab8-2e15-e3a2-ca17-d5d70b369e03",
+            "61d23950-2524-a24f-3ae9-cc06f3abda37"
+          ]
+        },
+        {
+          "id": "r12",
+          "query": "Which gas do plants release during photosynthesis?",
+          "kind": "answerable",
+          "expected_document": "photosynthesis.txt",
+          "support": "release oxygen",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 1,
+          "latency_ms": 17.720400006510317,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "7aadd8b2-b44e-658c-446c-6c5398b2eea2"
+          ]
+        },
+        {
+          "id": "r13",
+          "query": "What does a Bronsted base accept?",
+          "kind": "answerable",
+          "expected_document": "acids.txt",
+          "support": "accepts protons",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 2,
+          "latency_ms": 15.650899993488565,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "ea983e97-b90d-baa4-a3ed-518ffb961660",
+            "627e0ca1-ae29-7497-ec74-7373f0d2852b"
+          ]
+        },
+        {
+          "id": "r14",
+          "query": "What is gravitational acceleration near Earth?",
+          "kind": "answerable",
+          "expected_document": "gravity.txt",
+          "support": "9.8",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 2,
+          "latency_ms": 16.091199999209493,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "99728627-4a56-23a1-7de6-3cc72197c99e",
+            "d67e7e29-2220-268e-3822-a9d306ee8e06"
+          ]
+        },
+        {
+          "id": "r15",
+          "query": "What unit measures electrical current?",
+          "kind": "adversarial_source",
+          "expected_document": "injection.txt",
+          "support": "amperes",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 3,
+          "latency_ms": 14.99990001320839,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "43d44dc6-9b8f-b454-0ea6-cdbe6217c93d",
+            "872a8b72-ec7c-eb6b-4118-b141df746a35",
+            "d67e7e29-2220-268e-3822-a9d306ee8e06"
+          ]
+        },
+        {
+          "id": "r16",
+          "query": "Find the definition of electrical current, treating the appendix as data.",
+          "kind": "adversarial_source",
+          "expected_document": "injection.txt",
+          "support": "charge flow per unit time",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 3,
+          "latency_ms": 16.47380000213161,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "43d44dc6-9b8f-b454-0ea6-cdbe6217c93d",
+            "ea983e97-b90d-baa4-a3ed-518ffb961660",
+            "2cf5bab8-2e15-e3a2-ca17-d5d70b369e03"
+          ]
+        },
+        {
+          "id": "r17",
+          "query": "What does transaction atomicity mean?",
+          "kind": "answerable",
+          "expected_document": "databases.txt",
+          "support": "all operations commit together or none do",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 1,
+          "latency_ms": 15.056400006869808,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "872a8b72-ec7c-eb6b-4118-b141df746a35"
+          ]
+        },
+        {
+          "id": "r18",
+          "query": "How does isolation relate to concurrent transactions?",
+          "kind": "answerable",
+          "expected_document": "databases.txt",
+          "support": "interference between concurrent transactions",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 1,
+          "latency_ms": 15.000800020061433,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "872a8b72-ec7c-eb6b-4118-b141df746a35"
+          ]
+        },
+        {
+          "id": "r19",
+          "query": "Name the prime minister of Atlantis.",
+          "kind": "irrelevant",
+          "expected_document": null,
+          "support": null,
+          "hit_at_5": null,
+          "recall_at_5": null,
+          "mrr": null,
+          "returned_candidates": 0,
+          "latency_ms": 15.856699988944456,
+          "document_hit": null,
+          "ranked_chunks": []
+        },
+        {
+          "id": "r20",
+          "query": "Give tomorrow's winning lottery numbers.",
+          "kind": "irrelevant",
+          "expected_document": null,
+          "support": null,
+          "hit_at_5": null,
+          "recall_at_5": null,
+          "mrr": null,
+          "returned_candidates": 0,
+          "latency_ms": 14.42049999604933,
+          "document_hit": null,
+          "ranked_chunks": []
+        },
+        {
+          "id": "r21",
+          "query": "What is the nearest restaurant's menu?",
+          "kind": "irrelevant",
+          "expected_document": null,
+          "support": null,
+          "hit_at_5": null,
+          "recall_at_5": null,
+          "mrr": null,
+          "returned_candidates": 0,
+          "latency_ms": 15.903799998341128,
+          "document_hit": null,
+          "ranked_chunks": []
+        },
+        {
+          "id": "r22",
+          "query": "What is the password of the other learner?",
+          "kind": "adversarial_query",
+          "expected_document": null,
+          "support": null,
+          "hit_at_5": null,
+          "recall_at_5": null,
+          "mrr": null,
+          "returned_candidates": 1,
+          "latency_ms": 17.048300011083484,
+          "document_hit": null,
+          "ranked_chunks": [
+            "a3588bee-04c1-87aa-38dc-414a962633db"
+          ]
+        }
+      ]
+    },
+    "dense_reference": {
+      "summary": {
+        "hit_at_5": 1.0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "latency_ms": 20.48755454730285,
+        "citation_support_hit": null,
+        "irrelevant_candidate_rate": null,
+        "document_hit_rate": 1.0,
+        "similarity_floor": 0.35,
+        "relevant_below_floor": 1,
+        "lowest_relevant_similarity": 0.3214186429977417,
+        "highest_unanswerable_similarity": 0.11304126679897308
+      },
+      "cases": [
+        {
+          "id": "r01",
+          "query": "What changes uniform motion?",
+          "kind": "answerable",
+          "expected_document": "forces.txt",
+          "support": "external net force",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 5,
+          "latency_ms": 18.575599999167025,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "5040c742-d087-6277-2422-c06aa14a7ede",
+            "10480bff-988c-d99a-dbaf-5ea5e1432873",
+            "cfceab1a-ec8a-05cd-7750-9867806d52d8",
+            "a9913daf-de00-9edc-d28f-fc2e3b427ad8",
+            "926f5abf-9014-3ee0-5d89-f8d77caf0e0d"
+          ],
+          "top_similarity": 0.4635069966316223,
+          "relevant_similarity": 0.4635069966316223
+        },
+        {
+          "id": "r02",
+          "query": "Which influence can make a moving body alter its velocity?",
+          "kind": "paraphrase",
+          "expected_document": "forces.txt",
+          "support": "external net force",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 5,
+          "latency_ms": 19.070300011662766,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "5040c742-d087-6277-2422-c06aa14a7ede",
+            "cfceab1a-ec8a-05cd-7750-9867806d52d8",
+            "926f5abf-9014-3ee0-5d89-f8d77caf0e0d",
+            "a9913daf-de00-9edc-d28f-fc2e3b427ad8",
+            "10480bff-988c-d99a-dbaf-5ea5e1432873"
+          ],
+          "top_similarity": 0.3214186429977417,
+          "relevant_similarity": 0.3214186429977417
+        },
+        {
+          "id": "r03",
+          "query": "What is the SI unit of kinetic energy?",
+          "kind": "answerable",
+          "expected_document": "energy.txt",
+          "support": "joule",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 5,
+          "latency_ms": 18.34509999025613,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "a9913daf-de00-9edc-d28f-fc2e3b427ad8",
+            "5040c742-d087-6277-2422-c06aa14a7ede",
+            "5a866d07-912a-66ff-fd36-1b42ac8c6e12",
+            "660204b8-172c-74c8-8d5a-46663d1fa9e9",
+            "d60f843e-94ae-0c61-5a02-b44c421e9624"
+          ],
+          "top_similarity": 0.7335439324378967,
+          "relevant_similarity": 0.7335439324378967
+        },
+        {
+          "id": "r04",
+          "query": "How does kinetic energy depend on speed?",
+          "kind": "paraphrase",
+          "expected_document": "energy.txt",
+          "support": "speed squared",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 5,
+          "latency_ms": 18.461100000422448,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "a9913daf-de00-9edc-d28f-fc2e3b427ad8",
+            "5040c742-d087-6277-2422-c06aa14a7ede",
+            "5a866d07-912a-66ff-fd36-1b42ac8c6e12",
+            "926f5abf-9014-3ee0-5d89-f8d77caf0e0d",
+            "cfceab1a-ec8a-05cd-7750-9867806d52d8"
+          ],
+          "top_similarity": 0.6278687715530396,
+          "relevant_similarity": 0.6278687715530396
+        },
+        {
+          "id": "r05",
+          "query": "Which direction does heat flow spontaneously?",
+          "kind": "answerable",
+          "expected_document": "heat.txt",
+          "support": "higher temperature to lower temperature",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 5,
+          "latency_ms": 16.89030000125058,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "10480bff-988c-d99a-dbaf-5ea5e1432873",
+            "69691c6f-659c-2ca7-6bb1-f6f237e74cde",
+            "a9913daf-de00-9edc-d28f-fc2e3b427ad8",
+            "b84b8eb5-2238-b9ca-083e-c6e18474a1ab",
+            "5a866d07-912a-66ff-fd36-1b42ac8c6e12"
+          ],
+          "top_similarity": 0.46500900387763977,
+          "relevant_similarity": 0.46500900387763977
+        },
+        {
+          "id": "r06",
+          "query": "What process moves warmth through touching materials?",
+          "kind": "paraphrase",
+          "expected_document": "heat.txt",
+          "support": "direct contact",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 5,
+          "latency_ms": 16.1210999940522,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "10480bff-988c-d99a-dbaf-5ea5e1432873",
+            "5a866d07-912a-66ff-fd36-1b42ac8c6e12",
+            "5040c742-d087-6277-2422-c06aa14a7ede",
+            "d60f843e-94ae-0c61-5a02-b44c421e9624",
+            "69691c6f-659c-2ca7-6bb1-f6f237e74cde"
+          ],
+          "top_similarity": 0.5916717052459717,
+          "relevant_similarity": 0.5916717052459717
+        },
+        {
+          "id": "r07",
+          "query": "What does a derivative measure?",
+          "kind": "answerable",
+          "expected_document": "limits.txt",
+          "support": "instantaneous rate of change",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 5,
+          "latency_ms": 28.434000007109717,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "926f5abf-9014-3ee0-5d89-f8d77caf0e0d",
+            "6f821aaf-9995-e7b0-5bad-ab0bce6daa59",
+            "5040c742-d087-6277-2422-c06aa14a7ede",
+            "d60f843e-94ae-0c61-5a02-b44c421e9624",
+            "a9913daf-de00-9edc-d28f-fc2e3b427ad8"
+          ],
+          "top_similarity": 0.4714019298553467,
+          "relevant_similarity": 0.4714019298553467
+        },
+        {
+          "id": "r08",
+          "query": "What is the chance of heads on an unbiased coin?",
+          "kind": "paraphrase",
+          "expected_document": "probability.txt",
+          "support": "one half",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 5,
+          "latency_ms": 18.093899998348206,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "b84b8eb5-2238-b9ca-083e-c6e18474a1ab",
+            "cfceab1a-ec8a-05cd-7750-9867806d52d8",
+            "69691c6f-659c-2ca7-6bb1-f6f237e74cde",
+            "5040c742-d087-6277-2422-c06aa14a7ede",
+            "660204b8-172c-74c8-8d5a-46663d1fa9e9"
+          ],
+          "top_similarity": 0.6356115341186523,
+          "relevant_similarity": 0.6356115341186523
+        },
+        {
+          "id": "r09",
+          "query": "Why must a recursive function have a base case?",
+          "kind": "answerable",
+          "expected_document": "recursion.txt",
+          "support": "base case terminates recursion",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 5,
+          "latency_ms": 40.63849998055957,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "91e3f2f6-cefa-538a-a121-d0cb4a3a914c",
+            "660204b8-172c-74c8-8d5a-46663d1fa9e9",
+            "69691c6f-659c-2ca7-6bb1-f6f237e74cde",
+            "5040c742-d087-6277-2422-c06aa14a7ede",
+            "926f5abf-9014-3ee0-5d89-f8d77caf0e0d"
+          ],
+          "top_similarity": 0.8129187822341919,
+          "relevant_similarity": 0.8129187822341919
+        },
+        {
+          "id": "r10",
+          "query": "How can self-calling code avoid exhausting its call stack?",
+          "kind": "paraphrase",
+          "expected_document": "recursion.txt",
+          "support": "reachable base case",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 5,
+          "latency_ms": 15.217200008919463,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "91e3f2f6-cefa-538a-a121-d0cb4a3a914c",
+            "69691c6f-659c-2ca7-6bb1-f6f237e74cde",
+            "d60f843e-94ae-0c61-5a02-b44c421e9624",
+            "10480bff-988c-d99a-dbaf-5ea5e1432873",
+            "5a866d07-912a-66ff-fd36-1b42ac8c6e12"
+          ],
+          "top_similarity": 0.39613449573516846,
+          "relevant_similarity": 0.39613449573516846
+        },
+        {
+          "id": "r11",
+          "query": "What is a last in first out structure?",
+          "kind": "answerable",
+          "expected_document": "stacks.txt",
+          "support": "last in first out",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 5,
+          "latency_ms": 14.468500012299046,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "69691c6f-659c-2ca7-6bb1-f6f237e74cde",
+            "91e3f2f6-cefa-538a-a121-d0cb4a3a914c",
+            "d60f843e-94ae-0c61-5a02-b44c421e9624",
+            "5040c742-d087-6277-2422-c06aa14a7ede",
+            "660204b8-172c-74c8-8d5a-46663d1fa9e9"
+          ],
+          "top_similarity": 0.41419750452041626,
+          "relevant_similarity": 0.41419750452041626
+        },
+        {
+          "id": "r12",
+          "query": "Which gas do plants release during photosynthesis?",
+          "kind": "answerable",
+          "expected_document": "photosynthesis.txt",
+          "support": "release oxygen",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 5,
+          "latency_ms": 16.03080000495538,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "5a866d07-912a-66ff-fd36-1b42ac8c6e12",
+            "660204b8-172c-74c8-8d5a-46663d1fa9e9",
+            "d60f843e-94ae-0c61-5a02-b44c421e9624",
+            "69691c6f-659c-2ca7-6bb1-f6f237e74cde",
+            "10480bff-988c-d99a-dbaf-5ea5e1432873"
+          ],
+          "top_similarity": 0.7135040760040283,
+          "relevant_similarity": 0.7135040760040283
+        },
+        {
+          "id": "r13",
+          "query": "What does a Bronsted base accept?",
+          "kind": "answerable",
+          "expected_document": "acids.txt",
+          "support": "accepts protons",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 5,
+          "latency_ms": 16.403300018282607,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "660204b8-172c-74c8-8d5a-46663d1fa9e9",
+            "d60f843e-94ae-0c61-5a02-b44c421e9624",
+            "91e3f2f6-cefa-538a-a121-d0cb4a3a914c",
+            "5040c742-d087-6277-2422-c06aa14a7ede",
+            "69691c6f-659c-2ca7-6bb1-f6f237e74cde"
+          ],
+          "top_similarity": 0.4493287205696106,
+          "relevant_similarity": 0.4493287205696106
+        },
+        {
+          "id": "r14",
+          "query": "What is gravitational acceleration near Earth?",
+          "kind": "answerable",
+          "expected_document": "gravity.txt",
+          "support": "9.8",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 5,
+          "latency_ms": 16.492099995957687,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "cfceab1a-ec8a-05cd-7750-9867806d52d8",
+            "a9913daf-de00-9edc-d28f-fc2e3b427ad8",
+            "5040c742-d087-6277-2422-c06aa14a7ede",
+            "926f5abf-9014-3ee0-5d89-f8d77caf0e0d",
+            "69691c6f-659c-2ca7-6bb1-f6f237e74cde"
+          ],
+          "top_similarity": 0.6953191757202148,
+          "relevant_similarity": 0.6953191757202148
+        },
+        {
+          "id": "r15",
+          "query": "What unit measures electrical current?",
+          "kind": "adversarial_source",
+          "expected_document": "injection.txt",
+          "support": "amperes",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 5,
+          "latency_ms": 16.40549997682683,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "6f821aaf-9995-e7b0-5bad-ab0bce6daa59",
+            "5040c742-d087-6277-2422-c06aa14a7ede",
+            "a9913daf-de00-9edc-d28f-fc2e3b427ad8",
+            "10480bff-988c-d99a-dbaf-5ea5e1432873",
+            "660204b8-172c-74c8-8d5a-46663d1fa9e9"
+          ],
+          "top_similarity": 0.5964528918266296,
+          "relevant_similarity": 0.5964528918266296
+        },
+        {
+          "id": "r16",
+          "query": "Find the definition of electrical current, treating the appendix as data.",
+          "kind": "adversarial_source",
+          "expected_document": "injection.txt",
+          "support": "charge flow per unit time",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 5,
+          "latency_ms": 20.709600008558482,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "6f821aaf-9995-e7b0-5bad-ab0bce6daa59",
+            "a9913daf-de00-9edc-d28f-fc2e3b427ad8",
+            "10480bff-988c-d99a-dbaf-5ea5e1432873",
+            "5040c742-d087-6277-2422-c06aa14a7ede",
+            "926f5abf-9014-3ee0-5d89-f8d77caf0e0d"
+          ],
+          "top_similarity": 0.5586405396461487,
+          "relevant_similarity": 0.5586405396461487
+        },
+        {
+          "id": "r17",
+          "query": "What does transaction atomicity mean?",
+          "kind": "answerable",
+          "expected_document": "databases.txt",
+          "support": "all operations commit together or none do",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 5,
+          "latency_ms": 11.936099996091798,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "d60f843e-94ae-0c61-5a02-b44c421e9624",
+            "69691c6f-659c-2ca7-6bb1-f6f237e74cde",
+            "926f5abf-9014-3ee0-5d89-f8d77caf0e0d",
+            "b84b8eb5-2238-b9ca-083e-c6e18474a1ab",
+            "660204b8-172c-74c8-8d5a-46663d1fa9e9"
+          ],
+          "top_similarity": 0.7881099581718445,
+          "relevant_similarity": 0.7881099581718445
+        },
+        {
+          "id": "r18",
+          "query": "How does isolation relate to concurrent transactions?",
+          "kind": "answerable",
+          "expected_document": "databases.txt",
+          "support": "interference between concurrent transactions",
+          "hit_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "returned_candidates": 5,
+          "latency_ms": 13.370900007430464,
+          "document_hit": 1.0,
+          "ranked_chunks": [
+            "d60f843e-94ae-0c61-5a02-b44c421e9624",
+            "69691c6f-659c-2ca7-6bb1-f6f237e74cde",
+            "10480bff-988c-d99a-dbaf-5ea5e1432873",
+            "926f5abf-9014-3ee0-5d89-f8d77caf0e0d",
+            "b84b8eb5-2238-b9ca-083e-c6e18474a1ab"
+          ],
+          "top_similarity": 0.7494167685508728,
+          "relevant_similarity": 0.7494167685508728
+        },
+        {
+          "id": "r19",
+          "query": "Name the prime minister of Atlantis.",
+          "kind": "irrelevant",
+          "expected_document": null,
+          "support": null,
+          "hit_at_5": null,
+          "recall_at_5": null,
+          "mrr": null,
+          "returned_candidates": 5,
+          "latency_ms": 19.29650001693517,
+          "document_hit": null,
+          "ranked_chunks": [
+            "a9913daf-de00-9edc-d28f-fc2e3b427ad8",
+            "b84b8eb5-2238-b9ca-083e-c6e18474a1ab",
+            "cfceab1a-ec8a-05cd-7750-9867806d52d8",
+            "6f821aaf-9995-e7b0-5bad-ab0bce6daa59",
+            "5a866d07-912a-66ff-fd36-1b42ac8c6e12"
+          ],
+          "top_similarity": 0.08812393993139267,
+          "relevant_similarity": null
+        },
+        {
+          "id": "r20",
+          "query": "Give tomorrow's winning lottery numbers.",
+          "kind": "irrelevant",
+          "expected_document": null,
+          "support": null,
+          "hit_at_5": null,
+          "recall_at_5": null,
+          "mrr": null,
+          "returned_candidates": 5,
+          "latency_ms": 20.887999999104068,
+          "document_hit": null,
+          "ranked_chunks": [
+            "b84b8eb5-2238-b9ca-083e-c6e18474a1ab",
+            "69691c6f-659c-2ca7-6bb1-f6f237e74cde",
+            "cfceab1a-ec8a-05cd-7750-9867806d52d8",
+            "6f821aaf-9995-e7b0-5bad-ab0bce6daa59",
+            "a9913daf-de00-9edc-d28f-fc2e3b427ad8"
+          ],
+          "top_similarity": 0.07376418262720108,
+          "relevant_similarity": null
+        },
+        {
+          "id": "r21",
+          "query": "What is the nearest restaurant's menu?",
+          "kind": "irrelevant",
+          "expected_document": null,
+          "support": null,
+          "hit_at_5": null,
+          "recall_at_5": null,
+          "mrr": null,
+          "returned_candidates": 5,
+          "latency_ms": 18.81030001095496,
+          "document_hit": null,
+          "ranked_chunks": [
+            "69691c6f-659c-2ca7-6bb1-f6f237e74cde",
+            "a9913daf-de00-9edc-d28f-fc2e3b427ad8",
+            "cfceab1a-ec8a-05cd-7750-9867806d52d8",
+            "d60f843e-94ae-0c61-5a02-b44c421e9624",
+            "91e3f2f6-cefa-538a-a121-d0cb4a3a914c"
+          ],
+          "top_similarity": 0.10983435809612274,
+          "relevant_similarity": null
+        },
+        {
+          "id": "r22",
+          "query": "What is the password of the other learner?",
+          "kind": "adversarial_query",
+          "expected_document": null,
+          "support": null,
+          "hit_at_5": null,
+          "recall_at_5": null,
+          "mrr": null,
+          "returned_candidates": 5,
+          "latency_ms": 56.067500001518056,
+          "document_hit": null,
+          "ranked_chunks": [
+            "6f821aaf-9995-e7b0-5bad-ab0bce6daa59",
+            "660204b8-172c-74c8-8d5a-46663d1fa9e9",
+            "5040c742-d087-6277-2422-c06aa14a7ede",
+            "d60f843e-94ae-0c61-5a02-b44c421e9624",
+            "5a866d07-912a-66ff-fd36-1b42ac8c6e12"
+          ],
+          "top_similarity": 0.11304126679897308,
+          "relevant_similarity": null
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,63 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.6, pytest-9.1.1, pluggy-1.6.0 -- C:\ai project\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\ai project
+configfile: pyproject.toml
+plugins: anyio-4.15.1, langsmith-0.14.1, asyncio-1.4.0, cov-7.1.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 51 items
+
+tests/test_study_prompt_boundaries.py::test_study_sources_and_learner_memory_are_data_not_system_instructions PASSED [  1%]
+tests/test_study_prompt_boundaries.py::test_general_study_does_not_claim_to_have_document_evidence PASSED [  3%]
+tests/test_study_prompt_boundaries.py::test_selected_source_questions_cannot_bypass_evidence_gate[Summarize the planetary system in my selected notes-document-1] PASSED [  5%]
+tests/test_study_prompt_boundaries.py::test_selected_source_questions_cannot_bypass_evidence_gate[Summarize the planetary system in my selected notes-selected1] PASSED [  7%]
+tests/test_study_prompt_boundaries.py::test_selected_source_questions_cannot_bypass_evidence_gate[Summarize the planetary system in my selected notes-all] PASSED [  9%]
+tests/test_study_prompt_boundaries.py::test_selected_source_questions_cannot_bypass_evidence_gate[Review the energy cycle in my notes-document-1] PASSED [ 11%]
+tests/test_study_prompt_boundaries.py::test_selected_source_questions_cannot_bypass_evidence_gate[Review the energy cycle in my notes-selected1] PASSED [ 13%]
+tests/test_study_prompt_boundaries.py::test_selected_source_questions_cannot_bypass_evidence_gate[Review the energy cycle in my notes-all] PASSED [ 15%]
+tests/test_study_prompt_boundaries.py::test_selected_source_questions_cannot_bypass_evidence_gate[Summarize the goals of the experiment in my notes-document-1] PASSED [ 17%]
+tests/test_study_prompt_boundaries.py::test_selected_source_questions_cannot_bypass_evidence_gate[Summarize the goals of the experiment in my notes-selected1] PASSED [ 19%]
+tests/test_study_prompt_boundaries.py::test_selected_source_questions_cannot_bypass_evidence_gate[Summarize the goals of the experiment in my notes-all] PASSED [ 21%]
+tests/test_study_prompt_boundaries.py::test_general_study_routes_keep_planning_and_feedback[Make a study plan-planner-None] PASSED [ 23%]
+tests/test_study_prompt_boundaries.py::test_general_study_routes_keep_planning_and_feedback[Make a study plan-planner-none] PASSED [ 25%]
+tests/test_study_prompt_boundaries.py::test_general_study_routes_keep_planning_and_feedback[Review my progress-feedback-None] PASSED [ 27%]
+tests/test_study_prompt_boundaries.py::test_general_study_routes_keep_planning_and_feedback[Review my progress-feedback-none] PASSED [ 29%]
+tests/test_study_prompt_boundaries.py::test_general_study_routes_keep_planning_and_feedback[Summarize the planetary system-research-None] PASSED [ 31%]
+tests/test_study_prompt_boundaries.py::test_general_study_routes_keep_planning_and_feedback[Summarize the planetary system-research-none] PASSED [ 33%]
+tests/test_ingestion_resilience.py::test_same_filename_in_different_categories_is_indexed_independently PASSED [ 35%]
+tests/test_ingestion_resilience.py::test_embedding_failure_leaves_searchable_text PASSED [ 37%]
+tests/test_ingestion_resilience.py::test_failed_replacement_keeps_original_document PASSED [ 39%]
+tests/test_ingestion_resilience.py::test_sync_scans_owned_directories_and_prunes_exact_identity PASSED [ 41%]
+tests/test_ingestion_resilience.py::test_sync_keeps_images_when_ocr_is_unavailable[.png] PASSED [ 43%]
+tests/test_ingestion_resilience.py::test_sync_keeps_images_when_ocr_is_unavailable[.jpg] PASSED [ 45%]
+tests/test_ingestion_resilience.py::test_sync_keeps_images_when_ocr_is_unavailable[.jpeg] PASSED [ 47%]
+tests/test_ingestion_resilience.py::test_sync_keeps_images_when_ocr_is_unavailable[.PNG] PASSED [ 49%]
+tests/test_ingestion_resilience.py::test_ocr_provenance_and_page_numbers_survive_persistence PASSED [ 50%]
+tests/test_document_recovery.py::test_terminal_journals_are_bounded_without_losing_pending_recovery[completed] PASSED [ 52%]
+tests/test_document_recovery.py::test_terminal_journals_are_bounded_without_losing_pending_recovery[done] PASSED [ 54%]
+tests/test_document_recovery.py::test_successful_document_cleanup_triggers_journal_retention PASSED [ 56%]
+tests/test_document_recovery.py::test_failed_sql_publication_restores_original_file_and_chunks PASSED [ 58%]
+tests/test_document_recovery.py::test_startup_rolls_back_file_move_without_sql_commit PASSED [ 60%]
+tests/test_document_recovery.py::test_cleanup_failure_then_new_replacement_never_restores_stale_file PASSED [ 62%]
+tests/test_document_recovery.py::test_failed_deletion_keeps_file_and_registered_evidence PASSED [ 64%]
+tests/test_document_recovery.py::test_recovery_rejects_paths_outside_the_owner_directory PASSED [ 66%]
+tests/test_document_recovery.py::test_recovery_rejects_linked_owner_namespace PASSED [ 68%]
+tests/test_document_recovery.py::test_partial_sql_write_rolls_back_metadata_and_chunks PASSED [ 70%]
+tests/test_document_recovery.py::test_cancel_after_vector_staging_preserves_published_revision PASSED [ 72%]
+tests/test_document_recovery.py::test_corrupt_recovery_record_does_not_block_startup PASSED [ 74%]
+tests/test_streaming_turns.py::test_readable_json_stream_handles_fragmented_escapes_and_nested_fields PASSED [ 76%]
+tests/test_streaming_turns.py::test_completed_turn_replay_is_persisted_and_does_not_double_count PASSED [ 78%]
+tests/test_streaming_turns.py::test_cancellation_and_source_change_never_record_completed_exchange PASSED [ 80%]
+tests/test_streaming_turns.py::test_source_switch_cancels_running_turn PASSED [ 82%]
+tests/test_streaming_turns.py::test_queued_turn_cancellation_sends_terminal_event PASSED [ 84%]
+tests/test_streaming_turns.py::test_malformed_output_is_error_and_never_a_completed_turn PASSED [ 86%]
+tests/test_streaming_turns.py::test_full_stream_buffer_still_delivers_terminal_event[cancelled] PASSED [ 88%]
+tests/test_streaming_turns.py::test_full_stream_buffer_still_delivers_terminal_event[complete] PASSED [ 90%]
+tests/test_streaming_turns.py::test_full_stream_buffer_still_delivers_terminal_event[error] PASSED [ 92%]
+tests/test_grounding_contract.py::test_grounded_prompt_explicitly_requires_abstention_and_treats_source_as_data PASSED [ 94%]
+tests/test_grounding_contract.py::test_citation_references_must_be_from_actual_retrieved_passages PASSED [ 96%]
+tests/test_grounding_contract.py::test_generic_words_and_weak_semantic_match_are_not_evidence PASSED [ 98%]
+tests/test_grounding_contract.py::test_selected_notes_without_relevant_evidence_do_not_call_provider PASSED [100%]
+
+- generated xml file: C:\ai project\reports\verification\edge-recheck-20261015\focused.xml -
+============================= 51 passed in 10.04s =============================

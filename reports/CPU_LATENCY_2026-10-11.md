@@ -1,4 +1,4 @@
-# Local CPU latency experiment ? 2026-10-11
+# Local CPU latency experiment — 2026-10-11
 
 Problem: the old benchmark appended previous responses to one live session and
 used retrieval without owner/source selection. Later requests were longer and
@@ -55,7 +55,7 @@ model unload/reload; OS file caches are not cleared. Some checks/builds ran on
 the same local machine during collection, so background load can confound timing.
 Prompt-prefix caching is a real part of these warm measurements. Seed and zero
 temperature do not guarantee identical outputs across loads/provider versions.
-The suite does not alter learner sessions or uploads and uses no paid services.
+The suite does not alter learner sessions or uploads.
 
 Evidence: [raw measurements](latency-2026-10-11.json),
 [dataset and rubrics](../tests/fixtures/evaluation_v1/dataset.json), and
