@@ -7,7 +7,10 @@ an evidence outcome. When nothing relevant is found, or no notes are selected, t
 outcome tells the tutor workflow to refuse instead of calling the model.
 """
 
+import hashlib
 import logging
+import threading
+from collections import OrderedDict
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional
@@ -16,6 +19,9 @@ from sentio.config import nlp_cfg, tutor_cfg
 from sentio.rag.evidence_policy import MIN_DENSE_SIMILARITY, has_relevance_signal
 
 logger = logging.getLogger(__name__)
+
+# One per recent selection of notes (a lecture, a course, everything).
+KEYWORD_INDEXES_KEPT = 4
 
 
 # ─────────────────────────────────────────────
@@ -245,6 +251,33 @@ class KnowledgeBase:
         self.vdb = vdb or QdrantVectorDB()
         self.doc_repo = doc_repo or DocumentRepository()
         self.ranker = ranker or HybridRanker(w_vector=0.75, w_keyword=0.25)
+        self._keyword_indexes = OrderedDict()  # chunk fingerprint -> BM25Searcher
+        self._keyword_lock = threading.Lock()
+
+    def _keyword_index(self, chunks):
+        """The keyword index for exactly these chunks, reused while they are unchanged.
+
+        The key is a digest of every field of every chunk, so an upload, replacement,
+        deletion or rename produces a different key and a fresh index.
+        """
+        from sentio.rag.bm25 import BM25Searcher
+
+        digest = hashlib.blake2b(digest_size=16)
+        for chunk in chunks:
+            digest.update(repr(chunk).encode("utf-8", "surrogatepass"))
+        key = digest.digest()
+        with self._keyword_lock:
+            searcher = self._keyword_indexes.get(key)
+            if searcher is not None:
+                self._keyword_indexes.move_to_end(key)
+                return searcher
+        searcher = BM25Searcher()
+        searcher.index(chunks)
+        with self._keyword_lock:
+            self._keyword_indexes[key] = searcher
+            while len(self._keyword_indexes) > KEYWORD_INDEXES_KEPT:
+                self._keyword_indexes.popitem(last=False)
+        return searcher
 
     def load(self):
         """Open the document registry and the vector index."""
@@ -366,10 +399,7 @@ class KnowledgeBase:
             else:
                 subj_chunks = [c for c in all_db_chunks if c.get("document_id") == document_id]
 
-            from sentio.rag.bm25 import BM25Searcher
-
-            bm25_searcher = BM25Searcher()
-            bm25_searcher.index(subj_chunks)
+            bm25_searcher = self._keyword_index(subj_chunks)
             bm25_results = bm25_searcher.search(query, limit=20)
             t_k_end = time.perf_counter()
             keyword_latency = (t_k_end - t_k_start) * 1000
