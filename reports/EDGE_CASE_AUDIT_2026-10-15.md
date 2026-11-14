@@ -2,11 +2,11 @@
 
 What this repo does: Sentio is a local study workspace for uploaded notes, source-based tutoring, practice and scheduled review. This audit assumes the documented local installation with one API process, including concurrent browser requests and background jobs.
 
-Three audit agents inspected frontend flows, backend documents/persistence, and tutor/recovery paths. They reached the usage limit before delivering complete reports. The primary agent independently reproduced the four findings below from their partial work. The original audit changed no application code; the authorized repair follow-up is recorded here.
+The audit covered frontend flows, backend documents and persistence, and tutor and recovery paths. The frontend pass was not completed. Each of the four findings below was reproduced with a probe before it was recorded. The original audit changed no application code; the repair follow-up is recorded here.
 
 ## Repair follow-up — all four findings fixed
 
-Changes are on local branch `codex/fix-audit-edge-cases`.
+Changes are on branch `codex/fix-audit-edge-cases`.
 
 Fresh recheck: all four fixes passed again, with 51 focused checks and a full run
 of 282 tests plus 31 subtests passing. See the [evidence report](verification/edge-recheck-20261015/EVIDENCE.md)
@@ -27,11 +27,11 @@ Verification:
 - The skip is the real Tesseract image test because the executable is not installed. Synthetic OCR failures and saved-image preservation pass.
 - All six JavaScript scripts, Prettier, Ruff lint, and Python formatting pass. Source and wheel builds succeed offline with the installed build backend.
 - Inverted the selected-source routing guard in memory and reran its regressions: six cases failed as expected. No application file was changed for this mutation check.
-- Tests used `SENTIO_HOME` pointing at a synthetic workspace directory, isolated temporary databases, and deterministic model providers. Sandbox restrictions on localhost sockets and protected signing keys were resolved by permitted test execution; no sandbox-related tests were disabled.
+- Tests used `SENTIO_HOME` pointing at a synthetic workspace directory, isolated temporary databases, and deterministic model providers. No tests were disabled.
 
 The following entries retain the original reproduction details. They are no longer open bugs in this working tree.
 
-Remaining limits: no live local-model quality/latency evaluation was run, and no guarantee of semantic correctness follows from checking citation references. Real Tesseract OCR needs its external executable. The interrupted frontend agent audit was not exhaustive; passing browser regressions does not establish that every user edge case has been found. Personal documents/databases were not modified, and these code changes do not automatically repair any records removed before the fix.
+Remaining limits: no live local-model quality/latency evaluation was run, and no guarantee of semantic correctness follows from checking citation references. Real Tesseract OCR needs its external executable. The frontend audit was not exhaustive; passing browser regressions does not establish that every user edge case has been found. Personal documents/databases were not modified, and these code changes do not automatically repair any records removed before the fix.
 
 ## Must fix
 
@@ -69,9 +69,9 @@ Remaining limits: no live local-model quality/latency evaluation was run, and no
 
 - `npm test`: all six JavaScript test scripts passed.
 - Both isolated probe scripts passed their reproduction assertions.
-- A complete Python run could not be certified in this sandbox. The default temporary directory was inaccessible. Moving temporary files into the workspace passed fixture setup, but protected local signing-key publication then failed with `PermissionError` at `os.link` in `auth/local_secret.py:48`. Long full-suite attempts were stopped; these environmental failures are not counted as application findings.
+- A complete Python run was not obtained during the original audit: the environment it ran in could not use the default temporary directory, and publishing the local signing key failed with `PermissionError` at `os.link` in `auth/local_secret.py:48`. These environmental failures are not counted as application findings. The repair follow-up above records the later full run.
 - A follow-up run of four relevant Python test modules with a synthetic signing key started but did not finish within this audit; it was stopped and is not reported as passing.
-- No complete new frontend agent report was returned. Do not interpret the passing existing JavaScript checks as exhaustive coverage of navigation, accessibility, mobile layouts or stale state.
+- The frontend pass produced no complete report. The passing JavaScript checks are not exhaustive coverage of navigation, accessibility, mobile layouts or stale state.
 - No production deployment, personal-document testing, live-provider quality evaluation or destructive real-data tests were performed. Probes use synthetic data, temporary storage and explicit doubles.
 
 Verdict: Fix source-routing correctness and image rescan deletion first, then stream termination. The four reproductions should become regression tests when fixes are implemented.

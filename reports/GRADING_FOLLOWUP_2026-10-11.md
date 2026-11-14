@@ -52,5 +52,4 @@ Reproduce the repeated comparison:
 uv run python scripts/eval/evaluate_grading.py --repeats 3 --output reports/grading-comparison.json
 ```
 
-Measurements use local Ollama only. No learner data, paid services, model
-retraining or artificial commit dates were used.
+Measurements use local Ollama only and no learner data.

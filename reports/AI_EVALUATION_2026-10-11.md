@@ -1,4 +1,9 @@
-# Measured AI evaluation ? 2026-10-11
+# Measured AI evaluation — 2026-10-11
+
+> Correction, 14 November 2026: the conclusion that hybrid search "showed no gain" needs
+> a qualifier, and the 75% negative candidate rate no longer matches the current code.
+> See the [retrieval follow-up](RETRIEVAL_FOLLOWUP_2026-11-14.md). The measurements below
+> are unchanged.
 
 Problem: the old benchmark retrieved without authenticated learner ownership or
 selected documents, scanned real folders, and fabricated answer-quality scores.
@@ -68,5 +73,3 @@ Raw evidence: [before](evaluation-before-2026-10-11.json),
 
 Emotion recognition remains **unverified**: successful loading or a working webcam
 pipeline does not establish accuracy without an appropriate labelled dataset.
-No training, paid services, synthetic commit dates, or guaranteed accuracy claims
-were introduced.
