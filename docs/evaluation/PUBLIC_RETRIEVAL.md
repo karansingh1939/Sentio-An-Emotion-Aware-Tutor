@@ -56,10 +56,13 @@ BM25, so the harness is not inflating results.
    `all-MiniLM-L6-v2` (5th to 95th percentile, SciFact) but 0.81 to 0.91 with
    `e5-small-v2`, where a floor of 0.35 removes nothing. Changing the model means choosing
    the floor again.
-5. **Rebuilding the keyword index per question dominates search time.**
-   `KnowledgeBase.retrieve` rebuilds it on every question. Building took 443 ms for the
+5. **Rebuilding the keyword index per question dominated search time.**
+   `KnowledgeBase.retrieve` rebuilt it on every question. Building took 443 ms for the
    SciQ passages and 555 ms for SciFact's longer ones, against a median 15 to 42 ms for
-   the keyword search itself.
+   the keyword search itself. The index is now kept and reused until any chunk it covers
+   changes. On the SciQ passages with keyword search only, a question through
+   `KnowledgeBase.retrieve` fell from a median 450 ms to 73 ms (30 questions; the first
+   question after a change still pays the build).
 
 ## What it does not show
 
