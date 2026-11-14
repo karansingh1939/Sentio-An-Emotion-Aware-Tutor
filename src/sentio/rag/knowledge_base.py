@@ -129,6 +129,86 @@ class ContentAdapter:
 # ─────────────────────────────────────────────
 
 
+def bm25_score_for(searcher, query: str, doc_id: str) -> float:
+    """BM25 score of one indexed chunk for a query."""
+    query_tokens = searcher._tokenize(query)
+    if not query_tokens or doc_id not in searcher.doc_term_freqs:
+        return 0.0
+
+    freqs = searcher.doc_term_freqs[doc_id]
+    doc_len = searcher.doc_lengths[doc_id]
+    score = 0.0
+
+    for token in query_tokens:
+        if token not in freqs:
+            continue
+        tf = freqs[token]
+        idf_val = searcher.idf.get(token, 0.0)
+        numerator = tf * (searcher.k1 + 1)
+        denominator = tf + searcher.k1 * (
+            1.0 - searcher.b + searcher.b * (doc_len / searcher.avg_doc_len)
+        )
+        score += idf_val * (numerator / denominator)
+
+    return score
+
+
+def fuse_candidates(
+    query,
+    vector_results,
+    bm25_results,
+    bm25_searcher,
+    chunks_by_id,
+    ranker,
+    limit=5,
+    floor=MIN_DENSE_SIMILARITY,
+    gate=True,
+):
+    """Merge vector and keyword hits, drop those with no relevance signal, and rank them.
+
+    `floor` and `gate` exist so evaluations can switch each filter off; the tutor always
+    uses the defaults.
+    """
+    merged_hits = {}
+    for hit in vector_results:
+        if hit["score"] < floor:
+            continue
+        cid = hit["id"]
+        if cid not in chunks_by_id:
+            continue
+        merged_hits[cid] = {
+            "id": cid,
+            "text": chunks_by_id[cid]["text_content"],
+            "payload": chunks_by_id[cid],
+            "vector_score": hit["score"],
+            "bm25_score": 0.0,
+        }
+
+    for hit in bm25_results:
+        cid = hit["id"]
+        if cid not in merged_hits:
+            merged_hits[cid] = {
+                "id": cid,
+                "text": hit["text"],
+                "payload": hit["payload"],
+                "vector_score": 0.0,
+                "bm25_score": hit["score"],
+            }
+        else:
+            merged_hits[cid]["bm25_score"] = hit["score"]
+
+    for cid, hit in merged_hits.items():
+        if hit["bm25_score"] == 0.0:
+            hit["bm25_score"] = bm25_score_for(bm25_searcher, query, cid)
+
+    candidates = [
+        hit
+        for hit in merged_hits.values()
+        if not gate or has_relevance_signal(query, hit["text"], hit.get("vector_score", 0))
+    ]
+    return ranker.rerank(query, candidates, limit=limit)
+
+
 class KnowledgeBase:
     """
     Main interface used by the TutorAgent.
@@ -294,51 +374,12 @@ class KnowledgeBase:
             t_k_end = time.perf_counter()
             keyword_latency = (t_k_end - t_k_start) * 1000
 
-            # 4. Merge candidates and back-fill scores
-            merged_hits = {}
+            # 4. Merge candidates, back-fill scores, filter and rank
             db_chunk_map = {c["chunk_id"]: c for c in subj_chunks}
-
-            for hit in vector_results:
-                if hit["score"] < MIN_DENSE_SIMILARITY:
-                    continue
-                cid = hit["id"]
-                if cid not in db_chunk_map:
-                    continue
-                text_content = db_chunk_map[cid]["text_content"]
-                merged_hits[cid] = {
-                    "id": cid,
-                    "text": text_content,
-                    "payload": db_chunk_map[cid],
-                    "vector_score": hit["score"],
-                    "bm25_score": 0.0,
-                }
-
-            for hit in bm25_results:
-                cid = hit["id"]
-                if cid not in merged_hits:
-                    merged_hits[cid] = {
-                        "id": cid,
-                        "text": hit["text"],
-                        "payload": hit["payload"],
-                        "vector_score": 0.0,
-                        "bm25_score": hit["score"],
-                    }
-                else:
-                    merged_hits[cid]["bm25_score"] = hit["score"]
-
-            for cid, hit in merged_hits.items():
-                if hit["bm25_score"] == 0.0:
-                    hit["bm25_score"] = self._compute_single_bm25_score(bm25_searcher, query, cid)
-
-            # 5. Hybrid Reranking Pass
-
-            candidates = [
-                hit
-                for hit in merged_hits.values()
-                if has_relevance_signal(query, hit["text"], hit.get("vector_score", 0))
-            ]
             t_rank_start = time.perf_counter()
-            top_ranked = self.ranker.rerank(query, candidates, limit=5)
+            top_ranked = fuse_candidates(
+                query, vector_results, bm25_results, bm25_searcher, db_chunk_map, self.ranker
+            )
             t_rank_end = time.perf_counter()
             ranking_latency = (t_rank_end - t_rank_start) * 1000
 
@@ -471,29 +512,6 @@ class KnowledgeBase:
                 )
         content.rag_context = "\n".join(parts)
         return content
-
-    def _compute_single_bm25_score(self, searcher, query: str, doc_id: str) -> float:
-        """Compute BM25 score of a single document ID for a query."""
-        query_tokens = searcher._tokenize(query)
-        if not query_tokens or doc_id not in searcher.doc_term_freqs:
-            return 0.0
-
-        freqs = searcher.doc_term_freqs[doc_id]
-        doc_len = searcher.doc_lengths[doc_id]
-        score = 0.0
-
-        for token in query_tokens:
-            if token not in freqs:
-                continue
-            tf = freqs[token]
-            idf_val = searcher.idf.get(token, 0.0)
-            numerator = tf * (searcher.k1 + 1)
-            denominator = tf + searcher.k1 * (
-                1.0 - searcher.b + searcher.b * (doc_len / searcher.avg_doc_len)
-            )
-            score += idf_val * (numerator / denominator)
-
-        return score
 
     def get_tone_instruction(self, learning_state: str) -> str:
         strategy = tutor_cfg.STRATEGY_MAP.get(learning_state, "standard")
