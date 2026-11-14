@@ -17,7 +17,9 @@ import psutil
 from sentio.config import nlp_cfg, session_cfg
 from sentio.evaluation.metrics import aggregate, retrieval_metrics
 from sentio.ingestion.pipeline import DocumentIngestionPipeline
+from sentio.rag.evidence_policy import MIN_DENSE_SIMILARITY
 from sentio.rag.knowledge_base import KnowledgeBase, SemanticRetriever
+from sentio.rag.reranker import HybridRanker
 from sentio.rag.vector_db import QdrantVectorDB
 from sentio.repositories.documents import DocumentRepository
 from sentio.session.manager import SessionManager
@@ -55,30 +57,43 @@ def isolated_runtime(model):
             sm.persister._engine.dispose()
 
 
+def _ingest(sm, pipeline, dataset_dir, dataset, owner, model):
+    documents = {}
+    for filename in dataset["documents"]:
+        if not pipeline.process_file(dataset_dir / filename, "reference", "general", owner):
+            raise RuntimeError(f"Evaluation ingestion failed: {filename}")
+        saved = sm.get_document_by_filename(filename, owner, "reference")
+        documents[filename] = saved["id"]
+        if not isinstance(model, KeywordOnly) and not saved["embedding_count"]:
+            raise RuntimeError(f"Hybrid evaluation requires indexed vectors: {filename}")
+    return documents
+
+
+def _relevant_chunks(sm, documents, case):
+    if not case["expected_document"]:
+        return []
+    chunks = sm.get_document_chunks(documents[case["expected_document"]])
+    relevant = [
+        c["chunk_id"] for c in chunks if case["support"].lower() in c["text_content"].lower()
+    ]
+    if not relevant:
+        raise ValueError(f"Rubric support absent from indexed source: {case['id']}")
+    return relevant
+
+
+def _summarise(rows):
+    summary = aggregate(rows)
+    positives = [r for r in rows if r["document_hit"] is not None]
+    summary["document_hit_rate"] = sum(r["document_hit"] for r in positives) / len(positives)
+    return summary
+
+
 def measure_retrieval(dataset_dir, dataset, model):
     with isolated_runtime(model) as (sm, pipeline, kb, owner):
-        documents = {}
-        for filename in dataset["documents"]:
-            if not pipeline.process_file(dataset_dir / filename, "reference", "general", owner):
-                raise RuntimeError(f"Evaluation ingestion failed: {filename}")
-            documents[filename] = sm.get_document_by_filename(filename, owner, "reference")["id"]
-            if (
-                not isinstance(model, KeywordOnly)
-                and not sm.get_document_by_filename(filename, owner, "reference")["embedding_count"]
-            ):
-                raise RuntimeError(f"Hybrid evaluation requires indexed vectors: {filename}")
+        documents = _ingest(sm, pipeline, dataset_dir, dataset, owner, model)
         rows = []
         for case in dataset["queries"]:
-            relevant = []
-            if case["expected_document"]:
-                chunks = sm.get_document_chunks(documents[case["expected_document"]])
-                relevant = [
-                    c["chunk_id"]
-                    for c in chunks
-                    if case["support"].lower() in c["text_content"].lower()
-                ]
-                if not relevant:
-                    raise ValueError(f"Rubric support absent from indexed source: {case['id']}")
+            relevant = _relevant_chunks(sm, documents, case)
             started = time.perf_counter()
             content = kb.retrieve(
                 "general",
@@ -102,9 +117,55 @@ def measure_retrieval(dataset_dir, dataset, model):
             )
             row["ranked_chunks"] = content.chunks_used
             rows.append(row)
-        summary = aggregate(rows)
-        positives = [r for r in rows if r["document_hit"] is not None]
-        summary["document_hit_rate"] = sum(r["document_hit"] for r in positives) / len(positives)
+        return {"summary": _summarise(rows), "cases": rows}
+
+
+def measure_dense(dataset_dir, dataset, model):
+    """Embedding similarity alone, with no score floor and no keyword filter.
+
+    The product never retrieves this way. It is the reference that shows what the hybrid
+    path's similarity floor removes.
+    """
+    with isolated_runtime(model) as (sm, pipeline, _kb, owner):
+        documents = _ingest(sm, pipeline, dataset_dir, dataset, owner, model)
+        names = {doc_id: filename for filename, doc_id in documents.items()}
+        chunks = [
+            dict(chunk, filename=names[doc_id])
+            for doc_id in documents.values()
+            for chunk in sm.get_document_chunks(doc_id)
+        ]
+        vectors = model.encode([c["text_content"] for c in chunks], normalize_embeddings=True)
+        rows = []
+        for case in dataset["queries"]:
+            relevant = _relevant_chunks(sm, documents, case)
+            started = time.perf_counter()
+            scores = (vectors @ model.encode(case["query"], normalize_embeddings=True)).tolist()
+            order = sorted(range(len(chunks)), key=lambda i: -scores[i])[:5]
+            latency = (time.perf_counter() - started) * 1000
+            ranked = [chunks[i]["chunk_id"] for i in order]
+            row = dict(case, **retrieval_metrics(ranked, relevant), latency_ms=latency)
+            row["document_hit"] = (
+                float(any(chunks[i]["filename"] == case["expected_document"] for i in order))
+                if relevant
+                else None
+            )
+            row["ranked_chunks"] = ranked
+            row["top_similarity"] = scores[order[0]]
+            row["relevant_similarity"] = (
+                max(s for s, c in zip(scores, chunks) if c["chunk_id"] in relevant)
+                if relevant
+                else None
+            )
+            rows.append(row)
+        summary = _summarise(rows)
+        # Unlike the product paths, this reference always returns its five nearest passages.
+        summary["irrelevant_candidate_rate"] = None
+        wanted = [r["relevant_similarity"] for r in rows if r["relevant_similarity"] is not None]
+        unwanted = [r["top_similarity"] for r in rows if r["relevant_similarity"] is None]
+        summary["similarity_floor"] = MIN_DENSE_SIMILARITY
+        summary["relevant_below_floor"] = sum(s < MIN_DENSE_SIMILARITY for s in wanted)
+        summary["lowest_relevant_similarity"] = min(wanted)
+        summary["highest_unanswerable_similarity"] = max(unwanted) if unwanted else None
         return {"summary": summary, "cases": rows}
 
 
@@ -184,16 +245,22 @@ def evaluate(dataset_dir, grade=False):
             "embedding_model": nlp_cfg.EMBEDDING_MODEL,
             "device": "cpu",
             "top_k": 5,
-            "vector_weight": 0.75,
-            "keyword_weight": 0.25,
+            "vector_weight": HybridRanker().w_vector,
+            "keyword_weight": HybridRanker().w_keyword,
+            "similarity_floor": MIN_DENSE_SIMILARITY,
             "chunk_size": 500,
             "chunk_overlap": 100,
+            "longest_document_characters": max(
+                len((dataset_dir / filename).read_text(encoding="utf-8"))
+                for filename in dataset["documents"]
+            ),
             "fresh_owned_database": True,
         },
         "retrieval": {},
     }
     for mode, encoder in (("keyword", KeywordOnly()), ("hybrid", model)):
         result["retrieval"][mode] = measure_retrieval(dataset_dir, dataset, encoder)
+    result["retrieval"]["dense_reference"] = measure_dense(dataset_dir, dataset, model)
     if grade:
         result["grading"] = measure_grading(dataset)
     return result

@@ -13,6 +13,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from sentio.config import nlp_cfg, tutor_cfg
+from sentio.rag.evidence_policy import MIN_DENSE_SIMILARITY, has_relevance_signal
 
 logger = logging.getLogger(__name__)
 
@@ -298,7 +299,7 @@ class KnowledgeBase:
             db_chunk_map = {c["chunk_id"]: c for c in subj_chunks}
 
             for hit in vector_results:
-                if hit["score"] < 0.35:
+                if hit["score"] < MIN_DENSE_SIMILARITY:
                     continue
                 cid = hit["id"]
                 if cid not in db_chunk_map:
@@ -330,7 +331,6 @@ class KnowledgeBase:
                     hit["bm25_score"] = self._compute_single_bm25_score(bm25_searcher, query, cid)
 
             # 5. Hybrid Reranking Pass
-            from sentio.rag.evidence_policy import has_relevance_signal
 
             candidates = [
                 hit

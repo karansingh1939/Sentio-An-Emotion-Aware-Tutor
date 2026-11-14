@@ -105,3 +105,13 @@ def test_case_evaluator_uses_real_owned_api_context(tmp_path, monkeypatch):
     assert report["cases"][0]["outcome"] == "generated"
     assert report["summary"]["lexical_rubrics_passed"] == 1
     assert report["summary"]["semantic_accuracy"] is None
+
+
+def test_required_and_forbidden_terms_match_whole_terms_only():
+    case = {"kind": "answerable", "required_terms": ["8", "grams"], "forbidden_terms": ["0%"]}
+    cited = {"answer_mode": "ollama/test", "source_citations": [{"filename": "a.txt", "page": 1}]}
+    wrong = observe_answer(case, {**cited, "text": "Cedar retains 48 grams, 100% of it."})
+    right = observe_answer(case, {**cited, "text": "Cedar retains 8 grams."})
+    assert not wrong["lexical_rubric_pass"]
+    assert wrong["forbidden_terms_found"] == []
+    assert right["lexical_rubric_pass"]
