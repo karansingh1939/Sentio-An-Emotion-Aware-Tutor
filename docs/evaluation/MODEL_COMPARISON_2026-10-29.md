@@ -44,6 +44,28 @@ source recall. Probing the production quiz prompt showed two causes:
 
 After the fix, raw replies passed validation in 2 of 4 probes (from 0 of 4), and two
 full journeys produced model-generated quizzes in 48 s and 59 s with all steps passing.
+Those probes and journeys were not saved as reports, so these figures cannot be checked
+from the repository.
+
+## Later runs, added 14 November 2026
+
+Two more recorded runs bear on the table above.
+
+- A repeat of the 12 cases with `qwen2.5:7b` on 9 November
+  ([report](../../reports/generation/speed-2026-11-09-qwen2-5-7b.json)) answered 4/4
+  covered questions, declined 6/6 and took a 20.2 s median turn. `phi3:mini` scored 1/4
+  on 12 October and 2/4 in the table above. The same model on the same cases therefore
+  moves by one question between runs, which is the whole gap between `phi3:mini` and
+  `qwen2.5:7b`.
+- A full journey with `qwen2.5:7b` on the same day
+  ([report](../../reports/generation/speed-2026-11-09-journey-qwen2-5-7b.json)) ended
+  with status `failed`: its quiz fell back to source recall after 108 s, and the
+  unsupported-question step failed the script's wording check although the reply came
+  from the evidence gate. The repair step reduces quiz fallback; it does not remove it.
+
+"Absent facts declined" does not separate the models. `llama3.2` declined 6/6 while
+answering 0/4, and in every one of these cases the retrieval gate passed the question and
+the model was called.
 
 ## Limits
 

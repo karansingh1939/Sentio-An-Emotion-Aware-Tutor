@@ -1,0 +1,6 @@
+
+> format:check
+> prettier --check src/sentio/static tests/*.mjs
+
+Checking formatting...
+All matched files use Prettier code style!

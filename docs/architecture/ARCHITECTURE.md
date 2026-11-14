@@ -138,6 +138,13 @@ precision 1.00); adding similar topics gave 0.53 and 0.80, filling gaps gave 0.5
 and pruning weak links gave 0.54 and 0.86. Embeddings measure relatedness, and a syllabus
 gap is usually close to a slide without being taught by it.
 
+Limits of that check: the word matcher was scored on all 72 items, which it was developed
+against, while the embedding variants were cross-validated, so the comparison favours word
+overlap. The labels and course files are private and not in the repository. Word overlap
+finds 51% of the labelled links and 75% of the items that are in the notes, so the course
+percentage can show a covered topic as missing; on this syllabus it never showed a missing
+topic as covered (precision 1.00).
+
 Topic mastery (`study/topics.py`, `repositories/topics.py`): a lecture's topics are page
 ranges grouped by heading (slide titles; PDF page headings, skipping running headers),
 stored in `note_topics` with the document checksum and rebuilt when it changes. Topic ids
@@ -214,8 +221,8 @@ required by this local release.
 The supported flow is now Library ? Study ? practice ? review, with guided Today
 actions and no normal camera/voice controls. Authentication issues standard HS256
 JWTs; migration 8 adds hashed single-use recovery keys and token revocation versions.
-Legacy password hashes upgrade on successful login. See STUDY_GUIDE.md and
-RELEASE_HANDOFF.md for recovery, supported workflow and open release gates.
+Legacy password hashes upgrade on successful login. See the
+[learner guide](../guides/STUDY_GUIDE.md) for recovery and the supported workflow.
 
 A real three-item journey failed validation before fallback integration
 (reports/generation/live-journey-usability-3-v1.json). The next journey completed
