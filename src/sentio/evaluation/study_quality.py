@@ -8,11 +8,16 @@ import uuid
 from pathlib import Path
 
 
+def has_term(term, text):
+    """Whole-term match, so "8" is not found inside "48" nor "0%" inside "100%"."""
+    return re.search(rf"(?<![a-z0-9]){re.escape(term.lower())}(?![a-z0-9])", text) is not None
+
+
 def observe_answer(case, response):
     text = response.get("text", "")
     normalized = " ".join(text.lower().split())
     mode = response.get("answer_mode", "unknown")
-    forbidden = [term for term in case["forbidden_terms"] if term.lower() in normalized]
+    forbidden = [term for term in case["forbidden_terms"] if has_term(term, normalized)]
     first_sentence = re.split(r"[.!?](?:\s|$)", normalized, maxsplit=1)[0]
     abstains = any(
         phrase in first_sentence
@@ -41,7 +46,7 @@ def observe_answer(case, response):
     expected = {
         "answerable": outcome == "generated"
         and bool(response.get("source_citations"))
-        and all(term.lower() in normalized for term in case["required_terms"]),
+        and all(has_term(term, normalized) for term in case["required_terms"]),
         "absent": outcome == "abstention",
         "ambiguous": outcome in {"abstention", "clarification"},
     }[case["kind"]]
