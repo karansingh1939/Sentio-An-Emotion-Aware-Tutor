@@ -218,7 +218,7 @@ required by this local release.
 
 ## Usability checkpoint, 2026-10-12
 
-The supported flow is now Library ? Study ? practice ? review, with guided Today
+The supported flow is now Library → Study → practice → review, with guided Today
 actions and no normal camera/voice controls. Authentication issues standard HS256
 JWTs; migration 8 adds hashed single-use recovery keys and token revocation versions.
 Legacy password hashes upgrade on successful login. See the

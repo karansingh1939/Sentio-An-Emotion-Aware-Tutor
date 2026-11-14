@@ -10,7 +10,7 @@ web
 
 College students studying their own course material: lecture slides, PDFs, Word and text notes. They come back across a term to understand a lecture, practise it, review what is fading and prepare for exams. They often work on a laptop without a GPU and with no budget for paid AI services.
 
-Recruiters and interviewers also see Sentio as a portfolio project, but through the student's experience. Design decisions serve the student first.
+Other readers meet Sentio through the student's experience. Design decisions serve the student first.
 
 ## Product Purpose
 
@@ -48,7 +48,7 @@ Sentio answers only from the student's own notes. Every answer cites the slide o
 
 - Product screenshots in `docs/images/` (Today, Library, Study, Quiz, Flashcards, Progress; light and dark; 1280 and 390 widths) and `docs/images/journey.gif`.
 - Measured results in `docs/evaluation/` and `reports/`: a four-model grounding comparison, a retrieval comparison and a grading follow-up. These are synthetic, author-labelled experiments. They do not establish real-world accuracy or learning gains.
-- Syllabus-matching labels were written by Claude, not by students. Never present them as student validation.
+- Syllabus-matching labels were written with an AI assistant, not by students. Never present them as student validation.
 - There are no testimonials, user counts, institutional adoption or learning-outcome data. Do not fabricate any.
 
 ## Product Principles
