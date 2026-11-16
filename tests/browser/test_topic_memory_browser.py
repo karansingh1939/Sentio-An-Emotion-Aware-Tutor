@@ -86,7 +86,11 @@ async def test_a_faded_topic_can_be_practised_from_today(monkeypatch):
             assert "% remembered" in await card.inner_text()
 
             await page.goto(url + "/#/documents")
-            await line.filter(has_text="0 of 2 topics ready · 1 due for review").wait_for()
+            await (
+                line.filter(has_text="0 of 2 topics ready")
+                .filter(has_text="1 due for review")
+                .wait_for()
+            )
             await page.click(".course-progress-panel summary")
             due = page.locator(".due-topics .topic-row")
             assert "Review due" in await due.inner_text()

@@ -77,7 +77,11 @@ async def test_practise_a_topic_and_find_it_among_weak_topics(monkeypatch):
             await page.wait_for_selector("text=Quiz results")
 
             await page.goto(url + "/#/documents")
-            await line.filter(has_text="0 of 2 topics ready · 1 practising").wait_for()
+            await (
+                line.filter(has_text="0 of 2 topics ready")
+                .filter(has_text="1 practising")
+                .wait_for()
+            )
             await page.click(".course-progress-panel summary")
             weak = page.locator(".weak-topics .topic-row")
             assert await weak.count() == 1

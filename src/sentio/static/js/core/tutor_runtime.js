@@ -16,6 +16,15 @@ let sessionStartingFor = null;
 
 // Readable progress for the typing line. A queued answer waits for the one local model,
 // which may be busy writing a quiz, flashcards or an overview.
+const ANY_TOPIC = 'Any topic';
+
+/** "Course · topic", or just the course when the session has no topic of its own. */
+function sessionTitle(subject, topic) {
+  const name = String(topic || '').replace(/_/g, ' ');
+  return !name || name === ANY_TOPIC ? subject : `${subject} · ${name}`;
+}
+window.sessionTitle = sessionTitle;
+
 function stageLabel(stage) {
   if (stage === 'queued') return 'Waiting for the local AI to finish another task…';
   const text = String(stage || '').trim();
@@ -106,11 +115,9 @@ async function startSession(options = {}) {
     (!options.isCurrent || options.isCurrent());
   if (!current()) return null;
   const subject = options.subject || 'My notes';
-  const topic = (options.topic ?? document.getElementById('f-topic').value).trim();
-  if (!topic) {
-    toast('Choose a topic to study.', true);
-    return;
-  }
+  // A session covers anything in its notes unless Today started it on one topic.
+  const topic =
+    (options.topic ?? document.getElementById('f-topic')?.value ?? '').trim() || ANY_TOPIC;
   const difficulty = options.difficulty || document.getElementById('f-difficulty').value;
   const grounding =
     options.documentId ??
@@ -169,7 +176,7 @@ async function startSession(options = {}) {
     if (activeBar) activeBar.style.display = 'flex';
     const barTopic = document.getElementById('active-bar-topic');
     if (barTopic) {
-      barTopic.textContent = `${subject} · ${topic.replace(/_/g, ' ')}`;
+      barTopic.textContent = sessionTitle(subject, topic);
       barTopic.title = barTopic.textContent;
     }
     const barMeta = document.getElementById('active-bar-meta');

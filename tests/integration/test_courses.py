@@ -180,3 +180,28 @@ def test_courses_are_exported_and_removed_with_the_account():
             text("SELECT COUNT(*) FROM courses WHERE student_id=:owner"), {"owner": owner}
         ).scalar()
     assert remaining == 0
+
+
+def test_upload_says_whether_a_file_was_added_unchanged_or_replaced():
+    with TestClient(app) as client:
+        login_student(client)
+        first = _upload(client, "scheduling.txt", SCHEDULING)
+        again = _upload(client, "scheduling.txt", SCHEDULING)
+        edited = _upload(client, "scheduling.txt", SCHEDULING + b" Shorter slices cost more.")
+        assert [r.status_code for r in (first, again, edited)] == [201, 201, 201]
+        assert [r.json()["outcome"] for r in (first, again, edited)] == [
+            "added",
+            "unchanged",
+            "replaced",
+        ]
+        assert again.json()["document_id"] == first.json()["document_id"]
+
+
+def test_the_same_file_under_a_new_name_is_not_added_twice():
+    with TestClient(app) as client:
+        login_student(client)
+        assert _upload(client, "scheduling.txt", SCHEDULING).status_code == 201
+        copy = _upload(client, "scheduling (1).txt", SCHEDULING)
+        assert copy.status_code == 409
+        assert "already in your Library as scheduling.txt" in copy.json()["detail"]
+        assert _upload(client, "deadlock.txt", DEADLOCK).status_code == 201

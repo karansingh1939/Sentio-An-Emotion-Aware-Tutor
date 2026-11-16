@@ -305,8 +305,7 @@ export class StudyView {
       if (activeBar) activeBar.style.display = 'flex';
       const barTopic = document.getElementById('active-bar-topic');
       if (barTopic) {
-        const topic = (res.topic || 'Session').replace(/_/g, ' ');
-        barTopic.textContent = `${res.subject || 'Tutoring'} · ${topic}`;
+        barTopic.textContent = window.sessionTitle(res.subject || 'Tutoring', res.topic);
         barTopic.title = barTopic.textContent;
       }
       const barMeta = document.getElementById('active-bar-meta');
@@ -451,6 +450,8 @@ export class StudyView {
         ${goals.map((g) => `<option value="${escapeHtml(g.goal_id)}">${escapeHtml(g.goal_text)}</option>`).join('')}
       `;
       if ([...select.options].some((o) => o.value === currentVal)) select.value = currentVal;
+      const field = select.closest('.field');
+      if (field) field.style.display = goals.length ? '' : 'none';
     }
     return goals;
   }
@@ -486,10 +487,6 @@ export class StudyView {
           </select>
         </div>
         <div>
-          <label class="form-label" for="new-sess-topic">Topic</label>
-<input class="input" type="text" id="new-sess-topic" placeholder="What would you like to study?" />
-        </div>
-        <div>
           <label class="form-label" for="new-sess-difficulty">Difficulty</label>
 <select class="input" id="new-sess-difficulty">
             <option value="beginner" selected>Beginner</option>
@@ -512,15 +509,9 @@ export class StudyView {
         grounding === 'all'
           ? 'My notes'
           : source.selectedOptions[0].textContent.replace(/^Course: /, '').trim();
-      const topic = modal.querySelector('#new-sess-topic').value.trim();
       const difficulty = modal.querySelector('#new-sess-difficulty').value;
       if (owner !== store.getState('currentUser')?.id || route !== store.getState('activeRoute'))
         return;
-
-      if (!topic) {
-        toast('Topic cannot be empty', true);
-        return;
-      }
 
       const button = modal.querySelector('#new-sess-submit-btn');
       if (button.disabled) return;
@@ -529,7 +520,7 @@ export class StudyView {
       try {
         const result = await window.startSession({
           subject,
-          topic,
+          topic: '',
           difficulty,
           documentId: grounding,
           isCurrent: () => modal.isConnected,

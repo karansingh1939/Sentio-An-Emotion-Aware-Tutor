@@ -66,6 +66,8 @@ class RetrievedContent:
     rag_diagnostics: Dict[str, Any] = field(default_factory=dict)
     is_rag: bool = False
     evidence_outcome: str = "general"
+    # Earlier lectures of the course searched together with the selected one.
+    earlier_documents: List[str] = field(default_factory=list)
     rag_context: Optional[str] = None
 
     def has_content(self) -> bool:

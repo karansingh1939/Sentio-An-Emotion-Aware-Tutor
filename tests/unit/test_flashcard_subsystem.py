@@ -138,8 +138,22 @@ class TestFlashcardSubsystem(unittest.TestCase):
         self.assertLess(ending_mastery, starting_mastery)
 
     def test_06_tutor_suggestion_hook(self):
+        import json
+        import re
+        from unittest.mock import patch
+
         # Clear chat history for clean run
         self.agent.nlp._get_history(self.session_id).clear()
+
+        def complete(system_prompt, history, user_message, **kwargs):
+            # The tip belongs to a generated, cited explanation.
+            found = re.search(r'"reference": "(\[[^"]+\])"', user_message)
+            cite = f" {found.group(1)}" if found else ""
+            return json.dumps({"text": "Entropy measures disorder." + cite}), 9
+
+        patcher = patch.object(self.agent.nlp._backend, "complete", side_effect=complete)
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
         # Ask first time
         res1 = self.agent.chat(self.session_id, "what is entropy")

@@ -24,8 +24,19 @@ export class HistoryView {
       store.getState('currentUser')?.id === owner &&
       store.getState('activeRoute') === '#/history';
     try {
-      const result = await sentioAPI.get(`/sessions?limit=20&offset=${offset}`);
+      const [result, documents, courses] = await Promise.all([
+        sentioAPI.get(`/sessions?limit=20&offset=${offset}`),
+        offset ? null : sentioAPI.get('/documents').catch(() => null),
+        offset ? null : sentioAPI.get('/courses').catch(() => null),
+      ]);
       if (!current()) return;
+      if (!offset) {
+        // A session is named by the notes it studied, not by a typed topic.
+        this.sources = new Map([['all', 'All my notes']]);
+        for (const doc of documents?.documents || []) this.sources.set(doc.id, doc.filename);
+        for (const course of courses?.courses || [])
+          this.sources.set(`course:${course.id}`, `Course: ${course.name}`);
+      }
       this.sessions = offset
         ? [...this.sessions, ...(result.sessions || [])]
         : result.sessions || [];
@@ -37,14 +48,21 @@ export class HistoryView {
       this.container.querySelector('#retry-history').onclick = () => this.load();
     }
   }
+  label(session) {
+    const source = session.metadata?.document_id;
+    const notes = this.sources?.get(source) || session.subject || 'My notes';
+    const topic = String(session.topic || '').replace(/_/g, ' ');
+    return topic && topic !== 'Any topic' && topic !== notes ? `${notes} · ${topic}` : notes;
+  }
+
   render(sessions) {
     this.container.innerHTML = `
       <div class="view-header"><h2>Study history</h2><p>Your recent learning sessions.</p></div>
       ${
         sessions.length
           ? `<div style="overflow-x:auto"><table style="width:100%;text-align:left;border-spacing:0 16px">
-      <thead><tr><th scope="col">Topic</th><th scope="col">Subject</th><th scope="col">Status</th><th scope="col">Started</th><th scope="col">Questions asked</th></tr></thead>
-      <tbody>${sessions.map((s) => `<tr><td><a href="#/tutor" class="continue-session" data-session="${escapeHtml(s.session_id)}" title="Continue this session">${escapeHtml(s.topic || 'General')}</a></td><td>${escapeHtml(s.subject)}</td><td>${escapeHtml(s.status === 'active' ? 'In progress' : s.status === 'paused' ? 'Paused' : 'Ended')}</td><td>${escapeHtml(new Date(s.created_at * 1000).toLocaleString())}</td><td>${escapeHtml(s.total_exchanges ?? s.exchanges?.length ?? 0)}</td></tr>`).join('')}</tbody></table></div>`
+      <thead><tr><th scope="col">Studied from</th><th scope="col">Status</th><th scope="col">Started</th><th scope="col">Questions asked</th></tr></thead>
+      <tbody>${sessions.map((s) => `<tr><td><a href="#/tutor" class="continue-session" data-session="${escapeHtml(s.session_id)}" title="Continue this session">${escapeHtml(this.label(s))}</a></td><td>${escapeHtml(s.status === 'active' ? 'In progress' : s.status === 'paused' ? 'Paused' : 'Ended')}</td><td>${escapeHtml(new Date(s.created_at * 1000).toLocaleString())}</td><td>${escapeHtml(s.total_exchanges ?? s.exchanges?.length ?? 0)}</td></tr>`).join('')}</tbody></table></div>`
           : '<p role="status">Your sessions will appear here after you start studying.</p>'
       }
       ${this.nextOffset != null ? '<button class="workspace-action" id="history-more">Load more sessions</button>' : ''}

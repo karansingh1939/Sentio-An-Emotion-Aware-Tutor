@@ -12,10 +12,12 @@ from typing import Any, Dict, List, Optional
 
 from sentio.ai.practice_schema import practice_schema
 from sentio.flashcards import fsrs
-from sentio.jobs.control import checkpoint, publish
+from sentio.jobs.control import WorkInputError, checkpoint, publish
+from sentio.repositories.courses import with_earlier_lectures
 from sentio.repositories.practice import PracticeRepository
 from sentio.repositories.topics import TopicRepository
-from sentio.study.topics import locate, place, turn, turns_rule
+from sentio.study.focus import session_focus
+from sentio.study.topics import ANY_TOPIC, locate, place, turn, turns_rule
 
 logger = logging.getLogger(__name__)
 
@@ -72,8 +74,14 @@ class FlashcardService:
             source_snapshot = PracticeRepository(self.agent.sm.persister._engine).snapshot(session)
         document_id = session.metadata.get("document_id") if session else None
         if document_id in (None, "none"):
-            raise ValueError("Choose notes for this session before making flashcards.")
+            raise WorkInputError("Choose notes for this session before making flashcards.")
         checkpoint("retrieving sources")
+        about = topic_id
+        if session and (not (topic_id or "").strip() or topic_id == ANY_TOPIC):
+            # A session without a topic makes cards about what it has been about.
+            about, topic_id = session_focus(
+                self.agent, session.session_id, student_id, document_id, session.subject
+            )
         # 1. Use the chosen topics' slides, or retrieve passages from the selected notes
         focus = TopicRepository(self.agent.sm.persister._engine).focus(session)
         retrieved = (
@@ -84,15 +92,20 @@ class FlashcardService:
                 topic=topic_id,
                 difficulty="intermediate",
                 learning_state="neutral",
-                query=f"definitions, key concepts, terminology, formulas and facts about {topic_id}",
+                query=f"definitions, key concepts, terminology, formulas and facts about {about}",
                 session_id=session.session_id if session else "flashcard_gen",
                 student_id=student_id,
-                document_id=document_id,
+                document_id=with_earlier_lectures(
+                    self.agent.sm.persister._engine, student_id, document_id
+                ),
             )
         )
         context = (getattr(retrieved, "rag_context", None) or "").strip()
         if not getattr(retrieved, "is_rag", False) or not context:
-            raise ValueError("No relevant material found in the selected document(s).")
+            raise WorkInputError(
+                "No relevant material found in the selected notes. Ask the tutor about a "
+                "concept first, or choose other notes."
+            )
 
         # 2. Build LLM prompt
         system_prompt = f"""Create exactly {num_cards} flashcards about '{topic_id}'.

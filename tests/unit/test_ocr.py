@@ -45,11 +45,36 @@ def test_scanned_and_mixed_pdf_keep_original_page_citations(tmp_path, monkeypatc
     path = tmp_path / "mixed.pdf"
     pdf_file(path, ["Native page text retained.", "", ""])
     monkeypatch.setattr(ocr, "require_ocr", lambda **kw: "fake-tesseract")
-    monkeypatch.setattr(ocr, "read_image", lambda image: "Extracted scanned page text.")
+    monkeypatch.setattr(ocr, "recognise", lambda image: ("Extracted scanned page text.", 90.0))
     pages = ocr.pdf_pages(path)
     assert [p["page_number"] for p in pages] == [1, 2, 3]
     assert [p["extraction_method"] for p in pages] == ["text", "ocr", "ocr"]
     assert pages[0]["text"] == "Native page text retained."
+
+
+def test_a_picture_only_slide_does_not_reject_the_whole_pdf(tmp_path, monkeypatch):
+    pytest.importorskip("pypdfium2")
+    path = tmp_path / "deck.pdf"
+    pdf_file(path, ["Native slide text retained.", "", ""])
+    monkeypatch.setattr(ocr, "require_ocr", lambda **kw: "fake-tesseract")
+    readings = iter([("en om a", 43.0), ("Edge-based implementation of AIoT", 74.0)])
+    monkeypatch.setattr(ocr, "recognise", lambda image: next(readings))
+    pages = ocr.pdf_pages(path)
+    assert [p["text"] for p in pages] == [
+        "Native slide text retained.",
+        "",
+        "Edge-based implementation of AIoT",
+    ]
+
+
+def test_a_pdf_with_no_readable_page_is_rejected(tmp_path, monkeypatch):
+    pytest.importorskip("pypdfium2")
+    path = tmp_path / "blank.pdf"
+    pdf_file(path, ["", ""])
+    monkeypatch.setattr(ocr, "require_ocr", lambda **kw: "fake-tesseract")
+    monkeypatch.setattr(ocr, "recognise", lambda image: ("", -1.0))
+    with pytest.raises(ocr.ExtractionError, match="No readable English text"):
+        ocr.pdf_pages(path)
 
 
 def test_missing_tools_and_encrypted_pdf_are_actionable(tmp_path, monkeypatch):
@@ -68,11 +93,12 @@ def test_missing_tools_and_encrypted_pdf_are_actionable(tmp_path, monkeypatch):
 
 def test_ocr_page_limit_applies_only_to_scanned_pages(tmp_path, monkeypatch):
     path = tmp_path / "large.pdf"
-    pdf_file(path, [""] * 21)
-    with pytest.raises(ocr.ExtractionError, match="20 OCR pages"):
+    over = ocr.MAX_OCR_PAGES + 1
+    pdf_file(path, [""] * over)
+    with pytest.raises(ocr.ExtractionError, match=f"has {over} scanned pages"):
         ocr.pdf_pages(path)
-    pdf_file(path, ["A native page requires no OCR."] * 21)
-    assert len(ocr.pdf_pages(path)) == 21
+    pdf_file(path, ["A native page requires no OCR."] * over)
+    assert len(ocr.pdf_pages(path)) == over
 
 
 def test_rotated_image_chooses_readable_orientation(tmp_path, monkeypatch):
