@@ -100,8 +100,6 @@ async def test_first_time_notes_to_study_to_practice_without_hidden_setup(monkey
             # closes, closes that unused session and keeps the current one.
             await page.click("#hud-toggle-btn")
             await page.click("#tutor-new-session-btn")
-            await page.wait_for_selector("#new-sess-topic")
-            await page.fill("#new-sess-topic", "Inertia")
             await page.select_option("#new-sess-grounding", selected)
             created = asyncio.Event()
             release = asyncio.Event()

@@ -160,7 +160,6 @@ async def test_sentio_real_browser_e2e_and_tenant_isolation():
             # Navigate to Tutor View
             await page.click('a[href="#/tutor"]')
             await page.wait_for_selector("#start-btn")
-            await page.fill("#f-topic", "kinematics")
             await page.wait_for_selector(
                 '#f-grounding option:has-text("kinematics_test.txt")', state="attached"
             )
@@ -262,7 +261,7 @@ async def test_sentio_real_browser_e2e_and_tenant_isolation():
             await page.click(".account-btn")
             await page.click('.account-menu a[href="#/history"]')
             await page.wait_for_selector("#view-history tbody tr")
-            assert "kinematics" in await page.inner_text("#view-history")
+            assert "thermodynamics_test.txt" in await page.inner_text("#view-history")
             await page.click('a[href="#/analytics"]')
             await page.wait_for_selector("text=Practice estimate")
             assert "do not prove understanding" in await page.inner_text("#view-analytics")

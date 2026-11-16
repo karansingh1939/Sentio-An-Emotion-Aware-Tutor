@@ -39,7 +39,9 @@ _EASIER = re.compile(
 )
 _CONFUSED = re.compile(
     r"\bi(?:'m| am)\s+(?:so\s+|really\s+)?(?:lost|confused)\b"
-    r"|\bi (?:don'?t|do not) (?:understand|get it)\b"
+    r"|\bi (?:still )?(?:don'?t|do not|didn'?t|did not) (?:understand|get it|follow)\b"
+    r"|\b(?:still )?not (?:clear|getting it)\b"
+    r"|\b(?:explain|say) (?:it |this |that )?again\b"
     r"|\b(?:explain|say)\b[^.?!]{0,15}?\b(?:another|a different) way\b"
     r"|\bexplain (?:it |this |that )?differently\b"
     r"|\b(?:it|this|that) makes no sense\b",
@@ -67,6 +69,21 @@ def requested_change(message):
 def asks_for_another_explanation(message):
     """The learner says they are confused: re-explain, without changing the level."""
     return bool(_CONFUSED.search(message or ""))
+
+
+# Short replies that point back at the last answer rather than naming a new subject.
+_REFERS_BACK = re.compile(
+    r"\b(?:it|this|that|these|those|again|example|examples|more|why|how so|what about|and)\b",
+    re.IGNORECASE,
+)
+
+
+def follows_up(message):
+    """Whether a message continues the previous question instead of asking a new one."""
+    text = (message or "").strip()
+    if asks_for_another_explanation(text) or requested_change(text):
+        return True
+    return len(text.split()) <= 5 and bool(_REFERS_BACK.search(text))
 
 
 def step(level, direction):

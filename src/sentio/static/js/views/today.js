@@ -103,6 +103,61 @@ function progressCard(profile, topics, recommendations, noteCount) {
     </div>`;
 }
 
+// Every course that has a syllabus, with its progress.
+async function loadSyllabi() {
+  const { courses } = await sentioAPI.get('/courses');
+  const loaded = await Promise.all(
+    courses.map(async (course) => ({
+      course,
+      syllabus: await sentioAPI.get(`/courses/${encodeURIComponent(course.id)}/syllabus`),
+    })),
+  );
+  return loaded.filter(({ syllabus }) => syllabus.items.length);
+}
+
+const SYLLABUS_PARTS = [
+  ['Ready', 'var(--green)', ['ready']],
+  ['Practising or review due', 'var(--accent)', ['practising', 'review_due']],
+  ['In your notes, not practised', 'var(--yellow)', ['not_started']],
+  ['Not in your notes', 'var(--press)', ['no_notes']],
+];
+
+// Per course: how much of the syllabus is ready, practised, only in the notes, or missing.
+function syllabusCard(syllabi, noteCount) {
+  if (syllabi === null) return '<p class="muted">Syllabus progress is currently unavailable.</p>';
+  if (!syllabi.length)
+    return `<p class="muted card-sub">${noteCount ? 'Add your course syllabus to see how much of it your notes cover and how much you are ready for.' : 'Add notes and your course syllabus to see how much of it you are ready for.'}</p><a class="workspace-action" href="#/documents">Open Library</a>`;
+  const courses = syllabi
+    .map(({ course, syllabus }) => {
+      const { summary, items } = syllabus;
+      const parts = SYLLABUS_PARTS.map(([label, color, statuses]) => [
+        label,
+        color,
+        statuses.reduce((sum, status) => sum + (summary[status] || 0), 0),
+      ]);
+      const next =
+        items.find((item) => item.status === 'practising') ||
+        items.find((item) => item.status === 'not_started') ||
+        items.find((item) => item.status === 'review_due');
+      const covered = summary.total - summary.no_notes;
+      return `
+        <div class="today-syllabus">
+          <div class="today-syllabus-head"><strong>${escapeHtml(course.name)}</strong><span><b>${summary.percent_ready}%</b> ready</span></div>
+          <div class="stack-bar" role="img" aria-label="${escapeHtml(course.name)} syllabus: ${parts.map(([label, , n]) => `${n} ${label.toLowerCase()}`).join(', ')}">${parts
+            .filter(([, , n]) => n)
+            .map(([, color, n]) => `<i style="flex:${n};background:${color}"></i>`)
+            .join('')}</div>
+          <ul class="legend today-syllabus-legend">${parts.map(([label, color, n]) => `<li><i style="background:${color}"></i>${label}<b>${n}</b></li>`).join('')}</ul>
+          <p class="muted fine-print">${covered} of ${plural(summary.total, 'syllabus topic')} ${covered === 1 ? 'is' : 'are'} in your notes.${next ? ` Next: ${escapeHtml(next.title)}${next.unit ? ` (${escapeHtml(next.unit)})` : ''}.` : ''}</p>
+        </div>`;
+    })
+    .join('');
+  return `
+    <p class="muted card-sub">Ready means your recent quiz answers on the topic were right and it is not yet due for review.</p>
+    ${courses}
+    <a class="workspace-action" href="#/documents">Open syllabus in Library</a>`;
+}
+
 // Sessions started per day over the chosen range, against the range before it.
 function sessionsChart(sessions, days) {
   const now = Date.now() / 1000;
@@ -247,6 +302,7 @@ export class TodayView {
       sentioAPI.get(`/students/${id}/goals`),
       sentioAPI.get('/documents'),
       sentioAPI.get('/topics/due'),
+      loadSyllabi(),
     ]);
     if (revision !== this.revision || store.getState('currentUser')?.id !== user.id) return;
     const values = results.map((result) => (result.status === 'fulfilled' ? result.value : null));
@@ -260,6 +316,7 @@ export class TodayView {
       'Goals',
       'Library',
       'Topics due',
+      'Syllabus',
     ];
     const failed = results.flatMap((result, index) =>
       result.status === 'rejected' ? [labels[index]] : [],
@@ -269,6 +326,7 @@ export class TodayView {
     this.goals = values[6]?.goals;
     this.noteCount = values[7]?.documents?.filter((item) => item.status === 'indexed').length;
     this.dueTopics = values[8]?.topics || [];
+    this.syllabi = values[9];
     this.data = [values[0], values[1], values[2]?.sessions, values[3], failed];
     this.render(...this.data);
   }
@@ -316,6 +374,9 @@ export class TodayView {
             ? '<p class="muted">Study history is currently unavailable.</p>'
             : sessionsChart(sessions || [], this.chartDays)
         }</sentio-card>
+      </div>
+      <div class="today-grid">
+        <sentio-card title="Syllabus progress" class="syllabus-card">${syllabusCard(this.syllabi, this.noteCount)}</sentio-card>
       </div>
       <div class="today-grid today-mid">
         <sentio-card title="Topics due for review" class="due-card">${dueTable(this.dueTopics)}</sentio-card>

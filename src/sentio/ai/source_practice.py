@@ -69,6 +69,11 @@ def practice_provenance(mode, content, backend, snapshot=None):
     }
 
 
+EXCERPT_HEADER = (
+    "I could not verify a generated explanation. Here are passages from your notes that may help:"
+)
+
+
 def source_excerpt(content):
     parts = []
     for citation in getattr(content, "source_citations", [])[:2]:
@@ -81,7 +86,4 @@ def source_excerpt(content):
             )
     if not parts:
         raise ValueError("No readable source excerpt is available.")
-    return (
-        "I could not verify a generated explanation. Here are passages from your notes that may help:\n\n"
-        + "\n\n".join(parts)
-    )
+    return EXCERPT_HEADER + "\n\n" + "\n\n".join(parts)

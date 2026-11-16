@@ -80,10 +80,11 @@ def test_ocr_evaluation_keeps_page_provenance_and_measures_engine_errors(monkeyp
 
     def read(image):
         if image.convert("L").getextrema() == (255, 255):
-            raise evaluation.ocr.ExtractionError("No readable English text found.")
-        return evaluation.TEXT if recognized == "correct" else "Deliberately wrong recognition"
+            return "", -1.0
+        text = evaluation.TEXT if recognized == "correct" else "Deliberately wrong recognition"
+        return text, 90.0
 
-    monkeypatch.setattr(evaluation.ocr, "read_image", read)
+    monkeypatch.setattr(evaluation.ocr, "recognise", read)
     result = evaluation.evaluate()
     assert result["summary"]["structure_passed"] == 9
     assert result["summary"]["ocr_pages_measured"] == 8

@@ -17,7 +17,8 @@ PDF rendering starts at 150 DPI and scales down to a maximum of 16 million
 pixels, approximately 48 MiB for one RGB image before additional copies.
 Images also have a 16 million pixel limit. These are bounds, not measured peak
 memory guarantees. Only one page is rendered at a time. CPU recognition may try
-four rotations with a 30 second timeout each; at most 20 OCR pages are accepted.
+four rotations with a 30 second timeout each; at most 200 OCR pages are accepted
+per file (raised from 20 on 15 November 2026, after a real lecture PDF was refused).
 The upload limit remains 20 MiB. The upload UI allows a longer request deadline
 because document extraction can involve multiple page-orientation operations.
 

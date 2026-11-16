@@ -844,6 +844,37 @@ table th {
   color: var(--text);
   font-weight: 500;
 }
+.today-syllabus {
+  margin: 16px 0;
+}
+.today-syllabus-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+  color: var(--text-dim);
+}
+.today-syllabus-head b {
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 500;
+}
+.stack-bar {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+  margin-bottom: 12px;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.stack-bar i {
+  min-width: 4px;
+}
+.today-syllabus-legend {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  column-gap: 24px;
+}
 .chart-head {
   display: flex;
   align-items: flex-start;
@@ -1280,4 +1311,244 @@ table th {
     padding: 0 5px;
     font-size: 12px;
   }
+}
+
+/* ── Study screen layout (16 November 2026) ──────────────────────────
+   One slim header (the session line, then notes and goal), one centred reading
+   column for the summary, the conversation and the message box, and Stop in
+   place of Send while an answer is being written. */
+#chat-area {
+  --study-column: 820px;
+  --study-gutter: max(24px, calc((100% - var(--study-column)) / 2));
+}
+#session-setup-card {
+  order: -2;
+}
+#session-active-bar {
+  order: -1;
+  border-bottom: 0;
+  padding: 14px 24px 6px;
+  animation: none;
+}
+.active-topic-name {
+  font-size: 15px;
+  font-weight: 600;
+}
+.active-sub-meta {
+  font-family: var(--font);
+  font-size: 12.5px;
+}
+.active-bar-actions {
+  gap: 6px;
+}
+.active-bar-actions .workspace-action,
+.active-bar-actions .hud-pill-btn {
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: 14px;
+}
+.study-context {
+  align-items: center;
+  gap: 10px 24px;
+  padding: 14px 24px;
+}
+#chat-area:has(#session-active-bar:not([style*='none'])) .study-context {
+  padding-top: 4px;
+}
+.study-context .field {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.study-context .field label {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.study-context select {
+  width: auto;
+  min-width: 200px;
+  max-width: 360px;
+  height: 36px;
+  padding: 0 32px 0 12px;
+  font-size: 14px;
+}
+#notes-overview {
+  width: auto;
+  margin: 16px var(--study-gutter) 0;
+  padding: 12px 16px;
+}
+#chat-messages {
+  padding: 24px var(--study-gutter);
+}
+.sources-preview .msg-meta {
+  font-size: 13px;
+}
+.cite-chip {
+  font-size: 12px;
+  font-weight: 500;
+}
+#input-bar {
+  padding: 8px var(--study-gutter) 20px;
+  background: var(--bg);
+  border-top: 0;
+}
+#msg-input {
+  min-height: 48px;
+  padding: 12px 16px;
+  border-radius: 16px !important;
+  background: var(--bg2) !important;
+  font-family: var(--font);
+  font-size: 15px;
+}
+#send-btn,
+#stop-generation-btn {
+  height: 48px;
+  min-width: 88px;
+  justify-content: center;
+  border-radius: 14px;
+}
+#stop-generation-btn {
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+#stop-generation-btn:not([hidden]) ~ #send-btn {
+  display: none;
+}
+@media (max-width: 600px) {
+  .study-context .field {
+    flex: 1 1 100%;
+  }
+  .study-context select {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+  }
+}
+
+/* ── Study session panel (16 November 2026) ──────────────────────────
+   From tablet width up, an active session keeps its details in a panel on the left
+   (what you are studying, which notes, the goal, the summary) so the
+   conversation gets the full height. Narrow screens keep the header above. */
+@media (min-width: 860px) {
+  #view-tutor #chat-area {
+    display: grid;
+    grid-template-columns: clamp(240px, 24vw, 300px) minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    --study-column: 760px;
+  }
+  #view-tutor #chat-area::before {
+    content: '';
+    grid-column: 1;
+    grid-row: 1 / -1;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+  }
+  #view-tutor #chat-area > #session-active-bar,
+  #view-tutor #chat-area > .study-context,
+  #view-tutor #chat-area > #notes-overview {
+    grid-column: 1;
+    position: relative;
+    z-index: 1;
+    background: transparent;
+  }
+  #view-tutor #chat-area > #session-setup-card {
+    grid-column: 1;
+    grid-row: 1;
+    position: relative;
+    z-index: 1;
+    background: transparent;
+    border-bottom: 0;
+    padding: 22px 20px 14px;
+  }
+  #view-tutor #chat-area #session-setup-card .session-icon {
+    display: none;
+  }
+  #view-tutor #chat-area #session-setup-card .session-card-title h3 {
+    font-size: 18px;
+    line-height: 1.3;
+  }
+  #view-tutor #chat-area #session-setup-card .session-card-title p {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  #view-tutor #chat-area .session-form-grid {
+    grid-template-columns: 1fr;
+  }
+  #view-tutor #chat-area .session-action-row #start-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  #view-tutor #chat-area > #session-active-bar {
+    grid-row: 1;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 22px 20px 14px;
+  }
+  #view-tutor #chat-area > #session-active-bar > * {
+    flex: none;
+  }
+  #view-tutor #chat-area .active-topic-name {
+    font-size: 16px;
+    line-height: 1.35;
+  }
+  #view-tutor #chat-area .active-bar-actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  #view-tutor #chat-area #end-btn {
+    order: 9;
+    flex-basis: 100%;
+    text-align: left;
+    padding: 4px 0 0;
+  }
+  #view-tutor #chat-area > .study-context {
+    grid-row: 2;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  #view-tutor #chat-area .study-context .field {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  #view-tutor #chat-area .study-context select {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+  #view-tutor #chat-area > #notes-overview {
+    grid-row: 3;
+    align-self: start;
+    max-height: 100%;
+    overflow-y: auto;
+    margin: 16px 20px;
+    background: var(--bg);
+  }
+  #view-tutor #chat-area > #chat-messages {
+    grid-column: 2;
+    grid-row: 1 / 4;
+    min-height: 0;
+  }
+  #view-tutor #chat-area > #input-bar {
+    grid-column: 2;
+    grid-row: 4;
+  }
+}
+
+label .optional {
+  font-weight: 400;
+  color: var(--text-dim);
 }

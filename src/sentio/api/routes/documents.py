@@ -20,13 +20,17 @@ MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 
 @router.get(PREFIX + "/documents/capabilities", tags=["Documents"])
 def document_capabilities(user: dict = Depends(get_current_user)):
-    from sentio.ingestion.ocr import ExtractionError, require_ocr
+    from sentio.ingestion.ocr import MAX_OCR_PAGES, ExtractionError, require_ocr
 
     try:
         require_ocr(pdf=True)
-        return {"ocr_available": True, "ocr_language": "eng", "max_ocr_pages": 20}
+        return {"ocr_available": True, "ocr_language": "eng", "max_ocr_pages": MAX_OCR_PAGES}
     except ExtractionError as exc:
-        return {"ocr_available": False, "ocr_setup": str(exc), "max_ocr_pages": 20}
+        return {
+            "ocr_available": False,
+            "ocr_setup": str(exc),
+            "max_ocr_pages": MAX_OCR_PAGES,
+        }
 
 
 def _index_upload(filepath, category, subject, student_id, publisher=None, force=False):
@@ -149,13 +153,39 @@ def ingest_staged(pending, destination, category, course_id, owner, recovery):
     def publisher(document, chunks, old_chunks):
         recovery.replace(pending, destination, document, chunks, old_chunks)
 
+    previous = agent.sm.get_document_by_filename(pending.name, student_id=owner, category=category)
+    # The same file under a new name would be a second copy of the same lecture.
+    if not previous:
+        checksum = hashlib.md5(pending.read_bytes()).hexdigest()
+        twin = next(
+            (
+                document
+                for document in agent.sm.list_documents(student_id=owner)
+                if document.get("checksum") == checksum and document["status"] == "indexed"
+            ),
+            None,
+        )
+        if twin:
+            raise HTTPException(
+                409,
+                f"This file is already in your Library as {twin['filename']}, "
+                "so it was not added again.",
+            )
     document = _index_upload(
         pending, category, None, owner, publisher, force=not destination.exists()
     )
+    # Tell the learner what an upload of a file they already have actually did.
+    if not previous:
+        outcome = "added"
+    elif previous["status"] == "indexed" and previous["checksum"] == document["checksum"]:
+        outcome = "unchanged"
+    else:
+        outcome = "replaced"
     if course_id:
         CourseRepository(agent.sm.persister._engine).move_document(owner, document["id"], course_id)
     return {
         "indexed": True,
+        "outcome": outcome,
         "filename": document["filename"],
         "category": category,
         "course_id": course_id,
