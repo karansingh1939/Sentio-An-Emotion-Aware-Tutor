@@ -9,14 +9,31 @@ from langgraph.graph import END, StateGraph
 from sentio.ai.stream_schema import TutorPayload, output_schema
 from sentio.config import tutor_cfg
 from sentio.jobs.control import checkpoint, current_control
-from sentio.tutor.difficulty import (
-    asks_for_another_explanation,
-    follows_up,
-    requested_change,
-    step,
-)
+from sentio.tutor.difficulty import asks_for_another_explanation, requested_change, step
+from sentio.tutor.search import merge_rankings, search_text, stands_alone
 
 logger = logging.getLogger(__name__)
+
+# How a turn's request changes the explanation. These go into the system prompt (the
+# learner context is untrusted data) and all stay inside the grounding rules: none asks
+# for an analogy, example or fact the passages don't contain.
+HARDER_DIRECTIVE = (
+    "This turn the learner asked for a harder level: use the passages' more technical "
+    "details and end with one harder question that the passages answer. Use only the passages."
+)
+SIMPLER_DIRECTIVE = (
+    "This turn the learner asked for a simpler explanation: restate what the passages say "
+    "in short sentences and plain words, keep the citation, and add nothing they don't say."
+)
+CONFUSED_DIRECTIVE = (
+    "This turn the learner did not understand the last answer: explain the same passages "
+    "again in short numbered steps and plain words, using the passages' own example and "
+    "numbers, and keep the citation."
+)
+QUIZ_DIRECTIVE = (
+    "This turn the learner asked to be tested: end with one multiple-choice or short-answer "
+    "question that the passages answer."
+)
 
 
 # State definition conforming to LangGraph
@@ -33,6 +50,9 @@ class OrchestratorState(TypedDict):
     document_id: Optional[str]
     slide: Optional[int]  # The slide explained this turn, in slide study.
     student_request: bool  # The student asked for a change of level or explanation this turn.
+    directive: Optional[str]  # How this turn's request changes the explanation.
+    search: Optional[Dict[str, Any]]  # How retrieval resolved the question (see _search).
+    topic_query: Optional[str]  # The conversation's new topic after this turn, if it changed.
 
     # Context
     student_memory: str
@@ -171,8 +191,6 @@ class SentioOrchestrator:
                 session_id=session_id,
             )
         )
-        if text_directive:
-            memory_context += f"\n\n{text_directive}\n"
 
         # 5. Connect AdaptationEngine to evaluate student mastery and pace (Phase 7)
         if hasattr(self.tutor_agent, "intelligence") and self.tutor_agent.intelligence:
@@ -208,6 +226,8 @@ class SentioOrchestrator:
             "difficulty_reason": difficulty_reason,
             "learning_state": new_learning_state,
             "student_request": bool(text_directive),
+            # Directives go to the system prompt: learner_context is untrusted data.
+            "directive": text_directive,
             "student_memory": memory_context,
             "agent_timeline": timeline,
             "selected_route": route,
@@ -243,11 +263,7 @@ class SentioOrchestrator:
             new_state = "engaged" if harder else "struggling"
             new_difficulty = step(current_difficulty, direction)
             reason = "request_harder" if harder else "request_easier"
-            directive = (
-                "INSTRUCTION (Student requested harder challenge):\n- Present a deeper, more advanced conceptual example.\n- Ask a thought-provoking challenge question."
-                if harder
-                else "INSTRUCTION (Student requested simpler explanation):\n- Strip away jargon and present an elementary, intuitive example.\n- Focus only on core fundamentals."
-            )
+            directive = HARDER_DIRECTIVE if harder else SIMPLER_DIRECTIVE
             try:
                 session = self.tutor_agent.sm.get_session(session_id)
                 if session and not getattr(current_control(), "defer_turn", False):
@@ -263,14 +279,7 @@ class SentioOrchestrator:
         if asks_for_another_explanation(msg):
             new_strategy = "reframe"
             new_state = "struggling"
-            # Re-explain from the notes themselves: an invented analogy would be an
-            # outside claim, which the grounding rules forbid.
-            directive = (
-                "INSTRUCTION (Student expressed confusion):\n"
-                "- Explain the same idea again more simply, in short numbered steps.\n"
-                "- Work through the passage's own example and numbers, one step at a time.\n"
-                "- Use plain words and say what each term from the passage means."
-            )
+            directive = CONFUSED_DIRECTIVE
             try:
                 session = self.tutor_agent.sm.get_session(session_id)
                 if session and not getattr(current_control(), "defer_turn", False):
@@ -289,7 +298,7 @@ class SentioOrchestrator:
             "ask me a question",
         ]
         if any(sig in msg for sig in quiz_signals):
-            directive = "INSTRUCTION (Student requested a quiz):\n- Conclude your explanation with a specific multiple-choice or short-answer comprehension check."
+            directive = QUIZ_DIRECTIVE
             return new_strategy, new_difficulty, new_state, directive, None
 
         return new_strategy, new_difficulty, new_state, None, None
@@ -318,38 +327,59 @@ class SentioOrchestrator:
         engine = self.tutor_agent.sm.persister.engine
         return SlideRepository(engine).slide(state["student_id"], document_id, number)
 
-    def _retrieve(self, state, document_id):
+    def _retrieve(self, state, document_id, query=None):
         return self.tutor_agent.kb.retrieve(
             subject=state["subject"],
             topic=state["topic"],
             difficulty=state["difficulty"],
             learning_state=state["learning_state"],
-            query=self._search_query(state),
+            query=query or search_text(state["user_message"]),
             session_id=state["session_id"],
             student_id=state.get("student_id"),
             document_id=document_id,
         )
 
-    def _search_query(self, state):
-        """What to search the notes for: the message, or the question it follows up.
+    def _active_topic(self, state):
+        """The question the conversation is about, saved with the session."""
+        session = self._session(state["session_id"])
+        return (getattr(session, "metadata", None) or {}).get("topic_query") or ""
 
-        "I didn't understand" or "give an example" has no subject of its own; searched
-        alone it finds unrelated slides. Joined to the previous question it finds the
-        same slides again.
+    def _search(self, state, scope):
+        """Retrieve for this turn in the context of the conversation's active topic.
+
+        Every turn is searched twice: the message alone, and the active topic joined to
+        it. The two rankings are merged by rank, so a follow-up ("which one is better?",
+        "I still don't get it") finds the topic's slides, and a new question finds its
+        own (its words are in both searches). No list of follow-up phrases decides this.
         """
-        message = state["user_message"]
-        if not follows_up(message):
-            return message
-        previous = [
-            turn["content"] for turn in state.get("history") or [] if turn["role"] == "user"
-        ]
-        if not previous:
-            from sentio.study.focus import recent_questions
+        message = search_text(state["user_message"])
+        topic = self._active_topic(state)
+        alone = self._retrieve(state, scope, message)
+        info = {"message": message, "topic": topic, "stands_alone": True}
+        if not topic or topic.lower() == message.lower():
+            return alone, info
+        joined = self._retrieve(state, scope, search_text(f"{topic} {message}"))
+        content = merge_rankings(alone, joined)
+        info["stands_alone"] = stands_alone(alone, joined, content)
+        return content, info
 
-            sm = getattr(self.tutor_agent, "sm", None)
-            if getattr(getattr(sm, "persister", None), "_engine", None) is not None:
-                previous = recent_questions(self.tutor_agent, state["session_id"], kept=1)
-        return f"{previous[-1]} {message}" if previous else message
+    def _remember_topic(self, state, answered):
+        """After an answer from the notes, keep the question the conversation is about.
+
+        A message that found its own slides becomes the topic; a follow-up keeps the
+        topic it followed, so a chain of follow-ups never drifts away from it.
+        """
+        info = state.get("search") or {}
+        if not answered or not info.get("message"):
+            return None
+        if info.get("topic") and not info.get("stands_alone"):
+            return None
+        # A streamed turn saves its session changes when it commits (stream_service);
+        # the new topic travels with the turn's result to be saved there.
+        session = self._session(state["session_id"])
+        if session is not None and not getattr(current_control(), "defer_turn", False):
+            session.metadata["topic_query"] = info["message"]
+        return info["message"]
 
     def _earlier_lectures(self, state):
         """Lectures of the same course taught before the selected one, if any.
@@ -396,6 +426,7 @@ class SentioOrchestrator:
         t0 = time.perf_counter()
 
         slide = self._study_slide(state)
+        search = None
         if slide:
             from sentio.tutor.slides import slide_content
 
@@ -412,11 +443,14 @@ class SentioOrchestrator:
         else:
             earlier = self._earlier_lectures(state)
             # One ranking over the selected and earlier lectures: the best passage wins.
-            content = self._retrieve(
-                state, [state["document_id"], *earlier] if earlier else state.get("document_id")
-            )
+            scope = [state["document_id"], *earlier] if earlier else state.get("document_id")
+            content, search = self._search(state, scope)
             if earlier:
                 content.earlier_documents = earlier
+        from sentio.ai.untrusted import clean_passages
+
+        # Notes are data: sentences addressed to the tutor never reach the model.
+        clean_passages(content)
         control = current_control()
         citations = getattr(content, "source_citations", None) or []
         if control and control.emit and citations:
@@ -438,6 +472,7 @@ class SentioOrchestrator:
         return {
             **state,
             "retrieved_content": content,
+            "search": search,
             "slide": slide["number"] if slide else None,
             "tone_instruction": tone,
             "agent_timeline": timeline,
@@ -476,22 +511,25 @@ class SentioOrchestrator:
         """Answer from the selected notes, or from earlier lectures when they hold the answer."""
         from sentio.ai.grounding import (
             MISSING_EVERYWHERE,
+            MISSING_EVIDENCE,
             cited_files,
             earlier_lecture_note,
-            says_missing,
         )
-        from sentio.ai.source_practice import EXCERPT_HEADER
 
         result = self._generate_once(state)
         response = result["agent_response"]
         content = result.get("retrieved_content")
         earlier = set(getattr(content, "earlier_documents", None) or [])
-        if not earlier:
+        result["topic_query"] = self._remember_topic(
+            result, response.answer_status in ("answered", "partial")
+        )
+        if response.answer_status == "not_in_notes":
+            # The model found the answer missing from every passage it was given.
+            response.text = MISSING_EVERYWHERE if earlier else MISSING_EVIDENCE
+            response.follow_up_question = response.encouragement = None
             return result
-        excerpt = response.backend_used == "source_excerpt"
-        if says_missing(response.text) and not excerpt:
-            # Neither the selected lecture nor the earlier ones answer it.
-            response.text = MISSING_EVERYWHERE
+        # Only a checked explanation earns the earlier-lecture note, never a fallback.
+        if not earlier or response.answer_status not in ("answered", "partial"):
             return result
         earlier_files = {
             citation["filename"]
@@ -504,27 +542,64 @@ class SentioOrchestrator:
             return result
         if len(from_earlier) < len(cited):
             note = f"This builds on an earlier lecture ({', '.join(from_earlier)})."
-        elif excerpt:
-            response.text = response.text.replace(EXCERPT_HEADER, "", 1).lstrip()
-            note = (
-                "Your selected lecture doesn't cover this. These passages from an earlier "
-                f"lecture ({', '.join(from_earlier)}) may help:"
-            )
         else:
             note = earlier_lecture_note(from_earlier)
         response.text = f"{note}\n\n{response.text}"
         return result
 
+    @staticmethod
+    def _prior_answer(state):
+        """The tutor's last answer that cited the notes, which a follow-up may restate."""
+        from sentio.ai.answer_check import CITATION_TEXT, UNVERIFIED
+
+        for turn in reversed(state.get("history") or []):
+            if turn.get("role") != "assistant":
+                continue
+            text = str(turn.get("content") or "")
+            if CITATION_TEXT.search(text) and not text.startswith(UNVERIFIED):
+                return text
+            return ""
+        return ""
+
+    def _checked(self, response, state):
+        """Keep the sentences the notes support and decide what the learner sees."""
+        from sentio.ai.answer_check import PARTIAL_NOTE, honest_fallback, repair_citations, review
+
+        content = state.get("retrieved_content")
+        if not getattr(content, "is_rag", False):
+            return response
+        citations = list(getattr(content, "source_citations", None) or [])
+        prior = self._prior_answer(state)
+        verdict = review(
+            response.text,
+            [str(citation.get("text", "")) for citation in citations],
+            question=state["user_message"],
+            prior=prior,
+        )
+        response.answer_status = verdict.status
+        if verdict.dropped:
+            logger.info(
+                "Unsupported sentences dropped (%s): %.500r", verdict.status, verdict.dropped
+            )
+        if verdict.status == "unverified":
+            response.text = honest_fallback(citations)
+            response.backend_used = "source_excerpt"
+            response.follow_up_question = response.encouragement = None
+        elif verdict.status == "not_in_notes":
+            logger.info("Model said the notes lack it: %.500r", response.text)
+            response.text = verdict.text
+        else:
+            text = repair_citations(verdict.text, citations, prior)
+            if verdict.dropped:
+                text = f"{text}\n\n{PARTIAL_NOTE}"
+            response.text = text
+        return response
+
     def _generate_once(self, state: OrchestratorState) -> OrchestratorState:
-        """Generate a schema-checked answer, validate citations, or fall back to excerpts."""
+        """Generate a schema-checked answer and keep only what the notes support."""
         t0 = time.perf_counter()
 
-        from sentio.ai.grounding import (
-            cite_by_support,
-            split_page_lists,
-            trim_abstention,
-            validate_references,
-        )
+        from sentio.ai.answer_check import honest_fallback
         from sentio.ai.response_models import TutorResponse
 
         tone = state.get("tone_instruction", "Be encouraging.")
@@ -543,8 +618,9 @@ class SentioOrchestrator:
             from sentio.tutor.slides import SLIDE_INSTRUCTION
 
             system_prompt += SLIDE_INSTRUCTION
+        if state.get("directive"):
+            system_prompt += "\n" + state["directive"]
 
-        from sentio.ai.source_practice import source_excerpt
         from sentio.shared.exceptions import LLMServiceUnavailableError
 
         tutor_resp = None
@@ -571,31 +647,24 @@ class SentioOrchestrator:
                 latency_ms=latency,
                 backend_name=self.tutor_agent.nlp._backend.name,
             )
-            tutor_resp.text = trim_abstention(split_page_lists(tutor_resp.text))
-            tutor_resp.text = cite_by_support(tutor_resp.text, state.get("retrieved_content"))
-            validate_references(tutor_resp.text, state.get("retrieved_content"))
+            tutor_resp = self._checked(tutor_resp, state)
         except (ValueError, LLMServiceUnavailableError) as exc:
             content = state.get("retrieved_content")
             if not getattr(content, "is_rag", False):
                 raise
-            # A reply that failed the checks (as opposed to the model being unavailable).
-            if isinstance(exc, ValueError):
-                logger.info(
-                    "Generated answer rejected: %s | %.400r",
-                    exc,
-                    getattr(tutor_resp, "text", None),
-                )
+            # The reply was unreadable or the model was unavailable.
+            logger.info("Generated answer unusable: %s", exc)
             checkpoint("showing source passages")
             t1 = time.perf_counter()
             latency = (t1 - t0) * 1000
             tutor_resp = TutorResponse(
-                text=source_excerpt(content),
+                text=honest_fallback(list(content.source_citations or [])),
                 strategy_used=state["strategy"],
                 learning_state=state["learning_state"],
                 backend_used="source_excerpt",
                 latency_ms=latency,
+                answer_status="unverified",
             )
-            validate_references(tutor_resp.text, content)
 
         timeline = list(state["agent_timeline"])
         timeline.append(

@@ -66,7 +66,10 @@ def test_provider_failure_keeps_selected_notes_usable_and_resumed_practice_persi
             json={"message": "What is inertia?", "request_id": "source-fallback-test"},
         )
         assert "event: complete" in stream.text
-        assert "source_excerpt" in stream.text and "could not verify" in stream.text
+        assert (
+            "source_excerpt" in stream.text
+            and "I couldn't write an answer I can check" in stream.text
+        )
         assert client.delete("/api/v1/sessions/" + sid).status_code == 200
         assert client.post(f"/api/v1/sessions/{sid}/resume").status_code == 200
         stored = agent.sm.persister.load_session_data(sid)

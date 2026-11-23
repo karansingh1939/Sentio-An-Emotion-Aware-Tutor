@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import os
+import re
 import time
 import uuid
 from pathlib import Path
@@ -14,6 +15,10 @@ from sentio.jobs.control import WorkCancelled, checkpoint, publish
 from sentio.rag.vector_db import QdrantVectorDB
 from sentio.repositories.documents import DocumentRepository
 from sentio.session.manager import SessionManager
+
+# Longest passage: all-MiniLM-L6-v2 reads 256 word pieces, about 1,000 characters of
+# English, so a longer passage would be embedded without its end.
+CHUNK_CHARS = 1000
 
 logger = logging.getLogger(__name__)
 _ingestion_lock = RLock()
@@ -127,19 +132,42 @@ class DocumentIngestionPipeline:
                 pages.append({"page_number": number, "text": "\n".join(lines)})
         return pages
 
-    def chunk_text(self, text: str, chunk_size: int = 500, chunk_overlap: int = 100) -> List[str]:
-        """Perform sliding character-window chunking on text."""
-        chunks = []
-        if not text.strip():
-            return chunks
+    def chunk_text(self, text: str, chunk_size: int = CHUNK_CHARS) -> List[str]:
+        """Split one page into passages along its own structure.
 
-        start = 0
-        while start < len(text):
-            end = min(start + chunk_size, len(text))
-            chunks.append(text[start:end])
-            if end == len(text):
-                break
-            start += chunk_size - chunk_overlap
+        A page that fits is one passage, so a slide's list ("four layers: Device,
+        Connectivity, Cloud, User communication") stays together. A longer page splits
+        between lines (bullets, rows), and a single over-long line between sentences or
+        words, never inside a word and without overlapping copies of the same text.
+        """
+        text = text.strip()
+        if not text:
+            return []
+        if len(text) <= chunk_size:
+            return [text]
+        pieces = []
+        for line in text.split("\n"):
+            line = line.strip()
+            if len(line) <= chunk_size:
+                pieces.append(line)
+                continue
+            for sentence in re.split(r"(?<=[.!?;])\s+", line):
+                while len(sentence) > chunk_size:
+                    cut = sentence.rfind(" ", 0, chunk_size)
+                    cut = cut if cut > 0 else chunk_size
+                    pieces.append(sentence[:cut])
+                    sentence = sentence[cut:].strip()
+                pieces.append(sentence)
+        chunks, current = [], ""
+        for piece in filter(None, pieces):
+            joined = f"{current}\n{piece}" if current else piece
+            if len(joined) <= chunk_size:
+                current = joined
+            else:
+                chunks.append(current)
+                current = piece
+        if current:
+            chunks.append(current)
         return chunks
 
     def process_file(

@@ -121,7 +121,8 @@ def mock_complete(system_prompt, history, user_message, max_tokens=512, temperat
         cite = f" {found.group(1)}" if found else ""
         return json.dumps(
             {
-                "text": "This is a tutoring explanation about thermodynamics." + cite,
+                "text": "Thermodynamics studies heat, work and energy, and entropy measures disorder."
+                + cite,
                 "follow_up_question": "Does this explanation make sense?",
                 "encouragement": "Good effort!",
                 "suggested_topic": "thermodynamics",

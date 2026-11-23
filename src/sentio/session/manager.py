@@ -128,6 +128,10 @@ class SessionManager:
                         question_preview=row[5] or "",
                     )
                 )
+            streak = session.metadata.get("quiz_streak")
+            if streak:
+                session.quiz_tracker.consecutive_correct = int(streak.get("correct", 0))
+                session.quiz_tracker.consecutive_wrong = int(streak.get("wrong", 0))
 
             # Cache in memory
             self._sessions[session_id] = session
@@ -286,6 +290,17 @@ class SessionManager:
 
         # 3. Difficulty adaptation based on quiz performance
         change = self._maybe_adapt_difficulty(session)
+        # The live streak, saved with the session: replaying attempts cannot tell where a
+        # level change (or a pinned level) restarted it.
+        session.metadata["quiz_streak"] = {
+            "correct": session.quiz_tracker.consecutive_correct,
+            "wrong": session.quiz_tracker.consecutive_wrong,
+        }
+        # 4. Without a caller's transaction (which saves the session itself), save now:
+        # otherwise the level, streaks and quiz summary exist only in memory, History
+        # shows stale values and a restart rebuilds them wrongly from the attempts.
+        if connection is None:
+            self.persister.save_session(session)
 
         logger.debug(
             f"Quiz attempt | session={session_id[:8]} | "
