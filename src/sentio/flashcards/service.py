@@ -96,7 +96,7 @@ class FlashcardService:
                 session_id=session.session_id if session else "flashcard_gen",
                 student_id=student_id,
                 document_id=with_earlier_lectures(
-                    self.agent.sm.persister._engine, student_id, document_id
+                    self.agent.sm.persister.engine, student_id, document_id
                 ),
             )
         )

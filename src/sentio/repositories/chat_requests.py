@@ -89,3 +89,15 @@ def completed_turns(connection, owner, session_id, context, limit, offset):
         .mappings()
         .all()
     )
+
+
+def recent_messages(connection, session_id, kept):
+    """The last `kept` completed, non-empty learner messages in a session, oldest first."""
+    rows = connection.execute(
+        text(
+            "SELECT message FROM chat_requests WHERE session_id=:id AND status='complete' "
+            "AND message!='' ORDER BY updated_at DESC LIMIT :kept"
+        ),
+        {"id": session_id, "kept": kept},
+    ).scalars()
+    return list(rows)[::-1]

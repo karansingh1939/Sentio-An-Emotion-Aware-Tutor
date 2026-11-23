@@ -113,7 +113,7 @@ class QuizService:
                 session_id=session_id,
                 student_id=student_id,
                 document_id=with_earlier_lectures(
-                    self.agent.sm.persister._engine, student_id, document_id
+                    self.agent.sm.persister.engine, student_id, document_id
                 ),
             )
         )
