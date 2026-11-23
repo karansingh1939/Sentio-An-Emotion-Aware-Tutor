@@ -2,6 +2,27 @@ import math
 import re
 from typing import Any, Dict, List
 
+# Shorter words have too many one-letter neighbours ("cat", "car", "bat") to correct safely.
+MIN_CORRECTABLE_LENGTH = 5
+MAX_CORRECTIONS_PER_WORD = 2
+
+
+def edit_distance(a: str, b: str, limit: int) -> int:
+    """Optimal string alignment distance (a swap of neighbours counts once), capped at limit + 1."""
+    previous2 = None
+    previous = list(range(len(b) + 1))
+    for i in range(1, len(a) + 1):
+        current = [i] + [0] * len(b)
+        for j in range(1, len(b) + 1):
+            cost = 0 if a[i - 1] == b[j - 1] else 1
+            current[j] = min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + cost)
+            if i > 1 and j > 1 and a[i - 1] == b[j - 2] and a[i - 2] == b[j - 1]:
+                current[j] = min(current[j], previous2[j - 2] + 1)
+        if min(current) > limit:
+            return limit + 1
+        previous2, previous = previous, current
+    return previous[-1]
+
 
 class BM25Searcher:
     """
@@ -25,6 +46,30 @@ class BM25Searcher:
         """Simple tokenizer that lowercases, removes punctuation, and splits by whitespace."""
         cleaned = re.sub(r"[^\w\s\-]", " ", text.lower())
         return [word for word in cleaned.split() if len(word) > 1]
+
+    def correct_query(self, query: str) -> str:
+        """The query with each misspelled word followed by the notes' word it most likely meant.
+
+        A word is corrected only when it is absent from the indexed notes and a notes word
+        within a small edit distance shares its first letter. The original word is kept,
+        and a question about something the notes never mention stays unmatched.
+        """
+        vocabulary = self.df
+        words = []
+        for token in self._tokenize(query):
+            words.append(token)
+            if token in vocabulary or len(token) < MIN_CORRECTABLE_LENGTH or token.isdigit():
+                continue
+            limit = 1 if len(token) < 8 else 2
+            matches = [
+                term
+                for term in vocabulary
+                if term[0] == token[0]
+                and abs(len(term) - len(token)) <= limit
+                and edit_distance(token, term, limit) <= limit
+            ]
+            words.extend(sorted(matches)[:MAX_CORRECTIONS_PER_WORD])
+        return " ".join(words)
 
     def index(self, chunks: List[Dict[str, Any]]):
         """

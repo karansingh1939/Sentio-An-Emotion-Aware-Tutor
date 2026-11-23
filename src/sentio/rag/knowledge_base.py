@@ -426,7 +426,10 @@ class KnowledgeBase:
                 subj_chunks = [c for c in all_db_chunks if c.get("document_id") == document_id]
 
             bm25_searcher = self._keyword_index(subj_chunks)
-            bm25_results = bm25_searcher.search(query, limit=20)
+            # Misspelled words are matched to the notes' own vocabulary for the keyword side;
+            # the embedding search above keeps the learner's original wording.
+            keyword_query = bm25_searcher.correct_query(query)
+            bm25_results = bm25_searcher.search(keyword_query, limit=20)
             t_k_end = time.perf_counter()
             keyword_latency = (t_k_end - t_k_start) * 1000
 
@@ -435,7 +438,7 @@ class KnowledgeBase:
             t_rank_start = time.perf_counter()
             top_ranked = distinct_passages(
                 fuse_candidates(
-                    query,
+                    keyword_query,
                     vector_results,
                     bm25_results,
                     bm25_searcher,
