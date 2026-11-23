@@ -70,7 +70,6 @@ async def test_goal_selection_and_quiz_question_edit(monkeypatch):
 
             await page.goto(url + "/#/tutor")
             await page.wait_for_selector(f'#f-goal option[value="{goal_id}"]', state="attached")
-            await page.fill("#f-topic", "Inertia")
             await page.select_option("#f-goal", goal_id)
             await page.click("#start-btn")
             await page.wait_for_function("window.store.getState('activeSessionId')")

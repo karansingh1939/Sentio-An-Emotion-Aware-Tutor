@@ -11,13 +11,19 @@ from pathlib import Path
 
 from PIL import Image, ImageOps
 
-MAX_OCR_PAGES = 20
+MAX_OCR_PAGES = 200
+# A scanned PDF page below this mean word confidence is a picture, not text.
+MIN_PAGE_CONFIDENCE = 50
 MAX_PIXELS = 16_000_000
 PDFIUM_LOCK = threading.Lock()
 
 
 class ExtractionError(ValueError):
     """An actionable document extraction failure."""
+
+
+class UnreadablePage(ExtractionError):
+    """One image held no readable text, or took too long to read."""
 
 
 def tesseract_path():
@@ -42,6 +48,16 @@ def require_ocr(pdf=False):
 
 
 def read_image(image):
+    text, score = recognise(image)
+    if len(text.strip()) < 10 or score < 25:
+        raise UnreadablePage(
+            "No readable English text found. Upload a clearer scan or a text document."
+        )
+    return text
+
+
+def recognise(image):
+    """Best text over four orientations, with its mean word confidence (0-100)."""
     executable = require_ocr()
     if image.width * image.height > MAX_PIXELS:
         raise ExtractionError(
@@ -64,7 +80,7 @@ def read_image(image):
                     check=True,
                 )
             except subprocess.TimeoutExpired as exc:
-                raise ExtractionError(
+                raise UnreadablePage(
                     "OCR exceeded the 30 second page-orientation timeout. Try a smaller or clearer image."
                 ) from exc
             except subprocess.CalledProcessError as exc:
@@ -82,11 +98,7 @@ def read_image(image):
                 best_text, best_score = " ".join(words), score
             if angle == 0 and score >= 85:
                 break
-    if len(best_text.strip()) < 10 or best_score < 25:
-        raise ExtractionError(
-            "No readable English text found. Upload a clearer scan or a text document."
-        )
-    return best_text
+    return best_text, best_score
 
 
 def image_page(filepath):
@@ -120,7 +132,8 @@ def pdf_pages(filepath):
     scanned = [page for page in pages if len(page["text"].strip()) < 10]
     if len(scanned) > MAX_OCR_PAGES:
         raise ExtractionError(
-            "Document exceeds the maximum of 20 OCR pages. Split the scanned document."
+            f"This PDF has {len(scanned)} scanned pages (pictures of text). Sentio reads up to "
+            f"{MAX_OCR_PAGES} scanned pages in one file; split it into smaller files."
         )
     if scanned:
         require_ocr(pdf=True)
@@ -134,10 +147,27 @@ def pdf_pages(filepath):
                     with closing(page.render(scale=scale)) as bitmap:
                         image = bitmap.to_pil().copy()
                 try:
-                    entry["text"] = read_image(image)
+                    entry["text"] = page_text(image)
                     entry["extraction_method"] = "ocr"
                 finally:
                     image.close()
     if not pages:
         raise ExtractionError("PDF contains no pages.")
+    if not any(page["text"].strip() for page in pages):
+        raise ExtractionError(
+            "No readable English text found in this PDF. Upload a clearer scan or a text document."
+        )
     return pages
+
+
+def page_text(image):
+    """Text of one scanned PDF page, or "" for a picture or diagram with no readable text.
+
+    A slide deck exported to PDF often has picture-only slides; one of them must not
+    reject the whole lecture.
+    """
+    try:
+        text, score = recognise(image)
+    except UnreadablePage:
+        return ""
+    return text if len(text.strip()) >= 10 and score >= MIN_PAGE_CONFIDENCE else ""

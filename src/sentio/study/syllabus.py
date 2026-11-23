@@ -1,7 +1,7 @@
 """A course syllabus: its units and topics, matched to the topics of the student's lectures.
 
 Parsing and matching are deterministic. A syllabus topic matches a lecture topic when its
-words appear in that topic's title (weighted double) or slide text; the status of a
+words appear in that topic's headings (weighted double) or slide text; the status of a
 syllabus topic comes from the practice state of the lecture topics it matches.
 """
 
@@ -9,10 +9,11 @@ import re
 from collections import Counter
 from functools import lru_cache
 
+from sentio.study.topics import subheadings
+
 MAX_ITEM = 120
 MAX_LINKS = 3
 MATCH_THRESHOLD = 0.6
-STRONG_TEXT_MATCH = 0.75
 
 _UNIT = re.compile(
     r"^(unit|module|chapter|part|section|week|topic)\s*[-:.#]?\s*([0-9]+|[ivxlc]+)\b[\s\-:.–—)]*(.*)$",
@@ -193,24 +194,31 @@ def _words(text):
     return words
 
 
+@lru_cache(maxsize=4096)
+def _title_words(title, text):
+    """Words of a topic's title and of the sub-headings merged into it."""
+    return _words(" ".join([title, *subheadings(title, text)]))
+
+
 def match(title, topics):
     """Ids of the lecture topics a syllabus topic matches, best first.
 
-    Each syllabus word scores 2 if it is in a topic's title, 1 if only in its slide text.
-    A topic matches when it reaches MATCH_THRESHOLD of the maximum and shares a title word, or
-    reaches STRONG_TEXT_MATCH from slide text alone (a single word mentioned in passing is
-    not enough). Matches well below the best one are dropped.
+    Each syllabus word scores 2 if it is in a topic's title or in a sub-heading inside the
+    topic ("Process Management: Context Switch"), 1 if only in its slide text. A topic
+    matches when it reaches MATCH_THRESHOLD of the maximum and shares a heading word: words
+    found only in slide text are often a mention in passing, so they are never enough alone.
+    Matches well below the best one are dropped.
     """
     wanted = _words(title)
     if not wanted:
         return []
     scored = []
     for topic in topics:
-        in_title = _words(topic["title"])
+        in_title = _title_words(topic["title"], topic.get("text", ""))
         in_text = _words(topic.get("text", ""))
         score = sum(2 if w in in_title else 1 if w in in_text else 0 for w in wanted)
         score /= 2 * len(wanted)
-        if score >= MATCH_THRESHOLD and (wanted & in_title or score >= STRONG_TEXT_MATCH):
+        if score >= MATCH_THRESHOLD and wanted & in_title:
             scored.append((score, topic["id"]))
     scored.sort(key=lambda pair: -pair[0])
     best = scored[0][0] if scored else 0

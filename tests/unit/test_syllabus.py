@@ -121,6 +121,36 @@ def test_acronyms_comparisons_and_passing_mentions():
     assert match("Static", topics) == []  # mentioned in passing on a slide only
 
 
+def test_a_sub_heading_inside_a_topic_counts_as_its_title():
+    topics = [
+        {
+            "id": "processes",
+            "title": "Process Management",
+            "text": "Process Management\nA process is a program in execution.\n"
+            "Process Management: Context Switch\nThe state is saved into the PCB.",
+        },
+        {
+            "id": "scheduling",
+            "title": "CPU Scheduling",
+            "text": "CPU Scheduling\nShortest Job First runs the smallest burst.\n"
+            "CPU Scheduling: Round Robin\nToo small a quantum causes many context switches.",
+        },
+        {
+            "id": "deadlock",
+            "title": "Deadlocks",
+            "text": "Deadlocks\nFour conditions must hold.\nDeadlocks: Banker's Algorithm\n"
+            "A request is granted only in a safe state.",
+        },
+    ]
+    assert match("Context switch", topics) == ["processes"]
+    assert match("Round Robin", topics) == ["scheduling"]
+    assert match("Banker's algorithm", topics) == ["deadlock"]
+    assert match("Virtual memory", topics) == []
+    # Named only in body text: still a mention in passing, never enough alone.
+    assert match("Shortest Job First", topics) == []
+    assert match("Quantum", topics) == []
+
+
 def test_a_fading_topic_is_due_rather_than_ready():
     assert item_status(["ready", "review_due"]) == "review_due"
     assert item_status(["review_due", "not_started"]) == "practising"

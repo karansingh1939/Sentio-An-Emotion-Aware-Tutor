@@ -22,11 +22,14 @@ from sentio.ai.structured_parser import (
     ShortAnswerGrade,
     parse_structured_output,
 )
-from sentio.jobs.control import checkpoint, publish
+from sentio.jobs.control import WorkInputError, checkpoint, publish
+from sentio.repositories.courses import with_earlier_lectures
 from sentio.repositories.practice import PracticeRepository
 from sentio.repositories.quizzes import QuizRepository
 from sentio.repositories.topics import TopicRepository
 from sentio.shared.exceptions import LLMServiceUnavailableError
+from sentio.study.focus import session_focus
+from sentio.study.topics import ANY_TOPIC
 from sentio.tutor.difficulty import describe
 
 logger = logging.getLogger(__name__)
@@ -78,7 +81,7 @@ class QuizService:
         document_id = session.metadata.get("document_id")
         grounded = document_id not in (None, "none")
         if not grounded:
-            raise ValueError("Choose notes for this session before making a quiz.")
+            raise WorkInputError("Choose notes for this session before making a quiz.")
         if grounded and document_id != "all":
             from sentio.repositories.courses import expand_source
 
@@ -92,6 +95,10 @@ class QuizService:
             source_snapshot = PracticeRepository(self.agent.sm.persister._engine).snapshot(session)
 
         checkpoint("retrieving sources")
+        query = topic
+        if not (topic or "").strip() or topic == ANY_TOPIC:
+            # A session without a topic practises what it has been about.
+            query, topic = session_focus(self.agent, session_id, student_id, document_id, subject)
         # 1. Use the chosen topics' slides, or retrieve RAG context
         focus = TopicRepository(self.agent.sm.persister._engine).focus(session)
         retrieved = (
@@ -102,15 +109,17 @@ class QuizService:
                 topic=topic,
                 difficulty=difficulty,
                 learning_state="neutral",
-                query=topic,
+                query=query,
                 session_id=session_id,
                 student_id=student_id,
-                document_id=document_id,
+                document_id=with_earlier_lectures(
+                    self.agent.sm.persister._engine, student_id, document_id
+                ),
             )
         )
         context = (getattr(retrieved, "rag_context", None) or "").strip()
         if grounded and (not getattr(retrieved, "is_rag", False) or not context):
-            raise ValueError(
+            raise WorkInputError(
                 "No relevant material found in the selected document(s). Choose another topic or document, or wait for indexing to finish."
             )
 

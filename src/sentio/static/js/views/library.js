@@ -161,10 +161,31 @@ function boardView(topics) {
   }).join('');
 }
 
-function progressLine(summary) {
-  if (!summary.total) return 'No topics yet';
+// A course's topics as one bar (ready, due, practising, not started) and a short count.
+function progressMeter(summary, syllabus) {
+  if (!summary.total)
+    return '<p class="course-meter-text">No topics yet. They appear once a lecture is ready to study.</p>';
+  const plural = summary.total === 1 ? '' : 's';
+  const topics = `${summary.ready} of ${summary.total} topic${plural} ready`;
   const due = summary.review_due ? `${summary.review_due} due for review · ` : '';
-  return `${summary.ready} of ${summary.total} topic${summary.total === 1 ? '' : 's'} ready · ${due}${summary.practising} practising · ${summary.not_started} not started`;
+  const rest = `${due}${summary.practising} practising · ${summary.not_started} not started`;
+  const headline = syllabus.items.length
+    ? `${syllabus.summary.percent_ready}% of the syllabus ready`
+    : topics;
+  const detail = syllabus.items.length ? `${topics} · ${rest}` : rest;
+  const parts = [
+    ['ready', summary.ready],
+    ['review_due', summary.review_due || 0],
+    ['practising', summary.practising],
+    ['not_started', summary.not_started],
+  ]
+    .filter(([, count]) => count)
+    .map(
+      ([state, count]) => `<span class="course-meter-part ${state}" style="flex:${count}"></span>`,
+    )
+    .join('');
+  return `<div class="course-meter" role="img" aria-label="${escapeHtml(`${headline}. ${detail}.`)}">${parts}</div>
+    <p class="course-meter-text"><strong>${escapeHtml(headline)}</strong><span>${escapeHtml(detail)}</span></p>`;
 }
 
 // A title that wraps onto a second line ("Microprocessor &" / "Computer Architecture")
@@ -337,8 +358,8 @@ export class LibraryView {
           }
         </div>
         ${
-          course
-            ? `<p class="muted course-progress" data-course="${escapeHtml(course.id)}">Loading progress…</p>
+          course && docs.length
+            ? `<div class="course-progress" data-course="${escapeHtml(course.id)}" title="Estimated from your quizzes and flashcards"><p class="course-meter-text">Loading progress…</p></div>
               <details class="course-progress-panel" data-course="${escapeHtml(course.id)}">
                 <summary>Progress by topic</summary>
                 <div class="course-progress-body"></div>
@@ -360,7 +381,7 @@ export class LibraryView {
                   <tbody>${this.renderRows(docs)}</tbody>
                 </table>
               </div>`
-            : '<p class="muted">No lectures yet. Choose this course when you upload.</p>'
+            : `<p class="muted">This course is empty. To add lectures, pick "${escapeHtml(title)}" in the Course menu beside a file below, or choose it when you upload.</p>`
         }
       </section>
     `;
@@ -744,9 +765,7 @@ export class LibraryView {
         const topics = progress.lectures.flatMap((lecture) => lecture.topics);
         this.remember(topics);
         this.syllabi.set(course.id, syllabus);
-        line.textContent = syllabus.items.length
-          ? `${syllabus.summary.percent_ready}% of the syllabus ready · ${progressLine(progress.summary)}. Practice estimate from your quizzes and flashcards.`
-          : `${progressLine(progress.summary)}. Practice estimate from your quizzes and flashcards.`;
+        line.innerHTML = progressMeter(progress.summary, syllabus);
         body.innerHTML = `
           ${syllabus.items.length ? syllabusView(syllabus, course.id) : syllabusForm(course.id)}
           ${
@@ -988,6 +1007,7 @@ export class LibraryView {
         (item) => `<li class="upload-item">
           <span class="upload-name">${window.sentioIcon('file', 16)}<span>${escapeHtml(item.name)}</span></span>
           <span class="doc-state ${pill[item.state]}">${label[item.state]}</span>
+          ${item.error ? `<span class="upload-error">${escapeHtml(item.error)}</span>` : ''}
         </li>`,
       )
       .join('');
@@ -1037,6 +1057,7 @@ export class LibraryView {
       const ok = await this.uploadFile(file, courseId);
       this.batchItems[index].state = ok ? 'done' : 'failed';
       if (!ok) {
+        this.batchItems[index].error = this.lastUploadError;
         failed.push(file.name);
         this.failedFiles.push(file);
       }
@@ -1050,7 +1071,7 @@ export class LibraryView {
     const status = this.container.querySelector('#upload-batch');
     if (status) status.textContent = this.batchStatus;
     if (failed.length && files.length > 1)
-      toast(`${failed.length} file${failed.length === 1 ? '' : 's'} could not be added.`, true);
+      toast(`Not added: ${failed.join(', ')}. The reason is shown beside each file.`, true);
   }
 
   // The progress panel, or a detached stand-in while the Library is not drawn, so an
@@ -1068,6 +1089,7 @@ export class LibraryView {
     const uploader = this.container.querySelector('#file-uploader');
     let refreshed = false;
     let added = false;
+    this.lastUploadError = '';
     if (uploader) uploader.disabled = true;
     try {
       // A newly chosen file is a new intent. Finish reconnecting the previous
@@ -1110,12 +1132,18 @@ export class LibraryView {
         owner === store.getState('currentUser')?.id &&
         store.getState('activeRoute') === '#/documents'
       ) {
-        toast(
-          `${file ? file.name + ' saved. ' : 'Study material saved. '}` +
-            (result.indexing_mode === 'keyword'
-              ? 'Keyword search is available; semantic indexing was unavailable.'
-              : 'Ready for study.'),
-        );
+        const name = file ? file.name : 'This file';
+        const search =
+          result.indexing_mode === 'keyword'
+            ? 'Keyword search is available; semantic indexing was unavailable.'
+            : 'Ready for study.';
+        if (result.outcome === 'unchanged')
+          toast(`${name} is already in your Library and has not changed. Nothing was added.`);
+        else if (result.outcome === 'replaced')
+          toast(
+            `${name} was already in your Library. It is now replaced with this version. ${search}`,
+          );
+        else toast(`${file ? file.name + ' saved. ' : 'Study material saved. '}${search}`);
         this.justUploadedId = result.document_id;
         // A syllabus uploaded as notes becomes just another lecture (goldfish F4).
         if (file && /syllabus|course outline|curriculum/i.test(file.name))
@@ -1130,7 +1158,11 @@ export class LibraryView {
         this.jobPanel().textContent =
           `${file ? file.name + ': ' : ''}${error.message}` +
           (file ? ' Use Try again below.' : ' Choose the file again to retry.');
-        toast('Upload did not finish: ' + error.message, true);
+        this.lastUploadError = error.message;
+        toast(
+          `${file ? file.name + ' was not added: ' : 'Upload did not finish: '}${error.message}`,
+          true,
+        );
       }
     } finally {
       this.uploadInProgress = false;

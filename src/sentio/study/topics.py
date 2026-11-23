@@ -16,6 +16,8 @@ READY_RECENT = 3
 READY_RECENT_CORRECT = 3
 MAX_TITLE = 80
 MAX_PRACTICE_TOPICS = 5
+# The topic of a session started without one: anything in its notes.
+ANY_TOPIC = "Any topic"
 MAX_PRACTICE_TEXT = 3000  # Characters of slides in one quiz prompt.
 
 _CONTINUED = re.compile(r"[\s\-–—:.…(\[]*\bcont(inued|'d|d)?\.?[)\]]?\s*$", re.IGNORECASE)
@@ -58,22 +60,36 @@ def _continues(heading, title):
     return new == _key(title) or (len(base) >= 3 and re.match(re.escape(base) + r"s?\b", new))
 
 
+def _heading_shaped(line):
+    return (
+        len(line) <= MAX_TITLE
+        and len(line.split()) <= MAX_TITLE_WORDS
+        and not line.endswith((".", "!", ":"))
+        and not _SENTENCE.search(line)
+        # "Peak value: The maximum value of ..." is body text
+        and len(line.partition(":")[2].split()) <= 4
+    )
+
+
 def _heading(text, running):
     """The page's heading: its first short line that is not a running header or page number."""
     for line in _candidates(text):
         if line.casefold() in running:
             continue
-        label, _, rest = line.partition(":")
-        if (
-            len(line) <= MAX_TITLE
-            and len(line.split()) <= MAX_TITLE_WORDS
-            and not line.endswith((".", "!", ":"))
-            and not _SENTENCE.search(line)
-            and len(rest.split()) <= 4  # "Peak value: The maximum value of ..." is body text
-        ):
+        if _heading_shaped(line):
             return line
         return None  # The page opens with body text: it continues the previous topic.
     return None
+
+
+def subheadings(title, text):
+    """Headings inside a topic that extend its title ("Control Bus- Example" under
+    "Control Bus"). Their pages were merged into the topic, so its title does not show them."""
+    return [
+        line
+        for line in _candidates(text or "")
+        if _heading_shaped(line) and _key(line) != _key(title) and _continues(line, title)
+    ]
 
 
 def build_topics(pages, fallback_title):
