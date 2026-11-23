@@ -1,0 +1,1 @@
+A stack is a last in first out data structure. Push inserts an item and pop removes the most recently inserted item. A queue is first in first out.
