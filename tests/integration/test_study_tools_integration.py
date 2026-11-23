@@ -11,6 +11,7 @@ This test suite verifies:
 """
 
 import json
+import re
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -115,10 +116,12 @@ def mock_complete(system_prompt, history, user_message, max_tokens=512, temperat
         ), 100
 
     else:
-        # Standard Tutor Chat Response
+        # Standard Tutor Chat Response, citing the first passage it was given.
+        found = re.search(r'"reference": "(\[[^"]+\])"', user_message or "")
+        cite = f" {found.group(1)}" if found else ""
         return json.dumps(
             {
-                "text": "This is a tutoring explanation about thermodynamics.",
+                "text": "This is a tutoring explanation about thermodynamics." + cite,
                 "follow_up_question": "Does this explanation make sense?",
                 "encouragement": "Good effort!",
                 "suggested_topic": "thermodynamics",

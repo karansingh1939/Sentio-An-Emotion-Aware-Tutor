@@ -361,7 +361,10 @@ class TutorAgent:
             suggest_flashcard = self._check_flashcard_suggestion(
                 session_id, student_message, nlp_history.to_list()
             )
-            if suggest_flashcard:
+            # Only a generated explanation of a short term earns the tip; passages and
+            # refusals are not teaching, and a whole question is not a flashcard term.
+            generated = tutor_resp.backend_used not in ("source_excerpt", "evidence_gate")
+            if suggest_flashcard and generated and len(suggest_flashcard.split()) <= 4:
                 suggestion_text = f"\n\n💡 *Tip: You seem to be working on '{suggest_flashcard}'. Would you like to add this to your flashcard deck?*"
                 tutor_resp.text += suggestion_text
         except Exception as e:

@@ -1,5 +1,6 @@
 """Owner-scoped courses: optional folders that group a student's lecture notes."""
 
+import re
 import time
 import uuid
 
@@ -130,3 +131,67 @@ def expand_source(connection, owner, source):
             {"course": source[len(COURSE_PREFIX) :], "owner": owner},
         ).scalars()
     )
+
+
+# "1. Introduction.pptx", "02_cnn.pdf", "Lecture 3", "L4 slides", "Week 5", "Unit 2".
+LEADING_NUMBER = re.compile(r"^\s*(\d{1,3})(?!\d)")
+NAMED_NUMBER = re.compile(
+    r"\b(?:lecture|lec|l|week|wk|unit|class|module|session|chapter|ch|part)[\s._-]*(\d{1,3})(?!\d)",
+    re.IGNORECASE,
+)
+
+
+def lecture_number(filename):
+    """The lecture number a filename shows, or None when it shows none."""
+    stem = filename.rsplit(".", 1)[0] if "." in filename else filename
+    match = LEADING_NUMBER.match(stem) or NAMED_NUMBER.search(stem)
+    return int(match.group(1)) if match else None
+
+
+def earlier_lectures(connection, owner, document_id):
+    """The indexed lectures of the same course taught before this one, nearest first.
+
+    Lectures that show a number ("3. CNN.pdf", "Lecture 3") are ordered by it. When the
+    selected lecture shows none, upload order stands in for teaching order.
+    """
+    if not isinstance(document_id, str):
+        return []
+    rows = connection.execute(
+        text(
+            "SELECT d.id,d.filename,d.upload_date,d.status FROM documents d "
+            "JOIN documents s ON s.course_id=d.course_id AND s.student_id=d.student_id "
+            "WHERE s.id=:document AND s.student_id=:owner AND s.course_id IS NOT NULL"
+        ),
+        {"document": document_id, "owner": owner},
+    ).mappings()
+    lectures = [dict(row) for row in rows]
+    selected = next((row for row in lectures if row["id"] == document_id), None)
+    if selected is None:
+        return []
+    number = lecture_number(selected["filename"])
+    if number is not None:
+        earlier = [
+            row
+            for row in lectures
+            if (row_number := lecture_number(row["filename"])) is not None and row_number < number
+        ]
+        earlier.sort(key=lambda row: -lecture_number(row["filename"]))
+    else:
+        earlier = [
+            row for row in lectures if (row["upload_date"] or 0) < (selected["upload_date"] or 0)
+        ]
+        earlier.sort(key=lambda row: -(row["upload_date"] or 0))
+    return [row["id"] for row in earlier if row["status"] == "indexed"]
+
+
+def with_earlier_lectures(engine, owner, source):
+    """A single lecture together with the course lectures taught before it.
+
+    The tutor answers from earlier lectures too, so practice made from a session
+    searches the same notes. Any other source is returned unchanged.
+    """
+    if not isinstance(source, str) or source in ("all", "none") or source.startswith(COURSE_PREFIX):
+        return source
+    with engine.connect() as connection:
+        earlier = earlier_lectures(connection, owner, source)
+    return [source, *earlier] if earlier else source

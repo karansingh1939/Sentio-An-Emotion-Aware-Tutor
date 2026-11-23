@@ -177,22 +177,15 @@
                   ></span>
                   <div>
                     <h3>What would you like to understand?</h3>
-                    <p>Choose a topic here, or open Library and select Study beside your notes.</p>
+                    <p>Choose your notes under Notes to use, then start and ask about anything in them.</p>
                   </div>
                 </div>
               </div>
 
               <div class="session-form-grid">
                 <input id="f-student" type="hidden" value="stu_001" />
-                <div class="field">
-                  <label for="f-topic">Topic</label>
-                  <input
-                    id="f-topic"
-                    type="text"
-                    value=""
-                    placeholder="Enter the concept you are studying"
-                  />
-                </div>
+                <!-- Set only when Today starts a session on one of your topics. -->
+                <input id="f-topic" type="hidden" value="" />
                 <div class="field">
                   <label for="f-difficulty">Difficulty</label>
                   <select id="f-difficulty">
@@ -218,7 +211,7 @@
                 </select>
               </div>
 
-              <div class="field">
+              <div class="field" style="display: none">
                 <label for="f-goal">Goal for this session</label>
                 <select id="f-goal">
                   <option value="">No goal</option>
