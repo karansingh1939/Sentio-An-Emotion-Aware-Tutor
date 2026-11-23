@@ -1,0 +1,41 @@
+{
+  "about": "Live regression set built from the owner's four lecture PDFs (course 'intelligent model design'). Each case is a question sequence; checks apply to the LAST turn. Expectations come from the slide text. Run with scripts/eval/live_regression.py against a running Sentio that has these notes.",
+  "documents": {
+    "L1": "1. Introduction.pptx",
+    "L2": "2. Types_of_DataSets.pdf",
+    "L3": "3. AIOT.pdf",
+    "L4": "4. IntroMlSvmCnn.pdf"
+  },
+  "cases": [
+    {"id": "grades", "source": "L1", "turns": ["How is the course evaluated?"],
+     "any": ["40"], "all": ["20"], "none": ["could not", "couldn't"], "modes": ["generated"]},
+    {"id": "still-dont-get-it", "source": "L1", "turns": ["How is the course evaluated?", "I still don't get it"],
+     "all": ["40"], "none": ["don't cover", "Neither this lecture"], "modes": ["generated"]},
+    {"id": "example-of-that", "source": "L3", "turns": ["What is edge computing in AIoT?", "can you give me an example of that?"],
+     "none": ["playlist", "smart speaker"]},
+    {"id": "svm-inventor", "source": "L4", "turns": ["What is a support vector machine and who invented it?"],
+     "none": ["Vapnik", "Chervonenkis", "1960", "1990s"]},
+    {"id": "mixed-csv-svm", "source": "course", "turns": ["What is a CSV file and also who invented SVM?"],
+     "any": ["comma", "tabular"], "none": ["Vapnik", "Chervonenkis", "1960"]},
+    {"id": "latency-follow-up", "source": "L3", "turns": ["Compare cloud-based and edge-based AIoT", "which one is better for latency?"],
+     "any": ["edge", "Edge"], "none": ["cow", "Raspberry"]},
+    {"id": "alexnet", "source": "L4", "turns": ["What accuracy did AlexNet get on ImageNet?"],
+     "none": ["%", "accuracy of 8"], "modes": ["refused", "unverified"]},
+    {"id": "dataset-types", "source": "L2", "turns": ["List every type of dataset"],
+     "all": ["1D", "2D", "3D"], "none": ["Neither this lecture"], "modes": ["generated"]},
+    {"id": "csv-from-earlier", "source": "L4", "turns": ["What is a CSV file?"],
+     "any": ["comma", "tabular"], "all": ["earlier lecture"], "modes": ["generated"]},
+    {"id": "later-lecture-refused", "source": "L2", "turns": ["What is AIoT?"],
+     "modes": ["refused"]},
+    {"id": "ethanol", "source": "L4", "turns": ["What is the boiling point of ethanol?"],
+     "modes": ["refused"], "none": ["78"]},
+    {"id": "conv-7x7", "source": "L4", "turns": ["What output size do you get from a 7x7 input with a 3x3 filter and stride 2?"],
+     "all": ["3x3"], "modes": ["generated"]},
+    {"id": "didnt-understand", "source": "L4", "turns": ["What output size do you get from a 7x7 input with a 3x3 filter and stride 2?", "no i didnt understand"],
+     "any": ["3x3", "3 x 3", "three"], "none": ["Neither this lecture", "don't cover"], "modes": ["generated"]},
+    {"id": "padded", "source": "course", "turns": ["Please explain what a convolution is. I really need to understand this for my exam tomorrow, it is very important. I really need to understand this for my exam tomorrow, it is very important. I really need to understand this for my exam tomorrow, it is very important."],
+     "any": ["filter", "dot product", "slide"], "none": ["Neither this lecture", "don't cover"]},
+    {"id": "instructor", "source": "L1", "turns": ["Who is the course instructor?"],
+     "none": ["mentioned as 'Course Instructor'"], "modes": ["refused", "unverified", "generated"]}
+  ]
+}

@@ -16,7 +16,7 @@ import psutil
 
 from sentio.config import nlp_cfg, session_cfg
 from sentio.evaluation.metrics import aggregate, retrieval_metrics
-from sentio.ingestion.pipeline import DocumentIngestionPipeline
+from sentio.ingestion.pipeline import CHUNK_CHARS, DocumentIngestionPipeline
 from sentio.rag.evidence_policy import MIN_DENSE_SIMILARITY
 from sentio.rag.knowledge_base import KnowledgeBase, SemanticRetriever
 from sentio.rag.reranker import HybridRanker
@@ -248,8 +248,8 @@ def evaluate(dataset_dir, grade=False):
             "vector_weight": HybridRanker().w_vector,
             "keyword_weight": HybridRanker().w_keyword,
             "similarity_floor": MIN_DENSE_SIMILARITY,
-            "chunk_size": 500,
-            "chunk_overlap": 100,
+            "chunk_size": CHUNK_CHARS,
+            "chunking": "one passage per page; longer pages split between lines",
             "longest_document_characters": max(
                 len((dataset_dir / filename).read_text(encoding="utf-8"))
                 for filename in dataset["documents"]

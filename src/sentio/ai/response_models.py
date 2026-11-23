@@ -29,6 +29,8 @@ class TutorResponse:
     tokens_used: int = 0
     latency_ms: float = 0.0
     backend_used: str = ""
+    # answered | partial | not_in_notes | unverified (see sentio.ai.answer_check).
+    answer_status: str = ""
 
     def full_text(self) -> str:
         """Combine all text fields for display."""

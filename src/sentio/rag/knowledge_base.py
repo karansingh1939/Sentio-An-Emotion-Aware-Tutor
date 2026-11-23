@@ -9,6 +9,7 @@ outcome tells the tutor workflow to refuse instead of calling the model.
 
 import hashlib
 import logging
+import re
 import threading
 from collections import OrderedDict
 from dataclasses import dataclass, field
@@ -159,6 +160,29 @@ def bm25_score_for(searcher, query: str, doc_id: str) -> float:
         score += idf_val * (numerator / denominator)
 
     return score
+
+
+# Passages the tutor is given per question.
+PASSAGES_SHOWN = 5
+# Two passages sharing this share of their words say the same thing (an uploaded copy
+# of a lecture, or slides that build up the same diagram step by step).
+NEAR_DUPLICATE = 0.8
+
+
+def distinct_passages(ranked, kept=PASSAGES_SHOWN):
+    """The best `kept` ranked passages, skipping any that repeat a better one."""
+    chosen, seen = [], []
+    for hit in ranked:
+        words = set(re.findall(r"[a-z0-9]+", str(hit.get("text", "")).lower()))
+        if not words:
+            continue
+        if any(len(words & other) / len(words | other) >= NEAR_DUPLICATE for other in seen):
+            continue
+        chosen.append(hit)
+        seen.append(words)
+        if len(chosen) == kept:
+            break
+    return chosen
 
 
 def fuse_candidates(
@@ -409,8 +433,17 @@ class KnowledgeBase:
             # 4. Merge candidates, back-fill scores, filter and rank
             db_chunk_map = {c["chunk_id"]: c for c in subj_chunks}
             t_rank_start = time.perf_counter()
-            top_ranked = fuse_candidates(
-                query, vector_results, bm25_results, bm25_searcher, db_chunk_map, self.ranker
+            top_ranked = distinct_passages(
+                fuse_candidates(
+                    query,
+                    vector_results,
+                    bm25_results,
+                    bm25_searcher,
+                    db_chunk_map,
+                    self.ranker,
+                    limit=2 * PASSAGES_SHOWN,
+                ),
+                PASSAGES_SHOWN,
             )
             t_rank_end = time.perf_counter()
             ranking_latency = (t_rank_end - t_rank_start) * 1000

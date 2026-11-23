@@ -404,7 +404,7 @@ class TutorAgent:
         total_ms = (time.perf_counter() - wall_start) * 1000
 
         # ── Step 7: Assemble AgentResponse ──────
-        return AgentResponse(
+        response = AgentResponse(
             tutor_response=tutor_resp,
             session_id=session_id,
             learning_state=final_state.get("learning_state", learning_state),
@@ -423,6 +423,10 @@ class TutorAgent:
             total_exchanges=session.total_exchanges,
             duration_minutes=session.duration_minutes,
         )
+        # The conversation's new topic, saved by a streamed turn when it commits. Kept
+        # off the dataclass fields so it never appears in the learner's result.
+        response.topic_query = final_state.get("topic_query")
+        return response
 
     # ── Topic Switching ────────────────────────
 

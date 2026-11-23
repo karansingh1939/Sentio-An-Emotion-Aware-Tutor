@@ -71,21 +71,6 @@ def asks_for_another_explanation(message):
     return bool(_CONFUSED.search(message or ""))
 
 
-# Short replies that point back at the last answer rather than naming a new subject.
-_REFERS_BACK = re.compile(
-    r"\b(?:it|this|that|these|those|again|example|examples|more|why|how so|what about|and)\b",
-    re.IGNORECASE,
-)
-
-
-def follows_up(message):
-    """Whether a message continues the previous question instead of asking a new one."""
-    text = (message or "").strip()
-    if asks_for_another_explanation(text) or requested_change(text):
-        return True
-    return len(text.split()) <= 5 and bool(_REFERS_BACK.search(text))
-
-
 def step(level, direction):
     index = LEVELS.index(level) if level in LEVELS else 1
     index += 1 if direction == "harder" else -1
