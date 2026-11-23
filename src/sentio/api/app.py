@@ -58,7 +58,7 @@ async def application_lifespan(app):
     agent.load()
     from sentio.jobs.service import JobManager
 
-    app.state.jobs = JobManager(agent.sm.persister._engine)
+    app.state.jobs = JobManager(agent.sm.persister.engine)
     from sentio.tutor.stream_service import StreamService
 
     app.state.streams = StreamService(agent, app.state.jobs)

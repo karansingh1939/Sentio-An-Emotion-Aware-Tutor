@@ -29,7 +29,7 @@ class CourseMove(BaseModel):
 
 
 def repository():
-    return CourseRepository(agent.sm.persister._engine)
+    return CourseRepository(agent.sm.persister.engine)
 
 
 @router.get(PREFIX + "/courses")

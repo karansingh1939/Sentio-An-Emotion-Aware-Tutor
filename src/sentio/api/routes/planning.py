@@ -36,7 +36,7 @@ class GoalUpdate(BaseModel):
 
 
 def service():
-    return PlanningService(agent.sm.persister._engine)
+    return PlanningService(agent.sm.persister.engine)
 
 
 @router.get(PREFIX + "/study/preferences")

@@ -27,7 +27,7 @@ def register_user(req: RegisterRequest):
     """
     try:
         account = agent.sm.persister.auth_service.register_student(req.email, req.password)
-        recovery_key = RecoveryRepository(agent.sm.persister._engine).issue(
+        recovery_key = RecoveryRepository(agent.sm.persister.engine).issue(
             account.student_id, account.password_hash
         )
         return {
@@ -100,7 +100,7 @@ def reset_password(req: ResetPasswordRequest, request: Request):
     try:
         service.validator.validate(req.new_password)
         password_hash = service.hasher.hash_password(req.new_password)
-        owner, key = RecoveryRepository(agent.sm.persister._engine).reset(
+        owner, key = RecoveryRepository(agent.sm.persister.engine).reset(
             req.email.strip().lower(), req.recovery_key, password_hash
         )
         jobs = getattr(request.app.state, "jobs", None)
@@ -130,7 +130,7 @@ def replace_recovery_key(req: RecoveryKeyRequest, user: dict = Depends(get_curre
     ):
         raise HTTPException(400, "Current password is incorrect.")
     try:
-        key = RecoveryRepository(agent.sm.persister._engine).issue(
+        key = RecoveryRepository(agent.sm.persister.engine).issue(
             account.student_id, account.password_hash
         )
         return {"recovery_key": key}

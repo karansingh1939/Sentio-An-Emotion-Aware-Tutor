@@ -54,7 +54,7 @@ def isolated_runtime(model):
             yield sm, pipeline, kb, owner.student_id
         finally:
             vdb.client.close()
-            sm.persister._engine.dispose()
+            sm.persister.engine.dispose()
 
 
 def _ingest(sm, pipeline, dataset_dir, dataset, owner, model):

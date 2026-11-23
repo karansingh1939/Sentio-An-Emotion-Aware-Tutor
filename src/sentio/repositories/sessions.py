@@ -22,6 +22,11 @@ class SessionPersister:
         self.token_manager = None
         self.auth_service = None
 
+    @property
+    def engine(self):
+        """The SQLAlchemy engine repositories share; None until load() runs."""
+        return self._engine
+
     def load(self):
         """Open SQLite, create tables and apply migrations."""
         if self._engine is not None:

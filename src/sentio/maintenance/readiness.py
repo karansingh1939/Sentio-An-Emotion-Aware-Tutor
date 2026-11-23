@@ -26,9 +26,9 @@ def readiness(agent):
     from sqlalchemy.exc import SQLAlchemyError
 
     storage = False
-    if agent.sm.persister._engine is not None:
+    if agent.sm.persister.engine is not None:
         try:
-            with agent.sm.persister._engine.connect() as connection:
+            with agent.sm.persister.engine.connect() as connection:
                 storage = connection.execute(text("SELECT 1")).scalar() == 1
         except SQLAlchemyError:
             storage = False

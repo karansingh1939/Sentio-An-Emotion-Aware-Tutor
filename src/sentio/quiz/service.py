@@ -85,14 +85,14 @@ class QuizService:
         if grounded and document_id != "all":
             from sentio.repositories.courses import expand_source
 
-            with self.agent.sm.persister._engine.connect() as connection:
+            with self.agent.sm.persister.engine.connect() as connection:
                 selected = expand_source(connection, student_id, document_id)
             selected = selected if isinstance(selected, list) else [selected]
             owned = {d["id"] for d in self.agent.sm.list_documents(student_id=student_id)}
             if any(d not in owned for d in selected):
                 raise PermissionError("Access denied or document not found.")
         if require_owner:
-            source_snapshot = PracticeRepository(self.agent.sm.persister._engine).snapshot(session)
+            source_snapshot = PracticeRepository(self.agent.sm.persister.engine).snapshot(session)
 
         checkpoint("retrieving sources")
         query = topic
@@ -100,7 +100,7 @@ class QuizService:
             # A session without a topic practises what it has been about.
             query, topic = session_focus(self.agent, session_id, student_id, document_id, subject)
         # 1. Use the chosen topics' slides, or retrieve RAG context
-        focus = TopicRepository(self.agent.sm.persister._engine).focus(session)
+        focus = TopicRepository(self.agent.sm.persister.engine).focus(session)
         retrieved = (
             self.agent.kb.topic_content(subject, topic, difficulty, focus)
             if focus
@@ -239,7 +239,7 @@ JSON Template:
         def save_current():
             if source_snapshot is None and not require_owner:
                 return save()
-            repository = PracticeRepository(self.agent.sm.persister._engine)
+            repository = PracticeRepository(self.agent.sm.persister.engine)
             with repository.publication(session, source_snapshot) as connection:
                 return save(connection)
 

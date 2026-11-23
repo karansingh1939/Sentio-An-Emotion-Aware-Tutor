@@ -18,7 +18,7 @@ class QuizRepository:
 
     @contextmanager
     def submission(self, quiz_id):
-        with self.persister._engine.connect() as connection:
+        with self.persister.engine.connect() as connection:
             begin_immediate(connection)
             row = connection.execute(
                 text("SELECT submissions_json FROM quizzes WHERE quiz_id = :id"), {"id": quiz_id}
@@ -38,7 +38,7 @@ class QuizRepository:
 
     def edit_question(self, owner, quiz_id, question_id, fields, expected_revision=None):
         """Apply a validated edit and bump the quiz revision; None when not owned or absent."""
-        with self.persister._engine.connect() as connection:
+        with self.persister.engine.connect() as connection:
             begin_immediate(connection)
             try:
                 quiz = connection.execute(
