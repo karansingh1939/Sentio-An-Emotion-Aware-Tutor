@@ -15,7 +15,7 @@ def _lectures(agent, student_id, document_id):
         ]
     from sentio.repositories.courses import expand_source
 
-    with agent.sm.persister._engine.connect() as connection:
+    with agent.sm.persister.engine.connect() as connection:
         selected = expand_source(connection, student_id, document_id)
     return selected if isinstance(selected, list) else [selected]
 
@@ -25,17 +25,10 @@ def recent_questions(agent, session_id, kept=3):
 
     The model's in-memory history is empty after a restart; saved turns are not.
     """
-    from sqlalchemy import text
+    from sentio.repositories import chat_requests
 
-    with agent.sm.persister._engine.connect() as connection:
-        rows = connection.execute(
-            text(
-                "SELECT message FROM chat_requests WHERE session_id=:id AND status='complete' "
-                "AND message!='' ORDER BY updated_at DESC LIMIT :kept"
-            ),
-            {"id": session_id, "kept": kept},
-        ).scalars()
-        saved = list(rows)[::-1]
+    with agent.sm.persister.engine.connect() as connection:
+        saved = chat_requests.recent_messages(connection, session_id, kept)
     if saved:
         return saved
     history = agent.nlp._get_history(session_id).to_list()
@@ -51,7 +44,7 @@ def session_focus(agent, session_id, student_id, document_id, subject):
     asked = recent_questions(agent, session_id)
     if asked:
         return " ".join(asked), subject
-    topics = TopicRepository(agent.sm.persister._engine)
+    topics = TopicRepository(agent.sm.persister.engine)
     titles = []
     lectures = _lectures(agent, student_id, document_id)
     for lecture_id in lectures:
