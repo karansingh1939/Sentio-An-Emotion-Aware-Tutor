@@ -77,7 +77,7 @@ def test_selected_source_questions_cannot_bypass_evidence_gate(monkeypatch, sele
             sm=SimpleNamespace(
                 get_student_memory_context=lambda _: "",
                 get_attention_summary=lambda _: None,
-                persister=SimpleNamespace(_engine=None),
+                persister=SimpleNamespace(engine=None),
             ),
             kb=SimpleNamespace(retrieve=retrieval, get_tone_instruction=lambda _: "Be clear."),
             nlp=SimpleNamespace(

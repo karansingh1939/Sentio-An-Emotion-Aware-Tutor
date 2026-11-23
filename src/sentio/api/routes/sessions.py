@@ -24,7 +24,7 @@ def _owned_source(owner, source):
         return
     if isinstance(source, str) and source.startswith(COURSE_PREFIX):
         course = source[len(COURSE_PREFIX) :]
-        if not CourseRepository(agent.sm.persister._engine).get(owner, course):
+        if not CourseRepository(agent.sm.persister.engine).get(owner, course):
             raise HTTPException(status_code=403, detail="Access denied or course not found.")
         return
     selected = source if isinstance(source, list) else [source]
@@ -49,7 +49,7 @@ def _owned_topics(owner, metadata):
         or len(set(topic_ids)) != len(topic_ids)
     ):
         raise HTTPException(422, f"Choose 1 to {MAX_PRACTICE_TOPICS} different topics.")
-    engine = agent.sm.persister._engine
+    engine = agent.sm.persister.engine
     topics = TopicRepository(engine).passages(owner, topic_ids)
     with engine.connect() as connection:
         source = expand_source(connection, owner, metadata.get("document_id"))
@@ -127,7 +127,7 @@ def get_study_context(session_id: str, user: dict = Depends(get_current_user)):
 
     session = _verify_session_owner(session_id, user)
     try:
-        return PracticeRepository(agent.sm.persister._engine).snapshot(session)
+        return PracticeRepository(agent.sm.persister.engine).snapshot(session)
     except WorkCancelled as exc:
         raise HTTPException(409, str(exc)) from exc
 
@@ -194,7 +194,7 @@ def set_session_grounding(
 def _owned_goal(owner, goal_id):
     if goal_id is None:
         return None
-    with agent.sm.persister._engine.connect() as connection:
+    with agent.sm.persister.engine.connect() as connection:
         goal = active_goal(connection, owner, goal_id)
     if goal is None:
         raise HTTPException(404, "Goal not found or no longer active.")

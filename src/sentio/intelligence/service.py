@@ -61,7 +61,7 @@ class IntelligenceService:
         # Ensure database is loaded
 
         # 1. Fetch raw sql tables data
-        engine = self.sm.persister._engine
+        engine = self.sm.persister.engine
         with engine.connect() as conn:
             # Quiz attempts
             quizzes_rows = conn.execute(
@@ -282,7 +282,7 @@ class IntelligenceService:
             conf = model.confidence.get(topic, 0.5)
             # Count due cards
             due_cards = 0
-            with self.sm.persister._engine.connect() as conn:
+            with self.sm.persister.engine.connect() as conn:
                 due_cards = (
                     conn.execute(
                         text(
@@ -323,7 +323,7 @@ class IntelligenceService:
 
         # Get quiz attempts for this session
         quiz_attempts = []
-        with self.sm.persister._engine.connect() as conn:
+        with self.sm.persister.engine.connect() as conn:
             rows = conn.execute(
                 text(
                     "SELECT topic, correct, question_text, student_answer, timestamp FROM quiz_attempts WHERE session_id = :sid"
@@ -343,7 +343,7 @@ class IntelligenceService:
 
         # Get emotion logs from DB
         emotion_events = []
-        with self.sm.persister._engine.connect() as conn:
+        with self.sm.persister.engine.connect() as conn:
             rows = conn.execute(
                 text(
                     "SELECT timestamp, emotion, learning_state, confidence, strategy FROM emotion_events WHERE session_id = :sid"
@@ -372,7 +372,7 @@ class IntelligenceService:
 
         due_date = time.time() + 86400.0
         # Check next review date from flashcards
-        with self.sm.persister._engine.connect() as conn:
+        with self.sm.persister.engine.connect() as conn:
             due_date = conn.execute(
                 text(
                     "SELECT MIN(next_review_at) FROM flashcards WHERE student_id = :sid AND topic_id = :tid"
@@ -404,7 +404,7 @@ class IntelligenceService:
         prerequisites = []
         topic_prereq_map: Dict[str, List[str]] = {}
 
-        engine = self.sm.persister._engine
+        engine = self.sm.persister.engine
         with engine.connect() as conn:
             # Ensure base topics are in topics table first
             self._seed_default_topics(conn)

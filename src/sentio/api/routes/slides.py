@@ -33,7 +33,7 @@ class SlideChoice(BaseModel):
 
 
 def repository():
-    return SlideRepository(agent.sm.persister._engine)
+    return SlideRepository(agent.sm.persister.engine)
 
 
 @router.get(PREFIX + "/documents/{document_id}/slides")

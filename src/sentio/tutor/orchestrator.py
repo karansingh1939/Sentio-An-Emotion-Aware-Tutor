@@ -89,7 +89,7 @@ class SentioOrchestrator:
         session = sm.get_session(session_id) if hasattr(sm, "get_session") else None
         if session is None or not session.metadata.get("goal_id"):
             return None
-        with sm.persister._engine.connect() as connection:
+        with sm.persister.engine.connect() as connection:
             return active_goal(connection, student_id, session.metadata["goal_id"])
 
     def memory_lookup_node(self, state: OrchestratorState) -> OrchestratorState:
@@ -315,7 +315,7 @@ class SentioOrchestrator:
             return None
         if not isinstance(document_id, str):
             return None
-        engine = self.tutor_agent.sm.persister._engine
+        engine = self.tutor_agent.sm.persister.engine
         return SlideRepository(engine).slide(state["student_id"], document_id, number)
 
     def _retrieve(self, state, document_id):
