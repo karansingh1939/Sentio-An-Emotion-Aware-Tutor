@@ -1,0 +1,1 @@
+Recursion occurs when a function calls itself on a smaller problem. A base case terminates recursion. Without a reachable base case, recursion may exhaust the call stack.
