@@ -163,7 +163,9 @@ def test_malformed_output_falls_back_to_quoted_notes_never_the_broken_reply(stud
         json={"message": "Explain inertia", "request_id": "malformed-output"},
     )
     assert "event: complete" in response.text
-    assert "could not verify" in response.text and "newton.txt" in response.text
+    assert (
+        "I couldn't write an answer I can check" in response.text and "newton.txt" in response.text
+    )
     assert "unfinished" not in response.text
 
 

@@ -116,6 +116,8 @@ class StreamService:
                         try:
                             session.metadata["strategy"] = response.strategy
                             session.metadata["learning_state"] = response.learning_state
+                            if getattr(response, "topic_query", None):
+                                session.metadata["topic_query"] = response.topic_query
                             change = None
                             if session.difficulty != response.difficulty:
                                 reason = response.difficulty_reason or "completed_tutor_turn"
