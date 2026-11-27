@@ -1,5 +1,5 @@
 from collections import deque
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from sentio.ai.response_models import Message
 from sentio.config import nlp_cfg
@@ -32,9 +32,3 @@ class ConversationHistory:
 
     def __len__(self):
         return len(self._messages)
-
-    def last_student_message(self) -> Optional[str]:
-        for msg in reversed(list(self._messages)):
-            if msg.role == "user":
-                return msg.content
-        return None

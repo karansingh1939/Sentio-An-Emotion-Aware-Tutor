@@ -1,4 +1,11 @@
-import { MAX_PRACTICE_TOPICS, escapeHtml, pageRange, topicMemory } from '../core/html.js';
+import {
+  MAX_PRACTICE_TOPICS,
+  escapeHtml,
+  initials,
+  pageRange,
+  tileClass,
+  topicMemory,
+} from '../core/html.js';
 import { store } from '../core/store.js';
 import { sentioAPI } from '../core/api.js';
 
@@ -207,18 +214,6 @@ function sessionsChart(sessions, days) {
     </svg>
     <div class="chart-legend muted"><span><i class="swatch now"></i>This period</span>${previous ? '<span><i class="swatch before"></i>The period before</span>' : ''}</div>`;
 }
-
-const tileClass = (text) =>
-  `t${[...(text || '')].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 4}`;
-const initials = (filename) =>
-  (filename || '?')
-    .replace(/\.[a-z0-9]+$/i, '')
-    .split(/[^\p{L}\p{N}]+/u)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => [...word][0])
-    .join('')
-    .toUpperCase() || '?';
 
 function dueTable(topics) {
   if (!topics.length)

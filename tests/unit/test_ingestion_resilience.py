@@ -148,3 +148,25 @@ def test_ocr_provenance_and_page_numbers_survive_persistence(pipeline, tmp_path,
     document = pipeline.sm.list_documents(student_id="owner")[0]
     assert document["extraction_method"] == "mixed"
     assert [c["page_number"] for c in pipeline.sm.get_document_chunks(document["id"])] == [1, 2]
+
+
+def test_word_tables_are_read_in_document_order(tmp_path):
+    import docx
+
+    document = docx.Document()
+    document.add_paragraph("Key terms")
+    table = document.add_table(rows=2, cols=2)
+    table.cell(0, 0).text, table.cell(0, 1).text = "Term", "Meaning"
+    table.cell(1, 0).text, table.cell(1, 1).text = "Inertia", "Resistance to a change in motion"
+    document.add_paragraph("After the table")
+    path = tmp_path / "terms.docx"
+    document.save(path)
+
+    pages = DocumentIngestionPipeline.parse_docx(None, path)
+
+    assert pages == [
+        {
+            "page_number": 1,
+            "text": "Key terms\nTerm | Meaning\nInertia | Resistance to a change in motion\nAfter the table",
+        }
+    ]

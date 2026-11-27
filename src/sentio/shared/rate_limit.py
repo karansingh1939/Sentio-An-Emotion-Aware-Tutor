@@ -38,11 +38,6 @@ class RateLimiter:
             return True
         return False
 
-    def wait_and_allow(self):
-        """Block until a token is available, then consume it."""
-        while not self.allow():
-            time.sleep(1.0 / self.rate)
-
     def retry_after(self):
         import math
 

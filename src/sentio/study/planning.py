@@ -13,7 +13,9 @@ class PlanningService:
     def daily_plan(self, owner, day=None, persist=True):
         day = day or date.today()
         saved = self.repository.plan(owner, day)
-        if saved:
+        # Once a task is ticked the day's plan stays fixed, so a checkbox never moves.
+        # Until then it follows new evidence: notes added, cards falling due, a changed budget.
+        if saved and any(task.get("completed_at") for task in saved["tasks"]):
             return saved
         minutes = self.repository.preferences(owner)["daily_minutes"]
         before = datetime.combine(day + timedelta(days=1), time.min).timestamp()
@@ -68,6 +70,8 @@ class PlanningService:
                 }
             )
             remaining -= duration
+        if saved and saved["tasks"] == tasks and saved["budget_minutes"] == minutes:
+            return saved
         if persist:
             return self.repository.save_plan(owner, day, minutes, tasks)
         return {"day": str(day), "budget_minutes": minutes, "tasks": tasks}

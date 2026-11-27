@@ -134,7 +134,11 @@ class SentioAPIClient {
           }
           // Logout user on failure
           store.clearAuth();
-          toast('Session expired. Please log in again.', true);
+          // Loaded on demand: ui.js defines custom elements, which this module must not
+          // require at import time.
+          import('../components/ui.js')
+            .then(({ toast }) => toast('Session expired. Please log in again.', true))
+            .catch(() => {});
         }
 
         let errorMessage = `API Error: ${response.status} ${response.statusText}`;

@@ -229,7 +229,6 @@ kbd {
   color: var(--text-muted);
   white-space: nowrap;
 }
-.icon-btn,
 #theme-toggle {
   width: 38px;
   height: 38px;
@@ -247,7 +246,6 @@ kbd {
     border-color var(--dur) var(--ease);
 }
 @media (hover: hover) and (pointer: fine) {
-  .icon-btn:hover,
   #theme-toggle:hover {
     color: var(--text);
     border-color: var(--text-muted);
@@ -658,8 +656,7 @@ table th {
 .enter-fade {
   animation: enter-fade 160ms var(--ease-out) both;
 }
-.meter > i,
-.grow-x {
+.meter > i {
   animation: grow-x 520ms var(--ease-out) both;
 }
 @media (prefers-reduced-motion: reduce) {

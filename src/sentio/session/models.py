@@ -153,21 +153,6 @@ class EmotionTimeline:
             return self._events[-1].learning_state
         return None
 
-    def state_persists(
-        self, state: str, seconds: float = tutor_cfg.STATE_PERSISTENCE_THRESHOLD
-    ) -> bool:
-        """
-        Returns True if the given state has been dominant
-        for at least `seconds` continuously.
-        """
-        now = time.time()
-        for event in reversed(list(self._events)):
-            if now - event.timestamp > seconds:
-                return event.learning_state == state
-            if event.learning_state != state:
-                return False
-        return False
-
     def dominant_state(self, last_n: int = 50) -> str:
         """Most frequent learning state in the last n events."""
         recent = self.recent(last_n)

@@ -224,3 +224,24 @@ def test_flashcard_tags_drop_prompt_bookkeeping():
 
     card = FlashcardItem(front="ATP", back="Energy carrier", tags=["ATP", "(Citation Index: 3)"])
     assert card.tags == ["ATP"]
+
+
+def test_true_false_question_must_be_a_statement():
+    import pytest
+    from pydantic import ValidationError
+
+    from sentio.ai.structured_parser import QuizQuestion
+
+    with pytest.raises(ValidationError):
+        QuizQuestion(
+            question_text="What is the relationship between force, mass and acceleration?",
+            question_type="true_false",
+            options=["True", "False"],
+            correct_answer="True",
+        )
+    statement = QuizQuestion(
+        question_text="Force equals mass times acceleration.",
+        question_type="true_false",
+        correct_answer="true",
+    )
+    assert statement.options == ["True", "False"] and statement.correct_answer == "True"

@@ -120,11 +120,6 @@ class PromptBuilder:
             else [],
             "learner_context": student_memory,
         }
-        if not grounded and retrieved_content:
-            data["curriculum_reference"] = {
-                field: getattr(retrieved_content, field, None)
-                for field in ("concept", "explanation", "analogy", "example", "hints")
-            }
         data["student_question"] = student_message
         return system, json.dumps(data, ensure_ascii=False)
 
@@ -250,24 +245,3 @@ Rules:
 - Do NOT add any text outside the JSON object.
 """
         return prompt
-
-    def build_user_message(
-        self,
-        student_message: str,
-        learning_state: str,
-        confidence: float,
-    ) -> str:
-        """
-        Wrap the student's raw message with emotional context metadata.
-        """
-        emoji = self.STATE_EMOJI.get(learning_state, "⚪")
-        if confidence is not None and confidence > 0.0:
-            return (
-                f"[Detected emotion: {emoji} {learning_state} | "
-                f"Confidence: {confidence:.0%}]\n\n"
-                f"{student_message}"
-            )
-        return (
-            f"[Detected emotion: {emoji} {learning_state} (visual tracking inactive)]\n\n"
-            f"{student_message}"
-        )

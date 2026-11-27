@@ -31,10 +31,8 @@ const viewControllers = {
 // Global App Initialization
 function initApp() {
   initWorkspace();
-  console.log('Initializing Sentio Web HUD App Shell...');
   window.store = store;
   window.sentioAPI = sentioAPI;
-  window.tutorView = viewControllers['tutor'];
 
   // Initialize auth overlay check
   new AuthView('view-auth').init();

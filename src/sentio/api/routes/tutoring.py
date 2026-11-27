@@ -2,15 +2,10 @@
 
 import logging
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException,
-    Request,
-)
+from fastapi import APIRouter, Depends, HTTPException
 
 from sentio.api.dependencies import PREFIX, _verify_session_owner, agent
-from sentio.api.schemas import ChatRequest, SwitchTopicRequest
+from sentio.api.schemas import ChatRequest
 from sentio.auth.middleware import get_current_user
 from sentio.emotion.access import decode_frame, require_emotion_access
 from sentio.shared.exceptions import LLMServiceUnavailableError
@@ -66,26 +61,3 @@ def chat(session_id: str, req: ChatRequest, user: dict = Depends(get_current_use
         raise HTTPException(status_code=500, detail=str(exc))
 
     return response.to_dict()
-
-
-@router.post(PREFIX + "/sessions/{session_id}/topic", tags=["Tutoring"])
-def switch_topic(
-    session_id: str,
-    req: SwitchTopicRequest,
-    request: Request,
-    user: dict = Depends(get_current_user),
-):
-    """
-    Switch the active topic mid-session.
-    Clears conversation history so the LLM starts fresh on the new topic.
-    """
-    _verify_session_owner(session_id, user)
-    streams = getattr(request.app.state, "streams", None)
-    if streams:
-        streams.cancel_session(user["student_id"], session_id)
-    updated_state = agent.switch_topic(
-        session_id=session_id,
-        new_topic=req.topic,
-        new_difficulty=req.difficulty,
-    )
-    return {"switched": True, "state": updated_state}

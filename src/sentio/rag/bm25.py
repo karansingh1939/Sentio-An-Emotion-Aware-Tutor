@@ -176,39 +176,3 @@ class BM25Searcher:
             )
 
         return results
-
-
-if __name__ == "__main__":
-    # Smoke test for BM25 Searcher
-    chunks = [
-        {
-            "id": "c1",
-            "text": "Calculus limits are fundamental to derivatives.",
-            "subject": "mathematics",
-        },
-        {
-            "id": "c2",
-            "text": "Linear algebra uses vectors and matrices to solve linear equations.",
-            "subject": "mathematics",
-        },
-        {
-            "id": "c3",
-            "text": "Python is a high-level programming language used in AI.",
-            "subject": "computer_science",
-        },
-    ]
-
-    searcher = BM25Searcher()
-    searcher.index(chunks)
-
-    print("Testing BM25 search for 'limits'...")
-    hits = searcher.search("limits", limit=2)
-    print(f"Hits: {hits}")
-    assert len(hits) == 1 and hits[0]["id"] == "c1", "Failed to retrieve c1"
-
-    print("Testing BM25 search for 'linear language'...")
-    hits = searcher.search("linear language", limit=2)
-    print(f"Hits: {hits}")
-    assert len(hits) == 2 and hits[0]["id"] == "c2", "Failed to rank c2 highest"
-
-    print("BM25 smoke test passed successfully!")

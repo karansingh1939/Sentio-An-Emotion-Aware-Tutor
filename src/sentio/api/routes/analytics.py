@@ -19,28 +19,6 @@ def get_analytics(session_id: str, user: dict = Depends(get_current_user)):
     return analytics.to_dict()
 
 
-@router.get(PREFIX + "/sessions/{session_id}/summary", tags=["Analytics"])
-def get_summary(session_id: str, user: dict = Depends(get_current_user)):
-    """
-    LLM-generated bullet-point summary of the session so far.
-    Covers: topics covered, where the student struggled, next steps.
-    """
-    _verify_session_owner(session_id, user)
-    summary_text = agent.summarize_session(session_id)
-    return {
-        "session_id": session_id,
-        "summary": summary_text,
-    }
-
-
-@router.get(PREFIX + "/students/{student_id}/history", tags=["Analytics"])
-def get_student_history(student_id: str, limit: int = 20, user: dict = Depends(get_current_user)):
-    """Return past session summaries for a student."""
-    student_id = user["student_id"]
-    history = agent.get_student_history(student_id, limit=limit)
-    return {"student_id": student_id, "sessions": history}
-
-
 @router.get(PREFIX + "/diagnostics/session/{session_id}", tags=["Diagnostics"])
 def get_session_diagnostics(session_id: str, user: dict = Depends(get_current_user)):
     """Retrieve detailed agent routing timeline, process memory footprint and latency metrics."""

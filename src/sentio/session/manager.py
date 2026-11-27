@@ -144,12 +144,6 @@ class SessionManager:
             raise KeyError(f"Session not found: {session_id}")
         return session
 
-    def pause_session(self, session_id: str):
-        session = self.get_or_raise(session_id)
-        session.status = SessionStatus.PAUSED
-        self.persister.save_session(session)
-        logger.info(f"Session paused: {session_id[:8]}…")
-
     def resume_session(self, session_id: str):
         session = self.get_or_raise(session_id)
         previous = session.status, session.closed_at, session.updated_at
@@ -391,10 +385,6 @@ class SessionManager:
                 sessions = [s for s in sessions if s["student_id"] == student_id]
             return sessions
         return self.persister.list_sessions(student_id=student_id)
-
-    def get_student_history(self, student_id: str, limit: int = 20) -> List[dict]:
-        """Return past session summaries for a student."""
-        return self.persister.list_sessions(student_id=student_id, limit=limit)
 
     # ── Student Memory System ──────────────────
 
@@ -691,11 +681,6 @@ class SessionManager:
     def register_document(self, doc: dict) -> bool:
         return self.persister.register_document(doc)
 
-    def get_document_by_checksum(
-        self, checksum: str, student_id: Optional[str] = None
-    ) -> Optional[dict]:
-        return self.persister.get_document_by_checksum(checksum, student_id=student_id)
-
     def get_document_by_filename(
         self, filename: str, student_id: Optional[str] = None, category: Optional[str] = None
     ) -> Optional[dict]:
@@ -871,8 +856,6 @@ class SessionManager:
         connection=None,
         provenance: Optional[dict] = None,
     ):
-        import json
-
         from sqlalchemy import text
 
         with (
@@ -928,8 +911,6 @@ class SessionManager:
                 conn.commit()
 
     def get_quiz(self, quiz_id: str) -> Optional[dict]:
-        import json
-
         from sqlalchemy import text
 
         with self.persister.engine.connect() as conn:
@@ -1011,9 +992,6 @@ class SessionManager:
         connection=None,
         provenance: Optional[dict] = None,
     ):
-        import json
-        import uuid
-
         from sqlalchemy import text
 
         with (
@@ -1050,8 +1028,6 @@ class SessionManager:
                 conn.commit()
 
     def get_due_flashcards(self, student_id: str, deck_id: Optional[str] = None) -> List[dict]:
-        import json
-
         from sqlalchemy import text
 
         with self.persister.engine.connect() as conn:
@@ -1088,8 +1064,6 @@ class SessionManager:
             return cards
 
     def get_flashcard(self, card_id: str) -> Optional[dict]:
-        import json
-
         from sqlalchemy import text
 
         with self.persister.engine.connect() as conn:

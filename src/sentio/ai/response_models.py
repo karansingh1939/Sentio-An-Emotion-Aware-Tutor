@@ -31,12 +31,3 @@ class TutorResponse:
     backend_used: str = ""
     # answered | partial | not_in_notes | unverified (see sentio.ai.answer_check).
     answer_status: str = ""
-
-    def full_text(self) -> str:
-        """Combine all text fields for display."""
-        parts = [self.text]
-        if self.encouragement:
-            parts.append(f"\n💬 {self.encouragement}")
-        if self.follow_up_question:
-            parts.append(f"\n🤔 {self.follow_up_question}")
-        return "\n".join(parts)

@@ -6,6 +6,11 @@ from sentio.intelligence.models import StudyRecommendation
 logger = logging.getLogger(__name__)
 
 
+def _name(topic_id):
+    """A topic as the learner named it; old ids written with underscores read as words."""
+    return topic_id.replace("_", " ")
+
+
 class RecommendationEngine:
     """
     Evaluates concept mastery, confidence, and database signals to recommend
@@ -40,9 +45,9 @@ class RecommendationEngine:
                         action="review_prerequisites",
                         priority_score=priority,
                         explanation=(
-                            f"We recommend reviewing the prerequisite concept '{p.replace('_', ' ').title()}' "
+                            f"We recommend reviewing the prerequisite concept '{_name(p)}' "
                             f"because its mastery is low ({p_mast:.0%}), which is holding back your understanding "
-                            f"of the downstream concept '{topic_id.replace('_', ' ').title()}'."
+                            f"of the downstream concept '{_name(topic_id)}'."
                         ),
                     )
                 )
@@ -56,7 +61,7 @@ class RecommendationEngine:
                     action="review_flashcards",
                     priority_score=priority,
                     explanation=(
-                        f"You have {due_flashcards_count} flashcards due for review in '{topic_id.replace('_', ' ').title()}'. "
+                        f"You have {due_flashcards_count} flashcards due for review in '{_name(topic_id)}'. "
                         f"Reviewing these now will strengthen your memory retention (current confidence: {confidence:.0%})."
                     ),
                 )
@@ -71,9 +76,9 @@ class RecommendationEngine:
                     action="start_tutoring",
                     priority_score=priority,
                     explanation=(
-                        f"We recommend starting an interactive tutoring session on '{topic_id.replace('_', ' ').title()}' "
+                        f"We recommend starting an interactive tutoring session on '{_name(topic_id)}' "
                         f"because your mastery score ({mastery:.0%}) is below the required baseline. "
-                        f"The AI Tutor will guide you through step-by-step analogies."
+                        f"The tutor explains it step by step from your notes."
                     ),
                 )
             )
@@ -87,7 +92,7 @@ class RecommendationEngine:
                     action="generate_new_flashcards",
                     priority_score=priority,
                     explanation=(
-                        f"We recommend generating a new flashcard deck for '{topic_id.replace('_', ' ').title()}' "
+                        f"We recommend generating a new flashcard deck for '{_name(topic_id)}' "
                         f"to initialize active recall review loops for key definitions."
                     ),
                 )
@@ -102,7 +107,7 @@ class RecommendationEngine:
                     action="take_quiz",
                     priority_score=priority,
                     explanation=(
-                        f"We recommend taking a short quiz on '{topic_id.replace('_', ' ').title()}' "
+                        f"We recommend taking a short quiz on '{_name(topic_id)}' "
                         f"to test your understanding and boost your concept confidence."
                     ),
                 )
@@ -117,7 +122,7 @@ class RecommendationEngine:
                     action="increase_challenge",
                     priority_score=priority,
                     explanation=(
-                        f"Excellent! Your mastery on '{topic_id.replace('_', ' ').title()}' is {mastery:.0%}. "
+                        f"Excellent! Your mastery on '{_name(topic_id)}' is {mastery:.0%}. "
                         f"We recommend stepping up the difficulty to challenge yourself with advanced extensions."
                     ),
                 )

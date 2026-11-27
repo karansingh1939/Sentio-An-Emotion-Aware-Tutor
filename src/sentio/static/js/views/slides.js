@@ -10,6 +10,14 @@ const MOOD_POLL_MS = 10000;
 const NUDGE_QUIET_MS = 2 * 60 * 1000;
 const BREAK_MS = 2 * 60 * 1000;
 const STREAM_TIMEOUT_MS = 200000;
+
+// A slide's text starts with its title; the title already shows as the heading above it.
+function slideBody(slide) {
+  const text = slide?.text ?? '';
+  const title = (slide?.title ?? '').trim();
+  const [first, ...rest] = text.split('\n');
+  return title && first.trim() === title ? rest.join('\n') : text;
+}
 const EXPLAIN = 'Explain this slide.';
 // Not "more simply": the tutor reads that as a request for easier work and lowers difficulty.
 const EXPLAIN_DIFFERENTLY = 'Explain this slide in a different way.';
@@ -228,7 +236,7 @@ export class SlidesView {
             <article class="slide-card">
               <p class="muted" id="slide-position">${escapeHtml(this.positionText())}</p>
               <h3 id="slide-title">${escapeHtml(slide.title)}</h3>
-              <div id="slide-text" class="slide-text">${escapeHtml(slide.text)}</div>
+              <div id="slide-text" class="slide-text">${escapeHtml(slideBody(slide))}</div>
             </article>
             <div class="btn-row slide-controls">
               <button type="button" class="workspace-action" id="slide-prev">Previous</button>
@@ -271,7 +279,7 @@ export class SlidesView {
     const title = this.container.querySelector('#slide-title');
     if (title) title.textContent = slide.title ?? '';
     const text = this.container.querySelector('#slide-text');
-    if (text) text.textContent = slide.text ?? '';
+    if (text) text.textContent = slideBody(slide);
     const position = this.container.querySelector('#slide-position');
     if (position) position.textContent = this.positionText();
     this.container.querySelectorAll('.slide-item').forEach((item) => {

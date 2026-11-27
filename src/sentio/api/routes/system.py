@@ -30,9 +30,15 @@ def root():
 
 @router.get(PREFIX + "/health", tags=["System"])
 def health_check():
-    """System health -- TensorFlow, GPU, model file, webcam, packages."""
+    """Installed packages, model files and the local AI. The camera (TensorFlow) is an
+    optional extra, so its absence never makes the app degraded."""
     report = system_health_check()
-    ready = report.get("tensorflow") is not None and report.get("opencv") is not None
+    packages = report.get("optional_packages", {})
+    ready = (
+        packages.get("sentence-transformers") is not None
+        and packages.get("sqlalchemy") is not None
+        and str(report.get("ollama_status", "")).startswith("available")
+    )
     return {
         "status": "ok" if ready else "degraded",
         "agent_loaded": agent._loaded,

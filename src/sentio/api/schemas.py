@@ -30,11 +30,6 @@ class QuizRequest(BaseModel):
     response_time_sec: float = Field(0.0)
 
 
-class SwitchTopicRequest(BaseModel):
-    topic: str = Field(..., description="New topic to study")
-    difficulty: Optional[str] = Field(None, description="Override difficulty level")
-
-
 class GroundingRequest(BaseModel):
     document_id: str = Field(..., description="none | all | specific document ID")
 
@@ -88,12 +83,6 @@ class ReviewCardRequest(BaseModel):
     )
     quality_score: int = Field(
         ..., ge=0, le=5, description="Recall quality (0-2 again, 3 hard, 4 good, 5 easy)"
-    )
-
-
-class MermaidRequest(BaseModel):
-    mermaid_code: str = Field(
-        ..., min_length=1, max_length=20000, description="Mermaid flowchart code"
     )
 
 

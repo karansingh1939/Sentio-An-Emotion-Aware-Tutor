@@ -42,7 +42,7 @@ def study(tmp_path, monkeypatch):
     monkeypatch.setattr("sentio.api.routes.documents.BASE_DIR", tmp_path)
     monkeypatch.setattr("sentio.api.routes.privacy.BASE_DIR", tmp_path)
     monkeypatch.setattr("sentio.ingestion.pipeline.DATA_DIR", tmp_path / "data")
-    monkeypatch.setattr(api.RateLimiter, "allow", lambda self: True)
+    monkeypatch.setattr("sentio.shared.rate_limit.RateLimiter.allow", lambda self: True)
     sm = SessionManager()
     sm.load()
     vdb = Mock()
@@ -211,6 +211,9 @@ def test_answer_grading_topic_mastery_persists_and_is_readable(
 ):
     s = study
     s.question.update(question_type=question_type, correct_answer=answer, options=options)
+    if question_type == "true_false":
+        # A true/false item is a statement to judge, not an open question.
+        s.question["question_text"] = "An external net force changes an object's uniform motion."
     s.backend.complete.return_value = (
         json.dumps({"title": "Newton quiz", "questions": [s.question]}),
         50,

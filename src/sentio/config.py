@@ -31,7 +31,6 @@ for directory in [
     CHECKPOINT_DIR,
     LOG_DIR / "sessions",
     LOG_DIR / "emotions",
-    BASE_DIR / "prompts",
 ]:
     directory.mkdir(parents=True, exist_ok=True)
 
@@ -92,11 +91,8 @@ class EmotionConfig:
 
     # Saved model paths
     MODEL_PATH = MODEL_DIR / "emotion_model.h5"
-    WEIGHTS_PATH = MODEL_DIR / "emotion_weights.weights.h5"
 
     # Webcam
-    WEBCAM_INDEX = 0
-    FACE_DETECTION_CONFIDENCE = 0.5
     FRAME_SKIP = 1  # Process every Nth frame (performance)
 
     # Haar Cascade for face detection (OpenCV built-in)
@@ -144,9 +140,6 @@ class NLPConfig:
     # Context window: how many past exchanges to include
     MAX_HISTORY_TURNS = 6
 
-    # Prompt template path
-    PROMPT_TEMPLATE_DIR = BASE_DIR / "prompts"
-
 
 # ─────────────────────────────────────────────
 # TUTORING & PEDAGOGY
@@ -174,11 +167,8 @@ class TutorConfig:
     EMOTION_CONFIDENCE_THRESHOLD = 0.6
 
     # Session settings
-    MAX_SESSION_DURATION_MIN = 90
     IDLE_TIMEOUT_SEC = 300
 
-    # Feedback loop: re-assess comprehension every N exchanges
-    COMPREHENSION_CHECK_INTERVAL = 5
     ENABLE_ADAPTIVE_TUTORING = True
 
 
@@ -188,7 +178,6 @@ class TutorConfig:
 class SessionConfig:
     SESSION_LOG_PATH = LOG_DIR / "sessions"
     EMOTION_LOG_PATH = LOG_DIR / "emotions"
-    MAX_SESSIONS_STORED = 100
 
     # Database (SQLite for local, change to postgres URI for prod)
     DB_URL = os.getenv("DATABASE_URL", f"sqlite:///{DATA_DIR}/tutor_sessions.db")
@@ -269,9 +258,6 @@ def validate_security_config(cfg=None):
 class DatasetConfig:
     # Download from: https://www.kaggle.com/datasets/msambare/fer2013
     FER2013_PATH = DATA_DIR / "fer2013.csv"
-    TRAIN_DIR = DATA_DIR / "train"
-    TEST_DIR = DATA_DIR / "test"
-    VALIDATION_SPLIT = 0.2
     RANDOM_SEED = 42
 
 

@@ -60,7 +60,7 @@ class TestLearningIdentity(unittest.TestCase):
             p = patch.object(self.api.agent, name, value)
             p.start()
             self.addCleanup(p.stop)
-        limiter = patch.object(self.api.RateLimiter, "allow", return_value=True)
+        limiter = patch("sentio.shared.rate_limit.RateLimiter.allow", return_value=True)
         limiter.start()
         self.addCleanup(limiter.stop)
         # No context manager: intentionally do not run model-loading lifespan.
@@ -330,7 +330,7 @@ class TestLearningIdentity(unittest.TestCase):
 
     def test_foreign_quiz_is_rejected_before_grading(self):
         self.sm.save_quiz("quiz-a", self.a, self.session_a.session_id, "Private", [])
-        with patch.object(self.api.quiz_service, "score_quiz", return_value={}) as score:
+        with patch("sentio.api.dependencies.quiz_service.score_quiz", return_value={}) as score:
             response = self.client.post(
                 self.prefix + "/quizzes/quiz-a/submit",
                 headers=self.headers_b,

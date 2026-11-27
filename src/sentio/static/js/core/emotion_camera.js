@@ -52,7 +52,6 @@ async function dispatchTelemetryWithRetry(payload, retriesLeft, delay) {
 
   try {
     await window.sentioAPI.post(`/sessions/${currentSessionId}/telemetry`, payload);
-    console.log('Telemetry sent successfully');
   } catch (err) {
     console.warn(`Failed to send telemetry. Retries left: ${retriesLeft}. Error:`, err);
     if (retriesLeft > 0) {
@@ -484,7 +483,6 @@ async function initMediaPipe() {
       });
     }
     window.faceLandmarker = faceLandmarker;
-    console.log('MediaPipe FaceLandmarker successfully initialized!');
   } catch (e) {
     console.error('Failed to initialize MediaPipe FaceLandmarker:', e);
   }
@@ -669,20 +667,6 @@ function adjustFPS(duration) {
   }
   const currentFPS = Math.round(30 / frameSkipCount);
   document.getElementById('stat-tracking-fps').textContent = currentFPS + ' FPS';
-}
-
-function captureFrame() {
-  const video = document.getElementById('cam-video');
-  const canvas = document.getElementById('cam-canvas');
-  if (!video.videoWidth) return null;
-  canvas.width = 320;
-  canvas.height = 240;
-  const ctx = canvas.getContext('2d');
-  ctx.save();
-  ctx.scale(-1, 1);
-  ctx.drawImage(video, -320, 0, 320, 240);
-  ctx.restore();
-  return canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
 }
 
 window.initMediaPipe = initMediaPipe;

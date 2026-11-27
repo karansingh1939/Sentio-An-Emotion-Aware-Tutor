@@ -8,7 +8,6 @@ from sqlalchemy import text
 from sentio.flashcards import fsrs
 from sentio.intelligence.adaptation import AdaptationEngine
 from sentio.intelligence.confidence import ConfidenceEngine
-from sentio.intelligence.explanation import ExplanationEngine
 from sentio.intelligence.forgetting import ForgettingEngine
 from sentio.intelligence.learning_path import LearningPathEngine
 from sentio.intelligence.mastery import MasteryEngine
@@ -51,7 +50,6 @@ class IntelligenceService:
         self.learning_path_engine = LearningPathEngine()
         self.adaptation_engine = AdaptationEngine()
         self.progress_engine = ProgressEngine()
-        self.explanation_engine = ExplanationEngine()
         self.session_summary_engine = SessionSummaryEngine()
 
     def build_learner_model(self, student_id: str) -> LearnerModel:
@@ -397,82 +395,13 @@ class IntelligenceService:
         )
 
     def _get_knowledge_graph(self) -> Tuple[List[Tuple[str, str]], Dict[str, List[str]]]:
-        """
-        Loads prerequisite relationships from the SQLite topic_prerequisites table.
-        Seeds standard relationships if the database table is empty.
-        """
-        prerequisites = []
-        topic_prereq_map: Dict[str, List[str]] = {}
-
-        engine = self.sm.persister.engine
-        with engine.connect() as conn:
-            # Ensure base topics are in topics table first
-            self._seed_default_topics(conn)
-
+        """Prerequisite links from the topic_prerequisites table, and child -> parents."""
+        with self.sm.persister.engine.connect() as conn:
             rows = conn.execute(
                 text("SELECT parent_topic_id, child_topic_id FROM topic_prerequisites")
             ).fetchall()
-            prerequisites = [(r[0], r[1]) for r in rows]
-
-        # Seed defaults if database table was empty
-        if not prerequisites:
-            defaults = [
-                ("limits", "derivatives"),
-                ("algebra", "linear_equations"),
-                ("linear_equations", "quadratic_equations"),
-                ("quadratic_equations", "functions"),
-            ]
-            with engine.connect() as conn:
-                for parent, child in defaults:
-                    try:
-                        # Verify both topics exist in topics table
-                        conn.execute(
-                            text(
-                                "INSERT OR IGNORE INTO topics (topic_id, subject, display_name, description) VALUES (:tid, 'mathematics', :name, '')"
-                            ),
-                            {"tid": parent, "name": parent.replace("_", " ").title()},
-                        )
-                        conn.execute(
-                            text(
-                                "INSERT OR IGNORE INTO topics (topic_id, subject, display_name, description) VALUES (:tid, 'mathematics', :name, '')"
-                            ),
-                            {"tid": child, "name": child.replace("_", " ").title()},
-                        )
-                        # Insert prerequisite link
-                        conn.execute(
-                            text(
-                                "INSERT OR IGNORE INTO topic_prerequisites (parent_topic_id, child_topic_id) VALUES (:parent, :child)"
-                            ),
-                            {"parent": parent, "child": child},
-                        )
-                    except Exception as e:
-                        logger.error(f"Error seeding topic prerequisite: {e}")
-                conn.commit()
-            prerequisites = defaults
-
-        # Populate mapping
+        prerequisites = [(r[0], r[1]) for r in rows]
+        topic_prereq_map: Dict[str, List[str]] = {}
         for parent, child in prerequisites:
             topic_prereq_map.setdefault(child, []).append(parent)
-
         return prerequisites, topic_prereq_map
-
-    def _seed_default_topics(self, conn):
-        """Helper to ensure base curriculum topics exist in SQLite."""
-        topics = [
-            ("limits", "mathematics"),
-            ("derivatives", "mathematics"),
-            ("algebra", "mathematics"),
-            ("linear_equations", "mathematics"),
-            ("quadratic_equations", "mathematics"),
-            ("functions", "mathematics"),
-            ("newtons_laws", "physics"),
-            ("recursion", "computer_science"),
-        ]
-        for tid, sub in topics:
-            conn.execute(
-                text(
-                    "INSERT OR IGNORE INTO topics (topic_id, subject, display_name, description) VALUES (:tid, :sub, :name, '')"
-                ),
-                {"tid": tid, "sub": sub, "name": tid.replace("_", " ").title()},
-            )
-        conn.commit()

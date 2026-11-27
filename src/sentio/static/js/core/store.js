@@ -15,15 +15,12 @@ class SentioStore {
       activeSessionId: localStorage.getItem('sentio_session_id') || null,
       activeSession: null, // Full session object
       activeRoute: '#/dashboard',
-      notifications: [],
       loading: false,
       // First visit follows the system setting; a choice made in the app is remembered.
       theme:
         localStorage.getItem('sentio_theme') ||
         (window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ? 'dark' : 'light'),
       telemetryActive: false,
-      telemetryLog: [],
-      currentMastery: {}, // Topic-wise mastery map
     };
     this.listeners = {};
   }
@@ -91,8 +88,6 @@ class SentioStore {
     if (signedOut) window.history?.replaceState(null, '', '#/dashboard');
     if (typeof window.cleanupSession === 'function') window.cleanupSession();
     this.setState('telemetryActive', false);
-    this.setState('telemetryLog', []);
-    this.setState('currentMastery', {});
     this.setState('authToken', null);
     this.setState('refreshToken', null);
     this.setState('activeSessionId', null);

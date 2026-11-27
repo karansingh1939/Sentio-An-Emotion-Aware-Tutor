@@ -143,13 +143,6 @@ def close_session(session_id: str, user: dict = Depends(get_current_user)):
     return analytics.to_dict()
 
 
-@router.post(PREFIX + "/sessions/{session_id}/pause", tags=["Sessions"])
-def pause_session(session_id: str, user: dict = Depends(get_current_user)):
-    _verify_session_owner(session_id, user)
-    agent.pause_session(session_id)
-    return {"status": "paused", "session_id": session_id}
-
-
 @router.post(PREFIX + "/sessions/{session_id}/resume", tags=["Sessions"])
 def resume_session(session_id: str, user: dict = Depends(get_current_user)):
     _verify_session_owner(session_id, user)

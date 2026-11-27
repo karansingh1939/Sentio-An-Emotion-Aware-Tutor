@@ -39,7 +39,7 @@ Usage
         student_message="I don't understand the chain rule",
         frame=webcam_frame,          # numpy BGR array, or None
     )
-    print(response.full_text())
+    print(response.to_dict()["text"])
 """
 
 import logging
@@ -49,7 +49,8 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
-from sentio.ai.tutor_llm import NLPEngine, TutorResponse
+from sentio.ai.response_models import TutorResponse
+from sentio.ai.tutor_llm import NLPEngine
 from sentio.emotion.detector import EmotionDetector, EmotionResult
 from sentio.rag.knowledge_base import KnowledgeBase
 from sentio.session.manager import SessionManager
@@ -253,9 +254,6 @@ class TutorAgent:
         logger.info("Session ended: %s", session_id[:8])
         return analytics
 
-    def pause_session(self, session_id):
-        self.sm.pause_session(session_id)
-
     def resume_session(self, session_id):
         self.sm.resume_session(session_id)
 
@@ -266,7 +264,6 @@ class TutorAgent:
         session_id,
         student_message,
         frame=None,
-        quiz_answer=None,
         quiz_correct=None,
         response_time_sec=0.0,
         defer_turn=False,
@@ -279,7 +276,6 @@ class TutorAgent:
             student_message : Student's text input (str)
             frame           : Optional BGR numpy array from webcam.
                               If None, the last known emotion is reused.
-            quiz_answer     : Optional raw answer string (not graded here)
             quiz_correct    : Optional bool -- was the student's answer correct?
             response_time_sec: How long the student took to answer (for quiz metrics)
 
@@ -428,53 +424,6 @@ class TutorAgent:
         response.topic_query = final_state.get("topic_query")
         return response
 
-    # ── Topic Switching ────────────────────────
-
-    def switch_topic(self, session_id, new_topic, new_difficulty=None):
-        """
-        Change the active topic mid-session.
-        Clears the NLP history so the LLM doesn't confuse contexts.
-
-        Args:
-            session_id     : Active session
-            new_topic      : e.g. "limits"
-            new_difficulty : Optional override; keeps current if None
-
-        Returns:
-            Updated state dict
-        """
-        self._require_loaded()
-        session = self.sm.get_or_raise(session_id)
-        session.topic = new_topic
-        session.add_topic(new_topic)
-        if new_difficulty:
-            session.update_difficulty(new_difficulty, reason="manual_topic_switch")
-        self.nlp.clear_history(session_id)
-        logger.info(
-            "Topic switched: %s -> %s [%s]",
-            session_id[:8],
-            new_topic,
-            session.difficulty,
-        )
-        return self.sm.get_current_state(session_id)
-
-    # ── Session Summary ────────────────────────
-
-    def summarize_session(self, session_id):
-        """
-        Ask the LLM to produce a human-readable session summary.
-
-        Returns:
-            str  -- bullet-point summary text
-        """
-        self._require_loaded()
-        session = self.sm.get_or_raise(session_id)
-        return self.nlp.summarize_session(
-            session_id=session_id,
-            subject=session.subject,
-            topic=session.topic,
-        )
-
     def get_analytics(self, session_id):
         """
         Return live SessionAnalytics without closing the session.
@@ -484,19 +433,6 @@ class TutorAgent:
         """
         self._require_loaded()
         return self.sm.get_analytics(session_id)
-
-    def list_sessions(self, student_id=None, active_only=False):
-        """List sessions, optionally filtered by student or status."""
-        self._require_loaded()
-        return self.sm.list_sessions(
-            student_id=student_id,
-            active_only=active_only,
-        )
-
-    def get_student_history(self, student_id, limit=20):
-        """Return past closed session summaries for a student."""
-        self._require_loaded()
-        return self.sm.get_student_history(student_id, limit=limit)
 
     # ── Internal Helpers ───────────────────────
 
@@ -519,21 +455,6 @@ class TutorAgent:
                 self._camera_attempted = True
                 self.detector.load_model()
         return self.detector.model is not None
-
-    def _retrieve_content(self, session_id, subject, topic, difficulty, learning_state, query):
-        """Wrapper around KnowledgeBase.retrieve with error guard."""
-        try:
-            return self.kb.retrieve(
-                subject=subject,
-                topic=topic,
-                difficulty=difficulty,
-                learning_state=learning_state,
-                query=query,
-                session_id=session_id,
-            )
-        except Exception as exc:
-            logger.error("KnowledgeBase retrieval failed: %s", exc)
-            return None
 
     def _neutral_emotion_result(self):
         """Fallback EmotionResult used when no frame is available (camera inactive)."""
@@ -590,23 +511,3 @@ class TutorAgent:
         self.sm.timeout_idle_sessions()
         self.sm.save_all_active()
         logger.info("TutorAgent shutdown complete.")
-
-
-# ─────────────────────────────────────────────
-# QUICK SMOKE TEST  (no LLM / webcam needed)
-# ─────────────────────────────────────────────
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-
-    agent = TutorAgent()
-    # Skip full load to avoid needing API keys / model files
-    # agent.load()
-
-    print("TutorAgent class instantiated successfully.")
-    print("Subsystems:")
-    print("  EmotionDetector:", agent.detector)
-    print("  KnowledgeBase  :", agent.kb)
-    print("  NLPEngine      :", agent.nlp)
-    print("  SessionManager :", agent.sm)
-    print("\nCall agent.load() then agent.start_session() to begin.")

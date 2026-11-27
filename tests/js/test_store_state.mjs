@@ -20,12 +20,10 @@ assert.equal(store.getState('currentUser'), null);
 store.setState('currentUser', { id: 'owner' });
 store.setState('activeSession', { id: 'session' });
 store.setState('telemetryActive', true);
-store.setState('currentMastery', { private: 1 });
 store.clearAuth();
 assert.equal(store.getState('activeSessionId'), null);
 assert.equal(store.getState('activeSession'), null);
 assert.equal(store.getState('telemetryActive'), false);
-assert.deepEqual(store.getState('currentMastery'), {});
 assert.equal(cleanupCount, 1);
 assert.equal(values.has('sentio_session_id'), false);
 // An expired token keeps the screen; choosing to sign out sends the next sign-in to Today.

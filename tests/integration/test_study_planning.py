@@ -122,3 +122,34 @@ def test_history_pagination_is_owner_scoped():
         assert not {s["session_id"] for s in first["sessions"]}.intersection(
             s["session_id"] for s in second["sessions"]
         )
+
+
+def test_untouched_plan_follows_new_evidence_until_a_task_is_ticked():
+    from sqlalchemy import text
+
+    from sentio.study.planning import PlanningService
+
+    with TestClient(app) as client:
+        _, owner = account(client, "fresh-plan@example.com")
+        service = PlanningService(agent.sm.persister._engine)
+        day = date(2026, 10, 14)
+        first = service.daily_plan(owner, day)
+        assert [task["kind"] for task in first["tasks"]] == ["study"]
+        # A card falls due later that day: the untouched plan now leads with the review.
+        with agent.sm.persister._engine.begin() as connection:
+            connection.execute(
+                text(
+                    "INSERT INTO flashcards (card_id,student_id,topic_id,front_text,back_text,created_at,next_review_at) VALUES ('fresh-card',:owner,'mechanics','Force?','m a',1,1)"
+                ),
+                {"owner": owner},
+            )
+        refreshed = service.daily_plan(owner, day)
+        assert refreshed["tasks"][0]["kind"] == "review"
+        # Once a task is ticked, the plan stays as it is for the day.
+        ticked = refreshed["tasks"][0]["task_id"]
+        assert service.repository.complete(owner, day, ticked, True)
+        with agent.sm.persister._engine.begin() as connection:
+            connection.execute(text("DELETE FROM flashcards WHERE card_id='fresh-card'"))
+        kept = service.daily_plan(owner, day)
+        assert kept["tasks"][0]["task_id"] == ticked
+        assert kept["tasks"][0]["completed_at"] is not None

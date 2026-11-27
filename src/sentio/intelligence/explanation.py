@@ -61,33 +61,3 @@ class ExplanationEngine:
             )
 
         return f"Study recommendation for '{topic_name}' based on current learner model stats."
-
-    def explain_adaptation(
-        self, topic_id: str, adaptation: Dict[str, Any], details: Dict[str, Any]
-    ) -> str:
-        """
-        Formulates a structured explanation for tutoring adaptations made during a session.
-        """
-        topic_name = topic_id.replace("_", " ").title()
-        diff = adaptation.get("difficulty", "intermediate")
-        pace = adaptation.get("pace", "standard")
-        cog_load = details.get("cognitive_load", 0.0)
-
-        reasons = []
-        if cog_load > 0.7:
-            reasons.append(
-                f"high cognitive load ({cog_load:.0%}) detected via slow response latencies"
-            )
-        if details.get("volatility", 0.0) > 0.4:
-            reasons.append("rapidly fluctuating learning states (frustrated/struggling)")
-
-        reason_str = (
-            " and ".join(reasons)
-            if reasons
-            else f"current mastery of {details.get('mastery', 0.0):.0%}"
-        )
-
-        return (
-            f"Tutoring adapted to {diff.upper()} difficulty at a {pace.upper()} pace. "
-            f"This adjustment was made because of {reason_str} for topic '{topic_name}'."
-        )

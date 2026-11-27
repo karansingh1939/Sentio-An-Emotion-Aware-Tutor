@@ -35,16 +35,6 @@ class Difficulty(str, Enum):
     INTERMEDIATE = "intermediate"
     ADVANCED = "advanced"
 
-    def step_up(self) -> "Difficulty":
-        order = [Difficulty.BEGINNER, Difficulty.INTERMEDIATE, Difficulty.ADVANCED]
-        idx = order.index(self)
-        return order[min(idx + 1, len(order) - 1)]
-
-    def step_down(self) -> "Difficulty":
-        order = [Difficulty.BEGINNER, Difficulty.INTERMEDIATE, Difficulty.ADVANCED]
-        idx = order.index(self)
-        return order[max(idx - 1, 0)]
-
 
 @dataclass
 class RetrievedContent:
@@ -92,9 +82,9 @@ class SemanticRetriever:
         if self._model is not None:
             return
         try:
-            from sentence_transformers import SentenceTransformer
+            from sentio.rag.embeddings import embedding_model
 
-            self._model = SentenceTransformer(self.model_name, device="cpu", local_files_only=True)
+            self._model = embedding_model(self.model_name)
             logger.info(f"Semantic retriever loaded: {self.model_name}")
         except ImportError:
             logger.warning(

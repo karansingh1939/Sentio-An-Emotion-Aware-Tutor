@@ -734,7 +734,7 @@ function sourceChips(citations) {
   if (!citations?.length) return '';
   const seen = new Set();
   const chips = citations
-    .map((c, i) => ({ c, i, key: `${c.filename} ${c.page}` }))
+    .map((c, i) => ({ c, i, key: `${c.filename}\u0000${c.page}` }))
     .filter(({ key }) => !seen.has(key) && seen.add(key));
   const extra = chips.length - VISIBLE_CHIPS;
   return `<div class="source-row">${chips
@@ -1022,7 +1022,6 @@ function initSpeechRecognition() {
   recognition.lang = 'en-US';
 
   recognition.onstart = () => {
-    console.log('Speech recognition started');
     recognitionActive = true;
     document.getElementById('mic-active-indicator').style.display = 'flex';
     // Barge-in: if mic capture starts while speech is playing, immediately cancel speech
@@ -1034,7 +1033,6 @@ function initSpeechRecognition() {
   };
 
   recognition.onend = () => {
-    console.log('Speech recognition ended');
     recognitionActive = false;
     document.getElementById('mic-active-indicator').style.display = 'none';
     // If voiceModeActive is still true and we are not currently waiting for tutor response (typing-indicator is not visible),
@@ -1061,7 +1059,6 @@ function initSpeechRecognition() {
 
   recognition.onresult = (event) => {
     const transcript = event.results[0][0].transcript;
-    console.log('Speech transcript:', transcript);
     if (transcript.trim()) {
       const msgInput = document.getElementById('msg-input');
       msgInput.value = transcript;
@@ -1200,13 +1197,11 @@ function speakText(text) {
   currentUtterance.lang = 'en-US';
 
   currentUtterance.onstart = () => {
-    console.log('TTS playback started');
     const stopBtn = document.getElementById('stop-speech-btn');
     if (stopBtn) stopBtn.disabled = false;
   };
 
   currentUtterance.onend = () => {
-    console.log('TTS playback finished');
     const stopBtn = document.getElementById('stop-speech-btn');
     if (stopBtn) stopBtn.disabled = true;
     currentUtterance = null;

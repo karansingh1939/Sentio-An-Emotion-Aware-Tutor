@@ -1,8 +1,10 @@
 import {
   MAX_PRACTICE_TOPICS,
   escapeHtml,
+  initials,
   pageLabel,
   pageRange,
+  tileClass,
   topicMemory,
 } from '../core/html.js';
 // Documents View Controller for Sentio (ES Module)
@@ -112,18 +114,6 @@ const BOARD_COLUMNS = [
   ['ready', 'Ready'],
 ];
 const BOARD_LIMIT = 60; // lectures fetched for the board at most
-
-const tileClass = (text) =>
-  `t${[...(text || '')].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 4}`;
-const initials = (filename) =>
-  (filename || '?')
-    .replace(/\.[a-z0-9]+$/i, '')
-    .split(/[^\p{L}\p{N}]+/u)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => [...word][0])
-    .join('')
-    .toUpperCase() || '?';
 
 // How far along a topic is, as a 0–100 bar, from the evidence the server keeps.
 function topicShare(topic) {
@@ -267,6 +257,7 @@ export class LibraryView {
       if (!current()) return;
       this.current = current;
       this.ocrReady = capabilities.ocr_available;
+      this.maxOcrPages = capabilities.max_ocr_pages;
       this.documents = res.documents || [];
       this.courses = courses.courses || [];
       if (!this.courses.some((course) => course.id === this.uploadCourse)) this.uploadCourse = '';
@@ -469,7 +460,7 @@ export class LibraryView {
               <input type="file" id="file-uploader" multiple style="display:none;" accept="${accept}" />
             </div>
 
-            <p class="muted">PowerPoint, PDF, Word, text${this.ocrReady ? ', or a photo or scan of your notes (up to 20 pages)' : ''}. 20 MiB per file.${this.ocrReady ? '' : ' Photos and scans need the optional OCR tools.'}</p>
+            <p class="muted">PowerPoint, PDF, Word, text${this.ocrReady ? `, or a photo or scan of your notes (up to ${this.maxOcrPages || 200} pages)` : ''}. 20 MiB per file.${this.ocrReady ? '' : ' Photos and scans need the optional OCR tools.'}</p>
             <p class="muted">Have a course syllabus? Make a course, then add the syllabus inside it to see how much of it your notes cover.</p>
             <p id="upload-batch" role="status" class="muted">${escapeHtml(this.batchStatus)}</p>
             <div id="upload-list">${this.renderUploadList()}</div>

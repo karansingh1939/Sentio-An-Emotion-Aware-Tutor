@@ -54,6 +54,11 @@ class TestIdentityAndPrivacyPlatform(unittest.TestCase):
         # 3. No special character
         with self.assertRaises(ValidationError):
             self.validator.validate("SecurePassword123")
+        with self.assertRaises(ValidationError):
+            self.validator.validate("Secure Password 123")  # A space is not a symbol.
+        # 4. Any symbol counts, not only a fixed list.
+        for symbol in "-_+=/~'[]":
+            self.validator.validate(f"SecurePassword123{symbol}")
 
     def test_token_serialization_tampering_and_expiration(self):
         """Verify TokenManager signature validation rejects tampered strings and expired payloads."""

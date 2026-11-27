@@ -65,17 +65,30 @@ class PlanningRepository:
         }
 
     def save_plan(self, owner, day, minutes, tasks):
+        """Save the day's plan, replacing an earlier one only while none of its tasks is done."""
         with self.engine.begin() as connection:
-            connection.execute(
-                text("INSERT OR IGNORE INTO daily_plans VALUES (:owner,:day,:minutes,:tasks,:now)"),
-                {
-                    "owner": owner,
-                    "day": str(day),
-                    "minutes": minutes,
-                    "tasks": json.dumps(tasks),
-                    "now": time.time(),
-                },
-            )
+            begin_immediate(connection)
+            row = connection.execute(
+                text("SELECT tasks_json FROM daily_plans WHERE student_id=:owner AND day=:day"),
+                {"owner": owner, "day": str(day)},
+            ).first()
+            done = row is not None and any(task.get("completed_at") for task in json.loads(row[0]))
+            if row is not None and not done:
+                connection.execute(
+                    text("DELETE FROM daily_plans WHERE student_id=:owner AND day=:day"),
+                    {"owner": owner, "day": str(day)},
+                )
+            if not done:
+                connection.execute(
+                    text("INSERT INTO daily_plans VALUES (:owner,:day,:minutes,:tasks,:now)"),
+                    {
+                        "owner": owner,
+                        "day": str(day),
+                        "minutes": minutes,
+                        "tasks": json.dumps(tasks),
+                        "now": time.time(),
+                    },
+                )
         return self.plan(owner, day)
 
     def complete(self, owner, day, task_id, completed):

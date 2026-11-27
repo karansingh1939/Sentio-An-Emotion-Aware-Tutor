@@ -609,29 +609,6 @@ class SessionPersister:
             logger.error(f"Error registering document: {e}")
             return False
 
-    def get_document_by_checksum(
-        self, checksum: str, student_id: Optional[str] = None
-    ) -> Optional[dict]:
-        from sqlalchemy import text
-
-        try:
-            with self._engine.connect() as conn:
-                query = """
-                    SELECT id, filename, file_type, category, subject, upload_date, last_modified, chunk_count, embedding_count, status, last_indexed, checksum, student_id, extraction_method
-                    FROM documents WHERE checksum = :checksum
-                """
-                params = {"checksum": checksum}
-                if student_id:
-                    query += " AND student_id = :sid"
-                    params["sid"] = student_id
-                row = conn.execute(text(query), params).fetchone()
-                if row:
-                    return dict(row._mapping)
-            return None
-        except Exception as e:
-            logger.error(f"Error fetching document by checksum: {e}")
-            return None
-
     def get_document_by_filename(
         self, filename: str, student_id: Optional[str] = None, category: Optional[str] = None
     ) -> Optional[dict]:

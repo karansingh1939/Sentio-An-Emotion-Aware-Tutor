@@ -311,10 +311,11 @@ export class StudyView {
       const barMeta = document.getElementById('active-bar-meta');
       if (barMeta) {
         const isGrounded = res.metadata?.document_id && res.metadata.document_id !== 'none';
-        barMeta.textContent = [
-          res.difficulty,
-          isGrounded ? 'From your notes' : 'Not linked to notes',
-        ]
+        // Same wording as a new session: "Beginner · From your notes".
+        const level = res.difficulty
+          ? res.difficulty[0].toUpperCase() + res.difficulty.slice(1)
+          : '';
+        barMeta.textContent = [level, isGrounded ? 'From your notes' : 'Not linked to notes']
           .filter(Boolean)
           .join(' · ');
       }

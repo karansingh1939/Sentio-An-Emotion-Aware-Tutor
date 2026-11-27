@@ -4,7 +4,9 @@ import unittest
 from fastapi.testclient import TestClient
 
 # Import local codebase modules
-from sentio.ai.tutor_llm import NLPEngine, PromptBuilder, ResponseParser
+from sentio.ai.prompts import PromptBuilder
+from sentio.ai.response_parser import ResponseParser
+from sentio.ai.tutor_llm import NLPEngine
 from sentio.api.app import app
 from sentio.rag.knowledge_base import KnowledgeBase
 from sentio.session.manager import SessionManager, SessionStatus

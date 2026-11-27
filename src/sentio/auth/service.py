@@ -165,8 +165,3 @@ class AuthService:
             self.audit.log_event(student_id, "logout", details=f"Revoked session {token_id[:8]}")
         except Exception:
             raise InvalidTokenError("Invalid refresh token.")
-
-    def logout_all_devices(self, student_id: str):
-        """Revokes all active refresh tokens for the student ID."""
-        self.repo.revoke_all_refresh_tokens(student_id)
-        self.audit.log_event(student_id, "logout_all", details="Revoked all active sessions")

@@ -172,8 +172,6 @@ def update_student_consent(
     """
     _verify_student_owner(student_id, user)
     try:
-        import json
-
         from sentio.auth.models import ConsentHistory
 
         consent = ConsentHistory(

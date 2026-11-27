@@ -78,12 +78,6 @@ class SentioRouter {
       }
     });
   }
-
-  navigateTo(route) {
-    if (this.routes.includes(route)) {
-      window.location.hash = route;
-    }
-  }
 }
 
 export const router = new SentioRouter();

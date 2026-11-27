@@ -38,8 +38,16 @@ def token(home, student):
         ).fetchone()
     secret = (db.parent / ".sentio-secret").read_text().strip().encode()
     now = time.time()
-    payload = {"sub": student, "email": email, "role": role, "token_type": "access",
-               "version": version, "iss": "sentio", "exp": now + 3600, "iat": int(now)}
+    payload = {
+        "sub": student,
+        "email": email,
+        "role": role,
+        "token_type": "access",
+        "version": version,
+        "iss": "sentio",
+        "exp": now + 3600,
+        "iat": int(now),
+    }
     return jwt.encode(payload, secret, algorithm="HS256")
 
 
@@ -48,7 +56,9 @@ def ask(base, headers, session_id, message):
         response = requests.post(
             f"{base}/sessions/{session_id}/chat/stream",
             json={"message": message, "request_id": "live-" + uuid.uuid4().hex},
-            headers=headers, stream=True, timeout=900,
+            headers=headers,
+            stream=True,
+            timeout=900,
         )
         if response.status_code not in (409, 429):
             break
@@ -105,24 +115,43 @@ def main():
         if only and case["id"] not in only:
             continue
         source = course if case["source"] == "course" else sources[case["source"]]
-        session = requests.post(f"{base}/sessions", headers=headers, timeout=60, json={
-            "student_id": args.student, "subject": "Live regression", "topic": "Any topic",
-            "difficulty": "beginner", "metadata": {"document_id": source},
-        }).json()
+        session = requests.post(
+            f"{base}/sessions",
+            headers=headers,
+            timeout=60,
+            json={
+                "student_id": args.student,
+                "subject": "Live regression",
+                "topic": "Any topic",
+                "difficulty": "beginner",
+                "metadata": {"document_id": source},
+            },
+        ).json()
         started = time.time()
         for turn in case["turns"]:
             result = ask(base, headers, session["session_id"], turn)
         problems = check(case, result)
         passed += not problems
-        row = {"id": case["id"], "ok": not problems, "mode": mode(result), "problems": problems,
-               "seconds": round(time.time() - started), "text": (result.get("text") or "")[:400],
-               "session_id": session["session_id"]}
+        row = {
+            "id": case["id"],
+            "ok": not problems,
+            "mode": mode(result),
+            "problems": problems,
+            "seconds": round(time.time() - started),
+            "text": (result.get("text") or "")[:400],
+            "session_id": session["session_id"],
+        }
         rows.append(row)
         status = "PASS" if not problems else "FAIL"
-        print(f"{status} {case['id']:<24} {row['mode']:<10} {row['seconds']:>4}s  {'; '.join(problems)}", flush=True)
+        print(
+            f"{status} {case['id']:<24} {row['mode']:<10} {row['seconds']:>4}s  {'; '.join(problems)}",
+            flush=True,
+        )
     print(f"\n{passed}/{len(rows)} passed")
     if args.report:
-        Path(args.report).write_text(json.dumps(rows, indent=1, ensure_ascii=False), encoding="utf-8")
+        Path(args.report).write_text(
+            json.dumps(rows, indent=1, ensure_ascii=False), encoding="utf-8"
+        )
     return 0 if passed == len(rows) else 1
 
 

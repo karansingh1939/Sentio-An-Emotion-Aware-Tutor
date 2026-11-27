@@ -30,5 +30,6 @@ class PasswordValidator:
         if not re.search(r"\d", password):
             raise ValidationError("Password must contain at least one digit.")
 
-        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+        # Any symbol counts (- _ + = / ~ and so on), as the sign-up form promises.
+        if not re.search(r"[^A-Za-z0-9\s]", password):
             raise ValidationError("Password must contain at least one special character.")

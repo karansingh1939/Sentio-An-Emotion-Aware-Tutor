@@ -12,7 +12,6 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from sentio.api.dependencies import PREFIX as PREFIX
 from sentio.api.dependencies import STATIC_DIR
 from sentio.api.dependencies import agent as agent
-from sentio.api.dependencies import quiz_service as quiz_service
 from sentio.api.middleware import (
     BodyLimitMiddleware,
     RateLimitMiddleware,
@@ -42,7 +41,6 @@ from sentio.api.routes import emotion as emotion_routes
 from sentio.config import api_cfg
 from sentio.shared.exceptions import LLMServiceUnavailableError
 from sentio.shared.logging_setup import setup_logging
-from sentio.shared.rate_limit import RateLimiter as RateLimiter
 
 setup_logging(level=logging.INFO)
 logger = logging.getLogger(__name__)

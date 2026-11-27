@@ -35,18 +35,6 @@ class DocumentRepository:
     def get_all_chunks(self, student_id: Optional[str] = None) -> List[dict]:
         return self.persister.get_all_chunks(student_id=student_id)
 
-    def register_document(self, doc: dict) -> bool:
-        return self.persister.register_document(doc)
-
-    def delete_document(self, doc_id: str) -> bool:
-        return self.persister.delete_document(doc_id)
-
-    def save_document_chunks(self, doc_id: str, chunks: List[dict]) -> bool:
-        return self.persister.save_document_chunks(doc_id, chunks)
-
-    def get_document_chunks(self, doc_id: str) -> List[dict]:
-        return self.persister.get_document_chunks(doc_id)
-
     def replace(self, document, chunks, require_owner=False):
         from sqlalchemy import text
 
@@ -148,18 +136,3 @@ class DocumentRepository:
                 {"id": document_id, "overview": json.dumps(saved)},
             )
         return saved
-
-    def clear_all_documents_and_chunks(self) -> bool:
-        return self.persister.clear_all_documents_and_chunks()
-
-    def get_document_by_checksum(
-        self, checksum: str, student_id: Optional[str] = None
-    ) -> Optional[dict]:
-        return self.persister.get_document_by_checksum(checksum, student_id=student_id)
-
-    def get_document_by_filename(
-        self, filename: str, student_id: Optional[str] = None, category: Optional[str] = None
-    ) -> Optional[dict]:
-        return self.persister.get_document_by_filename(
-            filename, student_id=student_id, category=category
-        )

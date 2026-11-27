@@ -1,20 +1,17 @@
 import logging
 import os
-import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 try:
     from qdrant_client import QdrantClient
     from qdrant_client.http import models
-    from qdrant_client.http.exceptions import UnexpectedResponse
 
     HAS_QDRANT = True
 except ImportError:
     HAS_QDRANT = False
     QdrantClient = None
     models = None
-    UnexpectedResponse = Exception
 
 logger = logging.getLogger(__name__)
 
@@ -233,47 +230,3 @@ class QdrantVectorDB:
 
 
 # Smoke test/Benchmark runner
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    db = QdrantVectorDB()
-
-    print("Testing connection...")
-    if not db.connect():
-        print(
-            "Qdrant connection failed (or package not installed). Skipping remainder of script test."
-        )
-    else:
-        print("Creating collection...")
-        assert db.create_collection_if_not_exists(vector_size=3), "Failed to create collection"
-
-        # Index a trial chunk and measure latency
-        print("Indexing trial chunk...")
-        t0 = time.perf_counter()
-        trial_id = 1
-        trial_vector = [0.1, 0.8, 0.1]
-        trial_payload = {
-            "text": "Derivatives measure rate of change",
-            "subject": "mathematics",
-            "topic": "derivatives",
-        }
-
-        success = db.index_chunks(ids=[trial_id], vectors=[trial_vector], payloads=[trial_payload])
-        t_index = (time.perf_counter() - t0) * 1000
-        print(f"Index status: {success} | Latency: {t_index:.2f} ms")
-        assert success, "Index failed"
-        assert t_index < 100.0, f"Indexing latency too high: {t_index:.2f} ms"
-
-        # Perform a search check
-        print("Searching trial chunk...")
-        t1 = time.perf_counter()
-        search_results = db.search(
-            query_vector=[0.1, 0.8, 0.1], limit=1, filter_payload={"subject": "mathematics"}
-        )
-        t_search = (time.perf_counter() - t1) * 1000
-        print(f"Search results: {search_results} | Latency: {t_search:.2f} ms")
-        assert len(search_results) > 0, "No search results returned"
-        assert search_results[0]["payload"]["topic"] == "derivatives", (
-            "Incorrect payload topic retrieved"
-        )
-
-        print("\nAll Qdrant trials passed successfully!")

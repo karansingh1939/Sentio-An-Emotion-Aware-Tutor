@@ -244,11 +244,6 @@ class AuthRepository:
             "UPDATE refresh_tokens SET revoked = 1 WHERE token_id = :tid", {"tid": token_id}
         )
 
-    def revoke_all_refresh_tokens(self, student_id: str):
-        self._execute(
-            "UPDATE refresh_tokens SET revoked = 1 WHERE student_id = :sid", {"sid": student_id}
-        )
-
     def save_audit_log(self, audit: AuditLog):
         self._execute(
             "INSERT INTO audit_logs (student_id, event_type, ip_address, timestamp, details) "

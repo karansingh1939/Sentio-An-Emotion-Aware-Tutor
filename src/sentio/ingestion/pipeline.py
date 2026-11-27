@@ -53,12 +53,10 @@ class DocumentIngestionPipeline:
         """Lazy-load the sentence transformer model for indexing embeddings."""
         if self._embedding_model is None:
             try:
-                from sentence_transformers import SentenceTransformer
+                from sentio.rag.embeddings import embedding_model
 
-                self._embedding_model = SentenceTransformer(
-                    nlp_cfg.EMBEDDING_MODEL, device="cpu", local_files_only=True
-                )
-                logger.info(f"Loaded sentence transformer model: {nlp_cfg.EMBEDDING_MODEL}")
+                # Shared with search, so each upload does not load its own copy.
+                self._embedding_model = embedding_model(nlp_cfg.EMBEDDING_MODEL)
             except ImportError:
                 logger.error(
                     "sentence-transformers not installed. Ingestion cannot index vector embeddings."
@@ -89,18 +87,25 @@ class DocumentIngestionPipeline:
         return pdf_pages(filepath)
 
     def parse_docx(self, filepath: Path) -> List[Dict[str, Any]]:
-        """Parse Word DOCX document. Returns list of paragraph blocks."""
+        """A Word document as one page: paragraphs and table rows in document order."""
         import docx
+        from docx.table import Table
+        from docx.text.paragraph import Paragraph
 
         doc = docx.Document(filepath)
-        parsed_blocks = []
-
-        # docx has no strict pages, group paragraphs into pseudo-pages/chapters if needed
-        # for simplicity, we parse paragraphs and treat them as sequential text blocks
-        full_text = "\n".join([p.text for p in doc.paragraphs])
-        parsed_blocks.append({"page_number": 1, "text": full_text})
-
-        return parsed_blocks
+        lines = []
+        # Word has no fixed pages. Walk the body in order so a table stays where it was
+        # written; python-docx's doc.paragraphs alone leaves table text out.
+        for block in doc.element.body.iterchildren():
+            tag = block.tag.rsplit("}", 1)[-1]
+            if tag == "p":
+                lines.append(Paragraph(block, doc).text)
+            elif tag == "tbl":
+                for row in Table(block, doc).rows:
+                    cells = [cell.text.strip() for cell in row.cells]
+                    # Merged cells repeat their text; keep each once, in order.
+                    lines.append(" | ".join(dict.fromkeys(c for c in cells if c)))
+        return [{"page_number": 1, "text": "\n".join(lines)}]
 
     def parse_pptx(self, filepath: Path) -> List[Dict[str, Any]]:
         """One page per slide: title, text boxes and table cells in order, then speaker notes."""
@@ -469,38 +474,3 @@ class DocumentIngestionPipeline:
             "failed_count": failed_count,
             "duration_sec": round(duration, 3),
         }
-
-
-if __name__ == "__main__":
-    # Smoke test for Ingestion Pipeline
-    logging.basicConfig(level=logging.INFO)
-    pipeline = DocumentIngestionPipeline()
-    pipeline.load()
-
-    # Write a trial txt file
-    cat_folder = DATA_DIR / "documents" / "notes"
-    cat_folder.mkdir(parents=True, exist_ok=True)
-    trial_txt = cat_folder / "test_notes.txt"
-    with open(trial_txt, "w", encoding="utf-8") as f:
-        f.write(
-            "Calculus limits describe behavior of a function near a point. The limit of 1/x as x approaches infinity is 0."
-        )
-
-    print("Running document ingestion pipeline scan...")
-    report = pipeline.scan_and_sync()
-    print(f"Report: {report}")
-
-    # Verify DB contains document
-    docs = pipeline.sm.list_documents()
-    print(f"Documents registered: {[d['filename'] for d in docs]}")
-    assert any(d["filename"] == "test_notes.txt" for d in docs), "Document not registered"
-
-    # Prune trial file
-    os.remove(trial_txt)
-    print("Running pruner sync scan...")
-    report = pipeline.scan_and_sync()
-    print(f"Sync Report: {report}")
-    docs = pipeline.sm.list_documents()
-    print(f"Documents registered after prune: {docs}")
-    assert not any(d["filename"] == "test_notes.txt" for d in docs), "Pruning failed"
-    print("Ingestion smoke test passed successfully!")

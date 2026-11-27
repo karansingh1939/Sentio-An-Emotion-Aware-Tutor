@@ -64,6 +64,14 @@ class QuizQuestion(SourcedItem):
         self.topic = self.topic or ""
         if not self.correct_answer.strip():
             raise ValueError("Correct answer must not be blank.")
+        # "What is the relationship between force and mass?" cannot be answered True or
+        # False; a true/false item has to be a statement the learner can judge.
+        if self.question_type == "true_false" and re.match(
+            r"\s*(what|which|how|why|when|where|who|whom|whose|explain|describe|name|list)\b",
+            self.question_text,
+            re.IGNORECASE,
+        ):
+            raise ValueError("A true/false question must be a statement, not an open question.")
         # True/false options are fixed, so models that omit them lose nothing.
         if self.question_type == "true_false" and not self.options:
             if self.correct_answer.strip().lower() in ("true", "false"):

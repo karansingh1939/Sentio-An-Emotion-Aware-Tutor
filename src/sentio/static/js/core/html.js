@@ -57,3 +57,16 @@ export function describeProvenance(provenance) {
       : `Made by the local AI${from || ' without notes'}`;
   return provenance.edited ? `${made} · edited by you` : made;
 }
+
+// A file's coloured tile: one of four colour classes, picked from its name, and two initials.
+export const tileClass = (text) =>
+  `t${[...(text || '')].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 4}`;
+export const initials = (filename) =>
+  (filename || '?')
+    .replace(/\.[a-z0-9]+$/i, '')
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => [...word][0])
+    .join('')
+    .toUpperCase() || '?';

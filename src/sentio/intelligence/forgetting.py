@@ -1,6 +1,6 @@
 import logging
 import math
-from typing import Dict, List, Optional
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -42,23 +42,3 @@ class ForgettingEngine:
         # R = 1.0 - 2^(-delta_days / S)
         risk = 1.0 - math.pow(2.0, -delta_days / stability)
         return max(0.0, min(1.0, risk)), stability
-
-    def prioritize_forgetting_risks(
-        self, topics: List[str], topic_histories: Dict[str, dict], current_time: float
-    ) -> List[tuple[str, float]]:
-        """
-        Scores and ranks a list of topics by their expected forgetting risk.
-        Returns a list of (topic_id, risk_score) sorted descending.
-        """
-        results = []
-        for topic in topics:
-            history = topic_histories.get(topic, {})
-            risk, _ = self.calculate_forgetting_risk(
-                last_attempt_at=history.get("last_attempt_at"),
-                current_time=current_time,
-                repetition_count=history.get("attempts_count", 0),
-                mastery=history.get("mastery_score", 0.0),
-            )
-            results.append((topic, risk))
-        results.sort(key=lambda x: x[1], reverse=True)
-        return results
